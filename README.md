@@ -65,6 +65,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/06-LEDGER.md           what is answered, how firmly, and what is open
     docs/07-M1-WORKLIST.md      the first milestone as an ordered work list
     docs/08-MACRO-UNDERCOUNT.md the inventory's biggest unknown, closed
+    docs/09-DAT-WORK-SHAPE.md   what reading DMKBLD and DMKPGS revealed
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was

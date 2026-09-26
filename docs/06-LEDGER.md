@@ -244,8 +244,14 @@ The honest end of the ledger.
    at 73 references, `CPCREG0 X'81800CC0'` (CP's own CR0) at 38,
    `X2048BND X'00FFF800'` at 25, `XRIGHT24` at 23, `X40FFS X'40FFFFFF'` at
    18 — 217 reference sites with one definition point each.
-2. **`DMKPGS` and `DMKBLD`** — 159 DAT-table references between them, and
-   neither has been read. They are the top two consumers.
+2. ~~**`DMKPGS` and `DMKBLD`**~~ **READ** — see `09-DAT-WORK-SHAPE.md`.
+   `DMKBLDRT`'s parameter is a packed halfword that cannot express a 31-bit
+   range, so it is an ABI change with 8 callers; 70 hard-coded shift amounts
+   across twelve modules encode the table geometry in bare literals; and
+   `DMKPGS` turns out to be the *other half* of the shared-segment machinery
+   (`DMKATS` attaches, `DMKPGS` releases), which widens `05`'s conclusion.
+   **`DMKPTR` is now the last unread module in the top five** — 54 DAT
+   references, 2,589 lines, and the busiest module in CP by `CORTABLE` use.
 3. **CMS's 139 `.MACRO`/`.COPY` members**, entirely unexamined. `TRANS`
    showed what macros can hide.
 4. **`USER DIRECT`** is not in the source tree — `UDIRECT.COPY` is the control

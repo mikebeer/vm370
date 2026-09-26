@@ -1,0 +1,144 @@
+# The real shape of the DAT conversion
+
+26 September 2026. `03-CP-INVENTORY.md` counted 492 DAT-table field
+references and named `DMKPGS`, `DMKATS` and `DMKBLD` as the top consumers,
+none of which had been read. Two of them have now been read, and the field
+count turns out to be the *easy* part.
+
+Three things the field references do not capture, all found by reading:
+
+1. **`DMKBLDRT`'s parameter format is a packed halfword**, and it cannot
+   express a 31-bit address range. An interface change, with 8 callers.
+2. **70 hard-coded shift amounts encode the table geometry**, in bare literals
+   like `SLL R9,6` that no field-name search can see.
+3. **`DMKPGS` is the other half of the shared-segment machinery**, not just a
+   paging module — which widens `05-CP67-PRIOR-ART.md`'s conclusion.
+
+---
+
+## 1. `DMKBLDRT`'s interface cannot carry a 31-bit range
+
+From the module's own entry conditions:
+
+    * ENTRY CONDITIONS -
+    *        GPR 1 = BEGINING AND ENDING ADDRESS TO BUILD TABLES.
+    *        BYTES 0-1 = BEGINING ADDRESS
+    *              FIRST 4 BITS = 0,NEXT 8 BITS = SEGMENT, NEXT 4 = PAGE
+    *        BYTES 2-3 = ENDING ADDRESS
+    *              FIRST 4 BITS = 0,NEXT 8 BITS = SEGMENT, NEXT 4 = PAGE
+
+Two addresses in one fullword, each a halfword of *4 zero bits, 8 segment
+bits, 4 page bits*. That is 256 segments of 16 pages of 4 KB — **exactly
+16 MB, and exactly the S/370 64 KB-segment geometry.**
+
+Under ESA/390 an address needs 11 segment bits and 8 page bits. Nineteen bits
+per address, so two of them do not fit in a fullword at all. **This is not a
+field widening, it is an ABI change** — and `DMKBLDRT` is called via SVC, so
+every caller is affected.
+
+**Eight callers**, which is the good news:
+
+    DMKCFG  DMKCFP  DMKCPI  DMKDEF  DMKDEH  DMKLOG  DMKPGS  DMKPTR
+
+`DMKCPI` is on M1's path, but M1 runs with DAT off and can stub the call —
+consistent with `07-M1-WORKLIST.md` deferring `DMKBLD` entirely.
+
+The companion entry points are similarly bounded: `DMKBLDRL` (release) has 5
+callers, `DMKBLDVM` 8, `DMKBLDEC` 3.
+
+## 2. Seventy shifts encode the geometry
+
+`DMKBLD` is a nest of hard-coded shift constants, and its own comments say
+what each one means:
+
+     205   SRL   R1,16          ADDRESS OF FIRST SEG. TO BUILD
+     232   SLL   R1,4+4         SEGMENT COUNT * 16
+     257   SLL   R9,6           LENGTH OF OLD TABLE
+     329   SRL   R3,4           DROP THE PAGE NUMBER
+     278   SLL   R7,6           TIMES 64 BYTES PER TABLE
+
+Measured across the twelve DAT-touching modules, 284 literal-shift
+instructions, of which the amounts sort cleanly into three groups:
+
+| Shift | Count | Encodes | Becomes |
+|---|---|---|---|
+| **4** | **33** | 16 pages per segment | **8** (256 pages) |
+| **16** | **27** | 64 KB segment | **20** (1 MB) |
+| **6** | **5** | ×64-byte page table | **10** (×1024) |
+| **11** | **4** | 2 KB storage-key granularity | **12** (4 KB) |
+| **4+4** | **1** | segment count ×16 | **4+8** |
+| | **70** | **must change** | |
+| 12, 2, 3, 20, 1 | 141 | 4 KB page, fullword, doubleword, 1 MB | unchanged |
+| various | 71 | — | need individual inspection |
+
+**Shift 12 staying valid is worth noticing**: pages remain 4 KB in ESA/390, so
+every page-offset extraction survives untouched. And four shift-20s already
+exist in `DMKPGS` — 1 MB-shaped arithmetic in a 64 KB-segment system, which
+is either a coincidence of scale or a hint that someone thought about this
+before.
+
+Where the 70 live:
+
+    shift 4    DMKBLD 8, DMKCPI 7, DMKPGS 6, DMKCFG 4, DMKPTR 2,
+               DMKVMA 2, DMKMCH 2, DMKVAT 1, DMKCPP 1
+    shift 16   DMKATS 6, DMKCFG 6, DMKCPP 5, DMKPGS 4, DMKPTR 3,
+               DMKBLD 1, DMKVAT 1, DMKCPI 1
+    shift 6    DMKBLD 4, DMKCPI 1
+    shift 11   DMKMCH 2, DMKPTR 1, DMKRPA 1
+
+The comments confirm the reading in nearly every case — `SRL R5,16  LEAVE
+ONLY SEGMENT NUMBER`, `SLL R4,4  TIMES 16 FOR NUM. SEG EN`, `SRL R1,11  GET
+PAGE NUMBER*2` — so this is evidence rather than inference. Each of the 70
+still needs individual confirmation, because a shift of 4 might be
+multiplying by sixteen for an unrelated reason, but the population is
+enumerable and the line numbers are known.
+
+**`DMKMCH` and `DMKRPA` were not on any earlier list.** `DMKMCH` is
+machine-check handling, with two shift-4s and two shift-11s — the latter
+being "PUT THE FAILING STORAGE ADDRESS" through a 2 KB-granular shift, which
+is storage-key arithmetic in the error path.
+
+## 3. `DMKPGS` is half of the shared-segment machinery
+
+Its function, from its own prologue:
+
+    *  1.    TO RELEASE THE PAGES OF A USER'S VIRTUAL STORAGE SPACE
+    *  2.    TO LOCATE A NAMED SYSTEM WHICH RESIDES IN THE USER'S
+    *        VIRTUAL STORAGE.
+
+with `DMKPGSPS - RELEASE A NAMED SYSTEM FROM USER'S VIRTUAL STORAGE`.
+
+So the named-saved-system machinery is split: **`DMKATS` attaches, `DMKPGS`
+releases.** `05-CP67-PRIOR-ART.md` concluded that moving to frame-level
+sharing puts work into "`DMKATS` and the `NAMESYS` path". That is incomplete —
+it is `DMKPGS` too, and `DMKPGS` is the *largest* DAT-table consumer in CP at
+96 references.
+
+Which makes the frame-sharing change: `DMKATS` (73 refs) + `DMKPGS` (96) +
+the `NAMESYS`/`DMKSNT` declaration format. Still bounded, still with IBM's
+precedent, but two large modules rather than one.
+
+---
+
+## What this does to M2's estimate
+
+M2 is *DAT on with ESA/390 tables, `TRANS`-bearing modules at AMODE 31, no
+guests, no shared segments*. Its work, now enumerable:
+
+| Item | Population | Source |
+|---|---|---|
+| DAT-table field references | 492 | `03-CP-INVENTORY.md` |
+| Geometry-encoding shifts | **70** | this document |
+| Architecture-dependent constants | 6 defs, **217 refs** | `08-MACRO-UNDERCOUNT.md` |
+| `TRANS` macro sites | 174 (one macro) | `08-MACRO-UNDERCOUNT.md` |
+| `DMKBLDRT` interface + callers | **8** | this document |
+| AMODE 31 for `TRANS`-bearing modules | — | `08-lra.rc` |
+
+**Nothing in that table is unbounded any more.** Six weeks ago the DAT work
+was "492 references and three unread modules"; it is now a list with line
+numbers, and the largest single item — 492 field references — is the most
+mechanical.
+
+The remaining unread module in the top five is **`DMKPTR`** at 54 DAT
+references, 2,589 lines, and it is the busiest module in CP by `CORTABLE`
+references (101). It is next.
