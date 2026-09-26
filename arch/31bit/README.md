@@ -18,9 +18,10 @@ CMS, shared segments and service structure. This is a 31-bit VM/370 CE.
 
 Seven programs in `tests/hardware/`, each answering one question, each with
 its own pass code so that a stale program left in storage cannot masquerade
-as a pass. **The first six pass; the seventh is written and has not been
-run** — it is the one aimed at the top remaining risk, and its failure code
-`000C11` would be informative rather than fatal (see below).
+as a pass. **All seven pass**, the seventh on two independently built
+emulators — a Windows 3.x build and a Hercules 3.13 built from source on
+Linux, which reached the pass by different paths (status on the first `TSCH`
+in one, after several polls in the other).
 
 | Test | Pass | Question |
 |---|---|---|
@@ -30,7 +31,7 @@ run** — it is the one aimed at the top remaining risk, and its failure code
 | `04a-virtual-above-line` | `006004` | Does an above-the-line **virtual** address translate? |
 | `04b-real-above-line` | `006005` | …to an above-the-line **real** frame? |
 | `05-channel-subsystem` | `006006` | Does MSCH/SSCH/TSCH drive a real device? |
-| `06-initial-status` | `006007` | **Not yet run.** Does `ORB5_I` give a zero condition code, so `SIO`'s synchronous contract has an equivalent? |
+| `06-initial-status` | `006007` | Does `ORB5_I` give a zero condition code, so `SIO`'s synchronous contract has an equivalent? |
 
 Test 4b stores at virtual `X'01005000'` — segment 16, page 5 — in 31-bit
 mode with DAT on. The byte arrives at real `X'01100000'`, and real `X'5000'`,
@@ -258,21 +259,26 @@ whole deferred-condition-code table, "Figure 16-5, the Deferred-Condition-Code
 Meaning for Status-Pending Subchannel". That is the mechanism the conversion
 needs, implemented and cited.
 
-**`06-initial-status.rc` is that test, and it is written but not run.** It
+**`06-initial-status.rc` is that test, and it passes.** It
 sets `ORB5_I` in ORB flag5 (`X'A0'` — format-1 plus initial status), then
 asserts three things about the first status to arrive: `SCSW1_Z` set,
 intermediate status set, and the deferred condition code in SCSW byte 0
 equal to zero. Then it confirms the write still completed `CE|DE`.
 
-Run it on 3.07 first. Two outcomes, both useful:
+**Result: `006007` on both builds tested.** The console prints
 
-- **`006007`** — the facility works on the build the lab already has, and the
-  top risk becomes a known quantity before any CP code is written.
-- **`000C11`** — status arrived but `SCSW1_Z` was clear, so this build does
-  not implement it. Not a problem with the approach, since 4.x demonstrably
-  does; it means the lab must move to 4.9.1 before the I/O conversion is
-  developed against it. Adrian is already there. Cheap to learn from a
-  fifteen-minute test rather than from M1.
+    ISI OK -- SCSW1_Z SET, DEFERRED CC 0: SIO CONTRACT HAS AN XA EQUIVALENT
+
+so the top risk is a known quantity before a line of CP has been touched, and
+no emulator upgrade is needed for it. 3.13's source shows why — `channel.c`
+sets `SCSW1_Z`, sets `SCSW3_SC_INTER | SCSW3_SC_PEND`, **and** calls
+`QUEUE_IO_INTERRUPT`, so the interruption is genuinely delivered and not
+merely recorded. The `@IWZ` change markers around it are old, consistent with
+the 1999 release note.
+
+What remains is the interrupt *path*, not the status: a test with a real I/O
+new PSW and handler, which would prove CP can be driven by the interruption
+rather than by polling. That is the natural test 7.
 
 It polls `TSCH` rather than taking an I/O interruption, so it proves the
 status mechanism and not interruption delivery. Status pending is a
@@ -280,6 +286,38 @@ subchannel condition that `TSCH` clears whether or not interrupts are
 enabled, so the SCSW contents are the same either way — but a test with a
 real I/O new PSW and handler proves more, and belongs before CP relies on
 the interrupt path.
+
+## Running the lab on Linux
+
+The tests were developed against a Windows 3.x build and re-run against
+Hercules 3.13 built from source on Linux. Two things bit, both worth knowing
+before blaming a test:
+
+**Codepage names differ between versions.** `herc.conf` carries
+`CODEPAGE 819-1047`, which 3.13 rejects with
+`HHCCF051E Codepage conversion table 819-1047 is not defined` — its table
+spells them with a slash, `819/1047`. The error is not fatal and the run
+continues on the default, so it is easy to miss.
+
+**The device modules must be installed, not just built.** Running `hercules`
+straight out of the build tree gives
+`HHCCF042E Device type 3215-C not recognized`, because the loadable module
+directory is `/usr/local/lib/hercules` and `hdt1052c` — which registers both
+`1052-C` and `3215-C` — is not there yet. With no device attached there is no
+subchannel 0000, so `SSCH` correctly returns condition code 3 and test 6
+reports `000C03`, which looks exactly like a real SSCH failure. `make install`
+first.
+
+**And 3.13 will not link against modern gcc without one patch.** `softfloat`
+declares `float_exception_flags` and `float_rounding_mode` `__thread`, and
+libtool's generated symbol table references them as non-TLS, so `ld` fails
+with `TLS definition … mismatches non-TLS reference` — reported confusingly as
+`libsoftfloat.a: error adding symbols: bad value`. Dropping `__thread` from
+both declarations links cleanly. Safe for this lab, which uses no floating
+point and one CPU; **not** a change to carry into a real Hercules build, where
+those flags are per-CPU state. Also configure with the default shared modules:
+`--disable-shared` statically links every device module and they all define
+`hdl_depc`, `hdl_init` and `hdl_ddev`.
 
 ## What this stage does *not* do
 
