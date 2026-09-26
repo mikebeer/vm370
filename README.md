@@ -63,6 +63,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/04-SHARED-SEGMENTS.md  what 1 MB segments do to CE's saved systems
     docs/05-CP67-PRIOR-ART.md   how CP-67 shared at 4 KB with 1 MB segments
     docs/06-LEDGER.md           what is answered, how firmly, and what is open
+    docs/07-M1-WORKLIST.md      the first milestone as an ordered work list
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was
