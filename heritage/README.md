@@ -32,9 +32,12 @@ CP-67's CMS also still ships with VM/370 CE, as the `CMS67` named saved
 system — and it is the only entry in CE's system name table that shares no
 segments, which makes it the one saved system the 1 MB change leaves alone.
 
-The frustrating part: the surviving recovery is CMS only. There is no CP-67
-*control program* source in it, and the control program is what would answer
-how 1 MB shared segments were handled. Detail in
+The frustrating part, now checked rather than assumed: the surviving recovery
+is CMS only — zero references to segment tables, page tables, `LRA` or
+`PTLB` across 200,000 lines, because CMS is a guest that never translates an
+address. And the 1966 CP-40 paper in the same repository does not substitute
+for it: CP-40 relocated through a 64-entry associative memory with no segment
+tables at all, and shared no storage between virtual machines. Detail in
 [`cp67/README.md`](cp67/README.md).
 
 ## Why keep CE snapshots

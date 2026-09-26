@@ -50,24 +50,69 @@ alone *because* code like CP's existed.
 
 ## What does not survive, and it is the part we would want
 
-The known recovery is [moshix/CP-67-CMS-Source](https://github.com/moshix/CP-67-CMS-Source),
-and it is **CMS only. There is no control program source in it** — the five
-files are CMS source, CMS macros, CMS assembly listings, a printed listing,
-and a 1966 paper on CP/CMS for the 360/40.
+The known recovery is [moshix/CP-67-CMS-Source](https://github.com/moshix/CP-67-CMS-Source).
+Its README says it is CMS; that has been checked rather than taken on trust,
+and it holds.
 
-Its README explains the provenance: recovered from tape reels "found in a
+**The source is CMS and nothing else.** Some 200,000 lines across
+`CMSSource.txt` and `CMSAssemblyListings.txt`, with about 130 CSECTs — all
+of them CMS commands and nucleus: `EDIT`, `LISTF`, `MACLIB`, `STAT`,
+`FILEDEF`, `TXTLIB`, `UPDATE`, `NUCON`, `GENMOD`, `LOGIN`. Counting
+occurrences of what a control program cannot avoid:
+
+    SEGTAB / "SEGMENT TABLE"      0
+    PAGTAB / "PAGE TABLE"         0
+    LRA                           0
+    PTLB                          0
+    VMBLOK                        0
+    "32 BIT"                      0
+
+That is not a hole in the recovery, it is what CMS is: a guest that never
+translates an address. The DAT and sharing design lives in CP, and no CP is
+present.
+
+Its provenance also bears repeating: recovered from tape reels "found in a
 dumpster (literally!)", read through VM/370 because the tape format is too
-old for z/VM, and **two of the files had permanent read errors, so some
-content is lost.**
+old for z/VM, and **two files had permanent read errors, so some content is
+lost.**
 
-That is unfortunate in a specific way. The interesting question — how a
-control program handled 1 MB segments, shared segments at 1 MB granularity,
-and two addressing modes on one machine — is answered by CP, not by CMS. CMS
-does not build DAT tables. So the prior art that would inform
-`docs/04-SHARED-SEGMENTS.md` is precisely what did not come back.
+## The 1966 paper is CP-40, and its answer does not transfer
 
-If a CP-67 *control program* source or listing exists anywhere, it is worth
-more to this project than anything else in this directory.
+The repository's other substantial item is a 34-page May 1966 paper, *A
+Virtual Machine System for the 360/40*. That is CP-40, CP-67's predecessor,
+and it is a design document about the *control program* — which made it look
+like the prior art the source is missing. It is not, for a concrete reason.
+
+CP-40's relocation hardware was not tables at all:
+
+> The CPU has been modified to permit dynamic relocation of storage
+> addresses by the addition of a 64 word (one per 4096 byte page of core
+> memory) by 16 bit associative memory. A privileged operation to load and
+> interrogate the memory has been added to the instruction set.
+
+A 64-entry fully associative map — one entry per 4 KB frame of the machine's
+entire 256 KB of core — interrogated directly, with no segment table, no page
+table and no table walk. Sixteen virtual machines of 256 KB each. There is no
+segment concept to learn a segment-size lesson from.
+
+**And CP-40 had no shared storage between virtual machines.** What the paper
+shares is the read-only *disk*, giving "all users access to a library of
+often-used systems and routines", plus partitioned unit-record equipment.
+Named saved systems and shared segments are a later VM/370 invention.
+
+So the ancestry of the problem in
+[`../../docs/04-SHARED-SEGMENTS.md`](../../docs/04-SHARED-SEGMENTS.md) reads:
+
+    CP-40      no shared storage at all
+    CP-67      unknown - control program source lost
+    VM/370     64 KB shared segments
+    ESA/390    1 MB, shared or not as a whole
+
+The one generation that might have had something to say is the one whose
+control program did not come back. **If a CP-67 control program source or
+listing exists anywhere, it is worth more to this project than anything else
+in this directory** — but the CMS recovery and the CP-40 paper, both now
+read, do not substitute for it.
 
 ## If files are imported here
 
