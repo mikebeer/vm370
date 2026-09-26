@@ -1,0 +1,136 @@
+* Channel subsystem test 3 -- I/O INTERRUPTION, not polling.
+*
+* Tests 5 and 6 both polled TSCH.  CP does not poll: DMKIOS starts an
+* operation and returns to the dispatcher, and DMKIOT runs when the machine
+* takes an I/O interruption.  So until an interruption has been taken and a
+* subchannel identified from lowcore, the I/O route is unproven in the way
+* that matters for CP.
+*
+* This starts a write, loads an ENABLED WAIT PSW, and expects the machine
+* to wake up in a handler at X'78'.
+*
+* THE THIRD SILENT GATE, AND THE WORST OF THE THREE
+* -------------------------------------------------
+* Two have already cost time here: CR0's translation format, checked before
+* any DAT table is read, and PMCW5_E, without which SSCH returns cc=3 with
+* no message.  This one is worse, because the failure is SILENCE.
+*
+*     /* Isolate the interruption subclass */
+*     i = ((dev->pmcw.flag4 & PMCW4_ISC) >> 3);
+*     /* Test interruption subclass mask bit in CR6 */
+*     if ((regs->CR_L(6) & (0x80000000 >> i)) == 0)
+*         return 0;               /* interrupt NOT enabled */
+*
+* CR6 is the I/O-interruption subclass mask.  A subchannel's ISC defaults
+* to 0, so CR6 bit 0 -- X'80000000' -- must be on or the interruption is
+* never presented.  Not deferred: never presented.
+*
+* THIS HAS BEEN MEASURED, NOT ASSUMED.  Running this exact image with CR6
+* forced to zero (r 20D8=00000000) gives:
+*
+*   - the console line STILL PRINTS.  The CCW ran, the device did its work,
+*     the I/O genuinely succeeded.
+*   - no PSW, no wait-state message, no code.  The CPU sits in its enabled
+*     wait until the emulator is killed.
+*
+* So the trap is not merely silent, it LOOKS LIKE SUCCESS: a developer sees
+* the expected output on the console and concludes the I/O path works,
+* while the operating system is hung.  A converted CP that gets DMKIOS
+* perfectly right and forgets CR6 will IPL, write its initialisation
+* message, and stop, with nothing in any log to say why.
+*
+* HOW TO READ THE RESULT
+*   006008   pass.  An interruption was taken, lowcore X'B8' held the
+*            expected subsystem id, TSCH returned CE|DE.
+*   SILENCE  the interruption was never presented.  Suspect CR6 first, then
+*            whether the device attached at all.  Tell them apart at the
+*            panel: `cr` shows CR6, `devlist` shows the device.  Note the
+*            console message is NOT evidence either way -- see above.
+*   000E11   handler entered but lowcore X'B8' was not the expected
+*            subsystem id.
+*   000E12   handler entered but TSCH gave cc/=0, though status must be
+*            pending by definition at that point.
+*   000E08   device status not CE|DE.    000E09  subchannel status set.
+*   000E01   STSCH cc/=0.  000E02  MSCH cc/=0.  000E03  SSCH cc/=0.
+*   000DED   program check -- read the old PSW at X'150'.
+*
+* KEY BYTES
+*   HANDLER at 00203A   the I/O new PSW at X'78' points here
+*   IONPSW  at 0020D0 = 000800000000203A   running, I/O masked off
+*   WAITPSW at 0020C8 = 020A000000006FFF   byte 0 = 02, I/O ENABLED, wait
+*   CR6VAL  at 0020D8 = 80000000           poke 0 here to see the hang
+*
+* An interruption stores the old PSW and loads the new one; it does not
+* touch the general registers.  So R15 is still the base established at
+* START and the handler needs no prologue.
+*
+* WHAT IT DOES NOT PROVE.  One interruption, one subchannel, one CCW.  Not
+* an interruption arriving while another is pending, not the ISC mechanism
+* with more than one class in play, and not DMKIOT's queue walk.  Those
+* need more than one device, which this deliberately minimal config does
+* not have.
+*
+* Built by build/ioint1.py.  Same device, config and MSCH-before-SSCH
+* prerequisite as tests 5 and 6 -- see those files for why.
+*
+r 0=0008000000002000
+r 2000=05F041F0F000D207
+r 2008=0068F0BED2070078
+r 2010=F0CEB766F0D65810
+r 2018=F0DAB234F0FE4770
+r 2020=F05E9680F103B232
+r 2028=F0FE4770F062B233
+r 2030=F0DE4770F0668200
+r 2038=F0C6D50300B8F0DA
+r 2040=4770F06AB235F132
+r 2048=4770F06E950CF13A
+r 2050=4770F0729500F13B
+r 2058=4770F0768200F07E
+r 2060=8200F0868200F08E
+r 2068=8200F0968200F09E
+r 2070=8200F0A68200F0AE
+r 2078=8200F0B600000000
+r 2080=000A000000006008
+r 2088=000A000000000E01
+r 2090=000A000000000E02
+r 2098=000A000000000E03
+r 20A0=000A000000000E11
+r 20A8=000A000000000E12
+r 20B0=000A000000000E08
+r 20B8=000A000000000E09
+r 20C0=000A000000000DED
+r 20C8=020A000000006FFF
+r 20D0=000800000000203A
+r 20D8=8000000000010000
+r 20E0=0000000000808000
+r 20E8=0000217800000000
+r 20F0=0000000000000000
+r 20F8=0000000000000000
+r 2100=0000000000000000
+r 2108=0000000000000000
+r 2110=0000000000000000
+r 2118=0000000000000000
+r 2120=0000000000000000
+r 2128=0000000000000000
+r 2130=0000000000000000
+r 2138=0000000000000000
+r 2140=0000000000000000
+r 2148=0000000000000000
+r 2150=0000000000000000
+r 2158=0000000000000000
+r 2160=0000000000000000
+r 2168=0000000000000000
+r 2170=0000000000000000
+r 2178=0920004600002180
+r 2180=C9D6C9D5E340D6D2
+r 2188=40606040C961D640
+r 2190=C9D5E3C5D9D9E4D7
+r 2198=E3C9D6D540E3C1D2
+r 21A0=C5D56B40E2E4C2C3
+r 21A8=C8C1D5D5C5D340C9
+r 21B0=C4C5D5E3C9C6C9C5
+r 21B8=C440C6D9D6D440D3
+r 21C0=D6E6C3D6D9C50000
+
+t-
+restart

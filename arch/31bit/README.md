@@ -16,9 +16,9 @@ CMS, shared segments and service structure. This is a 31-bit VM/370 CE.
 
 ## What is proven
 
-Seven programs in `tests/hardware/`, each answering one question, each with
+Eight programs in `tests/hardware/`, each answering one question, each with
 its own pass code so that a stale program left in storage cannot masquerade
-as a pass. **All seven pass**, the seventh on two independently built
+as a pass. **All eight pass**, the seventh on two independently built
 emulators — a Windows 3.x build and a Hercules 3.13 built from source on
 Linux, which reached the pass by different paths (status on the first `TSCH`
 in one, after several polls in the other).
@@ -32,6 +32,7 @@ in one, after several polls in the other).
 | `04b-real-above-line` | `006005` | …to an above-the-line **real** frame? |
 | `05-channel-subsystem` | `006006` | Does MSCH/SSCH/TSCH drive a real device? |
 | `06-initial-status` | `006007` | Does `ORB5_I` give a zero condition code, so `SIO`'s synchronous contract has an equivalent? |
+| `07-io-interrupt` | `006008` | Does an **I/O interruption** arrive and identify its subchannel from lowcore — the way `DMKIOS`/`DMKIOT` actually work? |
 
 Test 4b stores at virtual `X'01005000'` — segment 16, page 5 — in 31-bit
 mode with DAT on. The byte arrives at real `X'01100000'`, and real `X'5000'`,
@@ -276,9 +277,43 @@ sets `SCSW1_Z`, sets `SCSW3_SC_INTER | SCSW3_SC_PEND`, **and** calls
 merely recorded. The `@IWZ` change markers around it are old, consistent with
 the 1999 release note.
 
-What remains is the interrupt *path*, not the status: a test with a real I/O
-new PSW and handler, which would prove CP can be driven by the interruption
-rather than by polling. That is the natural test 7.
+### And the interrupt path works too — with a third silent gate behind it
+
+`07-io-interrupt.rc` closes the remaining gap: tests 5 and 6 both polled
+`TSCH`, and CP does not poll. It starts a write, loads an **enabled wait**
+PSW, and expects to wake up in a handler at `X'78'`, which then identifies
+the subchannel from lowcore `X'B8'` — exactly what `DMKIOT` does to find its
+`IOBLOK`. Passes `006008`.
+
+**Getting there needs CR6, and this is the nastiest of the three gates.**
+
+    /* Isolate the interruption subclass */
+    i = ((dev->pmcw.flag4 & PMCW4_ISC) >> 3);
+    /* Test interruption subclass mask bit in CR6 */
+    if ((regs->CR_L(6) & (0x80000000 >> i)) == 0)
+        return 0;               /* interrupt NOT enabled */
+
+CR6 is the I/O-interruption subclass mask. A subchannel's ISC defaults to 0,
+so CR6 bit 0 — `X'80000000'` — must be on or the interruption is **never**
+presented. Not deferred: never.
+
+**Measured, not assumed.** Running the identical image with CR6 forced to zero
+(`r 20D8=00000000`):
+
+- **the console line still prints.** The CCW ran, the device did its work,
+  the I/O genuinely succeeded.
+- no PSW, no wait-state message, no code. The CPU sits in its enabled wait
+  until the emulator is killed.
+
+So the trap does not merely fail silently, **it looks like success** — the
+expected output appears on the console while the operating system is hung. A
+converted CP that gets `DMKIOS` perfectly right and forgets CR6 will IPL,
+write its initialisation message, and stop, with nothing in any log to say
+why. That is worth knowing before M1 rather than during it.
+
+Still unproven: an interruption arriving while another is pending, the ISC
+mechanism with more than one class in play, and `DMKIOT`'s queue walk. Those
+need more than one device, which this deliberately minimal config lacks.
 
 It polls `TSCH` rather than taking an I/O interruption, so it proves the
 status mechanism and not interruption delivery. Status pending is a
