@@ -190,11 +190,45 @@ and MVS/XA itself never converted.
 
 | | | Status |
 |---|---|---|
-| **M0** | Assembler macros for the instructions CE does not know | done, awaiting listing validation |
-| **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests | not started |
-| **M2** | DAT on with ESA/390 tables, still no guests | blocked on the segment-size decision |
-| **M3** | One S/370-mode guest logs on and runs CMS | not started |
+| **M0** | Assembler macros for the instructions CE does not know | **done** — every encoding executed or independently sourced; one listing check left |
+| **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | not started — **the critical path** |
+| **M2** | DAT on with ESA/390 tables. No guests, **and no shared segments** | not started, **unblocked** |
+| **M3** | One S/370-mode guest logs on and runs CMS — includes frame-level shared segments in `DMKATS` | not started |
 | **M4** | Two guests, isolated | not started |
+
+**M2 was blocked and is not any more.** It waited on a compatibility decision
+about shared segments at 1 MB granularity, which was the plan's only external
+dependency. `../../docs/05-CP67-PRIOR-ART.md` removes it: sharing frames
+rather than page tables keeps 4 KB granularity, so no saved-system layout
+changes and nobody has to rule on `CMSOLD`. The critical path is now
+M0 → M1 → M2 → M3, entirely self-directed.
+
+**Shared segments moved from M2 to M3, which is where they are actually
+needed.** CP does not need shared segments to run with DAT on; CMS needs them
+because it is IPL'd by name through `DMKSNT`. Splitting them out keeps M2 to
+the table formats alone, and defers the `DMKATS` rework — the one piece of
+work the CP-67 finding *added* — until there is a guest to test it with.
+
+## The risk order changed
+
+The shared-segment question is closed and `DMKVAT` has been demoted twice, so
+the ranking is now:
+
+1. **The `SIO` condition-code contract.** `SIO` sets cc=1 with a CSW stored
+   *synchronously*; `SSCH` only queues. About a dozen `BC 4,…  BRANCH IF CSW
+   STORED` branches depend on the difference, and **Hercules cannot prototype
+   the fix** — it ignores `ORB5_I`, the initial-status-interruption bit IBM
+   added for exactly this problem. Nothing here can be validated by
+   experiment before M1, which makes it the top risk by default.
+2. **Storage keys, 2 KB → 4 KB.** Reaches `DMKPRV`, because a guest reading
+   its own keys through `ISK` expects 2 KB semantics. Not just paging code.
+3. **Channel logout.** `TM CSW,X'04'` and friends, replaced by the ESW/ERW in
+   the IRB plus `STCRW`. The bit survives a copy; what it points at does not.
+4. **Whether `ARCHTECT`'s `CODE60`/`CODE70` rows are live.** Still the one
+   open question where Adrian may simply know the answer.
+
+`DMKATS` frame sharing is new work but not a new risk — it is bounded, and
+IBM did it first.
 
 ## What this stage does *not* do
 

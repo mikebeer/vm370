@@ -279,7 +279,7 @@ heap limit actually moves.
 
 ## 6. Proposed milestones
 
-**M0 — the assembler. Done, awaiting validation.** CE's `ASSEMBLE` predates
+**M0 — the assembler. Done.** CE's `ASSEMBLE` predates
 1983 and knows neither the channel subsystem nor `BSM`. Twelve macros emit
 the encodings:
 
@@ -296,9 +296,13 @@ assists, including `DMKVATZP DC X'E60B',S(ARCHTECT,0(R9))`. Shipped as
 `XAOPS.MACRO` plus `XATEST.ASSEMBLE`; `MACLIB GEN XALIB XAOPS`.
 
 `MSCH`, `SSCH`, `TSCH`, `STSCH` and `BSM` are proven by execution in the
-tests above; the other seven were read from Hercules source and `XATEST`
-checks them against a listing. `RSCH` is disputed — `B238` in the Hercules
-dispatch table, `B23B` in a reading of GX20-0157-2.
+tests above. The other seven are confirmed against the z390 assembler's opcode
+table, which is not derived from Hercules. **The `RSCH` discrepancy I flagged
+was my error** — z390 lists `B238 RSCH, B239 STCRW, B23A STCPS, B23B RCHP`,
+so `B23B` is RESET CHANNEL PATH, a different instruction, which is how it got
+misread. `XATEST` is still worth assembling, because a second source agreeing
+about an opcode says nothing about whether the macro emits the operand
+correctly.
 
 **M1 — CP IPLs in ESA/390 mode and writes to the console.** DAT off, no
 paging, no guests, no DASD beyond IPL. Test 5 with real CP code, isolating
@@ -306,12 +310,19 @@ PSW format, lowcore, control registers and the console path. The stand-alone
 utilities are out of scope, which removes 71 of the 166 I/O instructions and
 224 of the CAW/CSW references. Pass: a CP initialisation message.
 
-**M2 — DAT on, ESA/390 tables, still no guests.** `CORE`, `DMKPTR`,
-`DMKPGS`, `DMKBLD`, `TRANS`. The 64 KB → 1 MB change lands here, so §3a
-needs settling first.
+**M2 — DAT on, ESA/390 tables, still no guests, and no shared segments.**
+`CORE`, `DMKPTR`, `DMKPGS`, `DMKBLD`, `TRANS`. **This no longer waits on
+you.** It previously did, on §3a; per 05-CP67-PRIOR-ART.md there is no
+decision left to make, and shared segments move to M3 because CP does not
+need them to run with DAT on — CMS needs them, being IPL'd by name.
 
-**M3 — one S/370-mode guest logs on and runs CMS.** `DMKVAT` plus
-`DMKPRV`. Less frightening than it was, per §3b.
+**M3 — one S/370-mode guest logs on and runs CMS.** `DMKVAT` plus `DMKPRV`,
+now also the frame-level shared-segment rework in `DMKATS` and the `NAMESYS`
+path. Less frightening than it was on the `DMKVAT` side, per §3b — and CP-67's
+PLM offers an *image segment table* trick worth stealing: keep a pre-built
+shadow segment table with every entry flagged unavailable and block-move it to
+reset, instead of walking and invalidating, on a path taken every time a guest
+loads CR0 or a page is stolen.
 
 **M4 — two guests, isolated.** Your `VK-AC-08` already requires this.
 
