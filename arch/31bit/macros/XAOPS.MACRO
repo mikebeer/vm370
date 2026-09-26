@@ -1,0 +1,189 @@
+*---------------------------------------------------------------------*
+* XAOPS  -  ESA/390 INSTRUCTIONS FOR AN ASSEMBLER THAT PREDATES THEM  *
+*                                                                     *
+* VM/370 CE'S ASSEMBLER IS FROM THE 1970S.  THE CHANNEL SUBSYSTEM     *
+* ARRIVED WITH 370-XA IN 1983 AND BSM WITH THE 31-BIT ADDRESSING      *
+* FACILITY THE SAME YEAR, SO NONE OF THESE MNEMONICS ARE KNOWN TO IT. *
+* RATHER THAN CHANGE THE TOOLCHAIN, EACH ONE IS A MACRO EMITTING ITS  *
+* OWN ENCODING.                                                       *
+*                                                                     *
+* THE S-TYPE ADDRESS CONSTANT  S(EXPR)  PRODUCES THE 4-BIT BASE AND   *
+* 12-BIT DISPLACEMENT THAT AN S-FORMAT INSTRUCTION WANTS, RESOLVED    *
+* THROUGH THE ACTIVE USING.  SO THESE BEHAVE EXACTLY LIKE THE REAL    *
+* INSTRUCTIONS, INCLUDING BASE REGISTER SELECTION.                    *
+*                                                                     *
+* DS 0H FIRST IN EVERY MACRO: THE S-TYPE CONSTANT FORCES HALFWORD     *
+* ALIGNMENT, SO WITHOUT IT A MISALIGNED DC WOULD HAVE A PAD BYTE      *
+* INSERTED BETWEEN THE OPCODE AND THE OPERAND.  IN AN INSTRUCTION     *
+* STREAM THAT CANNOT NORMALLY HAPPEN, BUT IT COSTS NOTHING TO BE SURE.*
+*                                                                     *
+* BUILD:   MACLIB GEN XALIB XAOPS                                     *
+* USE:     GLOBAL MACLIB XALIB DMSSP CMSLIB                           *
+*                                                                     *
+* ALL FOUR INSTRUCTIONS NEEDED TO DRIVE A DEVICE -- MSCH, SSCH, TSCH  *
+* AND STSCH -- PLUS BSM HAVE BEEN EXECUTED SUCCESSFULLY UNDER HERCULES*
+* 3.07 IN ESA/390 MODE FROM HAND-ASSEMBLED BYTES, SO THEIR ENCODINGS  *
+* ARE PROVEN BY RUNNING, NOT ONLY BY READING.  SEE THE VERIFICATION   *
+* NOTES AT THE END FOR WHICH ARE WHICH.                               *
+*---------------------------------------------------------------------*
+         MACRO
+&LAB     SSCH  &ORB
+.*  START SUBCHANNEL.  R1 MUST HOLD X'0001' IN THE HIGH HALFWORD AND
+.*  THE SUBCHANNEL NUMBER IN THE LOW.  THE ORB MUST BE WORD ALIGNED
+.*  AND -- THIS IS A HERCULES QUIRK, NOT ARCHITECTURE -- 32 BYTES OF
+.*  ADDRESSABLE STORAGE MUST EXIST THERE EVEN WHEN THE EXTENSION BIT
+.*  IS ZERO AND THE ARCHITECTED BLOCK IS ONLY 12 BYTES LONG.
+.*  CC 0 ACCEPTED, 1 STATUS PENDING, 2 BUSY,
+.*  CC 3 SUBCHANNEL NOT ENABLED OR LPM AND PAM DISJOINT.
+&LAB     DS    0H
+         DC    X'B233',S(&ORB)
+         MEND
+         MACRO
+&LAB     MSCH  &SCHIB
+.*  MODIFY SUBCHANNEL.  READS 28 BYTES -- THE PMCW ONLY.  MANDATORY
+.*  BEFORE THE FIRST SSCH ON ANY SUBCHANNEL, BECAUSE A SUBCHANNEL IS
+.*  CREATED VALID BUT NOT ENABLED, AND SSCH ON A DISABLED SUBCHANNEL
+.*  RETURNS CC 3 WITH NO EXCEPTION AND NO MESSAGE OF ANY KIND.
+&LAB     DS    0H
+         DC    X'B232',S(&SCHIB)
+         MEND
+         MACRO
+&LAB     STSCH &SCHIB
+.*  STORE SUBCHANNEL.  THE SAFE WAY TO REACH MSCH IS STSCH, THEN SET
+.*  THE ENABLE BIT IN THE STORED PMCW, THEN MSCH -- THAT CANNOT GET
+.*  THE RESERVED BITS OF FLAG4, FLAG26 OR FLAG27 WRONG, EACH OF WHICH
+.*  IS AN OPERAND EXCEPTION.
+&LAB     DS    0H
+         DC    X'B234',S(&SCHIB)
+         MEND
+         MACRO
+&LAB     TSCH  &IRB
+.*  TEST SUBCHANNEL.  STORES 64 BYTES: SCSW, ESW, ECW.  SSCH IS
+.*  ASYNCHRONOUS, SO THE FIRST TSCH AFTER IT NORMALLY GIVES CC 1 --
+.*  LOOP, AND BOUND THE LOOP SO A STALL IS DIAGNOSABLE.
+.*  CC 0 STATUS WAS PENDING AND HAS BEEN CLEARED, 1 NONE PENDING,
+.*  CC 3 NOT OPERATIONAL.
+&LAB     DS    0H
+         DC    X'B235',S(&IRB)
+         MEND
+         MACRO
+&LAB     CSCH
+.*  CLEAR SUBCHANNEL.  NO STORAGE OPERAND, BUT THE ENCODING STILL
+.*  CARRIES A BASE-DISPLACEMENT FIELD, WHICH IS IGNORED.
+&LAB     DS    0H
+         DC    X'B230',X'0000'
+         MEND
+         MACRO
+&LAB     HSCH
+.*  HALT SUBCHANNEL.
+&LAB     DS    0H
+         DC    X'B231',X'0000'
+         MEND
+         MACRO
+&LAB     RSCH
+.*  RESUME SUBCHANNEL.  THE COUNTERPART OF S/370 RESUME I/O.
+.*  SEE THE OPCODE CAVEAT AT THE END OF THIS FILE.
+&LAB     DS    0H
+         DC    X'B238',X'0000'
+         MEND
+         MACRO
+&LAB     TPI   &ADDR
+.*  TEST PENDING INTERRUPTION.
+&LAB     DS    0H
+         DC    X'B236',S(&ADDR)
+         MEND
+         MACRO
+&LAB     SAL
+.*  SET ADDRESS LIMIT.  IBM ADDED PER-SUBCHANNEL ADDRESS-LIMIT
+.*  CHECKING SPECIFICALLY FOR VIRTUAL MACHINES, TO STOP A GUEST'S
+.*  CHANNEL PROGRAM REACHING BEYOND ITS ASSIGNED STORAGE.  LIKELY TO
+.*  MATTER FOR CP EVENTUALLY.
+&LAB     DS    0H
+         DC    X'B237',X'0000'
+         MEND
+         MACRO
+&LAB     STCRW &ADDR
+.*  STORE CHANNEL REPORT WORD.  PART OF THE MACHINERY THAT REPLACES
+.*  S/370 CHANNEL LOGOUT, SO IT BELONGS TO THE ERROR-RECOVERY REWRITE
+.*  RATHER THAN TO NORMAL I/O.
+&LAB     DS    0H
+         DC    X'B239',S(&ADDR)
+         MEND
+         MACRO
+&LAB     BSM   &R1,&R2
+.*  BRANCH AND SET MODE.  RR FORMAT.
+.*
+.*  TWO DISTINCT USES, AND THE SECOND IS NOT OBVIOUS:
+.*
+.*  BSM  0,RX   -- BRANCH TO RX, TAKING THE ADDRESSING MODE FROM ITS
+.*                 BIT 0.  ONE MEANS 31-BIT, ZERO MEANS 24-BIT.
+.*
+.*  BSM  RY,0   -- WITH R2 ZERO NO BRANCH IS TAKEN AT ALL, AND THE
+.*                 INSTRUCTION ONLY REPORTS THE CURRENT MODE IN BIT 0
+.*                 OF RY, WHICH IS THE SIGN BIT.  SO  SR RY,RY  THEN
+.*                 BSM RY,0  THEN  LTR RY,RY  TESTS THE MODE WITHOUT
+.*                 NEEDING ANY ADDRESS ABOVE THE 16 MB LINE.  THAT
+.*                 MATTERS, BECAUSE EVERY TEST THAT DISTINGUISHES THE
+.*                 MODES BY TRUNCATION NECESSARILY USES ONE.
+&LAB     DS    0H
+         DC    X'0B',AL1((&R1)*16+(&R2))
+         MEND
+         MACRO
+&LAB     BASSM &R1,&R2
+.*  BRANCH AND SAVE AND SET MODE.  RR FORMAT.  SAVES THE RETURN
+.*  ADDRESS IN R1 WITH ITS BIT 0 SET TO THE CALLER'S MODE, SO THE
+.*  CALLEE CAN RETURN WITH  BSM 0,R1  AND RESTORE IT.  THIS IS THE
+.*  INSTRUCTION A MIXED-MODE CALLING CONVENTION IS BUILT ON.
+&LAB     DS    0H
+         DC    X'0C',AL1((&R1)*16+(&R2))
+         MEND
+*---------------------------------------------------------------------*
+* VERIFICATION STATUS                                                 *
+*                                                                     *
+* PROVEN BY EXECUTION.  THESE FIVE RAN CORRECTLY UNDER HERCULES 3.07, *
+* ARCHMODE ESA/390, FROM HAND-ASSEMBLED BYTES POKED INTO REAL STORAGE.*
+* MSCH ENABLED A SUBCHANNEL, SSCH STARTED A FORMAT-1 CHANNEL PROGRAM, *
+* TSCH RETURNED CLEAN STATUS AND THE DEVICE WROTE ITS LINE; BSM       *
+* SWITCHED INTO 31-BIT MODE AND BACK, CONFIRMED BOTH BY THE PSW AND BY*
+* BSM R1,0 REPORTING THE MODE.                                        *
+*                                                                     *
+*     MSCH   B232        STSCH  B234        BSM    0B                 *
+*     SSCH   B233        TSCH   B235                                  *
+*                                                                     *
+* READ FROM HERCULES SOURCE, NOT YET EXECUTED:                        *
+*                                                                     *
+*     CSCH   B230        TPI    B236        RSCH   B238               *
+*     HSCH   B231        SAL    B237        STCRW  B239               *
+*     BASSM  0C                                                       *
+*                                                                     *
+* ONE DISCREPANCY WORTH KNOWING.  TWO SOURCES DISAGREE ON RSCH: THE   *
+* HERCULES OPCODE TABLE GIVES B238, WHILE A READING OF THE 370-XA     *
+* REFERENCE SUMMARY GX20-0157-2 GAVE B23B.  B238 IS USED ABOVE BECAUSE*
+* IT CAME FROM A DIRECT QUOTE OF THE DISPATCH TABLE, WHICH IS WHAT    *
+* WOULD ACTUALLY EXECUTE.  CHECK IT AGAINST THE PRINCIPLES OF         *
+* OPERATION BEFORE RELYING ON RSCH.                                   *
+*                                                                     *
+* CSCH, HSCH, RSCH AND SAL TAKE NO STORAGE OPERAND -- HERCULES MARKS  *
+* THEM ASMFMT_NONE -- SO THEIR LOW HALFWORD IS IGNORED AND IS EMITTED *
+* AS X'0000' RATHER THAN THROUGH AN S-TYPE CONSTANT.                  *
+*                                                                     *
+* HOW TO CHECK ANY OF THEM.  ASSEMBLE A ONE-LINE TEST, THEN READ THE  *
+* OBJECT BYTES FROM THE LISTING -- THE FIRST TWO SHOULD MATCH THE     *
+* TABLE ABOVE.  OR LOAD THE MODULE UNDER HERCULES WITH  T+  AND LET IT*
+* DISASSEMBLE, WHICH IS HOW THE FIVE ABOVE WERE CONFIRMED.            *
+*                                                                     *
+* NOT INCLUDED, AND WHY                                               *
+*                                                                     *
+* STOSM AND STNSM NEED NO MACRO.  THEY EXIST IN S/370 EC MODE AND CE'S*
+* ASSEMBLER ALREADY KNOWS THEM -- CP ITSELF USES EACH FIVE TIMES.     *
+*                                                                     *
+* LCTL AND STCTL LIKEWISE: CP USES THEM 172 AND 28 TIMES.             *
+*                                                                     *
+* SAM24, SAM31 AND SAM64 ARE Z/ARCHITECTURE, NOT ESA/390.  IN ESA/390 *
+* THE ADDRESSING MODE IS CHANGED WITH BSM OR BASSM.                   *
+*                                                                     *
+* IPTE, IVSK AND TPROT ARE ESA/390 DAT INSTRUCTIONS THAT CE'S         *
+* ASSEMBLER WILL NOT KNOW EITHER, BUT NOTHING NEEDS THEM YET.  ADD    *
+* THEM WHEN THE DAT WORK REACHES THE POINT OF INVALIDATING SINGLE     *
+* PAGE TABLE ENTRIES.                                                 *
+*---------------------------------------------------------------------*

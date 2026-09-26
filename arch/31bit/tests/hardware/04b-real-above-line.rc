@@ -1,0 +1,128 @@
+* DAT step 4b -- an above-the-line REAL frame.  The last hardware
+* question on this route.
+*
+* Passed so far:
+*   1  00600D   tables accepted, DAT runs
+*   2  00600D   translation demonstrably walks our page table
+*   3  006003   AMODE 31 entered and left, DAT still correct there
+*   4a 006004   virtual 01005000, ABOVE the line, translated to real
+*               frame 7 below it
+*
+* 4a settled the virtual side.  This moves the real frame above the line
+* too:
+*
+*     virtual 01005000  ->  real 01100000        (17 MB)
+*
+* ORDER MATTERS HERE, differently from 4a.  With DAT off in 24-bit mode
+* real 01100000 is not addressable at all -- it truncates.  So the
+* checks run in 31-bit mode with DAT OFF, where addresses are real and
+* bits 1-31 wide, and 31-bit mode is entered BEFORE the frames are
+* cleared rather than after.  There is no return to 24-bit.
+*
+* There is a FOURTH check, and it earns its place: write 55 to real
+* 01100000 and read it back in 31-bit real mode, before translation is
+* involved at all.  If real storage above the line is simply not usable,
+* that is a different and more basic failure than translation failing to
+* reach it -- and without this check the two would give the same answer.
+*
+* Paste over hercules.rc.  Then EXIT HERCULES AND START IT AGAIN, or
+* stop / sysclear / script hercules.rc .
+*
+* PASS IS 006005.
+
+stop
+
+r 0=0008000000002000
+
+* --- code and data ----------------------------------------------------
+r 2000=05F041F0F000D207
+r 2008=0068F09EB701F0A6
+r 2010=5820F0AE5830F0B2
+r 2018=5860F0B65840F0BA
+r 2020=0B0407001B110B10
+r 2028=121147B0F0609255
+r 2030=3000955530004770
+r 2038=F06C920020009200
+r 2040=3000AD04F0BE92AA
+r 2048=6000ACFBF0BE95AA
+r 2050=30004770F0649500
+r 2058=20004770F0688200
+r 2060=F0768200F07E8200
+r 2068=F0868200F08E8200
+r 2070=F096000000000000
+r 2078=000A000000006005
+r 2080=000A000000000B31
+r 2088=000A000000000BA6
+r 2090=000A000000000BA7
+r 2098=000A000000000BA8
+r 20A0=000A000000000DED
+r 20A8=00B0000000003001
+r 20B0=0000500001100000
+r 20B8=0100500080002024
+r 20C0=0000000000000000
+
+* --- segment table, X'3000', 32 entries --------------------------------
+* Entries 0 and 16 valid; the other thirty invalid on purpose.
+r 3000=00003080000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+r 3040=000030C0000000200000002000000020
+r 3050=00000020000000200000002000000020
+r 3060=00000020000000200000002000000020
+r 3070=00000020000000200000002000000020
+
+* --- PAGETAB0, X'3080' -- segment 0, identity --------------------------
+r 3080=00000000000010000000200000003000
+r 3090=00004000000050000000600000007000
+r 30A0=00008000000090000000A0000000B000
+r 30B0=0000C0000000D0000000E0000000F000
+
+* --- PAGETAB16, X'30C0' -- segment 16 ----------------------------------
+* Entry 5 is 01100000: a page frame real address above the 16 MB line.
+* Everything else in the segment is invalid, so translation landing
+* anywhere but page 5 faults rather than quietly working.
+r 30C0=00000020000000200000002000000020
+r 30D0=00000020011000000000002000000020
+r 30E0=00000020000000200000002000000020
+r 30F0=00000020000000200000002000000020
+
+* --- go ---------------------------------------------------------------
+t+
+restart
+
+* Read the instruction address in the resulting PSW:
+*
+*   006005  PASS.  A virtual address above the 16 MB line translated to
+*           a real frame above the line.  Both sides of the line work,
+*           and the hardware question on this route is closed.
+*
+*   000BA8  Real storage above the line is not usable at all -- the 55
+*           written in 31-bit real mode did not read back.  Nothing
+*           about translation is implicated; check MAINSIZE first.
+*
+*   000BA6  Real storage above the line works, but the translated store
+*           did not arrive there.
+*
+*   000BA7  Real 5000 was modified: the virtual address was truncated to
+*           24 bits.
+*
+*   000B31  The switch to 31-bit did not take.
+*
+*   000DED  Program check.  Then  r 8E.2 :
+*             0005  addressing exception -- the frame is outside
+*                   MAINSIZE, so raise it
+*             0010  segment translation, 0011 page translation,
+*                   0012 translation specification
+*
+* Confirm which program ran:
+*
+*     X'2014' must disassemble as  L     3,178(0,15)
+*     GR03 must read 01100000, GR06 must read 01005000
+*     GR15 must read 00002002
+*
+* And by hand afterwards -- note these need 31-bit real addressing, so
+* read them from the panel rather than from 24-bit code:
+*
+*     r 1100000.1   expect AA
+*     r 5000.1      expect 00

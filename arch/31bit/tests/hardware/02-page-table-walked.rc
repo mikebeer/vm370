@@ -1,0 +1,117 @@
+* DAT step 2 -- is translation actually happening?
+*
+* Step 1 proved the tables are acceptable and DAT runs.  It could not
+* prove the tables are being USED: with every page mapped to itself,
+* walking them correctly and ignoring them entirely look the same.
+*
+* So: point virtual page 5 at real frame 6, store through it with DAT
+* on, then turn DAT off and look at BOTH frames.
+*
+*   translation working   real 6000 = AA   real 5000 = 00
+*   translation bypassed  real 6000 = 00   real 5000 = AA
+*
+* Checking both is the point.  Checking only frame 6 would pass if the
+* store were somehow duplicated; checking only frame 5 would pass if
+* nothing had been stored at all.  The pair cannot be satisfied by
+* accident.
+*
+* Paste this over hercules.rc and start Hercules -- no HERCULES_RC
+* needed, since Hercules reads hercules.rc from the working directory
+* by itself.
+*
+* Origin X'2000'.  BALR 15,0 leaves R15 = X'2002', the base throughout.
+
+stop
+
+r 0=0008000000002000
+
+* --- code -------------------------------------------------------------
+* 2000  05F0              BALR  15,0
+* 2002  D2070068F05E      MVC   X'68'(8,0),PCPSW    arm the failure PSW
+r 2000=05F0D2070068F05E
+
+* 2008  B701F066          LCTL  0,1,CRVALS          CR0 format + CR1 STD
+* 200C  5820F06E          L     2,A5000             R2 = X'5000'
+r 2008=B701F0665820F06E
+
+* 2010  5830F072          L     3,A6000             R3 = X'6000'
+* 2014  92002000          MVI   0(2),X'00'          clear real 5000
+r 2010=5830F07292002000
+
+* 2018  92003000          MVI   0(3),X'00'          clear real 6000
+* 201C  AD04F076          STOSM MASKSAVE,X'04'      DAT on
+r 2018=92003000AD04F076
+
+* Both frames are cleared with DAT still OFF, so nothing left over from
+* an earlier run can be mistaken for this run's store.
+*
+* 2020  92AA2000          MVI   0(2),X'AA'          store at VIRTUAL 5000
+* 2024  ACFBF076          STNSM MASKSAVE,X'FB'      DAT off
+r 2020=92AA2000ACFBF076
+
+* 2028  95AA3000          CLI   0(3),X'AA'          real 6000 = AA?
+* 202C  4770F03A          BNE   FAIL1
+r 2028=95AA30004770F03A
+
+* 2030  95002000          CLI   0(2),X'00'          real 5000 untouched?
+* 2034  4770F03E          BNE   FAIL2
+r 2030=950020004770F03E
+
+* 2038  8200F046          LPSW  PASSPSW
+* 203C  8200F04E  FAIL1   LPSW  FAIL1PSW
+r 2038=8200F0468200F04E
+
+* 2040  8200F056  FAIL2   LPSW  FAIL2PSW
+r 2040=8200F056
+
+* --- data, doubleword aligned for LPSW --------------------------------
+r 2048=000A00000000600D
+r 2050=000A000000000BA1
+r 2058=000A000000000BA2
+r 2060=000A000000000DED
+
+* CR0 = 00B00000, the 1M/4K ESA/390 translation format, which DAT checks
+* before reading any table.  CR1 = 00003000, segment table origin.
+r 2068=00B0000000003000
+
+* The two addresses, loaded into R2 and R3.
+r 2070=0000500000006000
+
+r 2078=0000000000000000
+
+* --- segment table, X'3000', unchanged from step 1 --------------------
+r 3000=00003040000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+
+* --- page table, X'3040' ----------------------------------------------
+* Identity, EXCEPT entry 5 at X'3054', which now reads 00006000 instead
+* of 00005000.  That single word is the whole experiment.
+r 3040=00000000000010000000200000003000
+r 3050=00004000000060000000600000007000
+r 3060=00008000000090000000A0000000B000
+r 3070=0000C0000000D0000000E0000000F000
+
+* --- go ---------------------------------------------------------------
+t+
+restart
+
+* Read the instruction address in the resulting PSW:
+*
+*   00600D  Translation is real.  The store went to frame 6 because the
+*           page table said so, and real 5000 was never touched.
+*
+*   000BA1  Real 6000 did not receive AA.  The store went somewhere
+*           else, or did not happen.
+*
+*   000BA2  Real 5000 was modified.  The store ignored the page table
+*           and used the virtual address as-is: translation is being
+*           BYPASSED, and step 1's pass meant nothing.
+*
+*   000DED  Program check.  Then  r 8E.2  for the code.
+*
+* Worth confirming by hand afterwards, whatever the PSW says:
+*
+*     r 5000.1        expect 00
+*     r 6000.1        expect AA

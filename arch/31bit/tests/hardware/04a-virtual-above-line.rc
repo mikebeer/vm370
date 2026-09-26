@@ -1,0 +1,136 @@
+* DAT step 4a -- can a virtual address ABOVE the 16 MB line translate?
+*
+* This is the question the project needs answered.  Steps 1 to 3 built
+* the ground for it and all passed:
+*
+*   1  00600D   tables accepted, DAT runs
+*   2  00600D   translation demonstrably walks our page table
+*   3  006003   AMODE 31 entered and left, DAT still correct while there
+*
+* Target: virtual 01005000, stored to in 31-bit mode with DAT on.
+*
+*     segment index    01005000 >> 20       = 16     <- past the line
+*     page index      (01005000 >> 12) & FF = 5
+*
+* REAL storage stays entirely below the line.  Segment 16's page table
+* points page 5 at real frame 7.  So this asks only whether the 31-bit
+* VIRTUAL address survives translation -- not whether Hercules can
+* address real storage above 16 MB, which is step 4b.
+*
+* THE TABLES GROW FOR THE FIRST TIME.  A sixteen-entry segment table
+* cannot reach segment 16 at all, so STL goes from 0 to 1:
+*
+*     SEGTAB     3000   32 entries now, 128 bytes
+*       [0]    -> PAGETAB0     identity, pages 0-15
+*       [16]   -> PAGETAB16    page 5 -> real frame 7, rest invalid
+*       rest      invalid
+*     PAGETAB0   3080   64-byte aligned, as SEGTAB_PTO requires
+*     PAGETAB16  30C0
+*     CR1 = 00003001            STO 3000, STL 1 = two 64-byte units
+*
+* Why real 5000 is the control: if the address were truncated to 24
+* bits, 01005000 becomes 005000, and PAGETAB0 maps virtual 5000 to real
+* 5000 identically -- so a truncated store lands there and nowhere near
+* frame 7.  Checking both addresses separates the three outcomes:
+* translated, truncated, or never stored.  One address could not.
+*
+* Paste over hercules.rc.  Then EXIT HERCULES AND START IT AGAIN, or
+* stop / sysclear / script hercules.rc -- stop and restart alone re-run
+* whatever is already in storage.
+*
+* PASS IS 006004.
+
+stop
+
+r 0=0008000000002000
+
+* --- code and data ----------------------------------------------------
+r 2000=05F041F0F000D207
+r 2008=0068F086B701F08E
+r 2010=5820F0965830F09A
+r 2018=5860F09E92002000
+r 2020=92003000AD04F0AA
+r 2028=5840F0A20B040700
+r 2030=1B110B10121147B0
+r 2038=F05A92AA60005850
+r 2040=F0A60B05ACFBF0AA
+r 2048=95AA30004770F05E
+r 2050=950020004770F062
+r 2058=8200F0668200F06E
+r 2060=8200F0768200F07E
+r 2068=000A000000006004
+r 2070=000A000000000B31
+r 2078=000A000000000BA4
+r 2080=000A000000000BA5
+r 2088=000A000000000DED
+r 2090=00B0000000003001
+r 2098=0000500000007000
+r 20A0=0100500080002030
+r 20A8=0000204400000000
+
+* --- segment table, X'3000', now 32 entries ---------------------------
+* Entry 0 at 3000 and entry 16 at 3040 are the only valid ones.  The
+* other thirty are X'20', invalid, so a stray reference faults cleanly
+* rather than reading rubbish as a table.
+r 3000=00003080000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+r 3040=000030C0000000200000002000000020
+r 3050=00000020000000200000002000000020
+r 3060=00000020000000200000002000000020
+r 3070=00000020000000200000002000000020
+
+* --- PAGETAB0, X'3080' -- segment 0, plain identity -------------------
+r 3080=00000000000010000000200000003000
+r 3090=00004000000050000000600000007000
+r 30A0=00008000000090000000A0000000B000
+r 30B0=0000C0000000D0000000E0000000F000
+
+* --- PAGETAB16, X'30C0' -- segment 16, above the line -----------------
+* Only entry 5 is valid, pointing at real frame 7.  Everything else in
+* the segment is invalid on purpose: if translation lands anywhere but
+* page 5, it faults instead of quietly working.
+r 30C0=00000020000000200000002000000020
+r 30D0=00000020000070000000002000000020
+r 30E0=00000020000000200000002000000020
+r 30F0=00000020000000200000002000000020
+
+* --- go ---------------------------------------------------------------
+t+
+restart
+
+* Read the instruction address in the resulting PSW:
+*
+*   006004  PASS.  A virtual address above the 16 MB line translated
+*           through a hand-built table to a real frame below it.  This
+*           is the result the CP/CMS conversion rests on.
+*
+*   000BA4  Real 7000 did not receive it.  The store went somewhere
+*           else.  Check real 5000 by hand -- if AA is there, the
+*           address was truncated after all.
+*
+*   000BA5  Real 5000 was modified: the address WAS truncated to 24
+*           bits, so 31-bit addressing is not reaching translation.
+*
+*   000B31  The switch to 31-bit did not take -- nothing else means
+*           anything if so.
+*
+*   000DED  Program check.  Then  r 8E.2 :
+*             0010  segment translation -- entry 16 not accepted, so
+*                   suspect CR1's STL or the entry itself
+*             0011  page translation -- PAGETAB16 reached but entry 5
+*                   rejected
+*             0012  translation specification -- a table FORMAT is
+*                   wrong, most likely the enlarged segment table
+*
+* Confirm which program ran, never the code alone:
+*
+*     X'2018' must disassemble as  L     6,158(0,15)
+*     X'203A' must disassemble as  MVI   0(6),X'AA'
+*     GR06 must read 01005000, and GR15 must read 00002002
+*
+* And by hand afterwards:
+*
+*     r 7000.1    expect AA
+*     r 5000.1    expect 00

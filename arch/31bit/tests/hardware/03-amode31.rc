@@ -1,0 +1,127 @@
+* DAT step 3, second attempt -- the addressing mode switch.
+*
+* THE FIRST ATTEMPT FOUND A REAL BUG, and it is worth more than the test
+* passing would have been.
+*
+* It failed with  V:400020B4: Translation exception 0010 . The cause:
+*
+*     BALR 15,0   in 24-bit mode places the instruction-length code, the
+*                 condition code and the program mask in bits 0-7 of R15.
+*                 R15 came out as 40002002.
+*
+* In 24-bit mode bits 0-7 take no part in address generation, so that 40
+* is invisible and harmless.  In 31-bit mode bits 1-31 ARE the address.
+* Every base-displacement reference through R15 therefore went to
+* 4000xxxx -- segment 400, far outside a sixteen-entry segment table, so
+* DAT raised a segment-translation exception.
+*
+* The first such reference after the switch was  L 5,A24 , because the
+* BNM before it was not taken and a non-taken branch generates no
+* address at all.  That is why it got as far as it did.
+*
+* Fix, the second instruction below:
+*
+*     LA 15,0(0,15)    in 24-bit mode yields a 24-bit address with bits
+*                      0-7 zeroed, so R15 becomes 00002002 and the base
+*                      is valid in BOTH modes.
+*
+* THIS MATTERS BEYOND THIS PROGRAM.  CMS establishes base registers with
+* BALR throughout.  Every one of those is the same latent bug: silent
+* today, a wild address the moment that code runs AMODE 31.  Worth
+* remembering for the CP/CMS conversion.
+*
+* What the first attempt DID establish, and is not in question:
+*   PSW=04081000 80002036   the amode bit was set -- 31-bit mode entered
+*   GR01=80000000           BSM 1,0 reported the mode correctly
+*   PSW byte 2 = 10         condition code 1 from the LTR, confirming it
+*
+* So the switch and the query both work.  What is still unproven is
+* whether DAT keeps translating correctly while in 31-bit mode, which is
+* what this attempt gets to.
+*
+* Still nothing above the 16 MB line.  That is step 4, and it needs a
+* larger segment table: virtual 01000000 is segment 16, and ours has
+* entries 0 through 15.
+*
+* Paste over hercules.rc.  Then EXIT HERCULES AND START IT AGAIN, or at
+* the panel:  stop / sysclear / script hercules.rc .  stop and restart
+* alone re-run whatever is already in storage.
+*
+* PASS IS 006003.
+
+stop
+
+r 0=0008000000002000
+
+* --- code and data ----------------------------------------------------
+* Assembled by dat3b.py via asm.py, which computes every displacement,
+* checks each against the 12-bit field, and checks every alignment the
+* machine enforces.  Hand arithmetic stopped being trustworthy here: the
+* fix above shifted all 33 displacements by four bytes.
+r 2000=05F041F0F000D207
+r 2008=0068F09EB701F0A6
+r 2010=5820F0AE5830F0B2
+r 2018=9200200092003000
+r 2020=AD04F0BE5840F0B6
+r 2028=0B0407001B110B10
+r 2030=121147B0F06092AA
+r 2038=20005850F0BA0B05
+r 2040=1B110B1012114770
+r 2048=F064ACFBF0BE95AA
+r 2050=30004770F0689500
+r 2058=20004770F06C8200
+r 2060=F0768200F07E8200
+r 2068=F0868200F08E8200
+r 2070=F096000000000000
+r 2078=000A000000006003
+r 2080=000A000000000B31
+r 2088=000A000000000B24
+r 2090=000A000000000BA1
+r 2098=000A000000000BA2
+r 20A0=000A000000000DED
+r 20A8=00B0000000003000
+r 20B0=0000500000006000
+r 20B8=8000202C00002040
+r 20C0=0000000000000000
+
+* --- segment table, X'3000', 4 KB aligned -----------------------------
+r 3000=00003040000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+
+* --- page table, X'3040' ----------------------------------------------
+* Identity, except entry 5 pointing at frame 6 -- unchanged from step 2,
+* so this step re-confirms translation while in 31-bit mode rather than
+* only confirming the mode switch.
+r 3040=00000000000010000000200000003000
+r 3050=00004000000060000000600000007000
+r 3060=00008000000090000000A0000000B000
+r 3070=0000C0000000D0000000E0000000F000
+
+* --- go ---------------------------------------------------------------
+t+
+restart
+
+* Read the instruction address in the resulting PSW:
+*
+*   006003  PASS.  Entered 31-bit mode, DAT still translated correctly
+*           there, and returned to 24-bit.
+*
+*   000B31  The switch to 31-bit did not take.
+*   000B24  The switch back to 24-bit did not take.
+*   000BA1  Real 6000 did not receive the store made in 31-bit mode:
+*           the mode switch worked but translation stopped.
+*   000BA2  Real 5000 was modified -- translation bypassed in 31-bit.
+*   000DED  Program check.  Then  r 8E.2 .
+*
+* Confirm which program ran -- never the code alone:
+*
+*     X'2002' must disassemble as  LA    15,0(0,15)     <- the fix
+*     X'2028' must disassemble as  BSM   0,4
+*     GR15 must read 00002002, NOT 40002002
+*
+* And by hand afterwards:
+*
+*     r 5000.1    expect 00
+*     r 6000.1    expect AA

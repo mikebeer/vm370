@@ -1,0 +1,101 @@
+* DATTEST.  Named dattest.rc, NOT hercules.rc, so it can never overwrite
+* CE's own startup script.  Point Hercules at it with:
+*
+*     set HERCULES_RC=dattest.rc          (Windows)
+*
+* before starting.  Hercules 3.07 reads hercules.rc from the working
+* directory unless HERCULES_RC names something else.
+*
+* Origin X'2000'.  BALR 15,0 leaves R15 = X'2002', the base for every
+* displacement below.
+
+stop
+
+* Restart new PSW: bit 12 on as ESA/390 requires, supervisor, DAT off,
+* interrupts off, entry X'2000'.  RESTART takes no address of its own -
+* it reads this.
+r 0=0008000000002000
+
+* --- code -------------------------------------------------------------
+* 2000  05F0              BALR  15,0
+* 2002  D2070068F03E      MVC   X'68'(8,0),PCPSW    arm the failure PSW
+r 2000=05F0D2070068F03E
+
+* 2008  B701F04E          LCTL  0,1,CRVALS          BOTH CR0 and CR1
+* 200C  AD04F04A          STOSM MASKSAVE,X'04'      DAT on
+r 2008=B701F04EAD04F04A
+
+* 2010  92C3F04B          MVI   MARKER,X'C3'
+* 2014  95C3F04B          CLI   MARKER,X'C3'
+r 2010=92C3F04B95C3F04B
+
+* 2018  4770F022          BNE   FAIL
+* 201C  ACFBF04A          STNSM MASKSAVE,X'FB'      DAT off
+r 2018=4770F022ACFBF04A
+
+* 2020  8200F02E          LPSW  PASSPSW
+* 2024  ACFBF04A  FAIL    STNSM MASKSAVE,X'FB'
+r 2020=8200F02EACFBF04A
+
+* 2028  8200F036          LPSW  FAILPSW
+r 2028=8200F036
+
+* --- data -------------------------------------------------------------
+* Byte 1 of each wait PSW is X'0A': bit 12 on, bit 14 on for the wait
+* state.  The instruction address is the answer.
+r 2030=000A00000000600D
+r 2038=000A000000000BAD
+r 2040=000A000000000DED
+
+* X'2048' is dead: it held the old single CR1 value before CR0 had to be
+* loaded as well.  Left in place so no displacement has to move.
+r 2048=0000000000000000
+
+* CR0 and CR1, loaded as a pair by the LCTL above.
+*
+*   CR0 = 00B00000   bits 8-12 = 10110, the 1M/4K ESA/390 translation
+*                    format.  ESA/390 checks this BEFORE looking at any
+*                    table; anything else is a translation-specification
+*                    exception, code 0012, which is what CP's leftover
+*                    CR0 produced.  Hercules esa390.h:
+*                       CR0_TRAN_FMT    0x00F80000
+*                       CR0_TRAN_ESA390 0x00B00000
+*
+*   CR1 = 00003000   segment table origin X'3000', STL 0 meaning one
+*                    64-byte unit: sixteen entries, segments 0-15.
+r 2050=00B0000000003000
+
+* --- segment table, X'3000', 4 KB aligned as STD_STO requires ---------
+* Entry 0 points at the page table with PTL 0, sixteen entries, invalid
+* bit off.  The other fifteen are X'20', invalid, so a stray reference
+* outside the first megabyte faults cleanly instead of reading rubbish.
+r 3000=00003040000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+
+* --- page table, X'3040', 64-byte aligned as SEGTAB_PTO requires ------
+* Sixteen pages, each mapped to itself: lowcore, the program, the tables.
+r 3040=00000000000010000000200000003000
+r 3050=00004000000050000000600000007000
+r 3060=00008000000090000000A0000000B000
+r 3070=0000C0000000D0000000E0000000F000
+
+* --- go ---------------------------------------------------------------
+* MARKER must be cleared every run.  It holds X'C3' from last time, and
+* a run that never reaches the store would read it back and report PASS.
+r 204D=00
+
+* Trace: eleven instructions before the wait state, each disassembled,
+* which is how the hand assembly gets checked rather than trusted.
+t+
+restart
+
+* Read the instruction address in the resulting PSW:
+*
+*   00600D  PASS.  Tables accepted, DAT on, store survived translation.
+*   000BAD  Tables accepted, DAT on, but the byte did not survive.
+*   000DED  Program check.  Then  r 8E.2  for the code:
+*              10  segment translation exception
+*              11  page translation exception
+*              12  translation specification - the FORMAT is wrong

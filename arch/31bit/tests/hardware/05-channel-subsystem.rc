@@ -1,0 +1,177 @@
+* Channel subsystem test 1 -- can we drive a device with SSCH?
+*
+* Writes a line to the 3215 console using MSCH/SSCH/TSCH on bare ESA/390,
+* no operating system.  If the text appears on the Hercules log, we have
+* done channel-subsystem I/O and have a working template for what CP's
+* DMKIOS inner loop becomes.
+*
+* DAT IS OFF and no control registers are loaded.  The five DAT tests
+* asked only about addressing; this asks only about I/O.  Keeping them
+* apart is the method that has worked all day.
+*
+* THE PREREQUISITE THAT WOULD OTHERWISE COST AN EVENING
+* ----------------------------------------------------
+* A subchannel comes up with only the VALID bit set.  config.c:740 sets
+* PMCW5_V; nothing sets PMCW5_E except MSCH and the IPL path, and
+* device_reset() clears it again.  SSCH with E off returns CONDITION CODE
+* 3 SILENTLY -- no exception, no message, nothing on the log.  So MSCH
+* comes first, always.  This is the CR0 of channel I/O: a hard gate the
+* Principles of Operation describes without mentioning that the emulator
+* leaves it off.
+*
+* CONFIG: the same ESA/390 sandbox as the DAT tests.  ARCHMODE ESA/390 is
+* required -- SSCH/MSCH/TSCH are not generated for S/370 at all
+* (opcode.c:1867), so in S/370 mode you get an operation exception.
+*
+* SUBCHANNEL NUMBER -- CHECK THIS FIRST
+* ------------------------------------
+* Assigned sequentially from 0x0000 in CONFIG FILE ORDER, not by device
+* number (config.c:678).  With 0009 as the only device it is 0x0000, so
+* SSIDW = X'00010000', which is what is poked below.  If your config
+* lists other devices first, 0009 is NOT subchannel 0 and this test will
+* answer 000B01 or 000B03.  Verify at the panel with
+*
+*     devlist
+*
+* or read the HHC02198 "... subchannel 0:xxxx attached" lines at startup,
+* then re-poke:
+*
+*     r 20D0=0001xxxx
+*
+* PASS IS 006006.
+*
+* Paste over hercules.rc.  Then EXIT HERCULES AND START IT AGAIN, or
+* stop / sysclear / script hercules.rc .
+
+stop
+
+r 0=0008000000002000
+
+* --- code and data ----------------------------------------------------
+* Assembled by ssch1.py via asm.py.  Layouts, required bits and every
+* condition-code path came from SDL Hyperion 4.9.1 source -- esa390.h,
+* io.c, channel.c, con1052c.c -- not from the manuals, because the
+* emulator is what accepts or rejects these control blocks.
+*
+* Key addresses:
+*   20D0  SSIDW    X'0001' || subchannel
+*   20D8  ORB      32 bytes, NOT 12: SSCH fetches sizeof(ORB)-1 = 31
+*                  unconditionally (io.c:561) whatever the X bit says, so
+*                  a 12-byte ORB near the end of the image takes an
+*                  addressing exception on a fetch the PoO says cannot
+*                  happen.  flag5 = 80 (format-1), lpm = 80 -- and lpm
+*                  MUST be 80, because SSCH tests lpm & pam and pam is
+*                  80, so lpm = 00 is cc=3 rather than "any path".
+*   20F8  SCHIB    52 bytes.  STSCH stores 52, MSCH reads 28.
+*   212C  IRB      64 bytes.  TSCH stores all 64.
+*   2170  MYCCW    09 = write with auto carrier return, 20 = SLI.
+*                  DOUBLEWORD aligned -- a different rule from the ORB,
+*                  SCHIB and IRB, which need only a word.
+*   2178  MSG      EBCDIC; the handler translates it to ASCII.
+r 2000=05F041F0F000D207
+r 2008=0068F0C65810F0CE
+r 2010=B234F0F64770F05E
+r 2018=9680F0FBB232F0F6
+r 2020=4770F062B233F0D6
+r 2028=4770F0665820F0D2
+r 2030=B235F12A4780F042
+r 2038=4730F06A4620F02E
+r 2040=47F0F06E9110F12D
+r 2048=4770F072950CF132
+r 2050=4770F0769500F133
+r 2058=4770F07A8200F07E
+r 2060=8200F0868200F08E
+r 2068=8200F0968200F09E
+r 2070=8200F0A68200F0AE
+r 2078=8200F0B68200F0BE
+r 2080=000A000000006006
+r 2088=000A000000000B01
+r 2090=000A000000000B02
+r 2098=000A000000000B03
+r 20A0=000A000000000B04
+r 20A8=000A000000000B05
+r 20B0=000A000000000B06
+r 20B8=000A000000000B07
+r 20C0=000A000000000B08
+r 20C8=000A000000000DED
+r 20D0=0001000000030D40
+r 20D8=0000000000808000
+r 20E0=0000217000000000
+r 20E8=0000000000000000
+r 20F0=0000000000000000
+r 20F8=0000000000000000
+r 2100=0000000000000000
+r 2108=0000000000000000
+r 2110=0000000000000000
+r 2118=0000000000000000
+r 2120=0000000000000000
+r 2128=0000000000000000
+r 2130=0000000000000000
+r 2138=0000000000000000
+r 2140=0000000000000000
+r 2148=0000000000000000
+r 2150=0000000000000000
+r 2158=0000000000000000
+r 2160=0000000000000000
+r 2168=0000000000000000
+r 2170=0920003000002178
+r 2178=E2E2C3C840D6D240
+r 2180=606040C3C8C1D5D5
+r 2188=C5D340E2E4C2E2E8
+r 2190=E2E3C5D440C961D6
+r 2198=40D6D540C2C1D9C5
+r 21A0=40C5E2C161F3F9F0
+
+* --- go ---------------------------------------------------------------
+t+
+restart
+
+* WHAT SUCCESS LOOKS LIKE
+*
+* On the Hercules log, before the wait state:
+*
+*     /SSCH OK -- CHANNEL SUBSYSTEM I/O ON BARE ESA/390
+*
+* The leading / is the device's command-prefix character, not a bug.
+*
+* Then the PSW instruction address:
+*
+*   006006  PASS.  MSCH enabled the subchannel, SSCH started a format-1
+*           channel program, TSCH collected clean status, and the device
+*           wrote the line.
+*
+*   000B01  STSCH cc != 0.  Almost certainly the wrong subchannel number
+*           -- cc=3 means it does not exist.  Check devlist.
+*   000B02  MSCH cc != 0.  cc=3 no such subchannel, cc=1 status pending,
+*           cc=2 busy.
+*   000B03  SSCH cc != 0.  cc=3 is the interesting one: subchannel not
+*           enabled (so MSCH did not take) or lpm & pam == 0.
+*   000B04  TSCH cc=3, subchannel not operational.
+*   000B05  Poll exhausted -- 200000 TSCH attempts, all cc=1.  The
+*           channel program never completed.
+*   000B06  SCSW alert bit.  Something went wrong in the channel program;
+*           read IRB+8 and IRB+9 to see what.
+*   000B07  Device status not exactly CE+DE.  X'0E' means unit check, so
+*           command reject -- the handler rejected the command code.
+*   000B08  Subchannel status non-zero.  X'20' program check (bad CCW or
+*           data address), X'40' incorrect length.
+*   000DED  Program check.  Then r 8E.2 -- 0006 operand exception means an
+*           ORB or PMCW reserved bit, 0005 addressing, 0006/0002 spec.
+*
+* Read the status by hand whatever the answer says:
+*
+*     r 212C.12      the whole SCSW
+*     r 2134.1       device status,      expect 0C  (CE + DE)
+*     r 2135.1       subchannel status,  expect 00
+*
+* Confirm which program ran, never the code alone:
+*
+*     X'2018' must disassemble as  STSCH
+*     X'2024' must disassemble as  SSCH
+*     GR01 must read 00010000 (or your subchannel)
+*
+* IF IT PASSES
+*
+* The next question is a DASD read, which is what DMKIOS actually does:
+* same MSCH/SSCH/TSCH frame, a real device, a CCW chain rather than one
+* CCW, and status that matters.  One change at a time, as ever.
