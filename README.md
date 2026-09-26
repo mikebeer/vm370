@@ -61,10 +61,15 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/02-CP-VERIFIED.md      two design hypotheses checked against CP source
     docs/03-CP-INVENTORY.md     the architecture-dependency counts
     docs/04-SHARED-SEGMENTS.md  what 1 MB segments do to CE's saved systems
+    docs/05-CP67-PRIOR-ART.md   how CP-67 shared at 4 KB with 1 MB segments
 
-`04` is the one to read if you only read one: it takes the conversion's
-hardest item — segments going from 64 KB to 1 MB — and reduces it from a
-worry about every saved system to a decision about one of them.
+`05` is the one to read if you only read one. The conversion's hardest item
+looked like segments going from 64 KB to 1 MB, costing a 16x loss of sharing
+granularity. CP-67 had **1 MB segments and shared at 4 KB**, because it gave
+each virtual machine its own page table and shared the frames rather than the
+table. So the granularity loss is a property of VM/370's implementation, not
+of ESA/390, and it is avoidable. `04` is the measurement that `05` corrects;
+read them in that order.
 
 ## Why heritage
 

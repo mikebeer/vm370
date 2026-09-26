@@ -82,7 +82,7 @@
          MACRO
 &LAB     RSCH
 .*  RESUME SUBCHANNEL.  THE COUNTERPART OF S/370 RESUME I/O.
-.*  SEE THE OPCODE CAVEAT AT THE END OF THIS FILE.
+.*  OPCODE CONFIRMED BY TWO INDEPENDENT SOURCES -- SEE END OF FILE.
 &LAB     DS    0H
          DC    X'B238',X'0000'
          MEND
@@ -150,18 +150,23 @@
 *     MSCH   B232        STSCH  B234        BSM    0B                 *
 *     SSCH   B233        TSCH   B235                                  *
 *                                                                     *
-* READ FROM HERCULES SOURCE, NOT YET EXECUTED:                        *
+* NOT YET EXECUTED, BUT CONFIRMED BY A SECOND INDEPENDENT SOURCE --   *
+* THE Z390 ASSEMBLER'S OPCODE TABLE (TZ390.JAVA), WHICH IS NOT DERIVED *
+* FROM HERCULES:                                                      *
 *                                                                     *
 *     CSCH   B230        TPI    B236        RSCH   B238               *
 *     HSCH   B231        SAL    B237        STCRW  B239               *
 *     BASSM  0C                                                       *
 *                                                                     *
-* ONE DISCREPANCY WORTH KNOWING.  TWO SOURCES DISAGREE ON RSCH: THE   *
-* HERCULES OPCODE TABLE GIVES B238, WHILE A READING OF THE 370-XA     *
-* REFERENCE SUMMARY GX20-0157-2 GAVE B23B.  B238 IS USED ABOVE BECAUSE*
-* IT CAME FROM A DIRECT QUOTE OF THE DISPATCH TABLE, WHICH IS WHAT    *
-* WOULD ACTUALLY EXECUTE.  CHECK IT AGAINST THE PRINCIPLES OF         *
-* OPERATION BEFORE RELYING ON RSCH.                                   *
+* THE RSCH DISCREPANCY IS RESOLVED.  AN EARLIER READING OF THE 370-XA *
+* REFERENCE SUMMARY GX20-0157-2 GAVE B23B FOR RSCH.  THAT WAS A       *
+* CONFUSION BETWEEN TWO SIMILARLY-NAMED CHANNEL INSTRUCTIONS.  Z390'S *
+* TABLE LISTS THE WHOLE BLOCK CONTIGUOUSLY:                           *
+*                                                                     *
+*     B238 RSCH    B239 STCRW   B23A STCPS   B23B RCHP   B23C SCHM    *
+*                                                                     *
+* B23B IS RCHP -- RESET CHANNEL PATH -- A DIFFERENT INSTRUCTION WITH A*
+* RELATED PURPOSE, WHICH IS WHY IT WAS MISREAD AS RSCH.  RSCH IS B238.*
 *                                                                     *
 * CSCH, HSCH, RSCH AND SAL TAKE NO STORAGE OPERAND -- HERCULES MARKS  *
 * THEM ASMFMT_NONE -- SO THEIR LOW HALFWORD IS IGNORED AND IS EMITTED *

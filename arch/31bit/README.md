@@ -150,16 +150,21 @@ Measured against the maintained CE source — 201 CP `.ASSEMBLE` members —
 with a statement parser that skips comments and takes the opcode from
 column 1 or after the label. Full detail in `../../docs/`.
 
-**The biggest item is a compatibility decision, not code volume — and it is
-one saved system.** CP runs 64 KB segments of sixteen 4 KB pages; ESA/390 has
-only 1 MB segments, shared or not as a whole. Measured against `DMKSNT`,
-nineteen 64 KB shared segments collapse into three 1 MB segments, and only
-two of the three cause trouble: `CMSVSAM` and `CMSAMS` need separating, and
-`CMSOLD` shares `X'10000'`–`X'20000'`, which forces the entire first megabyte
-common — where every saved system keeps its PSA and nucleus low core. The
-six-way collision at 15–16 MB turns out to be harmless, because CE already
-parked everything shared up there. `../../docs/04-SHARED-SEGMENTS.md` has the
-working; `tools/snt-collisions.py` recomputes it against any `DMKSNT`.
+**What looked like the biggest item has a documented precedent.** CP runs
+64 KB segments of sixteen 4 KB pages; ESA/390 has only 1 MB segments. Since
+VM/370 shares whole page tables — `SYSHRSG=` names segments — its sharing
+granularity is its segment size, so moving to 1 MB appears to cost a 16x
+coarsening, and measured against `DMKSNT` it would force the entire first
+megabyte common (`../../docs/04-SHARED-SEGMENTS.md`, recomputable with
+`tools/snt-collisions.py`).
+
+**CP-67 ran 1 MB segments and shared at 4 KB.** It gave each virtual machine
+its own page table populated from a model, sharing the *frames* rather than
+the table, and declared shared **pages** — `SWPTABLE FIRSTSP=/LASTSP=`. So
+the coarsening is a property of VM/370's implementation rather than of
+ESA/390, and the fix has IBM's own precedent on the same architecture family.
+`../../docs/05-CP67-PRIOR-ART.md` has the quotations. It moves work into
+`DMKATS` and the `NAMESYS` path rather than removing it.
 
 **I/O is ten instruction sites, not 1,493 references.** Every S/370 I/O
 instruction in `DMKIOS` is a single instruction with the same `0(R1)`

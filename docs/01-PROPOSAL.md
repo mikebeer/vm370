@@ -340,10 +340,18 @@ everything in §6 and is better said now.
 
 Otherwise:
 
-**A decision on `CMSOLD`** — §3a, detail in 04-SHARED-SEGMENTS.md. This is
-now one narrow question rather than the broad design worry I first wrote, and
-it is the only item in the whole plan that needs a compatibility call rather
-than engineering.
+**Nothing on `CMSOLD` after all — but a sanity check on why.** I twice sent
+you a shared-segment worry: first that every saved-system definition changes
+by 16x, then that `CMSOLD` forces the first megabyte common. Both assumed
+sharing must be segment-granular. **CP-67 ran 1 MB segments and shared at
+4 KB granularity**, by giving each virtual machine its own page table and
+sharing the frames instead of the table; `SWPTABLE FIRSTSP=/LASTSP=` declares
+shared **pages** where `SYSHRSG=` declares shared **segments**. So VM/370's
+64 KB segment is downstream of its decision to share page tables, and
+ESA/390 does not force the granularity loss. 05-CP67-PRIOR-ART.md has the
+quotations. What I would value is you telling me whether that reading of
+`DMKATS` is right, because it moves the work into that module rather than
+removing it.
 
 **Comments on §3b** — whether `ARCHTECT`'s fullword-entry rows are live or
 dead future-proofing.

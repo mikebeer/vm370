@@ -1,5 +1,19 @@
 # Shared segments at 1 MB: the collision is two items, not nineteen
 
+> **Superseded in its conclusion. Read
+> [05-CP67-PRIOR-ART.md](05-CP67-PRIOR-ART.md) with it.**
+>
+> Everything measured below is correct, but it rests on an assumption that
+> turns out to be false: that sharing must be segment-granular, because a
+> segment table entry is the smallest thing you can repoint. CP-67 ran **1 MB
+> segments and shared at 4 KB granularity**, by giving each virtual machine
+> its own page table and sharing the frames rather than the table.
+>
+> So the collision table below is the cost of **keeping VM/370's sharing
+> implementation** under ESA/390 — not the cost of moving to ESA/390.
+> `CMSOLD` is not a blocker, and the compatibility decision this document
+> asked Adrian for does not need making. See `05` §5.
+
 26 September 2026. Supersedes the §3a framing in 01-PROPOSAL.md and the
 `PAGTSWP` discussion in 03-CP-INVENTORY.md, both of which described this as
 a compatibility decision about every saved system. Measured, it is two
@@ -117,6 +131,9 @@ This is a question for Adrian because it is about what CE promises its
 users, not about what the hardware allows.
 
 ## What this does to the estimate
+
+*(Written before 05-CP67-PRIOR-ART.md. The counts stand; the framing is
+superseded — with frame-level sharing there is no decision here at all.)*
 
 The proposal said "every existing saved-system definition changes
 granularity by 16×, and anything sharing less than a megabyte must

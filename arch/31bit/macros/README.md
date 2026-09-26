@@ -52,17 +52,28 @@ switched into 31-bit mode and back.
     MSCH   B232        STSCH  B234        BSM    0B
     SSCH   B233        TSCH   B235
 
-**The rest were read from Hercules source and have not been executed.**
+**The rest have not been executed, but are confirmed by a second
+independent source** — the [z390](https://github.com/z390development/z390)
+assembler's opcode table (`src/tz390.java`), which is not derived from
+Hercules.
 
     CSCH   B230        TPI    B236        RSCH   B238
     HSCH   B231        SAL    B237        STCRW  B239
     BASSM  0C
 
-**One opcode is disputed.** `RSCH` reads as `B238` in the Hercules dispatch
-table and as `B23B` in a reading of the 370-XA Reference Summary
-GX20-0157-2. `B238` is used here because it came from a direct quote of the
-table that would actually execute, but check it against the Principles of
-Operation before relying on `RSCH`.
+**The `RSCH` dispute is resolved, and it was my error.** An earlier reading
+of the 370-XA Reference Summary GX20-0157-2 gave `B23B`. z390 lists the
+block contiguously and shows why:
+
+    B238 RSCH    B239 STCRW    B23A STCPS    B23B RCHP    B23C SCHM
+
+`B23B` is **RCHP** — RESET CHANNEL PATH — a different instruction with a
+related purpose, which is how it got misread as RSCH. `RSCH` is `B238`.
+
+So all twelve encodings now have either execution or an independent second
+source behind them. `XATEST` is still worth assembling, because a second
+source agreeing about the opcode says nothing about whether the macro emits
+the operand correctly.
 
 To check any of them, assemble `XATEST` with `(PRINT` and compare the
 object column against the table above. Only the first two bytes are fixed —
