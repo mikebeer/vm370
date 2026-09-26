@@ -1,0 +1,154 @@
+* Frame-level sharing at PAGE granularity, inside 1 MB segments.
+*
+* WHAT THIS SETTLES.  docs/05-CP67-PRIOR-ART.md carries this repository's
+* most load-bearing conclusion: that moving from 64 KB to 1 MB segments does
+* NOT cost a 16x loss of sharing granularity, because sharing need not be
+* done by repointing a segment table entry.  CP-67 ran 4 KB pages in 1 MB
+* segments and shared at 4 KB, by giving each machine its own page table and
+* sharing the FRAMES.
+*
+* That rested on IBM documentation from 1973.  This executes it.
+*
+*   docs/04-SHARED-SEGMENTS.md  what VM/370's segment-level sharing costs at
+*                               1 MB: CMSOLD forces the first megabyte common
+*   docs/05-CP67-PRIOR-ART.md   the argument that the cost is avoidable
+*   THIS TEST                   the avoidance, on the real hardware
+*
+* THE SHAPE.  Two address spaces with their own segment AND page tables, and
+* identical virtual addresses in both:
+*
+*   virtual 01005000  seg 16 page 5   A -> 01100000   B -> 01100000  SHARED
+*   virtual 01006000  seg 16 page 6   A -> 01200000   B -> 01300000  private
+*
+* Write under A, read under B at 01005000 -- must match, because one frame.
+* Write under both at 01006000 -- must differ, though it is the same virtual
+* address in the same 1 MB segment.
+*
+* Both holding at once means 4 KB sharing granularity and 4 KB isolation
+* granularity COEXIST INSIDE ONE 1 MB SEGMENT -- precisely what VM/370's
+* SYSHRSG cannot express and what CP-67's FIRSTSP/LASTSP could.
+*
+* All three frames are ABOVE THE LINE (17, 18, 19 MB), so this exercises the
+* case that matters rather than a convenient low-storage one.
+*
+* THE STEP THAT WILL BITE ANYONE REPEATING THIS: PTLB.  Changing CR1 does not
+* invalidate the translation lookaside buffer.  Without a PTLB after each
+* switch, the second address space reads through the first one's cached
+* translations, and the test either passes for the wrong reason or fails
+* confusingly.  CP has only 4 PTLB sites today and will need more.
+*
+* NEGATIVE CONTROLS -- BOTH RUN, BOTH BEHAVE
+* ------------------------------------------
+* This passed first time, which after the LRA test earned some suspicion.  So
+* it was broken deliberately, twice, to prove it discriminates:
+*
+*   r 40D4=01400000   B's page 5 -> a different frame
+*                     -> 001011, the sharing proof fails
+*   r 40D8=01200000   B's page 6 -> A's frame
+*                     -> 001012, the isolation proof fails
+*
+* Append either line after the pokes below to reproduce.  A test that cannot
+* be made to fail has not been shown to test anything.
+*
+* HOW TO READ THE RESULT
+*   00600A   pass.  Page-granular sharing AND isolation in one 1 MB segment.
+*   001011   THE SHARING PROOF FAILED -- the frame is not actually shared.
+*   001012   THE ISOLATION PROOF FAILED -- the private page is shared.
+*   001013   isolation failed in the other direction (A saw B's byte).
+*   001001   real storage above the line unusable at all -- a more basic
+*            fault than anything to do with translation.
+*   001021   shared frame wrong when read at its real address, DAT off.
+*   001022   A's private frame wrong.   001023  B's private frame wrong.
+*   000DED   program check -- read the old PSW at X'150'.
+*
+* WRITE PROTECTION IS A SEPARATE TEST.  CP-67's mechanism has two halves:
+* per-page frame sharing for granularity, and storage keys -- shared pages at
+* key 0, users running PSW key F -- for read-only enforcement.  Those are
+* independent mechanisms and one change at a time has worked all day.
+*
+* LAYOUT
+*   A: SEGTAB 3000  PAGETAB0 3080  PAGE16 30C0  CR1 00003001
+*   B: SEGTAB 4000  PAGETAB0 4080  PAGE16 40C0  CR1 00004001
+*   Segment 0 is identity-mapped for pages 0-15 in both, so the code at 2000
+*   and the tables themselves stay addressable with DAT on.
+*   STL 1 gives 32 segment entries, so entry 16 exists.
+*
+* Built by build/share1.py.
+*
+r 0=0008000000002000
+r 2000=05F041F0F000D207
+r 2008=0068F10E5840F13A
+r 2010=0B0407005850F12E
+r 2018=5860F1325870F136
+r 2020=9200500092006000
+r 2028=92007000925A5000
+r 2030=955A50004770F0B2
+r 2038=920050005880F126
+r 2040=5890F12AB701F116
+r 2048=B20D0000AD04F13E
+r 2050=92C1800092E19000
+r 2058=ACFBF13EB701F11E
+r 2060=B20D0000AD04F13E
+r 2068=95C180004770F0B6
+r 2070=95E190004780F0BA
+r 2078=92E29000ACFBF13E
+r 2080=B701F116B20D0000
+r 2088=AD04F13E95E19000
+r 2090=4770F0BEACFBF13E
+r 2098=95C150004770F0C2
+r 20A0=95E160004770F0C6
+r 20A8=95E270004770F0CA
+r 20B0=8200F0CE8200F0D6
+r 20B8=8200F0DE8200F0E6
+r 20C0=8200F0EE8200F0F6
+r 20C8=8200F0FE8200F106
+r 20D0=000A00000000600A
+r 20D8=000A000000001001
+r 20E0=000A000000001011
+r 20E8=000A000000001012
+r 20F0=000A000000001013
+r 20F8=000A000000001021
+r 2100=000A000000001022
+r 2108=000A000000001023
+r 2110=000A000000000DED
+r 2118=00B0000000003001
+r 2120=00B0000000004001
+r 2128=0100500001006000
+r 2130=0110000001200000
+r 2138=0130000080002014
+r 2140=0000000000000000
+r 3000=00003080000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+r 3040=000030C0000000200000002000000020
+r 3050=00000020000000200000002000000020
+r 3060=00000020000000200000002000000020
+r 3070=00000020000000200000002000000020
+r 3080=00000000000010000000200000003000
+r 3090=00004000000050000000600000007000
+r 30A0=00008000000090000000A0000000B000
+r 30B0=0000C0000000D0000000E0000000F000
+r 30C0=00000400000004000000040000000400
+r 30D0=00000400011000000120000000000400
+r 30E0=00000400000004000000040000000400
+r 30F0=00000400000004000000040000000400
+r 4000=00004080000000200000002000000020
+r 4010=00000020000000200000002000000020
+r 4020=00000020000000200000002000000020
+r 4030=00000020000000200000002000000020
+r 4040=000040C0000000200000002000000020
+r 4050=00000020000000200000002000000020
+r 4060=00000020000000200000002000000020
+r 4070=00000020000000200000002000000020
+r 4080=00000000000010000000200000003000
+r 4090=00004000000050000000600000007000
+r 40A0=00008000000090000000A0000000B000
+r 40B0=0000C0000000D0000000E0000000F000
+r 40C0=00000400000004000000040000000400
+r 40D0=00000400011000000130000000000400
+r 40E0=00000400000004000000040000000400
+r 40F0=00000400000004000000040000000400
+
+t-
+restart

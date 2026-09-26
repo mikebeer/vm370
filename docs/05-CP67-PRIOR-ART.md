@@ -10,6 +10,14 @@ CP-67 ran **1 MB segments and shared storage at 4 KB granularity.** It is an
 existence proof, from IBM, on the same architecture family, that the two are
 separable.
 
+> **And it is no longer only historical.**
+> `../arch/31bit/tests/hardware/09-frame-sharing.rc` executes the mechanism on
+> ESA/390 and passes: two address spaces with their own page tables, one
+> sharing a frame at virtual `01005000` and differing at `01006000` — the same
+> virtual address in the same 1 MB segment. Broken deliberately in both
+> directions to confirm it discriminates. So §5's conclusion rests on
+> execution now, not on a 1973 manual.
+
 Sources: `GY20-0590-2`, *CP-67 Program Logic Manual*, May 1973 (300 pages, no
 text layer — OCR'd at 200 dpi, so quoted wording is transcribed and may carry
 scanning errors); `GH20-0857-1`, *CP-67/CMS Version 3.1 Installation Guide*,
