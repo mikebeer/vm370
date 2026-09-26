@@ -1,0 +1,43 @@
+XCMP     CSECT
+         BALR  R15,0
+         USING *,R15
+         L     R1,SSIDW
+         SSCH    ORB
+         XSSCH   ORB
+         MSCH    SCHIB
+         XMSCH   SCHIB
+         TSCH    IRB
+         XTSCH   IRB
+         STSCH    SCHIB
+         XSTSCH   SCHIB
+         CSCH
+         XCSCH
+         HSCH
+         XHSCH
+         RSCH
+         XRSCH
+         SAL
+         XSAL
+         TPI    PARM
+         XTPI   PARM
+         STCRW    PARM
+         XSTCRW   PARM
+         BSM   R1,0
+         XBSM  R1,0
+         BASSM R14,R15
+         XBASSM R14,R15
+         BR    R14
+         DS    0F
+SSIDW    DC    X'00010000'
+PARM     DS    F
+         DS    0F
+SCHIB    DS    XL52
+         DS    0F
+IRB      DS    XL64
+         DS    0F
+ORB      DS    XL32
+R0      EQU   0
+R1      EQU   1
+R14      EQU   14
+R15      EQU   15
+         END
