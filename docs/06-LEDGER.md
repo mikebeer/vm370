@@ -234,11 +234,16 @@ these need nobody else. Roughly in value order:
 
 The honest end of the ledger.
 
-1. **The macro undercount.** The statement parser cannot see
-   macro-generated instructions. `TRANS` was found by accident and hides 174
-   `LCTL`/`LRA` pairs; `CALL` hides 4,104 linkages. **There is no estimate of
-   what else is hidden**, and this is the largest unknown in the whole
-   inventory. 59 `.MACRO` and 56 `.COPY` members in CP, mostly unread.
+1. ~~**The macro undercount.**~~ **CLOSED** — see
+   `08-MACRO-UNDERCOUNT.md`. Of 59 CP macros only 10 emit anything
+   architecture-dependent, and weighted by invocation `TRANS` is the entire
+   undercount: 522 instructions (`LCTL` ×348, `LRA` ×174) plus one `CLRIO`.
+   `CALL`, `SWTCHVM`, `LOCK` and `GOTO` are all clean. But it turned up
+   something an instruction count could never find: **six
+   architecture-dependent constants in `PSA.MACRO`** — `XPAGNUM X'00FFF000'`
+   at 73 references, `CPCREG0 X'81800CC0'` (CP's own CR0) at 38,
+   `X2048BND X'00FFF800'` at 25, `XRIGHT24` at 23, `X40FFS X'40FFFFFF'` at
+   18 — 217 reference sites with one definition point each.
 2. **`DMKPGS` and `DMKBLD`** — 159 DAT-table references between them, and
    neither has been read. They are the top two consumers.
 3. **CMS's 139 `.MACRO`/`.COPY` members**, entirely unexamined. `TRANS`
