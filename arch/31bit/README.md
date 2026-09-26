@@ -150,12 +150,16 @@ Measured against the maintained CE source — 201 CP `.ASSEMBLE` members —
 with a statement parser that skips comments and takes the opcode from
 column 1 or after the label. Full detail in `../../docs/`.
 
-**The biggest item is a compatibility decision, not code volume.** CP runs
-64 KB segments of sixteen 4 KB pages; ESA/390 has only 1 MB segments. The
-consequence is shared segments: `DMKATS` and the named-saved-system
-machinery are built on 64 KB granularity, so the minimum shareable unit
-becomes 1 MB and every existing saved-system definition changes by 16×. No
-parameter or table row solves that.
+**The biggest item is a compatibility decision, not code volume — and it is
+one saved system.** CP runs 64 KB segments of sixteen 4 KB pages; ESA/390 has
+only 1 MB segments, shared or not as a whole. Measured against `DMKSNT`,
+nineteen 64 KB shared segments collapse into three 1 MB segments, and only
+two of the three cause trouble: `CMSVSAM` and `CMSAMS` need separating, and
+`CMSOLD` shares `X'10000'`–`X'20000'`, which forces the entire first megabyte
+common — where every saved system keeps its PSA and nucleus low core. The
+six-way collision at 15–16 MB turns out to be harmless, because CE already
+parked everything shared up there. `../../docs/04-SHARED-SEGMENTS.md` has the
+working; `tools/snt-collisions.py` recomputes it against any `DMKSNT`.
 
 **I/O is ten instruction sites, not 1,493 references.** Every S/370 I/O
 instruction in `DMKIOS` is a single instruction with the same `0(R1)`

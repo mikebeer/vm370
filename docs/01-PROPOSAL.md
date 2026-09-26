@@ -102,12 +102,38 @@ cross-check against 165 counted independently in an unrelated R6 extraction.
 FULL 16 ENTRY PAGE TABLE", and `DMKCPI`'s `CTLREGS` sets `PAGE4K` without
 `SEG1M`. **ESA/390 has only 1 MB segments.**
 
-**The consequence I most want your judgement on is shared segments.**
-`DMKATS` and the named-saved-system machinery are built on 64 KB
-granularity; ESA/390 makes the minimum shareable unit 1 MB. Every existing
-saved-system definition changes granularity by 16×, and anything sharing
-less than a megabyte must over-share or be redesigned. No table row or
-parameter solves that — it is a design decision about compatibility.
+**The consequence I most want your judgement on is shared segments** —
+and since first writing this I have measured it against `DMKSNT` rather
+than asserting it. **04-SHARED-SEGMENTS.md has the working; it is much
+narrower than I claimed here.** Nineteen 64 KB shared segments collapse into
+three 1 MB segments, and what matters is only whether any saved system's
+*private* pages land in a megabyte another one makes common:
+
+  - **Segment 15**, with six saved systems in it, is the false alarm — no
+    saved system has a private page between 15 and 16 MB, because you parked
+    everything up there "to maximize the VM size". Nothing to do.
+  - **Segment 14** needs `CMSVSAM` and `CMSAMS` separated; each has private
+    pages in the other's megabyte. A `DMKSNT` layout edit.
+  - **Segment 0 is the real one, and it is `CMSOLD` alone.** It shares
+    64 KB segment 1, `X'10000'`–`X'20000'`, which forces the whole first
+    megabyte common — and that is where `CMS`, `CMSTEST`, `CMS67` and
+    `CMSOLD` all keep their PSA and nucleus low core. Your own `@D03`
+    comment says the production nucleus was relocated high "to relieve the
+    storage contraint between X'10000' and X'20000'", so you have already
+    made this move once for the live system; `CMSOLD` is the frozen Sixpack
+    1.3 fallback left behind in it.
+
+**So the decision I am actually asking for is what happens to `CMSOLD`** —
+retire it under 31-bit CP, relocate its shared segment above 1 MB and break
+its "never updated" intent, or keep it 24-bit only and refuse to attach it.
+That is a question about what CE promises its users, which is yours and not
+mine. The rest is a layout edit.
+
+One caveat I cannot close from the source tree: this uses *saved* pages. A
+virtual machine defined larger than its saved system could hold private
+pages anywhere below its size, including inside segments 14 and 15, which
+would stop segment 15 being benign. That needs `USER DIRECT`, which is on a
+CMS disk rather than in Git — `UDIRECT.COPY` is the control block layout.
 
 **Storage key granularity goes from 2 KB to 4 KB.** CP tracks it
 explicitly: `SWPKEY1`/`SWPKEY2` are "VIRTUAL STORAGE KEY, 1ST/2ND 2048
@@ -314,9 +340,10 @@ everything in §6 and is better said now.
 
 Otherwise:
 
-**Comments on §3a** — the segment size change and shared segments. The item
-most likely to need a design decision, and the one I am least able to
-judge.
+**A decision on `CMSOLD`** — §3a, detail in 04-SHARED-SEGMENTS.md. This is
+now one narrow question rather than the broad design worry I first wrote, and
+it is the only item in the whole plan that needs a compatibility call rather
+than engineering.
 
 **Comments on §3b** — whether `ARCHTECT`'s fullword-entry rows are live or
 dead future-proofing.

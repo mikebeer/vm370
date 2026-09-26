@@ -55,6 +55,17 @@ Every claim about what the conversion changes is measured against it, and a
 31-bit CP that cannot still run an unmodified S/370-mode guest has failed —
 which is precisely what `arch/31bit`'s M3 tests.
 
+## Documents
+
+    docs/01-PROPOSAL.md         the plan, and what is being asked of whom
+    docs/02-CP-VERIFIED.md      two design hypotheses checked against CP source
+    docs/03-CP-INVENTORY.md     the architecture-dependency counts
+    docs/04-SHARED-SEGMENTS.md  what 1 MB segments do to CE's saved systems
+
+`04` is the one to read if you only read one: it takes the conversion's
+hardest item — segments going from 64 KB to 1 MB — and reduces it from a
+worry about every saved system to a decision about one of them.
+
 ## Why heritage
 
 Two reasons, one practical and one not.

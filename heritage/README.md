@@ -22,13 +22,20 @@ operating systems.
 
 **There is a technical reason too, and it is not sentimental.** The
 System/360 Model 67 was IBM's first machine with dynamic address translation,
-and it offered **both 24-bit and 32-bit virtual addressing**, selected by a
-mode bit. Which makes it the earliest case of exactly the problem
-`../arch/31bit/` is working on: a control program facing two addressing modes
-on one machine. Whether CP-67 itself ever exploited the 32-bit mode, or
-stayed at 24 bits like OS/360 did, is worth establishing from the source
-rather than assuming — and if it did, the way it handled the boundary is
-directly relevant prior art.
+it had genuine 32-bit addressing fifteen years before 370-XA, and it grouped
+4 KB pages into **1 MB segments** — which is ESA/390's geometry, not
+VM/370's. So the 64 KB segment that makes `../arch/31bit/`'s hardest problem
+is a VM/370-era choice rather than something inherited, and the machine
+CP-67 ran on was in that respect closer to where this project is going.
+
+CP-67's CMS also still ships with VM/370 CE, as the `CMS67` named saved
+system — and it is the only entry in CE's system name table that shares no
+segments, which makes it the one saved system the 1 MB change leaves alone.
+
+The frustrating part: the surviving recovery is CMS only. There is no CP-67
+*control program* source in it, and the control program is what would answer
+how 1 MB shared segments were handled. Detail in
+[`cp67/README.md`](cp67/README.md).
 
 ## Why keep CE snapshots
 
@@ -45,14 +52,15 @@ the measurements reproducible, tagged with the date and commit it came from.
 
 ## Status
 
-**Both directories are empty.** Neither body of source is in this repository
-yet, and neither should be added without settling provenance and licence
-first — see each directory's README.
+**No source files imported yet**, and neither body should be added without
+settling provenance and licence first — see each directory's README. The
+`cp67/` README is not a placeholder, though: it records what CE already
+carries of CP-67, and what the surviving recovery does and does not contain.
 
 ## Sources
 
-- [CP-67-CMS-Source](https://github.com/moshix/CP-67-CMS-Source) — a
-  preserved CP-67/CMS source tree
+- [CP-67-CMS-Source](https://github.com/moshix/CP-67-CMS-Source) — the
+  surviving recovery. CMS source, macros and listings; **no control program**
 - [Original source code for the IBM CP/67 CMS operating system from
   1973](https://retrocomputingforum.com/t/original-source-code-for-the-ibm-cp-67-cms-operating-system-from-1973/1500)
   — the retrocomputing thread on that recovery
