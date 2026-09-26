@@ -28,6 +28,7 @@ anywhere.
 | Can `MSCH`/`SSCH`/`TSCH` drive a real device with a format-1 CCW? | yes | 5 |
 | Does `ORB5_I` produce `SCSW1_Z` and a deferred condition code of 0? | yes | 6 |
 | Does an **I/O interruption** arrive and identify its subchannel? | yes | 7 |
+| Does `LRA` behave as `TRANS` assumes, in both addressing modes? | **no, in 24-bit** | 8 |
 
 Test 4b is the load-bearing one: a store at virtual `X'01005000'` — segment
 16, page 5 — in 31-bit mode with DAT on lands at real `X'01100000'`, and real
@@ -41,6 +42,21 @@ test 7's identical image with CR6 forced to zero: the console line still
 prints, the CCW runs, the device does its work — and the CPU sits in its
 enabled wait until the emulator is killed, with no PSW, no message and no
 code. The failure *looks like success*.
+
+### And one answer that was a negative
+
+**`LRA`'s operand address is truncated by the addressing mode.** In 24-bit
+mode, `LRA 2,0(0,6)` with R6 = `01005000` returns cc=0 and R2 = `00005000` —
+the effective address was masked to `005000` before translation, so the
+instruction answered correctly about segment 0 page 5 instead. In 31-bit mode
+the same instruction returns `01100000`. `LRA`'s *result* is not truncated;
+its *question* is.
+
+**Consequence: converting the `TRANS`-bearing modules to AMODE 31 is a
+prerequisite for paging above the line.** While CP runs AMODE 24 its 174
+`TRANS` sites cannot ask about an above-the-line virtual address at all, and
+the failure is silent — cc=0 with a plausible real address from the wrong
+page. This moved AMODE 31 conversion into M2.
 
 ### What that closes
 
@@ -178,10 +194,7 @@ z390's opcode table, which is not derived from Hercules. `RSCH` is `B238`; the
 The lab now includes a Hercules built from source in this environment, so
 these need nobody else. Roughly in value order:
 
-1. **`LRA` semantics.** PoO Appendix F lists "Changes to LOAD REAL ADDRESS",
-   and `TRANS` uses `LRA` 174 times. **Never tested, and easily testable.**
-   This is the largest untested dependency in the DAT path.
-2. **Frame-level sharing on ESA/390.** Two page tables pointing at one frame,
+1. **Frame-level sharing on ESA/390.** Two page tables pointing at one frame,
    with storage keys for write protection — turning `05`'s conclusion from
    documented precedent into a demonstrated result on the target
    architecture.

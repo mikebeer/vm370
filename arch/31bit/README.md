@@ -16,9 +16,9 @@ CMS, shared segments and service structure. This is a 31-bit VM/370 CE.
 
 ## What is proven
 
-Eight programs in `tests/hardware/`, each answering one question, each with
+Nine programs in `tests/hardware/`, each answering one question, each with
 its own pass code so that a stale program left in storage cannot masquerade
-as a pass. **All eight pass**, the seventh on two independently built
+as a pass. **All nine pass**, the seventh on two independently built
 emulators — a Windows 3.x build and a Hercules 3.13 built from source on
 Linux, which reached the pass by different paths (status on the first `TSCH`
 in one, after several polls in the other).
@@ -33,6 +33,7 @@ in one, after several polls in the other).
 | `05-channel-subsystem` | `006006` | Does MSCH/SSCH/TSCH drive a real device? |
 | `06-initial-status` | `006007` | Does `ORB5_I` give a zero condition code, so `SIO`'s synchronous contract has an equivalent? |
 | `07-io-interrupt` | `006008` | Does an **I/O interruption** arrive and identify its subchannel from lowcore — the way `DMKIOS`/`DMKIOT` actually work? |
+| `08-lra` | `006009` | Does `LRA` behave as `TRANS` assumes, in both addressing modes? |
 
 Test 4b stores at virtual `X'01005000'` — segment 16, page 5 — in 31-bit
 mode with DAT on. The byte arrives at real `X'01100000'`, and real `X'5000'`,
@@ -191,13 +192,52 @@ future-proofing is an open question.
 24-bit format "is carried into the 370-XA mode", selected by one ORB bit,
 and MVS/XA itself never converted.
 
+## AMODE 31 is a prerequisite, not a later step
+
+`08-lra.rc` was written to close the largest untested dependency in the DAT
+path: `TRANS` is invoked 174 times and every one goes through `LRA`, and
+Appendix F of the Principles of Operation lists "Changes to LOAD REAL
+ADDRESS" without saying what they are.
+
+The worry was `LRA`'s **result** — if it truncated to 24 bits in 24-bit mode,
+`TRANS` could never return an above-the-line real address. The result is fine:
+`control.c` caps at 2 GB, not 16 MB, and the addressing mode does not enter
+into it.
+
+**The operand address is truncated instead, and that is worse:**
+
+    24-bit mode:  LRA 2,0(0,6)   R6 = 01005000  ->  cc 0, R2 = 00005000
+    31-bit mode:  LRA 2,0(0,6)   R6 = 01005000  ->  cc 0, R2 = 01100000
+
+In 24-bit mode the effective address is masked to `005000` **before**
+translation. `LRA` is asked about segment 0 page 5, which is validly mapped,
+and answers correctly about the wrong address — condition code 0, a
+plausible-looking real address, and the wrong page.
+
+**So while CP runs AMODE 24, its 174 `TRANS` sites cannot ask about an
+above-the-line virtual address at all.** The question is truncated before it
+is put, silently. Converting the modules containing `TRANS` to AMODE 31 is
+therefore a **prerequisite** for paging above the line, not an independent
+choice that can be deferred — which is why it now appears in M2 below rather
+than being left implicit.
+
+The other four cases confirm the condition-code contract `TRANS` depends on:
+cc=1 for an invalid segment-table entry, cc=2 for an invalid page-table entry,
+cc=3 beyond the segment-table length.
+
+**A note on test design, because this nearly slipped through.** A version of
+case A that checked only cc=0 would have *passed* — cc=0 is exactly what a
+truncated-but-valid translation returns. Comparing the returned real address
+against the expected one is what caught it. The same trap applies to anything
+else in this series that checks a condition code without checking the answer.
+
 ## Milestones
 
 | | | Status |
 |---|---|---|
 | **M0** | Assembler macros for the instructions CE does not know | **done** — every encoding executed or independently sourced; one listing check left |
 | **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | not started — **the critical path** |
-| **M2** | DAT on with ESA/390 tables. No guests, **and no shared segments** | not started, **unblocked** |
+| **M2** | DAT on with ESA/390 tables, **`TRANS`-bearing modules converted to AMODE 31**. No guests, no shared segments | not started, **unblocked** |
 | **M3** | One S/370-mode guest logs on and runs CMS — includes frame-level shared segments in `DMKATS` | not started |
 | **M4** | Two guests, isolated | not started |
 
@@ -207,6 +247,10 @@ dependency. `../../docs/05-CP67-PRIOR-ART.md` removes it: sharing frames
 rather than page tables keeps 4 KB granularity, so no saved-system layout
 changes and nobody has to rule on `CMSOLD`. The critical path is now
 M0 → M1 → M2 → M3, entirely self-directed.
+
+**AMODE 31 conversion moved INTO M2**, per the `LRA` finding above: without
+it, `TRANS` cannot see an above-the-line virtual address, so M2's tables would
+be correct and unusable.
 
 **Shared segments moved from M2 to M3, which is where they are actually
 needed.** CP does not need shared segments to run with DAT on; CMS needs them
