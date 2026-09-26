@@ -198,10 +198,9 @@ these need nobody else. Roughly in value order:
    with storage keys for write protection — turning `05`'s conclusion from
    documented precedent into a demonstrated result on the target
    architecture.
-3. **A DASD read.** The real `DMKIOS` case: a CCW chain, a real device, status
-   that matters. Needs an empty scratch volume, which `dasdinit` can create
-   here — so the old "never against a CE pack" conflict is resolved rather
-   than merely avoided.
+3. ~~**A DASD read.**~~ **DONE** — `10-dasd-read.rc`, passing `00600B`
+   against a scratch 3350 made with `dasdinit`. First test to exercise
+   command chaining, status modifier and TIC.
 4. **The STE flag-collision invariant.** Build a segment table entry with
    `SEGMIG`/`SEGENQ` set and the pointer zero; confirm the hardware ignores
    them.

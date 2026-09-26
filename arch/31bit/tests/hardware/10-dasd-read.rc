@@ -1,0 +1,164 @@
+* A DASD read -- the first test that does what DMKIOS actually does.
+*
+* Tests 5, 6 and 7 drove a 3215 console with ONE CCW.  That proved the
+* channel-subsystem plumbing and almost nothing about channel programs.
+* DMKIOS drives DASD, and a DASD read is a CHAIN: command chaining, a
+* transfer-in-channel that loops, and a device returning status you must care
+* about.  This is the shape of the thing CP's I/O supervisor exists to issue.
+*
+*     SEEK              07  CC    6 bytes BBCCHH
+*     SEARCH ID EQUAL   31  CC    5 bytes CCHHR
+*     TIC               08        back to the SEARCH
+*     READ DATA         06  SLI  80 bytes
+*
+* THE SEARCH/TIC IDIOM IS WORTH UNDERSTANDING, NOT COPYING.  When the search
+* matches, the device returns STATUS MODIFIER, which makes the channel SKIP
+* the next CCW -- the TIC -- and fall through to the READ.  When it does not
+* match, control reaches the TIC, which branches back to the search to try
+* the next record on the track.  The loop is built out of a conditional skip,
+* and the channel program is genuinely a program.  Tests 5-7 exercised none
+* of command chaining, status modifier or TIC.
+*
+* IT NEEDS A SECOND DEVICE, SO IT NEEDS A SECOND CONFIG.  Copy herc.conf and
+* append, keeping the console FIRST so it stays subchannel 0000:
+*
+*     0190   3350   scratch.cckd
+*
+* THE TARGET IS A SCRATCH VOLUME, DELIBERATELY.  A bare-metal test builds its
+* own channel programs with no operating system to stop it addressing the
+* wrong subchannel.  During development of test 5 a write command reached
+* subchannel 0000 while a writable CE pack was attached, and only a command
+* reject prevented damage.  So make your own volume and attach nothing else:
+*
+*     dasdinit -z scratch.cckd 3350 SCRTCH 10
+*
+* Ten cylinders, about 3 KB compressed, containing nothing but the standard
+* labels.  NEVER point this at a CE pack.
+*
+* WHAT IT READS.  dasdinit writes a standard VOL1 label at cylinder 0, head
+* 0, record 3 -- verified with cckddiag before a line of the test was
+* written:
+*
+*     Track 0 COUNT CC=0 HH=0 R=3 KL=4 DL=80
+*     R3 KEY  (4)  E5D6D3F1                       VOL1
+*     R3 DATA (80) E5D6D3F1 E2C3D9E3 C3C84000...  VOL1SCRTCH
+*
+* So it asserts the data begins 'VOL1' AND that the serial is 'SCRTCH'.  The
+* second matters: it proves the read reached THIS volume rather than matching
+* four plausible bytes by luck.
+*
+* NEGATIVE CONTROLS -- BOTH RUN, AND THE SECOND TAUGHT SOMETHING
+* --------------------------------------------------------------
+*   r 21D6=0000000009   search for record 9, which does not exist
+*                       -> 001106.  The device returns a unit check, so the
+*                          search really is searching.
+*   r 21D6=0000000001   search for record 1, which is IPL1 rather than VOL1
+*                       -> 001109, the RESIDUAL COUNT, not the data check.
+*
+* The second was expected to fail on 'VOL1' and did not, for a good reason:
+* record 1 is 24 bytes, so reading 80 transfers 24 and leaves a residual of
+* 56.  SLI suppresses the incorrect-length INDICATION but not the count.  The
+* residual assertion fired first and caught a real difference -- which is
+* why it is in the test rather than being ceremony.
+*
+* HOW TO READ THE RESULT
+*   00600B   pass.  Chain executed, CE|DE, zero residual, VOL1SCRTCH read.
+*   001101   STSCH cc/=0 -- almost always the wrong subchannel number.  The
+*            console must be listed FIRST in the config or the DASD is not
+*            0001.  Check `devlist`.
+*   001102   MSCH cc/=0.        001103  SSCH cc/=0.      001104  TSCH cc=3.
+*   001105   poll exhausted -- a seek that never completed.
+*   001106   device status not CE|DE.  Read IRB+8.  A unit check means the
+*            chain reached the device and it objected; get the sense.
+*   001107   subchannel status set.  Read IRB+9: channel program check
+*            (X'20') usually means a bad CCW address or alignment.
+*   001108   residual count high byte set -- a very short transfer.
+*   001109   residual count low byte set -- see control 2 above.
+*   001111   data is not 'VOL1'.  Dump READBUF at 0021E5.
+*   001112   data is 'VOL1' but the serial is not SCRTCH -- wrong volume.
+*   000DED   program check -- read the old PSW at X'150'.
+*
+* KEY ADDRESSES
+*   chain   0021B0   SEEK, SEARCH, TIC, READ -- contiguous, doubleword aligned
+*   SRCHID  0021D6   CCHHR, 5 bytes -- poke this for the controls above
+*   READBUF 0021E5   80 bytes
+*   IRB     00216C   +8 devstat  +9 substat  +10 residual count
+*   SSIDW   002110   00010001 -- subchannel 0001
+*
+* Built by build/dasd1.py.
+*
+r 0=0008000000002000
+r 2000=05F041F0F000D207
+r 2008=0068F1065810F10E
+r 2010=B234F1364770F07A
+r 2018=9680F13BB232F136
+r 2020=4770F07EB233F116
+r 2028=4770F0825820F112
+r 2030=B235F16A4780F042
+r 2038=4730F0864620F02E
+r 2040=47F0F08A950CF172
+r 2048=4770F08E9500F173
+r 2050=4770F0929500F174
+r 2058=4770F0969500F175
+r 2060=4770F09AD503F1E3
+r 2068=F1D94770F09ED505
+r 2070=F1E7F1DD4770F0A2
+r 2078=8200F0A68200F0AE
+r 2080=8200F0B68200F0BE
+r 2088=8200F0C68200F0CE
+r 2090=8200F0D68200F0DE
+r 2098=8200F0E68200F0EE
+r 20A0=8200F0F68200F0FE
+r 20A8=000A00000000600B
+r 20B0=000A000000001101
+r 20B8=000A000000001102
+r 20C0=000A000000001103
+r 20C8=000A000000001104
+r 20D0=000A000000001105
+r 20D8=000A000000001106
+r 20E0=000A000000001107
+r 20E8=000A000000001108
+r 20F0=000A000000001109
+r 20F8=000A000000001111
+r 2100=000A000000001112
+r 2108=000A000000000DED
+r 2110=0001000100061A80
+r 2118=0000000000808000
+r 2120=000021B000000000
+r 2128=0000000000000000
+r 2130=0000000000000000
+r 2138=0000000000000000
+r 2140=0000000000000000
+r 2148=0000000000000000
+r 2150=0000000000000000
+r 2158=0000000000000000
+r 2160=0000000000000000
+r 2168=0000000000000000
+r 2170=0000000000000000
+r 2178=0000000000000000
+r 2180=0000000000000000
+r 2188=0000000000000000
+r 2190=0000000000000000
+r 2198=0000000000000000
+r 21A0=0000000000000000
+r 21A8=0000000000000000
+r 21B0=07400006000021D0
+r 21B8=31400005000021D6
+r 21C0=08000000000021B8
+r 21C8=06200050000021E5
+r 21D0=0000000000000000
+r 21D8=000003E5D6D3F1E2
+r 21E0=C3D9E3C3C8000000
+r 21E8=0000000000000000
+r 21F0=0000000000000000
+r 21F8=0000000000000000
+r 2200=0000000000000000
+r 2208=0000000000000000
+r 2210=0000000000000000
+r 2218=0000000000000000
+r 2220=0000000000000000
+r 2228=0000000000000000
+r 2230=0000000000000000
+
+t-
+restart

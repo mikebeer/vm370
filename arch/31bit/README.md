@@ -16,9 +16,9 @@ CMS, shared segments and service structure. This is a 31-bit VM/370 CE.
 
 ## What is proven
 
-Ten programs in `tests/hardware/`, each answering one question, each with
+Eleven programs in `tests/hardware/`, each answering one question, each with
 its own pass code so that a stale program left in storage cannot masquerade
-as a pass. **All ten pass**, the seventh on two independently built
+as a pass. **All eleven pass**, the seventh on two independently built
 emulators — a Windows 3.x build and a Hercules 3.13 built from source on
 Linux, which reached the pass by different paths (status on the first `TSCH`
 in one, after several polls in the other).
@@ -35,6 +35,7 @@ in one, after several polls in the other).
 | `07-io-interrupt` | `006008` | Does an **I/O interruption** arrive and identify its subchannel from lowcore — the way `DMKIOS`/`DMKIOT` actually work? |
 | `08-lra` | `006009` | Does `LRA` behave as `TRANS` assumes, in both addressing modes? |
 | `09-frame-sharing` | `00600A` | Can 4 KB sharing **and** 4 KB isolation coexist inside one 1 MB segment? |
+| `10-dasd-read` | `00600B` | Does a real CKD chain work — SEEK, SEARCH, TIC, READ — the way `DMKIOS` issues them? |
 
 Test 4b stores at virtual `X'01005000'` — segment 16, page 5 — in 31-bit
 mode with DAT on. The byte arrives at real `X'01100000'`, and real `X'5000'`,
@@ -68,7 +69,11 @@ whatever is already in storage, which will look exactly like the new test
 passing. That cost a full cycle during development, and it is why every test
 has a distinct pass code.
 
-`herc.conf` deliberately attaches **one device and no DASD**. A bare-metal
+Test 10 needs a second config — copy `herc.conf`, append
+`0190 3350 scratch.cckd`, keeping the console first so it stays subchannel
+0000, and create the volume with
+`dasdinit -z scratch.cckd 3350 SCRTCH 10`. Otherwise `herc.conf` deliberately
+attaches **one device and no DASD**. A bare-metal
 test builds its own channel programs and has no operating system to stop it
 addressing the wrong subchannel; during development a write command reached
 subchannel `0000` while a writable CE pack was attached, and only the device
