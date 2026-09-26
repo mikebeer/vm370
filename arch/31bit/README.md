@@ -16,9 +16,11 @@ CMS, shared segments and service structure. This is a 31-bit VM/370 CE.
 
 ## What is proven
 
-Six programs in `tests/hardware/`, each answering one question, each with
+Seven programs in `tests/hardware/`, each answering one question, each with
 its own pass code so that a stale program left in storage cannot masquerade
-as a pass.
+as a pass. **The first six pass; the seventh is written and has not been
+run** — it is the one aimed at the top remaining risk, and its failure code
+`000C11` would be informative rather than fatal (see below).
 
 | Test | Pass | Question |
 |---|---|---|
@@ -28,6 +30,7 @@ as a pass.
 | `04a-virtual-above-line` | `006004` | Does an above-the-line **virtual** address translate? |
 | `04b-real-above-line` | `006005` | …to an above-the-line **real** frame? |
 | `05-channel-subsystem` | `006006` | Does MSCH/SSCH/TSCH drive a real device? |
+| `06-initial-status` | `006007` | **Not yet run.** Does `ORB5_I` give a zero condition code, so `SIO`'s synchronous contract has an equivalent? |
 
 Test 4b stores at virtual `X'01005000'` — segment 16, page 5 — in 31-bit
 mode with DAT on. The byte arrives at real `X'01100000'`, and real `X'5000'`,
@@ -216,10 +219,10 @@ the ranking is now:
 
 1. **The `SIO` condition-code contract.** `SIO` sets cc=1 with a CSW stored
    *synchronously*; `SSCH` only queues. About a dozen `BC 4,…  BRANCH IF CSW
-   STORED` branches depend on the difference, and **Hercules cannot prototype
-   the fix** — it ignores `ORB5_I`, the initial-status-interruption bit IBM
-   added for exactly this problem. Nothing here can be validated by
-   experiment before M1, which makes it the top risk by default.
+   STORED` branches depend on the difference. **Correction: this is testable,
+   and an earlier claim here that Hercules cannot prototype it was wrong** —
+   see below. Still the top risk on merit, because it is semantic rather than
+   a field mapping, but it is no longer untestable.
 2. **Storage keys, 2 KB → 4 KB.** Reaches `DMKPRV`, because a guest reading
    its own keys through `ISK` expects 2 KB semantics. Not just paging code.
 3. **Channel logout.** `TM CSW,X'04'` and friends, replaced by the ESW/ERW in
@@ -229,6 +232,54 @@ the ranking is now:
 
 `DMKATS` frame sharing is new work but not a new risk — it is bounded, and
 IBM did it first.
+
+### The `SIO` gap is prototypable, and test 6 should prove it
+
+I previously wrote that Hercules ignores `ORB5_I`, the
+initial-status-interruption bit, and that the `SIO` condition-code problem
+therefore could not be tested before M1. **That was wrong.** Hercules's own
+release notes put "I/O initial status interruption" in **version 1.39, 24
+November 1999**, so every build since — 3.07 included — should have it.
+
+Hyperion 4.x implements it fully, with Principles of Operation citations:
+
+    /* Process Initial-Status-Interruption Request           */
+    /* SA22-7201-05:  p. 16-11, Zero Condition Code          */
+    if (dev->scsw.flag1 & SCSW1_I)
+    {
+        STORE_FW(dev->scsw.ccwaddr,ccwaddr);
+        dev->scsw.flag1 |= SCSW1_Z;              /* zero condition code */
+        dev->scsw.flag3 |= (SCSW3_SC_INTER | SCSW3_SC_PEND);
+    }
+
+`SCSW1_Z`, the zero-condition-code flag, is precisely the substitute for
+`SIO`'s synchronous condition code — and `channel.c`'s `AIPSX()` builds the
+whole deferred-condition-code table, "Figure 16-5, the Deferred-Condition-Code
+Meaning for Status-Pending Subchannel". That is the mechanism the conversion
+needs, implemented and cited.
+
+**`06-initial-status.rc` is that test, and it is written but not run.** It
+sets `ORB5_I` in ORB flag5 (`X'A0'` — format-1 plus initial status), then
+asserts three things about the first status to arrive: `SCSW1_Z` set,
+intermediate status set, and the deferred condition code in SCSW byte 0
+equal to zero. Then it confirms the write still completed `CE|DE`.
+
+Run it on 3.07 first. Two outcomes, both useful:
+
+- **`006007`** — the facility works on the build the lab already has, and the
+  top risk becomes a known quantity before any CP code is written.
+- **`000C11`** — status arrived but `SCSW1_Z` was clear, so this build does
+  not implement it. Not a problem with the approach, since 4.x demonstrably
+  does; it means the lab must move to 4.9.1 before the I/O conversion is
+  developed against it. Adrian is already there. Cheap to learn from a
+  fifteen-minute test rather than from M1.
+
+It polls `TSCH` rather than taking an I/O interruption, so it proves the
+status mechanism and not interruption delivery. Status pending is a
+subchannel condition that `TSCH` clears whether or not interrupts are
+enabled, so the SCSW contents are the same either way — but a test with a
+real I/O new PSW and handler proves more, and belongs before CP relies on
+the interrupt path.
 
 ## What this stage does *not* do
 

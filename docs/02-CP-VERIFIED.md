@@ -169,8 +169,11 @@ plus the interrupt entry**, not 1,917 references.
 
 The first three are the **`SIO` condition-code contract**: `SIO` sets cc=1
 with a CSW stored *synchronously*, and `SSCH` only queues the request. This
-is the gap IBM added the initial-status-interruption facility for, and the
-one Hercules cannot prototype because it ignores `ORB5_I`. There are
+is the gap IBM added the initial-status-interruption facility for. (An earlier
+version of this document said Hercules cannot prototype it because it ignores
+`ORB5_I`. **That was wrong** — the facility has been in Hercules since version
+1.39, November 1999, and Hyperion 4.x implements the deferred-condition-code
+table with it. See `../arch/31bit/README.md`.) There are
 roughly a dozen such condition-code branches, one cluster after each I/O
 instruction.
 
@@ -233,7 +236,8 @@ After reading it:
 
 **What got harder, or at least clearer:** the 64 KB → 1 MB segment change
 and shared segments; the `SIO` condition-code semantics, which no field
-mapping fixes and which Hercules cannot prototype; and channel logout.
+mapping fixes, though it is testable under Hercules after all; and channel
+logout.
 
 Three of those four are design decisions rather than code volume. That is a
 better problem to have, but it means the next useful step is Adrian's

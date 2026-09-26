@@ -246,9 +246,14 @@ branches. The fourth is channel logout, replaced by the ESW/ERW and
 `STCRW`. Everything else decodes the status *bytes*, which are bit-for-bit
 identical between CSW and SCSW.
 
-**One thing Hercules cannot prototype.** It ignores `ORB5_I`, the
-initial-status-interruption bit — the facility IBM added for exactly the
-`SIO` condition-code problem. Gum, *IBM J. Res. Develop.* 27(6), free at
+**And it is prototypable after all — I had this wrong.** I told you Hercules
+ignores `ORB5_I`, the initial-status-interruption bit. It does not. Hercules's
+release notes put "I/O initial status interruption" in version 1.39, 24
+November 1999, and Hyperion 4.x implements the whole thing with citations —
+`SCSW1_Z` for the zero condition code, and an `AIPSX()` routine building
+"Figure 16-5, the Deferred-Condition-Code Meaning for Status-Pending
+Subchannel". So the `SIO` gap can be tested standalone before any CP code is
+touched, which is now the highest-value test outstanding. Gum, *IBM J. Res. Develop.* 27(6), free at
 https://www.vm.ibm.com/history/50th/s370eavm.pdf : "To permit the condition
 code to be set correctly and in a timely fashion for a START I/O (SIO)
 instruction, an interruption can be requested from designated subchannels

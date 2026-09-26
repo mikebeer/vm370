@@ -1,0 +1,155 @@
+* Channel subsystem test 2 -- the initial-status-interruption facility.
+*
+* THE MOST IMPORTANT TEST IN THIS DIRECTORY, because it is the only one
+* aimed at a SEMANTIC gap rather than a field layout.
+*
+* THE PROBLEM IT SETTLES
+* ----------------------
+* S/370 SIO sets a condition code SYNCHRONOUSLY: cc=1 means "a CSW has
+* been stored, look at it now".  DMKIOS relies on that about a dozen
+* times --
+*
+*      988   BC    4,IOSCC1       BRANCH IF CSW STORED
+*     1017   BC    4,TIOCC1       CC = 1    CSW STORED
+*     1029   BC    4,HIOCC1       CC = 1 CSW STORED
+*
+* -- and SSCH gives none of it.  SSCH queues the request and returns.  No
+* field mapping fixes that; it is a different contract, and it is the top
+* technical risk in the whole conversion.
+*
+* IBM added a facility for exactly this: initial-status interruption,
+* requested by ORB5_I, flag5 bit X'20'.  With it set the subchannel
+* reports status as soon as the channel program starts and sets SCSW1_Z,
+* the ZERO CONDITION CODE flag -- the substitute for SIO's synchronous
+* cc.  The full mapping is the DEFERRED CONDITION CODE in SCSW byte 0
+* bits 6-7, which a program reads instead of the cc SIO would have set.
+*
+* AN EARLIER VERSION OF THE PROJECT DOCS SAID HERCULES CANNOT PROTOTYPE
+* THIS.  That was wrong, and this test proves the retraction.  Hercules's
+* release notes list "I/O initial status interruption" under version 1.39,
+* 24 November 1999.  Hyperion 4.x implements it with PoO citations, and
+* channel.c's AIPSX() builds all of "Figure 16-5, the Deferred-Condition-
+* Code Meaning for Status-Pending Subchannel".
+*
+* WHAT THE ANSWERS MEAN
+* ---------------------
+*   006007   pass.  SCSW1_Z set, intermediate status, deferred cc 0, and
+*            the write completed CE|DE.  CP's SIO contract has a working
+*            ESA/390 equivalent on the emulator this project runs on.
+*
+*   000C11   THE INTERESTING FAILURE.  Status arrived but SCSW1_Z was
+*            clear, so this build does not implement ISI.  Not a problem
+*            with the approach -- 4.x demonstrably has it -- but the lab
+*            must move to 4.9.1 before the I/O conversion is developed
+*            against it.  Adrian is already there.  Cheap to learn here
+*            rather than at M1.
+*   000C12   status arrived, Z set, but not flagged intermediate.
+*   000C13   deferred condition code was not 0.  Read IRB+0 by hand.
+*   000C05   no status at all within 200000 polls.
+*   000C03   SSCH itself rejected the ORB -- suspect flag5 X'A0'.
+*   000C14   primary status never arrived; the write did not finish.
+*   000C08   device status not CE|DE.       000C09  subchannel status set.
+*   000C01   STSCH cc/=0.   000C02  MSCH cc/=0.   000C04, 000C06  TSCH cc=3.
+*   000C07   second poll exhausted.
+*   000DED   program check -- read the old PSW at X'150' for the code.
+*
+* HOW TO RUN.  Exactly as the other tests: this file as hercules.rc in a
+* directory with herc.conf, and nothing else.  To run it after another
+* test, EXIT Hercules first, or stop / sysclear / script hercules.rc --
+* stop and restart alone re-run whatever is already in storage, which
+* looks exactly like a pass.
+*
+* WHAT IT DOES NOT PROVE.  It polls TSCH rather than taking an I/O
+* interruption, so it establishes the STATUS mechanism, not interruption
+* delivery.  Status pending is a subchannel condition and TSCH clears it
+* whether or not interrupts are enabled, so the SCSW contents are the
+* same either way -- but a test with a real I/O new PSW and handler
+* proves more, and should come before CP relies on the interrupt path.
+*
+* Built by build/ssch2.py.  Same device, same config and the same
+* MSCH-before-SSCH prerequisite as test 5 -- see that file for why.
+*
+* KEY BYTES
+*   ORB flag5 at 002155 = A0   F=format-1 | I=initial status
+*   IRB       at 0021A4
+*     IRB+0 bits X'03' deferred condition code   want 00
+*     IRB+1 bit  X'04' SCSW1_Z                   want set
+*     IRB+3 bit  X'08' intermediate status       want set
+*     IRB+3 bit  X'04' primary status
+*     IRB+8/+9         device / subchannel status want 0C / 00
+*
+r 0=0008000000002000
+r 2000=05F041F0F000D207
+r 2008=0068F13E5810F146
+r 2010=B234F16E4770F096
+r 2018=9680F173B232F16E
+r 2020=4770F09AB233F14E
+r 2028=4770F09E5820F14A
+r 2030=B235F1A24780F042
+r 2038=4730F0A24620F02E
+r 2040=47F0F0A69104F1A3
+r 2048=4780F0AA9108F1A5
+r 2050=4780F0AE9103F1A2
+r 2058=4770F0B29104F1A5
+r 2060=4710F0825820F14A
+r 2068=B235F1A24780F07A
+r 2070=4730F0B64620F066
+r 2078=47F0F0BA9104F1A5
+r 2080=4780F0BE950CF1AA
+r 2088=4770F0C29500F1AB
+r 2090=4770F0C68200F0CE
+r 2098=8200F0D68200F0DE
+r 20A0=8200F0E68200F0EE
+r 20A8=8200F0F68200F0FE
+r 20B0=8200F1068200F10E
+r 20B8=8200F1168200F11E
+r 20C0=8200F1268200F12E
+r 20C8=8200F13600000000
+r 20D0=000A000000006007
+r 20D8=000A000000000C01
+r 20E0=000A000000000C02
+r 20E8=000A000000000C03
+r 20F0=000A000000000C04
+r 20F8=000A000000000C05
+r 2100=000A000000000C11
+r 2108=000A000000000C12
+r 2110=000A000000000C13
+r 2118=000A000000000C06
+r 2120=000A000000000C07
+r 2128=000A000000000C14
+r 2130=000A000000000C08
+r 2138=000A000000000C09
+r 2140=000A000000000DED
+r 2148=0001000000030D40
+r 2150=0000000000A08000
+r 2158=000021E800000000
+r 2160=0000000000000000
+r 2168=0000000000000000
+r 2170=0000000000000000
+r 2178=0000000000000000
+r 2180=0000000000000000
+r 2188=0000000000000000
+r 2190=0000000000000000
+r 2198=0000000000000000
+r 21A0=0000000000000000
+r 21A8=0000000000000000
+r 21B0=0000000000000000
+r 21B8=0000000000000000
+r 21C0=0000000000000000
+r 21C8=0000000000000000
+r 21D0=0000000000000000
+r 21D8=0000000000000000
+r 21E0=0000000000000000
+r 21E8=09200047000021F0
+r 21F0=C9E2C940D6D24060
+r 21F8=6040E2C3E2E6F16D
+r 2200=E940E2C5E36B40C4
+r 2208=C5C6C5D9D9C5C440
+r 2210=C3C340F07A40E2C9
+r 2218=D640C3D6D5E3D9C1
+r 2220=C3E340C8C1E240C1
+r 2228=D540E7C140C5D8E4
+r 2230=C9E5C1D3C5D5E300
+
+t+
+restart
