@@ -109,10 +109,89 @@ literals. Change `PSA.MACRO` and every reference inherits the fix.
 **With one caveat that should not be glossed over.** Widening a mask changes
 behaviour everywhere the old width was load-bearing rather than incidental. A
 site doing `N R1,XRIGHT24` to *clear flags* wants the narrow mask to keep
-working; a site doing it to *truncate an address* wants the wide one. The 217
-sites each need classifying into which they are, and that is real work — but
-it is enumerable work with a known population, which is what the inventory
-previously could not say about anything macro-related.
+working; a site doing it to *truncate an address* wants the wide one.
+
+## The classification, done
+
+27 September, with `../arch/31bit/tools/constclass.py`. Two signals used
+together: the instruction form, which is mechanical, and **the comment**, which
+is what actually distinguishes a count from an address — CP comments nearly
+every line, and no amount of instruction analysis would tell `GET THE TIMEOUT
+COUNT` from `ISOLATE ENDING PAGE NO.`
+
+| Class | Sites | Action |
+|---|---|---|
+| **A** | 38 | one definition change, every site follows |
+| **B** | 121 | widen the definition, every site follows |
+| **C-safe** | 34 | leave alone — a genuine 16-bit quantity |
+| **C-break** | 4 | 16 bits no longer holds it — per-site fix |
+| **D** | 20 | a flag in bits 0–7 — relocate it, a design decision |
+
+**24 of 217 need individual attention. Four definition changes carry the other
+193.**
+
+### A — `CPCREG0` is not a constant, and that collapses 38 sites to one
+
+The biggest-looking item turns out to be the smallest. `CPCREG0` is a **live
+CR0 save area in lowcore**, not a read-only value:
+
+    DMKCLK 318   STCTL C0,C0,CPCREG0  SAVE IN REAL 0 FOR CP
+    DMKCLK 193   STCTL C0,C0,CPCREG0  DITTO IN PSA
+    DMKCPU 273   LCTL  C0,C0,CPCREG0  LOAD ORIGINAL CONTROL REG 0
+
+`DC X'81800CC0'` is only its *initial* value; thereafter CP stores the live CR0
+into it and reloads it. So the 21 `LCTL` and 8 `STCTL` sites are save/restore
+pairs that keep working unchanged whatever CR0 contains. **The work is one
+initial value** — bits 8–12 to `10110` — not 38 sites.
+
+### B — three masks widen, and 121 sites follow
+
+    XPAGNUM   X'00FFF000' -> X'7FFFF000'   73 sites
+    X2048BND  X'00FFF800' -> X'7FFFF000'   25 sites   (and 2 KB -> 4 KB keys)
+    XRIGHT24  X'00FFFFFF' -> X'7FFFFFFF'   23 sites
+
+Every one is a storage-address extraction whose upper bits were zero only
+because addresses were 24-bit. `X2048BND` changes twice over: widened *and*
+re-granularised, since storage keys go from 2 KB to 4 KB.
+
+### C — `XRIGHT16` is mostly safe, and I would have cleared it wrongly
+
+I had assumed a 16-bit mask stays a 16-bit mask. 34 of 38 sites do —
+`ISOLATE BYTE COUNT`, `GET THE TIMEOUT COUNT`, `ISOLATE THE MSG NUMBER`,
+`MASK ALL BUT CCW COUNT FIELD`, `SAVE ERROR CODE ONLY`. Counts and codes are
+16 bits because of what they are, not because of the address width.
+
+**Three are not:**
+
+    DMKCDM  992   N  R4,XRIGHT16   TEST FOR SEG BOUND START
+    DMKCFG  726   N  R2,XRIGHT16   ISOLATE ENDING PAGE NO.
+    DMKCFG  732   N  R1,XRIGHT16   CLEAR OUT FIRST ADDRESS
+
+A segment boundary needs 20 bits with 1 MB segments; a page number needs 19
+with a 31-bit space. Both silently truncate at 16.
+
+**And one is a false positive worth recording**, because it shows the limit of
+the method: `DMKSSP 159  N ...,XRIGHT16  IS THERE A CONSOLE ADDRESS` is a
+**device** address, which is 16 bits and stays 16 bits. The word "address"
+cannot distinguish a storage address from a device address, so the tool
+over-reports and the four hits need reading rather than trusting.
+
+### D — 20 sites where a flag occupies an address bit
+
+`X40FFS X'40FFFFFF'` and `NOADD X'FF000000'` are not masks to widen. They are
+flags living in bits 0–7, which become address bits:
+
+    DMKCPB  723   N    R1,X40FFS            BLANK HIGH BYTE
+    DMKCDB 1437   ICM  R2,B'1000',X40FFS    FLAG TO FRET BUFFER, NOT RTN
+    DMKCPS  282   O    R1,NOADD             INDICATE THIS IS AN OFFLINE REQ.
+    DMKUDR  731   O    R9,NOADD             SET UP END OF LISTING
+
+The `ICM Rx,B'1000',X40FFS` form inserts only byte 0 — it **sets bit 1 as a
+flag**. Widening the mask would not help; the flag needs a new home. This is
+Adrian's `SAVE.COPY` finding in constant form, and unlike the 582 `ICM`/`STCM`
+sites it is 20 places with two definitions.
+
+**These 20 are the only genuine design work in the whole 217.**
 
 ---
 
