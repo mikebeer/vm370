@@ -94,3 +94,82 @@ Increment B's deck is half of M1 step 5 on its own: it is correct once something
 writes the parameter, and until then it reads a field nobody sets. That is
 acceptable while M1's test is that the nucleus assembles, but it must not be
 mistaken for a working interrupt path — the `DMKCPI` half is what makes it true.
+
+## Is the pointer design used anywhere, and what does it cost?
+
+### Prior art
+
+The interruption parameter exists for exactly this purpose. It is a
+caller-chosen token: `MSCH` stores it into the subchannel's PMCW, `SSCH`'s ORB
+sets it for the subchannel, and it is presented in the interruption code on every
+I/O interruption from that subchannel. Linux's common I/O layer documents the
+intent plainly — the parameter is "user specific interruption parameter; will be
+presented back to cdev's interrupt handler. **Allows a device driver to associate
+the interrupt with a particular I/O request**."
+
+z/VM does define its own ORB with an `ORBINTP` "INTERRUPT PARAMETER" field at
+offset 0, but IBM does not publish what CP stores there, so that is evidence the
+field is used, not evidence of the convention. The MVS/XA practice of setting it
+to the UCB address is widely described but **unverified here from a primary
+source** — treat it as likely rather than established.
+
+So: the design is idiomatic and the architecture was built for it. What follows
+is about whether it suits *this* code.
+
+### What was verified in CP
+
+| Check | Result |
+|---|---|
+| Does `IOBLOK` hold an RDEVBLOK pointer? | **No.** Only `IOBRADD DS 1H`, a 16-bit device address |
+| What follows the device-address load? | `CALL DMKSCNRU` — "FIND THE BLOCKS FOR A GIVEN REAL DEVICE ADDRESS" |
+| Can RDEVBLOK reach its parents? | Yes — `RDEVCUA`/`RDEVCUB` point to the RCUBLOK |
+| Does `CSCH`/`HSCH` disturb the parameter? | **No.** `intparm` appears once in Hercules's `io.c`, in `modify_subchannel` |
+| What clears it? | `device_reset` only, beside `PMCW5_E` |
+
+The saving is therefore real and immediate: one `DMKSCNRU` scan per interruption,
+replaced by a pointer already in hand.
+
+### The side effects
+
+1. **A stale parameter changes from harmless to fatal.** A stale device address
+   simply fails to match a queued IOBLOK. A stale *pointer* is dereferenced. Any
+   path that detaches, redefines or reallocates an RDEVBLOK must re-issue `MSCH`,
+   and missing one gives a wild store rather than a missed match.
+2. **Four of the fourteen sites need a new field.** `CLC IOBRADD(2),INTTIO`
+   compares two device addresses, and `IOBLOK` has no RDEVBLOK pointer to compare
+   instead — so either `IOBLOK` grows a field, or the match goes through
+   `RDEVAIOB`. Fourteen mechanical edits become fourteen semantic ones.
+3. **The two-interface ambiguity comes back.** `RDEVCUA` and `RDEVCUB` are
+   interface A and B; `DMKSCNRU` resolves which applies. Walking up from the
+   RDEVBLOK reintroduces a choice the scan made.
+4. **Validation eats part of the saving.** A corrupted parameter used as a
+   pointer has to be range-checked before it is trusted, which is code on the
+   fast path that the device-address form does not need.
+5. **Dumps get harder to read.** A device address in a dump is legible at a
+   glance; a control-block address has to be resolved. On a project that will be
+   reading a great many dumps, that is not a trivial cost.
+6. **No guest exposure**, which is worth stating because it looked like a risk.
+   CP builds a guest's interruption code itself from `VDEVADD+VCUADD+VCHADD`
+   (`DMKDSP`'s `STCM R0,7,G370TIO-PSA-1(R2)`), so a CP control-block address in
+   the real parameter is never reflected to a virtual machine.
+7. **The maintenance obligation is small**, because only `device_reset` clears
+   the parameter and it clears `PMCW5_E` with it. Any path that must re-enable a
+   subchannel must already re-`MSCH`, so re-establishing the parameter is free
+   there.
+
+### Recommendation: take the middle, not the better
+
+The parameter is 32 bits and a device address is 16, so both fit:
+
+    IOINTPRM   high halfword: RDEVBLOK **index**, or zero
+               low  halfword: real device address   <- what XA0012DK reads
+
+The low half keeps every current site a displacement change and every comparison
+intact. The high half can later carry an **index into the RDEVBLOK area rather
+than an address**, which is what removes the dangling-pointer failure mode
+entirely: an index is stable across reallocation, range-checkable in one compare,
+and cannot be dereferenced wild. That yields the scan saving without side effect
+1 or 4, and it can be added without revisiting any of the fourteen sites.
+
+The pure pointer form should stay unimplemented until there is a measured reason
+to want the last few instructions.
