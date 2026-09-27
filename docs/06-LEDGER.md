@@ -194,19 +194,22 @@ z390's opcode table, which is not derived from Hercules. `RSCH` is `B238`; the
 The lab now includes a Hercules built from source in this environment, so
 these need nobody else. Roughly in value order:
 
-1. **Frame-level sharing on ESA/390.** Two page tables pointing at one frame,
+1. ~~**Frame-level sharing on ESA/390.**~~ **DONE** — `09-frame-sharing.rc`,
+   and `11-storage-keys.rc` for the read-only half. Two page tables pointing at one frame,
    with storage keys for write protection — turning `05`'s conclusion from
    documented precedent into a demonstrated result on the target
    architecture.
 3. ~~**A DASD read.**~~ **DONE** — `10-dasd-read.rc`, passing `00600B`
    against a scratch 3350 made with `dasdinit`. First test to exercise
    command chaining, status modifier and TIC.
-4. **The STE flag-collision invariant.** Build a segment table entry with
-   `SEGMIG`/`SEGENQ` set and the pointer zero; confirm the hardware ignores
-   them.
+4. ~~**The STE flag-collision invariant.**~~ **DONE** — `12-ste-flags.rc`
+   measured both directions. The invariant holds while `SEGINV` is set, and
+   without it the hardware walks a page table in lowcore. Real and unenforced.
 5. **Multiple devices**: an interruption arriving while another is pending,
-   ISC with more than one class, `DMKIOT`'s queue walk. All need a larger
-   config than the deliberately minimal one.
+   ISC with more than one class, `DMKIOT`'s queue walk. Still open, and now the
+   only untested item on the I/O path. Needs a larger config and a second
+   busy device; lower value than the others were, since its likely finding is
+   that the channel subsystem queues correctly.
 6. **Storage key semantics** at 4 KB versus a guest's 2 KB expectations —
    `ISK`/`SSK` behaviour, standalone.
 
@@ -258,11 +261,27 @@ The honest end of the ledger.
    tracks sharing **per frame** via `CORFLAG,CORSHARE` (84 references) and
    counts resident shared pages, so the frame-sharing change needs no new
    bookkeeping — that substrate is already at the right granularity.
-3. **CMS's 139 `.MACRO`/`.COPY` members**, entirely unexamined. `TRANS`
-   showed what macros can hide.
-4. **`USER DIRECT`** is not in the source tree — `UDIRECT.COPY` is the control
-   block layout, not the directory — so virtual machine storage sizes are
-   unknown.
+3. ~~**CMS's 139 `.MACRO`/`.COPY` members**~~ **SURVEYED** — 137 `.MACRO`
+   plus 2 `.COPY`, run through `macroexp.py`. **They hide almost nothing:
+   4 architecture-sensitive instructions in total** (one `LPSW` in `DBGSECT`,
+   invoked 4 times) and **zero S/370 I/O**. The 271 hidden `DC`s are DSECT and
+   table generators — `FVS`, `BGCOM`, `DTFCP`.
+   **And CMS has no `PSA.MACRO`-equivalent hoard of 24-bit masks**: zero
+   24-bit-shaped constants in its macros, and only 7 inline hex literals of
+   that shape across all 175 modules, against CP's 217 named references. On
+   this axis CMS is far cleaner than CP, which is good news for stage 2.
+4. **`USER DIRECT`** — resolved as far as the tree allows. It is a **CMS
+   file**, compiled onto the directory cylinder by the `DIRECT` command;
+   `DMKUDR` then reads the compiled form, which its prologue describes as
+   "written using a pageable access method", and `UDIRECT.COPY` is that
+   structure's layout. **The `DIRECT` command itself is not in the recovered
+   CE CMS source**, so the file's record format is not documented anywhere in
+   the tree — it would have to come from a running system or the VM/370
+   manuals. DIRMAINT is the later z/VM licensed program for the same job and
+   does not exist for VM/370.
+   Virtual machine storage sizes therefore remain unknown — but that question
+   was only ever needed for the segment-level sharing analysis, which
+   `05-CP67-PRIOR-ART.md` superseded, so nothing depends on it now.
 5. **Whether CE's existing C components follow the 31-bit ABI** and its R13
    convention.
 
