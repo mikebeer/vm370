@@ -297,8 +297,8 @@ else in this series that checks a condition code without checking the answer.
 | | | Status |
 |---|---|---|
 | **M0** | Assembler macros for the instructions CE does not know | **done, verified on CE, and measured complete** — 24 members, severity 0, and a 351-mnemonic probe showing nothing needed is missing. `../../docs/14-M0-CLOSED.md` |
-| **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | not started — **the critical path** |
-| **M2** | DAT on with ESA/390 tables, **`TRANS`-bearing modules converted to AMODE 31**. No guests, no shared segments | not started, **unblocked** |
+| **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | **steps 1 and 3 done** — `XAOPS` accepted by CE's assembler, and all nine modules assemble clean unmodified. Step 2 (`PSA.MACRO`) is the first change. **The critical path** |
+| **M2** | DAT on with ESA/390 tables, **`TRANS`-bearing modules converted to AMODE 31**. No guests, no shared segments | not started, **unblocked**, and baselined — the DAT five assemble clean |
 | **M3** | One S/370-mode guest logs on and runs CMS — includes frame-level shared segments in `DMKATS` | not started |
 | **M4** | Two guests, isolated | not started |
 

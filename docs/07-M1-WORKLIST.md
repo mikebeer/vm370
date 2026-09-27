@@ -144,10 +144,21 @@ are the ones with nothing to map to, and all three are channel-logout or
 2. **`PSA.MACRO`**: add the ESA/390 names at `X'B8'`/`X'BC'`, keep `INTTIO`
    where it is, and mark `CHANID`/`IOELPNTR`/`ECSWLOG` as S/370-only so
    anything still referencing them fails loudly rather than reading garbage.
-3. **Assemble the nine modules unchanged** and collect the errors. That is the
-   real work list, and it is cheap to obtain — the counts above predict what
-   it should contain, so a large discrepancy means the parser missed something
-   and the macro undercount is worse than thought.
+
+   **As an `AUXLCL` update deck, not an edit to base source.** CE stacks three
+   update levels — `LCL` over `HRC` over `TEXT AUXR60` — and the local one is
+   empty and reserved for exactly this. `594/DMKLCL.CNTRL` already declares it,
+   and `EXEC VMFASM PSA DMKLCL` builds it. This keeps base source untouched,
+   makes the conversion a reviewable delta, and largely retires `R-04`. See
+   `15-UPDATE-LEVELS.md`. Note `R-22`: `UPSTREAM.md` records that `PSA`'s
+   sequence-number increment already needed special handling, so this member is
+   one of the anchor-fragile ones.
+3. ~~**Assemble the nine modules unchanged** and collect the errors.~~ **DONE,
+   27 September, and the error list is empty.** All nine assemble on CE with
+   `CPACC` then `VMFASM <module> DMKLCL`, every one reporting
+   `NO STATEMENTS FLAGGED IN THIS ASSEMBLY`. The DAT five are clean too, so M2
+   has a baseline as well. That is the best available outcome: every error from
+   here on is ours. See `16-NATIVE-BASELINE.md`.
 4. **`DMKIOS`**: the ten sites plus the CSW shim after `TSCH`. The pattern is
    already proven by tests 5, 6 and 7.
 5. **`DMKIOT`**: interrupt entry, `INTTIO` as a subchannel number, and

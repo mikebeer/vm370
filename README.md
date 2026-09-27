@@ -72,6 +72,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/13-ISSUES.md           known issues and defects, including retractions
     docs/14-M0-CLOSED.md        the assembly chapter, measured shut
     docs/15-UPDATE-LEVELS.md    CE's three update levels, and a retracted claim
+    docs/16-NATIVE-BASELINE.md  18 CP modules assemble clean on CE, unmodified
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was

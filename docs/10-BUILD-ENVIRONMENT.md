@@ -8,6 +8,15 @@ why.
 all.** The native CE build is needed to produce a bootable nucleus — not to
 develop the conversion.
 
+> **Correction, 27 September.** The two-thirds figure is a property of **z390**,
+> not of CP. All four failure classes below were tested on CE's own Assembler XF
+> by assembling a module carrying each trigger, and all four came back clean —
+> see [16-NATIVE-BASELINE.md](16-NATIVE-BASELINE.md). The 69 failures were never
+> a to-do list. z390 remains useful as a fast local syntax check and it settled
+> the `RSCH` opcode, but its errors must be read as dialect disagreement until
+> proven otherwise, and the authority on whether CP assembles is the assembler
+> that builds CP.
+
 ## The measurement
 
 [z390](https://github.com/z390development/z390) is a Java mainframe assembler.

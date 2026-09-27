@@ -233,7 +233,10 @@ these need nobody else. Roughly in value order:
 2. Is the `DMKATS` frame-sharing reading right?
 3. Has `VMCE-WIDE-PLAN.md` selected a direct 64-bit route that supersedes
    this?
-4. The asset handover — `RECOVERED-RECORDS`, `ASSET-ROOT`, pinned tools.
+4. ~~The asset handover — `RECOVERED-RECORDS`, `ASSET-ROOT`, pinned tools.~~
+   **CLOSED** — the OSMACRO/DOSMACRO libraries that the handover was mostly
+   about are already on CE's `CMSDSK 190`, and four modules depending on them
+   assemble clean. See `16-NATIVE-BASELINE.md`.
 5. Repository access to `mainframe-lab`.
 
 ## 6. Open, needs Mike's machines
@@ -298,6 +301,14 @@ The honest end of the ledger.
    `05-CP67-PRIOR-ART.md` superseded, so nothing depends on it now.
 5. **Whether CE's existing C components follow the 31-bit ABI** and its R13
    convention.
+
+## 7a. And the build question, answered by building
+
+**Eighteen CP modules assemble clean on CE's own Assembler XF, unmodified** —
+the M1 nine, the DAT five, and four OS/VS-macro users. Every one reports
+`NO STATEMENTS FLAGGED`. That makes M1 step 3 done with an empty error list, and
+it means all four of z390's failure classes were dialect artifacts rather than
+CP defects. `16-NATIVE-BASELINE.md`.
 
 ## 8. And the thing no amount of reading settles
 
