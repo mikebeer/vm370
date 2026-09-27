@@ -1006,10 +1006,27 @@ def dmkckp():
     # --- SAVEDEV widens, and the work area goes next to it so that whatever
     #     base register already reaches SAVEDEV reaches XAIOWORK too.
     one('01647000', Deck.comment(
-        "EIGHT BYTES NOW: SUBSYSTEM ID AND INTERRUPTION PARAMETER. THE XAIO "
-        "WORK AREA IS PLACED HERE RATHER THAN AT THE END OF THE MODULE SO "
-        "THAT WHATEVER BASE REGISTER ALREADY REACHES SAVEDEV REACHES IT.") + [
+        "EIGHT BYTES NOW: SUBSYSTEM ID AND INTERRUPTION PARAMETER. THIS SITS "
+        "INSIDE CLR1, WHICH 00541000 ZEROES WITH XC CLR1(CLR1SIZE), SO THE "
+        "REGION GROWS BY FOUR BYTES -- FROM ABOUT 136 TO 140, WELL INSIDE THE "
+        "XC LENGTH LIMIT OF 256.") + [
         "SAVEDEV  DS    2F             ERROR DEVICE: SSID AND PARM",
+    ])
+
+    # The work area goes AFTER CLR1SIZE, and that placement is the whole point.
+    # Putting XAIOWORK inside CLR1 was the first attempt and CE rejected it with
+    # IFO224 LENGTH ERROR: 250-odd bytes took CLR1SIZE past the 256-byte limit
+    # of the XC that clears it.  The length error was the lucky part -- the real
+    # hazard is that CLR1 is *zeroed at startup*, and XAIOWORK contains the
+    # executable lookup subroutine, so it would have been erased at runtime with
+    # no diagnostic at all.  Here it is outside CLR1 and ahead of ALLOCBUF, so
+    # outside the ACBUFF clear as well.  I-55.
+    d.insert('01674000', first='01674100', inc=100,
+             limit=nxt('01674000'),
+             lines=Deck.comment(
+        "OUTSIDE EVERY CLEARED REGION ON PURPOSE: CLR1 ENDS ON THE LINE ABOVE "
+        "AND ALLOCBUF BEGINS BELOW, AND BOTH ARE ZEROED AT RUNTIME. XAIOWORK "
+        "HOLDS EXECUTABLE CODE. I-55.") + [
         "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
     ])
     return d
