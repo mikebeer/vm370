@@ -46,6 +46,7 @@ HANDLED = {
     'DMKPRV': 'run19',
     'DMKIOG': 'run21',
     'DMKEIG': 'run22',
+    'DMKCCH': 'run25',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
@@ -64,6 +65,45 @@ NEEDS = {
     'DMKDMP': '3 INTTIO compared against device addresses -- M3a',
     'DMKVMI': '1 INTTIO compared against a device address -- M3a',
 }
+
+
+def rollup(docs):
+    """Risk and issue counts, read from the registers rather than restated.
+
+    A status snapshot in a document goes stale on the next deck; the registers
+    are the source of truth, so count them here and keep one command that
+    answers "where are we".
+    """
+    import collections
+
+    def tally(path, prefix):
+        rows = collections.Counter()
+        weights = []
+        for line in open(path):
+            if not line.startswith('| **%s-' % prefix):
+                continue
+            cells = [c.strip() for c in line.strip().strip('|').split('|')]
+            rows[cells[-1].strip('*')] += 1
+            if prefix == 'R':
+                for c in cells:
+                    if c.startswith('**') and c.strip('*').isdigit():
+                        weights.append((int(c.strip('*')), cells[0].strip('*')))
+        return rows, weights
+
+    for name, prefix, label in (('12-RISKS.md', 'R', 'RISKS'),
+                                ('13-ISSUES.md', 'I', 'ISSUES')):
+        path = os.path.join(docs, name)
+        if not os.path.exists(path):
+            continue
+        rows, weights = tally(path, prefix)
+        print()
+        print('%s  (%d)  %s' % (label, sum(rows.values()),
+                                '  '.join('%s %d' % (k, v)
+                                          for k, v in rows.most_common())))
+        if weights:
+            top = sorted(weights, reverse=True)[:5]
+            print('  heaviest: ' + '  '.join('%s w%d' % (i, w)
+                                             for w, i in top))
 
 
 def listed(path, pattern):
@@ -145,7 +185,8 @@ def main():
     print('%-46s %s' % ('broken by the PSA rename, awaiting work',
                         len([m for m in broken if m not in changed])))
     print('%-46s %s' % ('  of which guest-PSA swaps only (I-36)',
-                        len([m for m in broken if m in GUEST_PSA])))
+                        len([m for m in broken
+                             if m in GUEST_PSA and m not in HANDLED])))
     print('%-46s %s' % ('untouched by the PSA rename',
                         len([m for m in nucleus if m not in rows])))
     print()
@@ -154,6 +195,7 @@ def main():
     print('%-46s %s' % ('  nucleus channel-I/O sites (SIO/TIO/HIO/...)', 133))
     print('%-46s %s' % ('  nucleus storage-key sites (ISK/SSK/RRB)', 67))
     print('%-46s %s' % ('  nucleus modules affected', 28))
+    rollup(os.path.join(HERE, '..', '..', '..', 'docs'))
 
 
 if __name__ == '__main__':
