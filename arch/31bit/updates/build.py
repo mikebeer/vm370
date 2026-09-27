@@ -906,7 +906,7 @@ def main():
         # OP CODE for SSCH and TSCH, with every other new symbol resolved.
         for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
                           ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
-                          ('XAOPS', 'MACRO')):
+                          ('XAOPS', 'MACRO'), ('XAIO', 'MACRO')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
