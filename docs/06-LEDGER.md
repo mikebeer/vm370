@@ -254,8 +254,10 @@ The honest end of the ledger.
    across twelve modules encode the table geometry in bare literals; and
    `DMKPGS` turns out to be the *other half* of the shared-segment machinery
    (`DMKATS` attaches, `DMKPGS` releases), which widens `05`'s conclusion.
-   **`DMKPTR` is now the last unread module in the top five** — 54 DAT
-   references, 2,589 lines, and the busiest module in CP by `CORTABLE` use.
+   **`DMKPTR` has now been read too**, completing the top five: it already
+   tracks sharing **per frame** via `CORFLAG,CORSHARE` (84 references) and
+   counts resident shared pages, so the frame-sharing change needs no new
+   bookkeeping — that substrate is already at the right granularity.
 3. **CMS's 139 `.MACRO`/`.COPY` members**, entirely unexamined. `TRANS`
    showed what macros can hide.
 4. **`USER DIRECT`** is not in the source tree — `UDIRECT.COPY` is the control

@@ -139,6 +139,36 @@ was "492 references and three unread modules"; it is now a list with line
 numbers, and the largest single item — 492 field references — is the most
 mechanical.
 
-The remaining unread module in the top five is **`DMKPTR`** at 54 DAT
-references, 2,589 lines, and it is the busiest module in CP by `CORTABLE`
-references (101). It is next.
+## `DMKPTR`, and a piece of good news for frame sharing
+
+Read 27 September, completing the top five. `DMKPTR` manages "the inventory of
+real system pages" — the frame allocator, plus `DMKPTRAN`, the page-fault
+handler that `TRANS` calls when a page is not resident.
+
+**It already tracks sharing per frame.** 84 references, through a `CORTABLE`
+flag:
+
+     395   TM    CORFLAG,CORSHARE     SHARED PAGE
+     711   OI    CORFLAG,CORSHARE     FLAG CORTABLE ENTRY (SHARED)
+     902   NI    CORFLAG,255-CORSHARE CLEAR FLAGS
+    1091   TM    CORFLAG,255-CORSHARE-CORRSV  PICK ANY UNLOCKED
+    1457   TM    VMOSTAT-VMBLOK(R15),VMSHR    RUNNING SHARED SYSTEM
+
+plus an entry point `DMKPTRSC - NUMBER OF RESIDENT, SHARED PAGES`.
+
+`CORTABLE` is CP's real-page inventory, one entry per **frame**, and
+`CORSHARE` is a flag on the frame. So CP's bookkeeping for shared storage is
+**already frame-oriented**, not segment-oriented — the segment-level part is
+only how the page tables get pointed at it.
+
+That matters for `05-CP67-PRIOR-ART.md`'s conclusion. Moving to frame-level
+sharing needs `DMKATS` and `DMKPGS` changed and `DMKSNT`'s declaration format
+widened from segments to pages, but it does **not** need a new way to track
+which frames are shared, how many are resident, or whether they can be stolen.
+That substrate exists and is already at the right granularity.
+
+So the sharing path is three modules — `DMKATS` attaches, `DMKPGS` releases,
+`DMKPTR` owns the frames — and the third one needs the least work of the
+three.
+
+**All five top DAT consumers have now been read.**
