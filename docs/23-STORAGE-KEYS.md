@@ -49,6 +49,13 @@ work:
 So the family belongs *with* the real-storage work, not ahead of everything
 else.  The four `INTTIO` modules, which unblock M3a, come first.
 
+**This is sequencing, not scope.**  Real storage above 16 MB is a project goal
+(Mike, 27 September): the machine is meant to have much more virtual storage
+*and* more than 16 MB real, so this family is required work, third in order
+behind the `INTTIO` group and the bootstrap chain.  Nothing here is optional,
+and `R-25`'s "keep Hercules at 16 MB real" is a gate to be lifted once the
+conversion lands, not a decision to stay below the line.
+
 ## What a 31-bit guest actually needs: DMKPRV
 
 Guest storage keys are not held in hardware at all.  CP keeps them in the swap

@@ -1,0 +1,20 @@
+./ R 00278000          $ 00278100 100                                           
+         MVC   2(2,R14),IOINTPRM+2 INTERRUPTING DEVICE ADDR    XA0012DK         
+./ R 00288000          $ 00288100 100                                           
+         LH    R1,IOINTPRM+2  INTERRUPTING UNIT'S ADDRESS      XA0012DK         
+./ R 00304140          $ 00304145 005                                           
+         CLC   IOBRADD(2),IOINTPRM+2 IS THIS FOR US?           XA0012DK         
+./ R 00304420          $ 00304425 005                                           
+         CLC   IOBRADD(2),IOINTPRM+2 IS THIS ONE FOR US?       XA0012DK         
+./ R 00324000          $ 00324100 100                                           
+         LH    R3,IOINTPRM+2  ALSO THE DEVICE ADDRESS.         XA0012DK         
+./ R 00410100          $ 00410110 010                                           
+         CLC   IOINTPRM+2(2),IOBRADD                           XA0012DK         
+./ R 00513000          $ 00513100 100                                           
+         LH    R1,IOINTPRM+2  ADDR. OF INTERRUPTING UNIT       XA0012DK         
+./ R 00846000          $ 00846100 100                                           
+         LH    R4,IOINTPRM+2  SAVE INTERRUPT DEVICE ADDR.      XA0012DK         
+./ R 00864000          $ 00864100 100                                           
+         CLC   IOINTPRM+2(2),2(R14) IS IT PRIMARY CONSOLE?     XA0012DK         
+./ R 00873000          $ 00873100 100                                           
+         CLC   IOINTPRM+2(2),2(R14) ALTERNATE CONSOLE?         XA0012DK         

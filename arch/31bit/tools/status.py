@@ -47,6 +47,8 @@ HANDLED = {
     'DMKIOG': 'run21',
     'DMKEIG': 'run22',
     'DMKCCH': 'run25',
+    'DMKVMI': 'run26',
+    'DMKIOT': 'run26',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
@@ -56,14 +58,14 @@ BASELINE_WARN = {'DMKRIO': 'RDEVICE 3375/3390 UNSUPPORTED DEVICE TYPE, sev 4'}
 # What each broken module actually needs, from reading its sites.
 NEEDS = {
     'DMKIOT': 'convert: 10 INTTIO sites, interrupt entry -- M1 step 5',
+    'DMKCKP': '4 INTTIO plus 25 channel sites -- one pass, bootstrap',
+    'DMKDMP': '3 INTTIO plus 22 channel sites -- one pass, bootstrap',
     'DMKDSP': 'guest-PSA symbol swap (G370TIO), no semantic change',
     'DMKPRV': 'guest-PSA symbol swap (S370CHID), STIDC simulation',
     'DMKCCH': 'guest-PSA swap plus 13 channel-logout sites -- R-03',
     'DMKIOG': 'channel logout: CHANID x3, ECSWLOG x2, IOELPNTR x1 -- R-03',
     'DMKEIG': 'channel logout: IOELPNTR x2 -- R-03',
-    'DMKCKP': '4 INTTIO compared against device addresses -- M3a',
-    'DMKDMP': '3 INTTIO compared against device addresses -- M3a',
-    'DMKVMI': '1 INTTIO compared against a device address -- M3a',
+    'DMKVMI': 'IPL device address moves to SYSIPLDV -- I-47',
 }
 
 

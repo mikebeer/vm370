@@ -34,6 +34,8 @@ XA7 = 'XA0007DK'
 XA8 = 'XA0008DK'          # XA0005DK was never issued -- the gap is deliberate
 XA9 = 'XA0009DK'
 XA10 = 'XA0010DK'
+XA11 = 'XA0011DK'
+XA12 = 'XA0012DK'
 
 
 def psa():
@@ -546,6 +548,99 @@ def dmkcch():
     return d
 
 
+def dmkvmi():
+    """CP was passing the IPL device address through the architected slot.
+
+    The site is `STH R13,INTTIO  SET IPL DEVICE ADDRESS IN EXT MODE`, and its
+    BC-mode sibling one instruction earlier is `STH R13,IPLPSW+2`.  So this is
+    CP mimicking the hardware: in BC mode the I/O interruption code lives in
+    the PSW, in EC mode at X'BA', and DMKVMI writes the IPL device address into
+    whichever one the mode uses so that later code can find it where a real
+    I/O interruption would have left it.
+
+    Nothing about ESA/390 requires that, and CP already has the right field:
+    `SYSIPLDV DS 1H -  P*3  DEVICE ADDRESS OF SYSTEM IPL DEVICE`, in the PSA,
+    set by `DMKCPI` at its seq 00484000 and read by six other places including
+    `HDKCQA` and `DMKDMP`.  So this is not a translation at all -- it is a
+    redundant copy into hardware-defined storage, and the fix is to write the
+    field that means what the value is.  I-47.
+    """
+    d = Deck(XA11)
+    d.replace('00806000', first='00806100', inc=100, limit='00807000',
+              lines=Deck.comment(
+        "SYSIPLDV IS CP'S OWN FIELD FOR THIS AND ALWAYS WAS -- SEE DMKCPI "
+        "00484000. WRITING IT HERE REPLACES A COPY INTO THE ARCHITECTED I/O "
+        "INTERRUPTION CODE, WHICH ON ESA/390 IS THE SUBSYSTEM ID WORD AND MUST "
+        "NOT HOLD A DEVICE ADDRESS. NO SEMANTIC CHANGE. I-47.") + [
+        "         STH   R13,SYSIPLDV   SET IPL DEVICE ADDRESS",
+    ])
+    return d
+
+
+def dmkiot():
+    """M1 step 5: the I/O interrupt entry reads the interruption parameter.
+
+    All ten sites treat `INTTIO` as a 16-bit device address -- compared against
+    `IOBRADD` to match a queued IOBLOK, and against the primary and alternate
+    console addresses.  ESA/390 presents no device address at interrupt time:
+    the hardware stores the subsystem ID at X'B8' and the **interruption
+    parameter** at X'BC', and `TSCH` yields the IRB.
+
+    The interruption parameter is CP's to choose, which is the whole trick.
+    Hercules shows the flow plainly: `SSCH` copies the ORB's intparm into the
+    subchannel (`channel.c`, `memcpy(dev->pmcw.intparm, orb->intparm, ...)`),
+    `MSCH` sets it from the SCHIB (`io.c:284`), and every I/O interruption
+    presents it from there (`FETCH_FW(*ioparm, dev->pmcw.intparm)`).  It lives
+    in the subchannel, so it is delivered on unsolicited interruptions too, not
+    only on ones CP started.
+
+    So CP puts the real device address in the low half of each subchannel's
+    interruption parameter and reads it back at X'BC'+2.  Ten sites become a
+    displacement change, every existing device-address comparison keeps working,
+    and `DMKSCNRU` lookups are untouched.
+
+    This deck is therefore only half of step 5: it is correct once something
+    sets the parameter, and until then it reads a field nobody writes.  The
+    other half is DMKCPI's discovery loop -- `STSCH` each subchannel, then
+    `MSCH` to set `PMCW5_E` and the intparm together, filling `RDEVSSID` on the
+    way.  Enable and intparm go in one `MSCH` because a subchannel reset clears
+    both (`channel.c` zeroes intparm beside `PMCW5_E`), so they must always be
+    re-established together.
+
+    A better design exists and is deliberately not taken here: putting the
+    RDEVBLOK address in the parameter instead would hand the interrupt handler
+    its control block directly and remove a `DMKSCNRU` scan per interruption.
+    That changes control flow at each site; the device address is a drop-in.
+    Recorded so the cheaper structure is not mistaken for the best one.
+    """
+    d = Deck(XA12)
+    for seq, first, inc, limit, text in (
+        ('00278000', '00278100', 100, '00279000',
+         "         MVC   2(2,R14),IOINTPRM+2 INTERRUPTING DEVICE ADDR"),
+        ('00288000', '00288100', 100, '00289000',
+         "         LH    R1,IOINTPRM+2  INTERRUPTING UNIT'S ADDRESS"),
+        # Gap of twenty to the next surviving record, so number by five.
+        ('00304140', '00304145', 5, '00304160',
+         "         CLC   IOBRADD(2),IOINTPRM+2 IS THIS FOR US?"),
+        ('00304420', '00304425', 5, '00304440',
+         "         CLC   IOBRADD(2),IOINTPRM+2 IS THIS ONE FOR US?"),
+        ('00324000', '00324100', 100, '00325000',
+         "         LH    R3,IOINTPRM+2  ALSO THE DEVICE ADDRESS."),
+        ('00410100', '00410110', 10, '00410200',
+         "         CLC   IOINTPRM+2(2),IOBRADD"),
+        ('00513000', '00513100', 100, '00514000',
+         "         LH    R1,IOINTPRM+2  ADDR. OF INTERRUPTING UNIT"),
+        ('00846000', '00846100', 100, '00847000',
+         "         LH    R4,IOINTPRM+2  SAVE INTERRUPT DEVICE ADDR."),
+        ('00864000', '00864100', 100, '00865000',
+         "         CLC   IOINTPRM+2(2),2(R14) IS IT PRIMARY CONSOLE?"),
+        ('00873000', '00873100', 100, '00874000',
+         "         CLC   IOINTPRM+2(2),2(R14) ALTERNATE CONSOLE?"),
+    ):
+        d.replace(seq, first=first, inc=inc, limit=limit, lines=[text])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -586,6 +681,16 @@ def main():
     aux(os.path.join(HERE, 'DMKIOG.AUXLCL'),
         [(XA9, 'NO STIDC SURVEY, AND THE S/370 LOGOUT FIELDS RENAMED')])
 
+    vmi = dmkvmi()
+    vmi.write(os.path.join(HERE, 'DMKVMI.%s' % XA11))
+    aux(os.path.join(HERE, 'DMKVMI.AUXLCL'),
+        [(XA11, 'IPL DEVICE ADDRESS GOES IN SYSIPLDV, NOT LOWCORE')])
+
+    iot = dmkiot()
+    iot.write(os.path.join(HERE, 'DMKIOT.%s' % XA12))
+    aux(os.path.join(HERE, 'DMKIOT.AUXLCL'),
+        [(XA12, 'INTERRUPT ENTRY READS THE INTERRUPTION PARAMETER')])
+
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
@@ -611,7 +716,9 @@ def main():
                  'DMKPRV.%s' % XA7, 'DMKPRV.AUXLCL',
                  'DMKEIG.%s' % XA8, 'DMKEIG.AUXLCL',
                  'DMKIOG.%s' % XA9, 'DMKIOG.AUXLCL',
-                 'DMKCCH.%s' % XA10, 'DMKCCH.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKCCH.%s' % XA10, 'DMKCCH.AUXLCL',
+                 'DMKVMI.%s' % XA11, 'DMKVMI.AUXLCL',
+                 'DMKIOT.%s' % XA12, 'DMKIOT.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
