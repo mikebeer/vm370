@@ -40,6 +40,7 @@ XA10 = 'XA0010DK'
 XA11 = 'XA0011DK'
 XA12 = 'XA0012DK'
 XA13 = 'XA0013DK'
+XA14 = 'XA0014DK'
 
 
 def psa():
@@ -771,6 +772,66 @@ def dmkcpi():
     return d
 
 
+def dmksys():
+    """Run uniprocessor, so DMKCPI's CONCS loop never executes.
+
+    `CONCS` connects a channel set to a processor.  It is S/370-only, it is
+    hand-coded as `DC X'B2001000'` so no sweep of the opcode column sees it
+    (I-49), and `DMKCPI` executes it in a loop over sixty-four channel-set
+    addresses -- but only when `DMKSYSAP` says `Y`.  Which it does, because
+    `OPTIONS.COPY` sets `&AP SETB 1` via `HRC035DK` and DMKSYS's
+    `AIF (NOT &AP).E1` therefore assembles the `AP=YES` line.  I-50.
+
+    Forcing the flag is the cheapest of the three available levers, and it is
+    worth being explicit about why, because the three are often confused:
+
+      * `&AP` in `OPTIONS.COPY` is assembly-wide.  `CALL`, `LOCK`, `SIGNAL`,
+        `SWITCH`, `COUNT`, `CHARGE` and `PSA` all declare `GBLB &AP`, so
+        changing it re-expands macros in **every** module and invalidates every
+        TEXT deck built so far.  Not touched.
+      * The load list is chosen at `VMFLOAD` time with no re-assembly at all --
+        `CPLOAD` (173) or `APLOAD` (181, which adds DMKCPP and DMKMCT and four
+        more CONCS/DISCS sites).
+      * `DMKSYSAP` is `DC CL1'&AP1'` -- literally one character, 'Y' or 'N', in
+        one module.  This deck replaces the conditional pair with the AP=NO
+        line, so one re-assembly of DMKSYS settles it.
+
+    Eight modules read `DMKSYSAP` at runtime -- DMKATS, DMKCDB, DMKCDM, DMKCDS,
+    DMKCFG, DMKCPI, DMKCPU, DMKPGS -- so every AP-sensitive path already has a
+    uniprocessor branch.  `AP=NO` is a configuration IBM supported, not a
+    degradation we are inventing.
+
+    It also matches the machine: CE's Hercules configuration is `NUMCPU 1`, so
+    AP support cannot do anything useful today in any case.
+
+    **Reverting** costs one re-assembly of DMKSYS and a nucleus rebuild: drop
+    this deck from `DMKSYS AUXLCL`.  Nothing else done for the conversion has to
+    be undone.  What re-enabling AP on ESA/390 *would* need is a redesign rather
+    than a deck, and that is the honest caveat: channel sets do not exist in the
+    channel subsystem, where every CPU can address every subchannel, so CP's
+    model of moving I/O ownership between processors is obsolete rather than
+    broken.  The processor half survives untouched -- `SIGP`, `SPX`, `STPX`,
+    `STAP` and `SPT` are all `GENx370x390x900` -- so multiprocessing is
+    reachable later; it is the I/O half that would be new work.
+    """
+    d = Deck(XA14)
+    d.replace('00170000', '00200000', first='00170100', inc=100,
+              limit=next_seq(SRC + '/DMKSYS.ASSEMBLE', '00200000'),
+              lines=Deck.comment(
+        "RUN UNIPROCESSOR. THE AP=YES PATH MAKES DMKCPI EXECUTE CONCS, WHICH "
+        "IS S/370-ONLY AND WOULD TAKE AN OPERATION EXCEPTION AT IPL. CHANNEL "
+        "SETS DO NOT EXIST IN THE CHANNEL SUBSYSTEM AT ALL -- EVERY CPU CAN "
+        "ADDRESS EVERY SUBCHANNEL -- SO THE AP I/O MODEL IS OBSOLETE RATHER "
+        "THAN BROKEN, AND RE-ENABLING IT IS A REDESIGN, NOT A DECK. THE "
+        "PROCESSOR HALF IS UNAFFECTED: SIGP, SPX, STPX, STAP AND SPT ARE VALID "
+        "IN ALL THREE ARCHITECTURES. HERCULES IS NUMCPU 1 REGARDLESS. EIGHT "
+        "MODULES ALREADY BRANCH ON DMKSYSAP, SO AP=NO IS A SUPPORTED "
+        "CONFIGURATION. TO REVERT: DROP THIS DECK FROM DMKSYS AUXLCL. I-50.") + [
+        "         SYSCOR RMSIZE=16384K,AP=NO",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -826,6 +887,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCPI.AUXLCL'),
         [(XA13, 'CR6 SUBCLASS MASK AND SUBCHANNEL DISCOVERY')])
 
+    sys_ = dmksys()
+    sys_.write(os.path.join(HERE, 'DMKSYS.%s' % XA14))
+    aux(os.path.join(HERE, 'DMKSYS.AUXLCL'),
+        [(XA14, 'RUN UNIPROCESSOR: AP=NO, SO NO CONCS AT IPL')])
+
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
@@ -854,7 +920,8 @@ def main():
                  'DMKCCH.%s' % XA10, 'DMKCCH.AUXLCL',
                  'DMKVMI.%s' % XA11, 'DMKVMI.AUXLCL',
                  'DMKIOT.%s' % XA12, 'DMKIOT.AUXLCL',
-                 'DMKCPI.%s' % XA13, 'DMKCPI.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKCPI.%s' % XA13, 'DMKCPI.AUXLCL',
+                 'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
