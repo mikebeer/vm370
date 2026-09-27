@@ -36,6 +36,18 @@ GUEST_PSA = {'DMKDSP': 'INTTIO-PSA-1',
              'DMKPRV': 'CHANID-PSA',
              'DMKCCH': 'ECSWLOG-PSA'}
 
+# Modules whose deck covers every site the PSA rename broke.  This cannot be
+# derived from a scan of `source/cp`: the decks are an UPDATE level applied at
+# assembly time, so the base source still carries the old symbols and a scan
+# still reports the module as broken.  Verified by CE saying
+# `NO STATEMENTS FLAGGED IN THIS ASSEMBLY` with a TXTLCL produced.
+HANDLED = {
+    'DMKDSP': 'run19',
+    'DMKPRV': 'run19',
+    'DMKIOG': 'run21',
+    'DMKEIG': 'run22',
+}
+
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
 # defect and the TEXT deck is still produced.  I-34.
 BASELINE_WARN = {'DMKRIO': 'RDEVICE 3375/3390 UNSUPPORTED DEVICE TYPE, sev 4'}
@@ -90,9 +102,11 @@ def main():
     rows = sorted(set(list(broken) + list(changed) + list(BASELINE_WARN)))
     for mod in rows:
         nucl = 'yes' if mod in nucleus else 'lib'
-        if mod in changed and mod not in broken:
+        if mod in changed and (mod not in broken or mod in HANDLED):
             state = 'CONVERTED'
-            note = 'assembles clean, TXTLCL produced'
+            note = ('in DMKLCL MACLIB, rebuilt by VMFMAC'
+                    if mod not in nucleus else
+                    'clean on CE (%s), TXTLCL produced' % HANDLED.get(mod, '?'))
             if mod == 'DMKIOS':
                 note = 'SSCH path done; TIO/HDV/TCH sites outstanding'
         elif mod in changed and mod in broken:
@@ -126,13 +140,20 @@ def main():
     print('%-46s %s' % ('  no source anywhere (I-35)',
                         ' '.join(m for m in nucleus if m not in asmdmk)))
     print('%-46s %s' % ('converted, assembling clean',
-                        len([m for m in changed if m not in broken])))
+                        len([m for m in changed
+                             if m not in broken or m in HANDLED])))
     print('%-46s %s' % ('broken by the PSA rename, awaiting work',
                         len([m for m in broken if m not in changed])))
     print('%-46s %s' % ('  of which guest-PSA swaps only (I-36)',
                         len([m for m in broken if m in GUEST_PSA])))
-    print('%-46s %s' % ('untouched and clean',
+    print('%-46s %s' % ('untouched by the PSA rename',
                         len([m for m in nucleus if m not in rows])))
+    print()
+    print('Of those, the ones still holding S/370-only instructions are found')
+    print('by tools/s370only.py, which is a separate and larger axis:')
+    print('%-46s %s' % ('  nucleus channel-I/O sites (SIO/TIO/HIO/...)', 133))
+    print('%-46s %s' % ('  nucleus storage-key sites (ISK/SSK/RRB)', 67))
+    print('%-46s %s' % ('  nucleus modules affected', 28))
 
 
 if __name__ == '__main__':

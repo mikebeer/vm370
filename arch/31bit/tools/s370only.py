@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Find every S/370-only instruction CP issues.
+
+`STIDC` in DMKIOG was found by reading one module.  That is not a method: an
+S/370-only instruction assembles perfectly under Assembler XF -- the assembler
+has no idea which architecture the object will run on -- and then takes an
+operation exception at execution.  The 173-module nucleus cannot be read line
+by line, so the sweep is mechanical.
+
+Hercules's own opcode table is the oracle.  A row marked
+
+    /*B203*/ AD_GENx370x___x___ ( "STIDC" , S , ASMFMT_S , store_channel_id )
+
+is installed in S/370 mode and in no other, so on ESA/390 it is an operation
+exception.  Thirty-four mnemonics are marked that way.
+
+    python3 s370only.py /path/to/opcode.c /path/to/vmce [--all]
+
+Reported counts are sites in the resolved tree, which is CE's own source as of
+its 20 September 2026 import (`UPSTREAM.md`); where a number matters, confirm
+it against what `VMFASM` produces.  R-23.
+"""
+import os
+import re
+import sys
+
+# Mnemonics that are also ordinary CP labels, macro names or operands.  Every
+# one of these needs the opcode-column test, not a substring match: DMKFRE's
+# entry points are literally FREE and FRET.
+# S/370 I/O sub-functions: 9C/9D/9E/9F dispatch on the low-order bits of the
+# operand address, so these are real Assembler XF mnemonics with no row of
+# their own in Hercules' opcode table.  A purely table-driven sweep misses all
+# of them -- HDV alone accounts for four nucleus sites, two of them the ones
+# DMKIOS still owes.  Supplied by hand, with the opcode's second byte shown.
+SUPPLEMENT = {'HDV': '9E01', 'SIOF': '9C01', 'CLRIO': '9D01',
+              'CLRCH': '9F01', 'TIOB': '9D02'}
+
+# What each one becomes.  ISKE, SSKE, RRBE and IVSK are GENx370x390x900 -- valid
+# in every mode -- so the storage-key family is a mechanical substitution.  The
+# channel family is not: cc1 from TIO means "CSW stored", cc1 from TSCH means
+# "no status pending", so the sense inverts at every site.
+REPLACEMENT = {'SIO': 'SSCH', 'SIOF': 'SSCH', 'TIO': 'TSCH, cc inverted',
+               'TIOB': 'TSCH', 'HIO': 'HSCH', 'HDV': 'HSCH',
+               'CLRIO': 'CSCH', 'CLRCH': 'CSCH',
+               'TCH': 'none -- force the channel-available path',
+               'STIDC': 'none -- report every channel unidentified',
+               'ISK': 'ISKE', 'SSK': 'SSKE', 'RRB': 'RRBE'}
+
+FAMILY = dict.fromkeys(('SIO', 'SIOF', 'TIO', 'TIOB', 'HIO', 'HDV', 'CLRIO',
+                        'CLRCH', 'TCH', 'STIDC'), 'channel')
+FAMILY.update(dict.fromkeys(('ISK', 'SSK', 'RRB'), 'key'))
+
+AMBIGUOUS = {'FREE', 'FRET', 'FREEX', 'FRETX', 'DISP0', 'DISP2', 'ASSIST',
+             'STEVL', 'PRFMA', 'CCWGN', 'DFCCW', 'DNCCW', 'FCCWS', 'UXCCW',
+             'SCNRU', 'SCNVU', 'TRLCK', 'LCSPG', 'VLKPG', 'VULKP', 'VIPT',
+             'VIST', 'CONCS', 'DISCS', 'ECPS_DISP1', 'ECPS_TRBRG'}
+
+
+def s370_only(opcode_c):
+    pat = re.compile(r'/\*([0-9A-Fa-f]{2,4})\*/\s*\w*GENx370x_+x_+\s*\(\s*"([^"]+)"')
+    found = {m.group(2).strip().upper(): m.group(1)
+             for m in pat.finditer(open(opcode_c, errors='replace').read())}
+    found.update(SUPPLEMENT)
+    return found
+
+
+def opcode_of(line):
+    """The operation field of an assembler statement, or None.
+
+    Columns 1-8 are the label, 9 is blank, the operation starts at 10 -- but
+    CP is not always tidy, so take the first token beginning at column 9 or
+    later on a line that is neither a comment nor a continuation.
+    """
+    if not line or line[0] in '*.':
+        return None
+    body = line[:71].rstrip()
+    if len(body) < 10 or not body[:9].endswith(' ') and body[0] != ' ':
+        pass
+    m = re.match(r'(?:\S{0,8})\s+(\S+)', body)
+    if not m or body[0] not in ' ' and len(body.split()[0]) > 8:
+        return None
+    return m.group(1).upper()
+
+
+def main():
+    opcode_c, root = sys.argv[1], sys.argv[2]
+    table = s370_only(opcode_c)
+    src = os.path.join(root, 'source', 'cp')
+    nucleus = {m.group(1) for m in re.finditer(
+        r'&1 &2 &3 (\S+)',
+        open(os.path.join(root, 'maintenance', 'files', '194',
+                          'CPLOAD.EXEC')).read())} - {'LOADER', 'LDT'}
+
+    hits = {}
+    for name in sorted(os.listdir(src)):
+        if not name.endswith('.ASSEMBLE'):
+            continue
+        mod = name[:-9]
+        for n, line in enumerate(open(os.path.join(src, name),
+                                     errors='replace'), 1):
+            op = opcode_of(line.rstrip('\n'))
+            if op in table:
+                seq = line[72:80].strip() if len(line) > 72 else ''
+                hits.setdefault(op, []).append((mod, seq or str(n)))
+
+    print('S/370-ONLY INSTRUCTIONS ISSUED BY CP')
+    print('(opcode table: %d mnemonics marked GENx370x___x___)\n' % len(table))
+    print('%-7s %-6s %5s %5s  %-8s %s'
+          % ('MNEM', 'OPC', 'NUCL', 'OTHER', 'FAMILY', 'BECOMES'))
+    print('-' * 76)
+    byfam = {}
+    for op in sorted(hits, key=lambda o: -sum(1 for m, _ in hits[o]
+                                              if m in nucleus)):
+        n = sum(1 for m, _ in hits[op] if m in nucleus)
+        byfam[FAMILY[op]] = byfam.get(FAMILY[op], 0) + n
+        flag = '  <-- also a CP label; verify' if op in AMBIGUOUS else ''
+        print('%-7s %-6s %5d %5d  %-8s %s%s'
+              % (op, table[op], n, len(hits[op]) - n, FAMILY[op],
+                 REPLACEMENT.get(op, '?'), flag))
+    print('-' * 76)
+    for fam, n in sorted(byfam.items()):
+        print('%-30s %d' % ('nucleus sites, %s family' % fam, n))
+    print('%-30s %d' % ('nucleus sites, total', sum(byfam.values())))
+    print('%-30s %d' % ('nucleus modules affected',
+                        len({m for v in hits.values() for m, _ in v
+                             if m in nucleus})))
+    print('%-30s %s' % ('non-nucleus (utilities)',
+                        ' '.join(sorted({m for v in hits.values()
+                                         for m, _ in v
+                                         if m not in nucleus}))))
+
+    if '--all' in sys.argv:
+        for op in sorted(hits):
+            print('\n%s (%s)' % (op, table[op]))
+            for mod, seq in hits[op]:
+                print('    %-9s %s' % (mod, seq))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -31,6 +31,8 @@ XA3 = 'XA0003DK'
 XA4 = 'XA0004DK'
 XA6 = 'XA0006DK'
 XA7 = 'XA0007DK'
+XA8 = 'XA0008DK'          # XA0005DK was never issued -- the gap is deliberate
+XA9 = 'XA0009DK'
 
 
 def psa():
@@ -333,6 +335,117 @@ def guest_psa():
     return dsp, prv
 
 
+def dmkeig():
+    """R-03: the S/370 channel extended logout has no ESA/390 counterpart.
+
+    DMKEIG is the extended-logout analyser for 2860/2870/2880 channels.  It
+    walks six words of I/O extended logout looking for a channel that has
+    logged out, then reads LW0-LW27 -- the 2880's logout format -- to decide
+    whether the failure is retryable.  None of that survives: the channel
+    subsystem reports failures as subchannel status in the IRB, with the ESW
+    and ERW carrying what little detail there is, and there is no per-channel
+    logout area at all.
+
+    So the analysis cannot be converted, only replaced, and replacing it is
+    not M1 work.  R-03's recorded mitigation is to stub every logout site to
+    a permanent error so the path assembles and fails loudly, and DMKEIG
+    already has exactly that path: its own "extended logout pointer is zero"
+    exit goes to CLEANUP, which sets ENTSW,TERMSYS -- system termination --
+    and returns without dereferencing R1.  Taking it needs one branch.
+
+    The 160 lines of analysis below stay in the module, unreachable, so a
+    later pass can re-point them at the ESW and ECW instead of writing them
+    again from the principles of operation.
+    """
+    d = Deck(XA8)
+
+    d.replace('00093000', '00094000', first='00093100', inc=100,
+              limit='00095000', lines=Deck.comment(
+        "ESA/390 HAS NO CHANNEL EXTENDED LOGOUT, SO THERE IS NOTHING TO "
+        "POINT AT AND NOTHING TO ANALYSE. TAKE THE MODULE'S OWN "
+        "NO-LOGOUT-AVAILABLE EXIT: CLEANUP SETS ENTSW,TERMSYS AND RETURNS "
+        "WITHOUT USING R1, SO A CHANNEL CHECK BECOMES A LOUD SYSTEM "
+        "TERMINATION RATHER THAN A SILENT MISREAD OF LOWCORE. R-03.") + [
+        "         B     CLEANUP        NO EXTENDED LOGOUT ON ESA/390",
+    ])
+
+    d.replace('00101000', first='00101100', inc=100, limit='00102000',
+              lines=Deck.comment(
+        "UNREACHABLE SINCE 00093000 BRANCHES AWAY. KEPT, WITH THE POINTER "
+        "FORCED TO ZERO, SO THE S/370 ANALYSIS BELOW STILL ASSEMBLES AND CAN "
+        "BE RE-POINTED AT THE IRB'S ESW AND ECW LATER. R-03.") + [
+        "         SR    R1,R1          NO LOGOUT POINTER EXISTS",
+    ])
+    return d
+
+
+def dmkiog():
+    """DMKIOG's channel survey issues STIDC, which ESA/390 does not have.
+
+    This is the find that justified reading the module instead of renaming
+    its six symbols: `STIDC` is `GENx370x___x___` in Hercules' opcode table,
+    S/370 mode only, so the survey loop would take an operation exception on
+    each of sixteen channels during CP initialisation.  Assembling cleanly
+    would have hidden it until the first IPL.
+
+    The fix is again the module's own path.  Before issuing STIDC the code
+    sets R0 to F's and the channel-table byte to X'FF' "tentatively ... STIDC
+    FAILS", and `BNZ STIDCSAV` takes that path on a non-zero condition code.
+    Branching straight there reports every channel as unidentified, which is
+    the truth: the channel subsystem does not expose channels this way.  R4
+    is recomputed from R5 at the top of the loop, R8 and R9 are dead after
+    it, and STIDCSAV stores R0 -- still F's -- into RCHSTIDC.
+
+    One consequence is worth having in writing, because the outstanding
+    DMKIOS work depends on it: RCHTYPE's RCH370 flag is only ever reset on
+    the 2860/2870/2880 paths, which are now unreachable, so RCH370 stays set
+    for every channel.  Both of its consumers are HDV sites in DMKIOS, and
+    both now statically take the "let the channel do the work" branch.  That
+    is the branch we want under HSCH, so it simplifies M1 step 4 rather than
+    complicating it.  I-40.
+
+    The three remaining sites are stores into PSA fields the rename kept, so
+    they need the new names and no other change: X'FF' into a reserved byte
+    and a zero pointer, neither of which anything reads any more.
+    """
+    d = Deck(XA9)
+
+    d.replace('00326000', '00332000', first='00326100', inc=100,
+              limit='00333000', lines=Deck.comment(
+        "STIDC IS AN S/370-ONLY INSTRUCTION: ON ESA/390 IT IS AN OPERATION "
+        "EXCEPTION, AND THIS LOOP WOULD TAKE ONE SIXTEEN TIMES DURING CP "
+        "INITIALISATION. THE CHANNEL SUBSYSTEM DOES NOT IDENTIFY CHANNELS "
+        "THIS WAY AT ALL, SO REPORT EVERY CHANNEL AS UNIDENTIFIED VIA THE "
+        "PATH THIS CODE ALREADY HAS FOR IT. R0 IS ALREADY F'S AND THE "
+        "CHANNEL-TABLE BYTE ALREADY X'FF' FROM 00323000-00324000.") + [
+        "         B     STIDCSAV       NO STIDC: CHANNEL UNIDENTIFIED",
+    ])
+
+    d.replace('00416000', first='00416100', inc=100, limit='00417000',
+              lines=Deck.comment(
+        "RENAMED FIELD, SAME STORE: X'FF' INTO A PSA BYTE NOTHING READS NOW. "
+        "THE ECSW IS S/370; SUBCHANNEL STATUS REPLACES IT. R-03.") + [
+        "         MVI   S370ECSW,X'FF' INITIALIZE THE ECSW (S/370)",
+    ])
+
+    # The next surviving record is 00427300, one hundred away, so this one
+    # numbers by ten.  Exactly the R-22 trap the sequence check exists for.
+    d.replace('00427200', first='00427210', inc=10, limit='00427300',
+              lines=Deck.comment(
+        "AS 00416000: RENAMED FIELD, SAME STORE. R-03.") + [
+        "         MVI   S370ECSW,X'FF' INITIALIZE THE ECSW (S/370)",
+    ])
+
+    d.replace('00536000', first='00536100', inc=100, limit='00537000',
+              lines=Deck.comment(
+        "RENAMED FIELD, SAME STORE. EVERY PATH THAT REACHES HERE NOW "
+        "CARRIES R1 = 0, SO THE LTR BELOW SKIPS THE MVCL THAT WOULD HAVE "
+        "PROPAGATED F'S THROUGH A LOGOUT AREA NOBODY ALLOCATES. R-03.") + [
+        "         ST    R1,S370IOEL    SAVE THE IOEL POINTER (S/370)",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -363,6 +476,16 @@ def main():
     aux(os.path.join(HERE, 'DMKPRV.AUXLCL'),
         [(XA7, 'GUEST LOWCORE: S370CHID FOR STIDC SIMULATION')])
 
+    eig = dmkeig()
+    eig.write(os.path.join(HERE, 'DMKEIG.%s' % XA8))
+    aux(os.path.join(HERE, 'DMKEIG.AUXLCL'),
+        [(XA8, 'CHANNEL LOGOUT: STUB THE ANALYSIS TO TERMINATION')])
+
+    iog = dmkiog()
+    iog.write(os.path.join(HERE, 'DMKIOG.%s' % XA9))
+    aux(os.path.join(HERE, 'DMKIOG.AUXLCL'),
+        [(XA9, 'NO STIDC SURVEY, AND THE S/370 LOGOUT FIELDS RENAMED')])
+
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
         # XAOPS must be here, not in a separate XALIB: DMKLCL.CNTRL's MACS
         # record is  DMKLCL DMKHRC DMKMAC DMSLCL CMSHRC CMSLIB OSMACRO  and
@@ -380,7 +503,9 @@ def main():
                  'RBLOKS.AUXLCL', 'IOBLOKS.%s' % XA3, 'IOBLOKS.AUXLCL',
                  'DMKIOS.%s' % XA4, 'DMKIOS.AUXLCL',
                  'DMKDSP.%s' % XA6, 'DMKDSP.AUXLCL',
-                 'DMKPRV.%s' % XA7, 'DMKPRV.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKPRV.%s' % XA7, 'DMKPRV.AUXLCL',
+                 'DMKEIG.%s' % XA8, 'DMKEIG.AUXLCL',
+                 'DMKIOG.%s' % XA9, 'DMKIOG.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
