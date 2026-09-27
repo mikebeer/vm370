@@ -64,6 +64,49 @@ def s370_only(opcode_c):
     return found
 
 
+# Instructions CP writes as constants because Assembler XF has no mnemonic for
+# them, or because the author wanted the bytes explicit.  A scan of the opcode
+# column cannot see any of these, and CONCS is live in CE: OPTIONS.COPY sets
+# `&AP SETB 1` via HRC035DK, so the Attached Processor blocks are assembled.
+# CONCS and DISCS are channel-SET instructions with no ESA/390 counterpart at
+# all -- the channel subsystem replaced channel sets -- so they must be removed
+# rather than translated.  I-49.
+DC_ENCODED = {'B200': 'CONCS', 'B201': 'DISCS', '9C01': 'SIOF', '9D01': 'CLRIO',
+              '9E01': 'HDV', '9F01': 'CLRCH', '9F00': 'TCH', '9D02': 'TIOB',
+              'B203': 'STIDC', 'B213': 'RRB'}
+
+# Verified by reading each site: a DC can be an executed instruction or merely a
+# comparison operand, and nothing mechanical distinguishes them.  These are the
+# ones confirmed by hand; anything not listed is reported for review.
+DC_VERDICT = {
+    ('DMKCPI', 'B200'): 'instruction',   # CONCS 0(R1), channel-set connect
+    ('DMKCPP', 'B200'): 'instruction',
+    ('DMKCPP', 'B201'): 'instruction',
+    ('DMKMCT', 'B200'): 'instruction',   # "ACTUAL CONNECT INSTRUCTION"
+    ('DMKMCT', 'B201'): 'instruction',   # "ACTUAL DISCONNECT INSTRUCTION"
+    ('DMKVSJ', '9F01'): 'instruction',   # CLRCH 0(R1), followed by DC S(0(1))
+    ('DMKVSI', '9F00'): 'operand',       # CLC VMINST(2),TCHOPER -- not executed
+}
+
+
+def dc_sites(src, nucleus):
+    """Find S/370-only instructions hand-coded as DC constants."""
+    pat = re.compile(r"^\s+DC\s+X'([0-9A-F]{4})", re.I)
+    out = []
+    for name in sorted(os.listdir(src)):
+        if not name.endswith('.ASSEMBLE'):
+            continue
+        mod = name[:-9]
+        for line in open(os.path.join(src, name), errors='replace'):
+            m = pat.match(line[:71])
+            if m and m.group(1).upper() in DC_ENCODED:
+                op = m.group(1).upper()
+                out.append((mod, op, DC_ENCODED[op],
+                            DC_VERDICT.get((mod, op), 'REVIEW'),
+                            mod in nucleus))
+    return out
+
+
 def opcode_of(line):
     """The operation field of an assembler statement, or None.
 
@@ -128,6 +171,20 @@ def main():
                         ' '.join(sorted({m for v in hits.values()
                                          for m, _ in v
                                          if m not in nucleus}))))
+
+    dc = dc_sites(src, nucleus)
+    if dc:
+        print()
+        print('HAND-CODED AS DC CONSTANTS (invisible to the column scan)')
+        print('%-8s %-6s %-7s %-12s %s' % ('MODULE', 'BYTES', 'MNEM',
+                                           'VERDICT', 'IN'))
+        print('-' * 60)
+        for mod, byt, mnem, verdict, nucl in dc:
+            print('%-8s %-6s %-7s %-12s %s'
+                  % (mod, byt, mnem, verdict, 'yes' if nucl else 'lib'))
+        live = [d for d in dc if d[3] == 'instruction' and d[4]]
+        print('%-46s %d' % ('  live nucleus instruction sites', len(live)))
+        print('%-46s %s' % ('  modules', ' '.join(sorted({d[0] for d in live}))))
 
     if '--all' in sys.argv:
         for op in sorted(hits):
