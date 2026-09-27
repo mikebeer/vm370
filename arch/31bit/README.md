@@ -16,9 +16,9 @@ CMS, shared segments and service structure. This is a 31-bit VM/370 CE.
 
 ## What is proven
 
-Eleven programs in `tests/hardware/`, each answering one question, each with
+Twelve programs in `tests/hardware/`, each answering one question, each with
 its own pass code so that a stale program left in storage cannot masquerade
-as a pass. **All eleven pass**, the seventh on two independently built
+as a pass. **All twelve pass**, the seventh on two independently built
 emulators — a Windows 3.x build and a Hercules 3.13 built from source on
 Linux, which reached the pass by different paths (status on the first `TSCH`
 in one, after several polls in the other).
@@ -36,6 +36,7 @@ in one, after several polls in the other).
 | `08-lra` | `006009` | Does `LRA` behave as `TRANS` assumes, in both addressing modes? |
 | `09-frame-sharing` | `00600A` | Can 4 KB sharing **and** 4 KB isolation coexist inside one 1 MB segment? |
 | `10-dasd-read` | `00600B` | Does a real CKD chain work — SEEK, SEARCH, TIC, READ — the way `DMKIOS` issues them? |
+| `11-storage-keys` | `00600C` | Do storage keys give read-only sharing per page — CP-67's other half? |
 
 Test 4b stores at virtual `X'01005000'` — segment 16, page 5 — in 31-bit
 mode with DAT on. The byte arrives at real `X'01100000'`, and real `X'5000'`,

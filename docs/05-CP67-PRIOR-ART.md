@@ -17,6 +17,11 @@ separable.
 > virtual address in the same 1 MB segment. Broken deliberately in both
 > directions to confirm it discriminates. So §5's conclusion rests on
 > execution now, not on a 1973 manual.
+>
+> **And §4's half too.** `11-storage-keys.rc` runs the read-only enforcement:
+> a frame at storage key 0, a program at PSW key F, and a store that takes a
+> protection exception while a fetch of the same page succeeds. Both mechanisms
+> CP-67 used are now demonstrated on ESA/390, independently of each other.
 
 Sources: `GY20-0590-2`, *CP-67 Program Logic Manual*, May 1973 (300 pages, no
 text layer — OCR'd at 200 dpi, so quoted wording is transcribed and may carry
