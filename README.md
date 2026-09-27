@@ -74,6 +74,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/15-UPDATE-LEVELS.md    CE's three update levels, and a retracted claim
     docs/16-NATIVE-BASELINE.md  18 CP modules assemble clean on CE, unmodified
     docs/17-CARRY-FORWARD-64.md what the 31-bit work hands to 64-bit
+    docs/18-TRACEABILITY.md     issues -> risks -> milestones, and what that revealed
     docs/R01-SHIFT-SITES.md     the 70 geometry shift sites, site by site
 
 **`06` is the status account** — sorted by strength of evidence, because
