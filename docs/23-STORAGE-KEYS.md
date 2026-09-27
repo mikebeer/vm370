@@ -20,17 +20,59 @@ right and the word "cheap" is wrong.
 `SSK` masks identically. `RRB` masks identically **and** is S-format,
 `D2(B2)`, where `RRBE` is RRE, `R1,R2`.
 
-## The finding that matters
+## The finding that matters, and what it does not mean
 
-**All three S/370 key instructions mask the operand address to 24 bits.** CP
-physically cannot read or set a storage key above the 16 MB line with `ISK`,
-`SSK` or `RRB`, whatever else is converted. The extended forms have no such
-limit.
+**All three S/370 key instructions mask the operand address to 24 bits.**
 
-So this family is not risk-reduction ahead of the real work. It is a
-**prerequisite for the project's purpose**: a virtual machine with storage
-above the line has frames whose keys CP could not manage at all. It belongs on
-M1's critical path, not in a cleanup pass.
+    pageaddr = regs->GR_L( r2 ) & 0x00FFF800;          /* 24-bit, 2K block */
+    pageaddr = APPLY_PREFIXING( pageaddr, regs->PX );  /* real -> absolute */
+
+The operand is a **real** address, because storage keys belong to real frames.
+So the limit is on real storage, and Mike's question is the right one: it does
+**not** block a 31-bit CMS.
+
+A guest's 31-bit virtual address space is produced by DAT -- segment and page
+tables -- and the real frames backing those pages can all sit below the line.
+CMS could run with a full 31-bit virtual address space on a 16 MB host, with
+`ISK`/`SSK` untouched and CP paging as it does today.
+
+I first wrote that this family was "a prerequisite for the project's purpose".
+That was wrong, and the correction matters because it changes the order of
+work:
+
+| Goal | Needs this family? |
+|---|---|
+| M5 -- CMS in a 31-bit virtual machine | **No.** DAT, plus `DMKPRV` simulation below |
+| CP using real storage above 16 MB | **Yes**, and `SWPTABLE`, and `R-01`/`R-02` |
+| A guest that issues `ISKE`/`SSKE`/`RRBE` | **Yes**, in `DMKPRV` specifically |
+
+So the family belongs *with* the real-storage work, not ahead of everything
+else.  The four `INTTIO` modules, which unblock M3a, come first.
+
+## What a 31-bit guest actually needs: DMKPRV
+
+Guest storage keys are not held in hardware at all.  CP keeps them in the swap
+table:
+
+    SWPKEY1  DS  1X   S*3 VIRTUAL STORAGE KEY, 1ST 2048 BYTES
+    SWPKEY2  DS  1X   S*4 VIRTUAL STORAGE KEY, 2ND 2048 BYTES
+
+`DMKPRV` simulates the guest's instruction against those and issues a real
+`ISK`/`SSK` only to synchronise the backing frame.  Its entry points state its
+whole repertoire:
+
+    ENTRY DMKPRVEK    INST COUNT FOR X'08'   SSK
+    ENTRY DMKPRVIK    INST COUNT FOR X'09'   ISK
+          CLI  VMINST,X'B2'   VIRT. RRB?
+
+X'08', X'09' and X'B213'.  **A 31-bit CMS issuing `ISKE`, `SSKE` or `RRBE`
+finds no case there**, so M5 needs DMKPRV extended -- guest-facing work with
+nothing to do with CP's own key management, and not previously counted in the
+67 sites.
+
+`SWPKEY1`/`SWPKEY2` also puts the 2 KB pairing in the **data structure**, so
+collapsing to one 4 KB key is a `SWPTABLE` change and not only an instruction
+change.  That makes the `DMKPTR` work larger than its 23 sites suggest.
 
 ## Why it is not cheap
 
