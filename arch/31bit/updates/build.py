@@ -33,6 +33,7 @@ XA6 = 'XA0006DK'
 XA7 = 'XA0007DK'
 XA8 = 'XA0008DK'          # XA0005DK was never issued -- the gap is deliberate
 XA9 = 'XA0009DK'
+XA10 = 'XA0010DK'
 
 
 def psa():
@@ -446,6 +447,105 @@ def dmkiog():
     return d
 
 
+def dmkcch():
+    """The channel check handler itself: R-03's last module.
+
+    DMKCCH analyses two different S/370 reporting mechanisms and has a natural
+    termination path for each, so almost all of this is renaming rather than
+    stubbing.
+
+    `CCHRESTO` (00530000) needs nothing at all beyond the new names.  It loads
+    the extended-logout pointer and does `BZ CPTERM` -- put the system down --
+    and after XA0009DK that pointer is always zero, because DMKIOG's only
+    store into it is `ST R1,S370IOEL` with R1 = 0 on every reachable path.  It
+    then dispatches on `MCHMODEL` through `B CCHSEREP(R3)` whose entry 0 is
+    also `B CPTERM`, and `MCHMODEL` is NOMODEL under any CPU the model table
+    does not list.  Two independent routes to the same correct answer, both
+    already written.
+
+    `INTEGRAT` (00340000) is the one that needs a branch.  It tests the Limited
+    Channel Logout in the ECSW -- validity bit, log-stored bit, channel-reset
+    bit -- and those bits are now stale bytes in a reserved PSA field, so it
+    would reach a decision from noise.  Its own `CCHSYSM` sets `ENTSW,TERMSYS`,
+    and the code below CCHSYSM then falls through CCHIOER and CCHFAIL to
+    `RCUSCN1` -- which is exactly the flow 00327000 uses for a termination
+    that has already been decided.  So `B CCHSYSM` reuses the module's own
+    path and invents no control flow.  What it copies into the CCH record on
+    the way is a record field nobody acts on, not a decision.
+
+    The two sites at 00780400 and 00801000 are GUEST lowcore, like DMKDSP's
+    and DMKPRV's: `MVC ECSWLOG-PSA(4,R2)` is commented "ECSW TO USER", and
+    00801000 is followed by `TM VMVCR14,VMIOLOG` -- the *user's* control
+    register 14 I/O logout mask.  An S/370 guest still has an ECSW and a
+    logout pointer at its own X'A8' and X'AC', so these keep their meaning and
+    want only the name.  I-36.
+    """
+    d = Deck(XA10)
+
+    d.replace('00340100', '00342400', first='00340100', inc=100,
+              limit='00343000', lines=Deck.comment(
+        "THE LIMITED CHANNEL LOGOUT IS S/370. ITS VALIDITY, LOG-STORED AND "
+        "CHANNEL-RESET BITS ARE NOW STALE BYTES IN A RESERVED PSA FIELD, SO "
+        "TESTING THEM WOULD REACH A DECISION FROM NOISE. TAKE THIS MODULE'S "
+        "OWN TERMINATION PATH INSTEAD: CCHSYSM SETS ENTSW,TERMSYS AND FALLS "
+        "THROUGH TO RCUSCN1, WHICH IS WHAT 00327000 DOES FOR A TERMINATION "
+        "ALREADY DECIDED. THE ANALYSIS BELOW IS LEFT IN PLACE, UNREACHABLE, "
+        "FOR A LATER PASS OVER THE IRB'S ESW AND ERW. R-03.") + [
+        "         B     CCHSYSM        NO LCL ON ESA/390: TERMINATE",
+    ])
+
+    # Unreachable from here on: 00343000's only reference was 00342200, inside
+    # the range above.  Renamed so the module assembles and the analysis stays
+    # legible to whoever implements ESW handling.
+    for seq, first, inc, limit, text in (
+        ('00343000', '00343100', 100, '00344000',
+         "CCHRESET TM    S370ECSW+3,COMPSYS IS CHANNEL RESET?"),
+        ('00347000', '00347100', 100, '00348000',
+         "         TM    S370EBY3,CCHIOH  I/O INTERFACE HANG-UP?"),
+        ('00354000', '00354100', 100, '00355000',
+         "         MVC   FAILECSW+1(3),S370ECSW+1 FAILING ECSW INTO"),
+        ('00358100', '00358110', 10, '00359000',
+         "         MVC   IOERECSW(4),S370ECSW MOVE IN ECSW"),
+        # 00366100 is the next surviving record, one hundred away.
+        ('00366000', '00366010', 10, '00366100',
+         "         MVI   S370ECSW,X'FF' INITIALIZE THE ECSW (S/370)"),
+        ('00367000', '00367100', 100, '00368000',
+         "         ICM   R1,15,S370IOEL GET ADDR OF IO EXTENDED LOGOUT"),
+        # A fourteenth site I had not catalogued, which CE found: R2 holds
+        # SIOADDR, a device address, being stored into what is now IOSCHNO, a
+        # subchannel number -- the exact substitution the no-alias rename
+        # exists to prevent.  Drop the store rather than translate it.  It is
+        # reachable (DMKCCH returns to DMKIOS even with TERMSYS set) but
+        # nothing consumes it on the only path out of the module, and leaving
+        # IOSCHNO untouched is safer than leaving it wrong.  A correct
+        # implementation restores the SSID from RDEVSSID: M1 step 5, DMKIOT.
+        # RESTDEV's label is on 00523000 and is undisturbed.  I-43.
+        ('00524000', '00524100', 100, '00525000',
+         tuple(Deck.comment(
+             "STORE DROPPED. R2 HOLDS SIOADDR, A DEVICE ADDRESS, AND THE "
+             "FIELD IS NOW IOSCHNO, A SUBCHANNEL NUMBER -- THE ONE "
+             "SUBSTITUTION THE RENAME WAS DESIGNED TO MAKE IMPOSSIBLE. A "
+             "CORRECT IMPLEMENTATION RESTORES THE SSID FROM RDEVSSID, WHICH "
+             "IS M1 STEP 5 WORK IN DMKIOT. UNTIL THEN LEAVE IOSCHNO ALONE: "
+             "ON THE ONLY PATH OUT OF THIS MODULE THE SYSTEM IS TERMINATING "
+             "AND NOTHING READS IT. I-43."))),
+        ('00531000', '00531100', 100, '00532000',
+         "         MVC   S370ECSW(4),FAILECSW RESTORE ECSW INFORMATION"),
+        ('00536000', '00536100', 100, '00537000',
+         "         ICM   R1,15,S370IOEL GET THE POINTER TO THE IOEL"),
+        # Guest lowcore, both of these.  R2 addresses the virtual machine's
+        # page 0, not CP's.
+        ('00780400', '00780410', 10, '00781000',
+         "         MVC   S370ECSW-PSA(4,R2),IOERECSW ECSW TO USER"),
+        ('00801000', '00801100', 100, '00802000',
+         "         L     R1,S370IOEL(R2)  POINTER TO LOGOUT AREA"),
+    ):
+        d.replace(seq, first=first, inc=inc, limit=limit,
+                  lines=list(text) if isinstance(text, tuple) else [text])
+
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -486,6 +586,11 @@ def main():
     aux(os.path.join(HERE, 'DMKIOG.AUXLCL'),
         [(XA9, 'NO STIDC SURVEY, AND THE S/370 LOGOUT FIELDS RENAMED')])
 
+    cch = dmkcch()
+    cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
+    aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
+        [(XA10, 'CHANNEL CHECK: NO LCL ANALYSIS, TERMINATE INSTEAD')])
+
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
         # XAOPS must be here, not in a separate XALIB: DMKLCL.CNTRL's MACS
         # record is  DMKLCL DMKHRC DMKMAC DMSLCL CMSHRC CMSLIB OSMACRO  and
@@ -505,7 +610,8 @@ def main():
                  'DMKDSP.%s' % XA6, 'DMKDSP.AUXLCL',
                  'DMKPRV.%s' % XA7, 'DMKPRV.AUXLCL',
                  'DMKEIG.%s' % XA8, 'DMKEIG.AUXLCL',
-                 'DMKIOG.%s' % XA9, 'DMKIOG.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKIOG.%s' % XA9, 'DMKIOG.AUXLCL',
+                 'DMKCCH.%s' % XA10, 'DMKCCH.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

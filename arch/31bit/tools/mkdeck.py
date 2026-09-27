@@ -44,6 +44,7 @@ class Deck:
         self.ident = ident
         self.cards = []
         self._claimed = []      # (first_seq, last_seq) for the overlap check
+        self._last_anchor = None  # ascending-order check, see _anchor()
 
     # ---------------------------------------------------------------- cards
     def _card(self, text, with_id):
@@ -83,6 +84,24 @@ class Deck:
         return out
 
     # ------------------------------------------------------------ operations
+    def _anchor(self, seq):
+        """UPDATE scans the file once, forward, so control cards must be in
+        ascending anchor order.  A card out of order is not diagnosed as such:
+        UPDATE has already read past the record and reports
+
+            SEQUENCE NUMBER '00524000' NOT FOUND.
+
+        which reads as a wrong anchor and sends you looking through the base
+        file and the PTF decks for a record that is sitting right there.  Cost
+        one ten-minute run.  I-45.
+        """
+        if self._last_anchor is not None and int(seq) <= int(self._last_anchor):
+            raise ValueError(
+                'control card for %s follows %s: UPDATE reads the file once, '
+                'forward, so cards must be in ascending anchor order and this '
+                'one would be reported as NOT FOUND' % (seq, self._last_anchor))
+        self._last_anchor = seq
+
     def _seqcheck(self, first, inc, count, limit):
         """A deck that numbers past the next surviving record corrupts the
         file's ordering, and UPDATE will not always say so.  R-22."""
@@ -95,6 +114,7 @@ class Deck:
         self._claimed.append((int(first), last))
 
     def replace(self, frm, to=None, first=None, inc=100, lines=(), limit=None):
+        self._anchor(frm)
         self._seqcheck(first, inc, len(lines), limit)
         rng = '%s %s' % (frm, to) if to else '%s%s' % (frm, ' ' * 9)
         self.control('./ R %s $ %s %03d' % (rng, first, inc))
@@ -102,12 +122,14 @@ class Deck:
             self.source(l)
 
     def insert(self, after, first=None, inc=100, lines=(), limit=None):
+        self._anchor(after)
         self._seqcheck(first, inc, len(lines), limit)
         self.control('./ I %s $ %s %03d' % (after, first, inc))
         for l in lines:
             self.source(l)
 
     def delete(self, frm, to=None):
+        self._anchor(frm)
         self.control('./ D %s%s' % (frm, ' ' + to if to else ''))
 
     # ---------------------------------------------------------------- output

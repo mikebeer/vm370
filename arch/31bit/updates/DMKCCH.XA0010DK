@@ -1,0 +1,39 @@
+./ R 00340100 00342400 $ 00340100 100                                           
+*  THE LIMITED CHANNEL LOGOUT IS S/370. ITS VALIDITY,          XA0010DK         
+*  LOG-STORED AND CHANNEL-RESET BITS ARE NOW STALE BYTES IN A  XA0010DK         
+*  RESERVED PSA FIELD, SO TESTING THEM WOULD REACH A DECISION  XA0010DK         
+*  FROM NOISE. TAKE THIS MODULE'S OWN TERMINATION PATH         XA0010DK         
+*  INSTEAD: CCHSYSM SETS ENTSW,TERMSYS AND FALLS THROUGH TO    XA0010DK         
+*  RCUSCN1, WHICH IS WHAT 00327000 DOES FOR A TERMINATION      XA0010DK         
+*  ALREADY DECIDED. THE ANALYSIS BELOW IS LEFT IN PLACE,       XA0010DK         
+*  UNREACHABLE, FOR A LATER PASS OVER THE IRB'S ESW AND ERW.   XA0010DK         
+*  R-03.                                                       XA0010DK         
+         B     CCHSYSM        NO LCL ON ESA/390: TERMINATE     XA0010DK         
+./ R 00343000          $ 00343100 100                                           
+CCHRESET TM    S370ECSW+3,COMPSYS IS CHANNEL RESET?            XA0010DK         
+./ R 00347000          $ 00347100 100                                           
+         TM    S370EBY3,CCHIOH  I/O INTERFACE HANG-UP?         XA0010DK         
+./ R 00354000          $ 00354100 100                                           
+         MVC   FAILECSW+1(3),S370ECSW+1 FAILING ECSW INTO      XA0010DK         
+./ R 00358100          $ 00358110 010                                           
+         MVC   IOERECSW(4),S370ECSW MOVE IN ECSW               XA0010DK         
+./ R 00366000          $ 00366010 010                                           
+         MVI   S370ECSW,X'FF' INITIALIZE THE ECSW (S/370)      XA0010DK         
+./ R 00367000          $ 00367100 100                                           
+         ICM   R1,15,S370IOEL GET ADDR OF IO EXTENDED LOGOUT   XA0010DK         
+./ R 00524000          $ 00524100 100                                           
+*  STORE DROPPED. R2 HOLDS SIOADDR, A DEVICE ADDRESS, AND THE  XA0010DK         
+*  FIELD IS NOW IOSCHNO, A SUBCHANNEL NUMBER -- THE ONE        XA0010DK         
+*  SUBSTITUTION THE RENAME WAS DESIGNED TO MAKE IMPOSSIBLE. A  XA0010DK         
+*  CORRECT IMPLEMENTATION RESTORES THE SSID FROM RDEVSSID,     XA0010DK         
+*  WHICH IS M1 STEP 5 WORK IN DMKIOT. UNTIL THEN LEAVE         XA0010DK         
+*  IOSCHNO ALONE: ON THE ONLY PATH OUT OF THIS MODULE THE      XA0010DK         
+*  SYSTEM IS TERMINATING AND NOTHING READS IT. I-43.           XA0010DK         
+./ R 00531000          $ 00531100 100                                           
+         MVC   S370ECSW(4),FAILECSW RESTORE ECSW INFORMATION   XA0010DK         
+./ R 00536000          $ 00536100 100                                           
+         ICM   R1,15,S370IOEL GET THE POINTER TO THE IOEL      XA0010DK         
+./ R 00780400          $ 00780410 010                                           
+         MVC   S370ECSW-PSA(4,R2),IOERECSW ECSW TO USER        XA0010DK         
+./ R 00801000          $ 00801100 100                                           
+         L     R1,S370IOEL(R2)  POINTER TO LOGOUT AREA         XA0010DK         
