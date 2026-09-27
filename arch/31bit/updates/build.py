@@ -22,7 +22,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
-from mkdeck import Deck, aux, verify              # noqa: E402
+from mkdeck import Deck, aux, verify, next_seq    # noqa: E402
+
+# The resolved tree the anchors are measured against.  R-23.
+SRC = '/home/claude/vmce/source/cp'
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 XA1 = 'XA0001DK'
@@ -36,6 +39,7 @@ XA9 = 'XA0009DK'
 XA10 = 'XA0010DK'
 XA11 = 'XA0011DK'
 XA12 = 'XA0012DK'
+XA13 = 'XA0013DK'
 
 
 def psa():
@@ -641,6 +645,132 @@ def dmkiot():
     return d
 
 
+def dmkcpi():
+    """M1 step 6: the CR6 gate, and subchannel discovery.
+
+    Two changes, and the first is the more important because nothing would have
+    diagnosed it.
+
+    **CR6.**  `CTLREGS` is DMKCPI's control-register image, loaded by
+    `LCTL C0,C14,CTLREGS` at seq 00461000.  Its CR2 is `X'FFFFFFFF'` -- the
+    S/370 channel-mask register, all thirty-two channels enabled -- and CR6 sits
+    inside `DC 11F'0'`, so it is zero.  Under ESA/390 CR6 is the
+    **I/O-interruption subclass mask**, and a zero mask means no subclass is
+    enabled, which means no I/O interruption is ever presented.  CP would IPL,
+    issue a perfectly good SSCH, and wait forever.  Nothing in the assembly or
+    the instruction stream hints at it; this is the third of the three silent
+    gates.  So the channel mask moves out of CR2 and becomes an ISC mask in CR6.
+
+    CR2 is set to zero rather than left alone, because in ESA/390 it is the
+    dispatchable-unit-control-table origin and `X'FFFFFFFF'` is not a value any
+    of that wants to see.
+
+    **Discovery.**  The loop probes subchannels 0 upward with `STSCH`, and for
+    each one that is provided and valid, takes the device number from the PMCW,
+    finds its RDEVBLOK, records the subsystem ID in `RDEVSSID`, and `MSCH`es the
+    subchannel to enable it and set the interruption parameter.
+
+    That fills in what `XA0012DK` reads: DMKIOT gets the device address back at
+    `IOINTPRM+2` on every interruption, solicited or not.  Enable and parameter
+    go in one `MSCH` because a subchannel reset clears both.
+
+    Register choice is dictated by DMKSCNRU's documented conventions -- "GPR 1 =
+    DEVICE ADDRESS ... GPR 0, 2-5, & 9-13 ARE NOT USED", and it uses neither
+    TEMPSAVE nor BALRSAVE, so it is safe to call this early and safe to call in
+    a loop holding state in R2 and R3.
+
+    The probe is bounded rather than stopping at the first gap.  Hercules numbers
+    subchannels densely from zero (`config.c`: `dev->subchan =
+    sysblk.highsubchan[lcss]++`), so an early exit would work today, but a gap
+    would silently truncate the device table and that is not a failure worth
+    risking to save a few hundred instructions at IPL.
+    """
+    d = Deck(XA13)
+
+    # --- the discovery loop, inserted after the last pre-AP instruction.
+    d.insert('00480000', first='00480020', inc=20,
+             limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '00480000'),
+             lines=Deck.comment(
+        "SUBCHANNEL DISCOVERY. ESA/390 REPLACES THE CHANNEL AND UNIT ADDRESS "
+        "WITH A SUBCHANNEL NUMBER, AND NOTHING IN THE DIRECTORY KNOWS IT, SO "
+        "IT HAS TO BE LEARNED. FOR EACH SUBCHANNEL: STSCH, AND IF IT IS "
+        "PROVIDED AND VALID, TAKE ITS DEVICE NUMBER, FIND THE RDEVBLOK, "
+        "RECORD THE SUBSYSTEM ID, AND MSCH TO ENABLE IT AND SET THE "
+        "INTERRUPTION PARAMETER TO THE DEVICE ADDRESS -- WHICH IS WHAT DMKIOT "
+        "READS AT IOINTPRM+2. ENABLE AND PARAMETER GO IN ONE MSCH BECAUSE A "
+        "SUBCHANNEL RESET CLEARS BOTH.") + [
+        "         LA    R4,CPISCHIB    THE SCHIB WE PROBE INTO",
+        "         USING SCHIBLOK,R4                               ",
+        "         SR    R2,R2          FIRST SUBCHANNEL NUMBER",
+        "         LA    R3,CPINSCH     HOW MANY TO PROBE",
+        "CPIDISC  DS    0H                                        ",
+        "         L     R1,CPISSID0    X'00010000'",
+        "         OR    R1,R2          OR IN THE SUBCHANNEL NUMBER",
+        "         STSCH 0(R4)          STORE SUBCHANNEL",
+        "         BC    7,CPIDISCN     NOT CC0: NOT PROVIDED, SKIP",
+        "         TM    PMCWFLG5,PMCW5V IS THE SUBCHANNEL VALID ?",
+        "         BZ    CPIDISCN       NO, NO DEVICE BEHIND IT",
+        "         STM   R1,R3,CPIDSAVE SAVE SSID, SCHNO AND COUNT",
+        "         LH    R1,PMCWDEV     DEVICE NUMBER FROM THE PMCW",
+        "         CALL  DMKSCNRU       FIND THE RCH, RCU AND RDEV",
+        "         LM    R1,R3,CPIDSAVE RESTORE -- LM LEAVES THE CC",
+        "         BNZ   CPIDISCN       NO RDEVBLOK FOR THIS DEVICE",
+        "         USING RDEVBLOK,R8                               ",
+        "         ST    R1,RDEVSSID    REMEMBER THIS DEVICE'S SSID",
+        "         XC    PMCWPARM,PMCWPARM CLEAR THE PARAMETER",
+        "         MVC   PMCWPARM+2(2),RDEVADD DEV ADDR, LOW HALF",
+        "         OI    PMCWFLG5,PMCW5E ENABLE THE SUBCHANNEL",
+        "         MSCH  0(R4)          MODIFY SUBCHANNEL",
+        "         DROP  R8                                        ",
+        "CPIDISCN DS    0H             NEXT SUBCHANNEL",
+        "         LA    R2,1(0,R2)     BUMP THE SUBCHANNEL NUMBER",
+        "         BCT   R3,CPIDISC     PROBE THE WHOLE RANGE",
+        "         DROP  R4                                        ",
+    ])
+
+    # --- CR2 and CR6.  CR2 is one word, CR3-CR13 are the eleven that follow, so
+    #     the replacement splits that DC to give CR6 a value of its own.
+    d.replace('01928000', '01929000', first='01928100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01929000'),
+              lines=Deck.comment(
+        "CR2 HELD X'FFFFFFFF' AS THE S/370 CHANNEL MASK. ON ESA/390 CR2 IS THE "
+        "DISPATCHABLE-UNIT-CONTROL-TABLE ORIGIN AND MUST NOT CARRY THAT, WHILE "
+        "CR6 IS THE I/O-INTERRUPTION SUBCLASS MASK AND WAS ZERO -- MEANING NO "
+        "I/O INTERRUPTION IS EVER PRESENTED. CP WOULD IPL, ISSUE A GOOD SSCH "
+        "AND WAIT FOREVER, WITH NOTHING FLAGGED ANYWHERE. THE MASK THEREFORE "
+        "MOVES FROM CR2 TO CR6. ALL EIGHT SUBCLASSES ARE ENABLED; SUBCHANNELS "
+        "DEFAULT TO ISC 0.") + [
+        "         DC    F'0'           CR2 -- DUCT ORIGIN, NOT A MASK",
+        "         DC    3F'0'          CR3, CR4, CR5",
+        "         DC    X'FF000000'    CR6 -- IO SUBCLASS MASK",
+        "         DC    7F'0'          CR7 THROUGH CR13",
+    ])
+
+    # --- the SCHIB, the SSID prefix, the save area and the probe bound.
+    d.insert('01930000', first='01930050', inc=50,
+             limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01930000'),
+             lines=Deck.comment(
+        "WORK AREAS FOR SUBCHANNEL DISCOVERY. THE SCHIB MUST BE FULLWORD "
+        "ALIGNED -- BOTH STSCH AND MSCH TAKE A SPECIFICATION EXCEPTION "
+        "OTHERWISE.") + [
+        "CPISCHIB DS    13F            52 BYTES = SCHIBSIZ, FULLWORD",
+        "*  ALIGNED.  13F RATHER THAN XL(SCHIBSIZ) BECAUSE XABLOKS IS",
+        "*  COPIED AFTER THIS POINT AND A LENGTH MODIFIER CANNOT BE A",
+        "*  FORWARD REFERENCE -- IFO231.  I-51.",
+        "CPIDSAVE DS    3F             SSID, SCHNO, COUNT",
+        "CPISSID0 DC    X'00010000'    SUBSYSTEM ID PREFIX, LCSS 0",
+        "CPINSCH  EQU   256            SUBCHANNELS PROBED AT IPL",
+    ])
+
+    # SCHIBLOK, PMCW* and the subchannel EQUs live in XABLOKS, which until now
+    # was copied only into DMKIOS.  Added beside DMKCPI's own COPY list rather
+    # than at the point of use, which is where CP keeps its DSECTs.
+    d.insert('03506100', first='03506110', inc=10,
+             limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '03506100'),
+             lines=["         COPY  XABLOKS"])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -691,6 +821,11 @@ def main():
     aux(os.path.join(HERE, 'DMKIOT.AUXLCL'),
         [(XA12, 'INTERRUPT ENTRY READS THE INTERRUPTION PARAMETER')])
 
+    cpi = dmkcpi()
+    cpi.write(os.path.join(HERE, 'DMKCPI.%s' % XA13))
+    aux(os.path.join(HERE, 'DMKCPI.AUXLCL'),
+        [(XA13, 'CR6 SUBCLASS MASK AND SUBCHANNEL DISCOVERY')])
+
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
@@ -718,7 +853,8 @@ def main():
                  'DMKIOG.%s' % XA9, 'DMKIOG.AUXLCL',
                  'DMKCCH.%s' % XA10, 'DMKCCH.AUXLCL',
                  'DMKVMI.%s' % XA11, 'DMKVMI.AUXLCL',
-                 'DMKIOT.%s' % XA12, 'DMKIOT.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKIOT.%s' % XA12, 'DMKIOT.AUXLCL',
+                 'DMKCPI.%s' % XA13, 'DMKCPI.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

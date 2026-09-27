@@ -49,6 +49,7 @@ HANDLED = {
     'DMKCCH': 'run25',
     'DMKVMI': 'run26',
     'DMKIOT': 'run26',
+    'DMKCPI': 'run30',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
@@ -57,6 +58,7 @@ BASELINE_WARN = {'DMKRIO': 'RDEVICE 3375/3390 UNSUPPORTED DEVICE TYPE, sev 4'}
 
 # What each broken module actually needs, from reading its sites.
 NEEDS = {
+    'DMKCPI': 'CR6 subclass mask and subchannel discovery -- M1 step 6',
     'DMKIOT': 'convert: 10 INTTIO sites, interrupt entry -- M1 step 5',
     'DMKCKP': '4 INTTIO plus 25 channel sites -- one pass, bootstrap',
     'DMKDMP': '3 INTTIO plus 22 channel sites -- one pass, bootstrap',

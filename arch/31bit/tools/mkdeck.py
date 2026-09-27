@@ -140,6 +140,33 @@ class Deck:
         return len(self.cards)
 
 
+def next_seq(source, anchor):
+    """The sequence number of the record following `anchor` in `source`.
+
+    `Deck._seqcheck` refuses generated numbers that reach the next surviving
+    record, but it can only check against the limit it is given -- and a limit
+    read off the screen is a guess.  XA0013DK numbered 01930100 to 01931100
+    against a limit of 01951000 taken from a nearby literal, and walked straight
+    over a real record at 01931000.  UPDATE reported it, the assembler flagged
+    `IFO025 STATEMENT OUT OF SEQUENCE` from DMKCPI's own `ISEQ 73,80`, and the
+    deck was wrong in a way the generator was built to prevent.
+
+    So derive the limit instead of quoting one.  I-52.
+
+        limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01930000')
+    """
+    seqs = []
+    for line in open(source, errors='replace'):
+        s = line[72:80].strip()
+        if s.isdigit():
+            seqs.append(s)
+    try:
+        return seqs[seqs.index(anchor) + 1]
+    except (ValueError, IndexError):
+        raise ValueError('anchor %s is not in %s, or is its last record'
+                         % (anchor, source))
+
+
 def aux(path, entries):
     """An AUX file lists update decks newest first: '<deck> V01 <description>'."""
     with open(path, 'w') as f:
