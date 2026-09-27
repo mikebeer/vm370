@@ -94,11 +94,20 @@ convenient: the header is CP's own and the hardware never sees it.
 | `SEGMIG` = `X'10'` | **collides with the COMMON SEGMENT bit** |
 | `SEGENQ` = `X'40'` | **collides with the lowest `PTO` bit** |
 
-The two collisions are survivable but fragile: CP sets `SEGMIG` and
-`SEGENQ` only when the pointer is zero, and the hardware does not examine
-other fields of an invalid entry. That needs to become an explicit
-invariant rather than an accident, because an entry that is invalid to CP
-but valid to the hardware would translate to `X'000000x0'`.
+The two collisions are survivable but fragile, and
+`../arch/31bit/tests/hardware/12-ste-flags.rc` now measures both halves of
+that rather than reasoning about it. With the ESA/390 invalid bit set, an STE
+carrying both CP flags — `X'00000070'` — is correctly reported as
+segment-invalid: **the hardware does ignore the rest of an invalid entry.**
+Without the invalid bit, `X'00000050'` is to ESA/390 a perfectly valid common
+segment with page-table origin `X'40'`, and **the hardware follows it into
+lowcore**, walking a page table on top of the CSW and CAW with no exception
+and no diagnostic.
+
+So the invariant is real and unenforced. The conversion should either move
+`SEGMIG` and `SEGENQ` out of bits ESA/390 defines, or assert in code that
+neither is ever set without `SEGINV`. "The hardware does not look at those
+bits" holds only while the entry is invalid.
 
 **113 references to the STE fields**, led by `DMKPGS` (36) and `DMKBLD`
 (32) — not `DMKVAT`, which has 10.

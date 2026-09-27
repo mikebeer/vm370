@@ -1,0 +1,98 @@
+* The segment-table flag collision -- does the invariant hold, and what breaks?
+*
+* docs/03-CP-INVENTORY.md found that two of CP's segment-table flags collide
+* with ESA/390 meanings:
+*
+*     CP / S/370            ESA/390
+*     SEGINV = X'01'        invalid = X'20'
+*     SEGMIG = X'10'        collides with the COMMON SEGMENT bit
+*     SEGENQ = X'40'        collides with the lowest PTO bit
+*
+* and argued they were "survivable but fragile: CP sets SEGMIG and SEGENQ only
+* when the pointer is zero, and the hardware does not examine other fields of
+* an invalid entry.  That needs to become an explicit invariant rather than an
+* accident."  That was reasoning.  This measures it, in both directions.
+*
+* CASE A -- THE INVARIANT HOLDING.  An STE with the ESA/390 invalid bit set
+* AND both CP flags:
+*
+*     X'20' invalid | X'10' SEGMIG | X'40' SEGENQ  =  X'00000070'
+*
+* LRA reports cc=1, segment-translation exception.  So the hardware really does
+* ignore the rest of an invalid entry, and CP's flags are safe where they are --
+* PROVIDED SEGINV is set.
+*
+* CASE B -- THE INVARIANT BROKEN, which is the part worth knowing.  The same
+* two CP flags WITHOUT the invalid bit:
+*
+*     X'10' SEGMIG | X'40' SEGENQ  =  X'00000050'
+*
+* To ESA/390 that is a perfectly VALID entry: a common segment whose page-table
+* origin is X'40'.  And the hardware follows it -- cc is not 1 -- walking a page
+* table at real address X'40', inside lowcore, on top of the CSW and CAW, and
+* translating through whatever bytes are there.
+*
+* WHY THIS MATTERS MORE THAN A COMMENT WOULD
+* ------------------------------------------
+* If any path in CP ever sets SEGMIG or SEGENQ without SEGINV, translation
+* proceeds SILENTLY through a page table in lowcore.  No exception, no
+* diagnostic -- the same failure shape as CR6 in test 7, where the I/O
+* succeeded and the machine hung.
+*
+* So this is an argument for asserting the invariant in CODE.  The conversion
+* should either move SEGMIG and SEGENQ out of bits that ESA/390 defines, or add
+* a check that they are never set without SEGINV.  "The hardware does not look
+* at those bits" is true only while the entry is invalid, and nothing in CP
+* currently enforces that.
+*
+* HOW TO READ THE RESULT
+*   00600D   pass.  Both cases behaved as described above.
+*   001301   CASE A FAILED -- an invalid entry with CP's flags set was NOT
+*            honoured as invalid.  That would make the collision fatal rather
+*            than fragile, and the flags would have to move.
+*   001302   CASE B failed -- the hardware rejected X'50' after all, so the
+*            hazard above does not exist on this build.  Worth understanding
+*            before relying on it either way.
+*   000DED   program check -- read the old PSW at X'150'.
+*
+* DAT stays OFF throughout; LRA translates through the tables CR1 designates
+* whether or not DAT is enabled.  31-bit mode is entered first because both
+* test addresses are above the line and 24-bit mode would truncate the operand
+* before translation -- see 08-lra.rc, which is how that was learned.
+*
+* TABLES  SEGTAB 3000, 32 entries (STL 1).  Segment 0 identity-mapped so the
+*         code stays addressable.  SEGTAB[17] = 70, SEGTAB[18] = 50.
+*
+* Built by build/ste1.py.
+*
+r 0=0008000000002000
+r 2000=05F041F0F000D207
+r 2008=0068F056B701F05E
+r 2010=5840F06E0B040700
+r 2018=5860F0665870F06A
+r 2020=B120600047B0F032
+r 2028=B13070004740F036
+r 2030=8200F03E8200F046
+r 2038=8200F04E00000000
+r 2040=000A00000000600D
+r 2048=000A000000001301
+r 2050=000A000000001302
+r 2058=000A000000000DED
+r 2060=00B0000000003001
+r 2068=0110000001200000
+r 2070=8000201800000000
+r 3000=00003080000000200000002000000020
+r 3010=00000020000000200000002000000020
+r 3020=00000020000000200000002000000020
+r 3030=00000020000000200000002000000020
+r 3040=00000020000000700000005000000020
+r 3050=00000020000000200000002000000020
+r 3060=00000020000000200000002000000020
+r 3070=00000020000000200000002000000020
+r 3080=00000000000010000000200000003000
+r 3090=00004000000050000000600000007000
+r 30A0=00008000000090000000A0000000B000
+r 30B0=0000C0000000D0000000E0000000F000
+
+t-
+restart
