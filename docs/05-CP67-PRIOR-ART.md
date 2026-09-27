@@ -139,6 +139,14 @@ ESA/390. Three options, and the third is CP-67's:
 | Share page tables, 1 MB segments | 1 MB | one | **breaks** — first megabyte common |
 | Share frames, 1 MB segments | **4 KB** | one per VM | **works** |
 
+**And this is now the only viable route, not the preferable one.**
+`04-SHARED-SEGMENTS.md`'s remaining caveat has been checked against the real
+`USER DIRECT`: eight machines default to 15 MB of storage, two to 14 MB, one to
+16 MB, and twenty-one can be defined to 16 MB — so private storage routinely
+occupies 14–16 MB, exactly where CMS's shared segments live. Segment-level
+sharing at 1 MB would expose it. Frame-level sharing never makes a segment
+common at all, so the question does not arise.
+
 **So `CMSOLD` is not a blocker and there is no compatibility decision to
 make.** Sharing at frame granularity keeps every existing saved-system layout
 working at its current granularity, `CMSOLD` included, and the ESA/390

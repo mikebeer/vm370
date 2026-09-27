@@ -97,9 +97,17 @@ images, `lab.crexx`. Needed to produce **TEXT decks, a bootable nucleus and a
 saved system** — that is, to turn converted source into something that IPLs.
 Not needed to write or check the source.
 
-**The blocker was misdiagnosed.** Development does not need Adrian's
-environment. Integration does. That is a much better position, and it means M1
-and M2 source work can start immediately.
+> **Update, 27 September: tier 3 is available here too.** VM/370 CE now IPLs
+> headless in this container and MAINT logs on with the toolchain disks
+> accessed — see [11-RUNNING-CE.md](11-RUNNING-CE.md). The
+> development-here/integration-elsewhere split below is obsolete; both can
+> happen here. What may still need Adrian is the pinned OSMACRO/DOSMACRO
+> libraries, and possibly not even that if they are on a CE disk.
+
+**The blocker was misdiagnosed twice over.** It was never build access, and as
+of `11-RUNNING-CE.md` it is not integration access either. M1 step 1
+(`MACLIB GEN XALIB XAOPS`) and step 3 (assemble the nine modules, collect the
+errors) are both executable in this container.
 
 ## Two hazards found while doing this
 

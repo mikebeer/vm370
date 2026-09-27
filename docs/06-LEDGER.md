@@ -270,7 +270,13 @@ The honest end of the ledger.
    24-bit-shaped constants in its macros, and only 7 inline hex literals of
    that shape across all 175 modules, against CP's 217 named references. On
    this axis CMS is far cleaner than CP, which is good news for stage 2.
-4. **`USER DIRECT`** — resolved as far as the tree allows. It is a **CMS
+4. ~~**`USER DIRECT`**~~ **READ** — by running CE itself; see
+   `11-RUNNING-CE.md`. **Eight machines default to 15 MB, two to 14 MB, `XNET`
+   to 16 MB, and 21 can be defined to 16 MB**, so private storage routinely
+   occupies 14–16 MB where CMS's shared segments sit. That closes
+   `04-SHARED-SEGMENTS.md`'s last caveat **against** segment-level sharing and
+   makes the frame-level route necessary rather than preferable. Background
+   below, still accurate: It is a **CMS
    file**, compiled onto the directory cylinder by the `DIRECT` command;
    `DMKUDR` then reads the compiled form, which its prologue describes as
    "written using a pageable access method", and `UDIRECT.COPY` is that

@@ -1,7 +1,23 @@
 # Shared segments at 1 MB: the collision is two items, not nineteen
 
-> **Superseded in its conclusion. Read
-> [05-CP67-PRIOR-ART.md](05-CP67-PRIOR-ART.md) with it.**
+> **Superseded in its conclusion, and its one open caveat has now come back
+> POSITIVE. Read [05-CP67-PRIOR-ART.md](05-CP67-PRIOR-ART.md) with it.**
+>
+> **Segment 15 is NOT benign.** The "Loose ends" section below flagged one
+> check that could overturn that finding: whether any virtual machine's
+> private storage reaches 14–16 MB. It needed `USER DIRECT`, which is a CMS
+> file and not in the source tree. That file has now been read, by running
+> VM/370 CE itself (`11-RUNNING-CE.md`), and the answer is yes —
+> **eight machines default to 15 MB, two to 14 MB, `XNET` to 16 MB, and
+> twenty-one can be defined up to 16 MB.** CMS's shared segments sit at
+> 15.0–15.7 MB, inside that private storage.
+>
+> So under VM/370-style segment sharing at 1 MB, making segment 15 common
+> would expose the private storage of most machines on the system. The
+> collision is real.
+>
+> **Which makes frame-level sharing necessary rather than merely tidier.**
+> `05` is no longer the elegant option; it is the only one.
 >
 > Everything measured below is correct, but it rests on an assumption that
 > turns out to be false: that sharing must be segment-granular, because a
