@@ -89,6 +89,26 @@ It also confirms the geometry independently: "Processes execute in a 31-bit
 virtual address space" and "The hardware page size for the ESA/390
 architecture is 4096 bytes."
 
+## What the 31-bit work already hands this directory
+
+[`../../docs/17-CARRY-FORWARD-64.md`](../../docs/17-CARRY-FORWARD-64.md) is the
+item-by-item ledger. The headline: the channel subsystem conversion, 4 KB storage
+keys, frame-level sharing, the `AUXLCL` delivery mechanism, the CE build harness
+and six of the 24 `XAOPS` macros carry forward **unchanged** — and two of those
+six, `IPTE` and `SSKE`, are already valid z/Architecture instructions because
+their encodings leave byte 2 zero, which is what z/Architecture reads as "no R3"
+and "no mask".
+
+What has to be redone is measured there too: **123 `LPSW` sites in 22 modules**,
+172 `LCTL` and 28 `STCTL`, the PSW growing from 8 bytes to 16 with a different
+layout, and DAT gaining up to three region-table levels above the segment table.
+The 3,482 `BAL` and 118 `BALR` sites are **not** affected, for the same reason
+they were not a problem at 31-bit.
+
+And one constant changes value twice — `PTLSHFT`, bytes per page table, because
+table entries go 2 bytes → 4 → 8. That is the whole argument for naming the 70
+shift sites rather than substituting values into them.
+
 ## Open questions
 
 **Does a 64-bit CP need 64-bit guests to be worth it?** The 31-bit answer is
