@@ -51,7 +51,8 @@ HANDLED = {
     'DMKIOT': 'run26',
     'DMKCPI': 'run30',
     'DMKSYS': 'run31',
-    'DMKCKP': 'run36',
+    'DMKCKP': 'run38',
+    'DMKDMP': 'run38',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source

@@ -42,6 +42,7 @@ XA12 = 'XA0012DK'
 XA13 = 'XA0013DK'
 XA14 = 'XA0014DK'
 XA15 = 'XA0015DK'
+XA16 = 'XA0016DK'
 
 
 def psa():
@@ -1032,6 +1033,142 @@ def dmkckp():
     return d
 
 
+def dmkdmp():
+    """The abend dump writer: the last module the PSA rename broke.
+
+    Twenty-two channel sites, seventeen backward self-relative branches and three
+    `INTTIO` sites.  Structurally the same as DMKCKP, with two differences worth
+    noting.
+
+    **Five of the seventeen branches are free.**  `TIOIPL`, `DRAINEND`,
+    `DOMONSIO`, `DOTIO` and `GOTIO` already label the instruction their `*-4`
+    targets, so the branch only needs the name it could have used all along.
+
+    **Placement is easy here.**  DMKDMP's only clears are `XC SENSDATA(24)` --
+    a named field -- and an `MVCL` over real pages 1 to 3, which is storage
+    rather than the module.  So `XAIOWORK` goes at the end of the data, after the
+    closing `ORG`, with none of the `CLR1` trouble DMKCKP gave (I-55).
+
+    The lookup's `STSCH` scan rather than `RDEVSSID` earns its keep in exactly
+    this module: DMKDMP runs *after an abend*, when CP's control blocks are the
+    one thing that cannot be trusted, and a dump that needs a healthy RDEVBLOK
+    to write itself is no use on the occasion you need it.
+    """
+    d = Deck(XA16)
+    nxt = lambda s: next_seq(SRC + '/DMKDMP.ASSEMBLE', s)
+
+    def one(seq, lines, inc=100):
+        d.replace(seq, first=str(int(seq) + inc), inc=inc,
+                  limit=nxt(seq), lines=lines)
+
+    def blk(frm, to, lines, first=None, inc=100):
+        d.replace(frm, to, first=first or str(int(frm) + inc), inc=inc,
+                  limit=nxt(to), lines=lines)
+
+    one('00710300', ["         XASIO R15            START IO"])
+
+    one('00722000', Deck.comment(
+        "THE INTERRUPTING DEVICE ADDRESS IS IN THE INTERRUPTION PARAMETER NOW, "
+        "PUT THERE BY DMKCPI'S MSCH. I-47.") + [
+        "         CH    R15,IOINTPRM+2 INTERRUPT FOR DUMP DISK ?",
+    ])
+
+    blk('00731000', '00735000', Deck.comment(
+        "R-26: BOTH *-4 BRANCHES SPANNED A TIO AND NOW NAME IT.") + [
+        "DMPCL1   XATIO R15            TEST IO",
+        "         BC    6,DMPCL1       CLEAR DEVICE",
+        "         XASIO R15            START IO (SENSE)",
+        "DMPWT1   XATIO R15            WAIT FOR IT",
+        "         BC    6,DMPWT1       BRANCH IF BUSY OR STATUS",
+    ])
+
+    blk('00738030', '00738080', [
+        "DMPCL2   XATIO R15            DRAIN ANY INTERRUPTS",
+        "         BC    7,DMPCL2       LOOP UNTIL READY",
+        "DMPST2   XASIO R15            READ R0 FOR ALT TRACK ADDR",
+        "         BC    7,DMPST2       LOOP UNTIL STARTED",
+        "DMPWT2   XATIO R15            TEST FOR COMPLETION",
+        "         BC    7,DMPWT2       TRY AGAIN",
+    ], first='00738031', inc=1)
+
+    # TIOIPL already labels the target, so the branch just names it.  00776500
+    # and 00776600 sit between these two, so they are separate edits.
+    one('00775000', ["TIOIPL   XATIO R15            TEST"])
+    one('00776000', ["         BNZ   TIOIPL         WAIT"])
+    one('00777000', Deck.comment(
+        "SYSIPLDV IS CP'S OWN FIELD FOR THE IPL DEVICE ADDRESS, SET BY DMKCPI "
+        "AND READ IN SIX PLACES. X'BA' NEVER MEANT IT. I-47.") + [
+        "         STH   R15,SYSIPLDV   SAVE IPL DEVICE ADDRESS",
+    ])
+
+    blk('00779000', '00782000', [
+        "DMPST3   XASIO R15            START",
+        "         BNZ   DMPST3         WAIT",
+        "DMPWT3   XATIO R15            TEST",
+        "         BNZ   DMPWT3         WAIT",
+    ])
+
+    blk('00804000', '00807000', [
+        "DMPST4   XASIO R15            START",
+        "         BNZ   DMPST4         WAIT",
+        "DMPWT4   XATIO R15            TEST",
+        "         BNZ   DMPWT4         WAIT",
+    ])
+
+    blk('00976000', '00977000', [
+        "DRAINEND XATIO R15            DRAIN LAST INTERRUPT",
+        "         BNZ   DRAINEND       WAIT",
+    ])
+
+    blk('01005000', '01006000', [
+        "DMPCL5   XATIO R1             CLEAR PENDING INTS",
+        "         BC    2,DMPCL5       STILL BUSY, KEEP TRYING",
+    ])
+
+    blk('01012000', '01013000', [
+        "DOMONSIO XASIO R1             START THE DEVICE",
+        "         BC    2,DOMONSIO     BUSY, KEEP TRYING",
+    ])
+
+    blk('01016000', '01017000', [
+        "DOTIO    XATIO R1             CLEAR THE STATUS",
+        "         BC    2,DOTIO        BUSY, KEEP TRYING",
+    ])
+
+    # 01130000's BC 8+4+2,*+8 is a FORWARD branch over the following BAL, and
+    # neither it nor the BAL changes length, so it is correct as it stands.
+    one('01129000', ["         XATIO R15            IS THE PATH FREE ?"])
+
+    blk('01144000', '01145000', [
+        "DMPCL6   XATIO R15            DRAIN INTERRUPT",
+        "         BC    2,DMPCL6       LOOP ON BUSY",
+    ])
+
+    one('01151000', [
+        "WAITRET  CH    R15,IOINTPRM+2 INTERRUPT FROM RIGHT DEVICE ?",
+    ])
+
+    blk('01157000', '01158000', [
+        "DMPWT7   XATIO R15            TEST",
+        "         BC    2,DMPWT7       CC=2; CHANNEL STILL BUSY",
+    ])
+
+    blk('01169000', '01170000', [
+        "GOTIO    XATIO R15            ISSUE TIO TO 'DUMP' DEVICE",
+        "         BC    2,GOTIO        CC=2, CHANNEL STILL BUSY",
+    ])
+
+    # After the closing ORG and before END.  DMKDMP clears only SENSDATA and
+    # real pages 1-3, so unlike DMKCKP there is no cleared region to avoid.
+    d.insert('01556000', first='01556100', inc=100, limit=nxt('01556000'),
+             lines=Deck.comment(
+        "AFTER THE CLOSING ORG. DMKDMP'S ONLY CLEARS ARE XC SENSDATA(24) AND "
+        "AN MVCL OVER REAL PAGES 1 TO 3, SO NOTHING ZEROES THIS. I-55.") + [
+        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -1097,6 +1234,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCKP.AUXLCL'),
         [(XA15, 'CHANNEL SUBSYSTEM VIA XAIO, AND THE INTTIO SITES')])
 
+    dmp = dmkdmp()
+    dmp.write(os.path.join(HERE, 'DMKDMP.%s' % XA16))
+    aux(os.path.join(HERE, 'DMKDMP.AUXLCL'),
+        [(XA16, 'CHANNEL SUBSYSTEM VIA XAIO, AND THE INTTIO SITES')])
+
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
@@ -1127,7 +1269,8 @@ def main():
                  'DMKIOT.%s' % XA12, 'DMKIOT.AUXLCL',
                  'DMKCPI.%s' % XA13, 'DMKCPI.AUXLCL',
                  'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL',
-                 'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL',
+                 'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

@@ -1,0 +1,69 @@
+./ R 00710300          $ 710400 100                                             
+         XASIO R15            START IO                         XA0016DK         
+./ R 00722000          $ 722100 100                                             
+*  THE INTERRUPTING DEVICE ADDRESS IS IN THE INTERRUPTION      XA0016DK         
+*  PARAMETER NOW, PUT THERE BY DMKCPI'S MSCH. I-47.            XA0016DK         
+         CH    R15,IOINTPRM+2 INTERRUPT FOR DUMP DISK ?        XA0016DK         
+./ R 00731000 00735000 $ 731100 100                                             
+*  R-26: BOTH *-4 BRANCHES SPANNED A TIO AND NOW NAME IT.      XA0016DK         
+DMPCL1   XATIO R15            TEST IO                          XA0016DK         
+         BC    6,DMPCL1       CLEAR DEVICE                     XA0016DK         
+         XASIO R15            START IO (SENSE)                 XA0016DK         
+DMPWT1   XATIO R15            WAIT FOR IT                      XA0016DK         
+         BC    6,DMPWT1       BRANCH IF BUSY OR STATUS         XA0016DK         
+./ R 00738030 00738080 $ 00738031 001                                           
+DMPCL2   XATIO R15            DRAIN ANY INTERRUPTS             XA0016DK         
+         BC    7,DMPCL2       LOOP UNTIL READY                 XA0016DK         
+DMPST2   XASIO R15            READ R0 FOR ALT TRACK ADDR       XA0016DK         
+         BC    7,DMPST2       LOOP UNTIL STARTED               XA0016DK         
+DMPWT2   XATIO R15            TEST FOR COMPLETION              XA0016DK         
+         BC    7,DMPWT2       TRY AGAIN                        XA0016DK         
+./ R 00775000          $ 775100 100                                             
+TIOIPL   XATIO R15            TEST                             XA0016DK         
+./ R 00776000          $ 776100 100                                             
+         BNZ   TIOIPL         WAIT                             XA0016DK         
+./ R 00777000          $ 777100 100                                             
+*  SYSIPLDV IS CP'S OWN FIELD FOR THE IPL DEVICE ADDRESS, SET  XA0016DK         
+*  BY DMKCPI AND READ IN SIX PLACES. X'BA' NEVER MEANT IT.     XA0016DK         
+*  I-47.                                                       XA0016DK         
+         STH   R15,SYSIPLDV   SAVE IPL DEVICE ADDRESS          XA0016DK         
+./ R 00779000 00782000 $ 779100 100                                             
+DMPST3   XASIO R15            START                            XA0016DK         
+         BNZ   DMPST3         WAIT                             XA0016DK         
+DMPWT3   XATIO R15            TEST                             XA0016DK         
+         BNZ   DMPWT3         WAIT                             XA0016DK         
+./ R 00804000 00807000 $ 804100 100                                             
+DMPST4   XASIO R15            START                            XA0016DK         
+         BNZ   DMPST4         WAIT                             XA0016DK         
+DMPWT4   XATIO R15            TEST                             XA0016DK         
+         BNZ   DMPWT4         WAIT                             XA0016DK         
+./ R 00976000 00977000 $ 976100 100                                             
+DRAINEND XATIO R15            DRAIN LAST INTERRUPT             XA0016DK         
+         BNZ   DRAINEND       WAIT                             XA0016DK         
+./ R 01005000 01006000 $ 1005100 100                                            
+DMPCL5   XATIO R1             CLEAR PENDING INTS               XA0016DK         
+         BC    2,DMPCL5       STILL BUSY, KEEP TRYING          XA0016DK         
+./ R 01012000 01013000 $ 1012100 100                                            
+DOMONSIO XASIO R1             START THE DEVICE                 XA0016DK         
+         BC    2,DOMONSIO     BUSY, KEEP TRYING                XA0016DK         
+./ R 01016000 01017000 $ 1016100 100                                            
+DOTIO    XATIO R1             CLEAR THE STATUS                 XA0016DK         
+         BC    2,DOTIO        BUSY, KEEP TRYING                XA0016DK         
+./ R 01129000          $ 1129100 100                                            
+         XATIO R15            IS THE PATH FREE ?               XA0016DK         
+./ R 01144000 01145000 $ 1144100 100                                            
+DMPCL6   XATIO R15            DRAIN INTERRUPT                  XA0016DK         
+         BC    2,DMPCL6       LOOP ON BUSY                     XA0016DK         
+./ R 01151000          $ 1151100 100                                            
+WAITRET  CH    R15,IOINTPRM+2 INTERRUPT FROM RIGHT DEVICE ?    XA0016DK         
+./ R 01157000 01158000 $ 1157100 100                                            
+DMPWT7   XATIO R15            TEST                             XA0016DK         
+         BC    2,DMPWT7       CC=2; CHANNEL STILL BUSY         XA0016DK         
+./ R 01169000 01170000 $ 1169100 100                                            
+GOTIO    XATIO R15            ISSUE TIO TO 'DUMP' DEVICE       XA0016DK         
+         BC    2,GOTIO        CC=2, CHANNEL STILL BUSY         XA0016DK         
+./ I 01556000 $ 01556100 100                                                    
+*  AFTER THE CLOSING ORG. DMKDMP'S ONLY CLEARS ARE XC          XA0016DK         
+*  SENSDATA(24) AND AN MVCL OVER REAL PAGES 1 TO 3, SO         XA0016DK         
+*  NOTHING ZEROES THIS. I-55.                                  XA0016DK         
+         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0016DK         
