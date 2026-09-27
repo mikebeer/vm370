@@ -1,0 +1,87 @@
+# Risk register
+
+27 September 2026. Risks are **forward-looking**: things that may happen and
+would cost us if they did. Anything that has *already* happened is a defect and
+lives in [13-ISSUES.md](13-ISSUES.md) instead. That boundary is what keeps both
+lists useful — a risk register full of things that already went wrong cannot be
+prioritised.
+
+This supersedes the four-item ranking that used to sit in
+`../arch/31bit/README.md` under "The risk order changed". Milestones are
+separate: see that README's milestone table.
+
+**Scoring.** Probability and Impact are Low / Medium / High, scored 1 / 2 / 3.
+Weight = P × I, so 1–9.
+
+| Weight | Band | Meaning |
+|---|---|---|
+| 9 | **critical** | plan around it explicitly |
+| 6 | **high** | needs a named mitigation before the milestone that carries it |
+| 3–4 | moderate | watch, mitigate cheaply |
+| 1–2 | low | accept, revisit if evidence changes |
+
+**Impact is judged on the conversion, not on the emulator.** A risk whose
+failure mode is *silent* is scored one level higher than the same damage
+announced loudly, because the cost is the debugging, not the bug. CR6 is why
+(see R-02).
+
+---
+
+## Register
+
+| ID | Risk | Description | P | I | W | Mitigation | Status |
+|---|---|---|---|---|---|---|---|
+| **R-01** | Geometry in bare shift literals | 70 hard-coded shift amounts across twelve modules encode the 64 KB/1 MB segment and halfword/fullword PTE geometry as bare numeric literals. No symbol rename touches them; a missed one yields a *correct-looking* translation to the wrong page. | H | H | **9** | Enumerate all 70 with a script and convert each to a named `EQU` **before** changing any geometry, so the change has one definition point. Pre-M2 task, mechanical, cheap. | open |
+| **R-02** | Silent-gate omissions | A required control bit omitted, with no diagnostic and a symptom that looks like success. Three found already: CR0 translation format, `PMCW5_E`, and CR6 — where the console line prints, the device works, and the CPU hangs forever. There is no reason to think three is all of them. | M | H | **6** | Keep a gates checklist in `../arch/31bit/tests/hardware/`; make every milestone exit criterion require *progress past* the observable, never the observable itself (see I-08). Assert CR0/CR6/PMCW enable at every CP entry during M1–M2. | open |
+| **R-03** | Channel logout has no equivalent | `TM CSW,X'04'` and friends survive a copy; what they point at does not. The ESW/ERW in the IRB plus `STCRW` replace `CHANID`, `IOELPNTR` and `ECSWLOG`, which have nothing to map to. | H | M | **6** | Map every logout site; stub all of them to "permanent error" for M1–M2 so the paths assemble and fail loudly; implement ESW/ERW properly only when a real device error needs diagnosing. | open |
+| **R-04** | Column-sensitive source corrupted by tooling | CP source is strictly column-sensitive: columns 1–71 are code, 72 is continuation, 73–80 carry `@V40759`-style change markers. Any script touching 217 constant sites or 70 shift literals can push markers into column 72. | H | M | **6** | Same-length renames only. A column-preserving edit tool with a verifier that asserts columns 72–80 byte-identical before and after. Observed instance (`TRACE`→`CPTRACE`) failed loudly, which is why impact is M not H. | open |
+| **R-05** | `DMKBLDRT` ABI change | Its parameter is a packed halfword that cannot express a 31-bit range. Eight callers. | H | M | **6** | Known and bounded: widen the parameter, fix eight sites, in M2. Counted, so it cannot be forgotten. | open |
+| **R-06** | Frame sharing needs new bookkeeping | The CP-67 route shares frames rather than page tables, so shared frames need locking and reference counting that a single shared page table got for free. This is the one piece of work the CP-67 finding *added*. | H | M | **6** | `DMKPTR` already tracks sharing per frame (`CORFLAG,CORSHARE`, 84 refs) and counts resident shared pages, so the substrate is at the right granularity. Isolate in M3b (see I-10) so a failure has one source. | open |
+| **R-07** | STE flag-collision invariant unenforced | `SEGMIG X'10'` collides with ESA/390's common-segment bit and `SEGENQ X'40'` with the lowest `PTO` bit. Survivable only because CP happens to set both exclusively when the pointer is zero — an accident, not a rule. `12-ste-flags.rc` showed that without `SEGINV` the hardware walks a page table in lowcore. | M | H | **6** | Turn the accident into an explicit, asserted invariant at every site that sets either flag. `12-ste-flags.rc` is the regression test and already measures both directions. | open |
+| **R-08** | S/370-mode guest regression | A 31-bit CP that cannot run an unmodified S/370-mode guest has failed by definition. 24-bit is the reference implementation, not a museum piece. | M | H | **6** | M3 is exactly this test. `ARCHTECT`'s eight rows, indexed from the *guest's* CR0 (`IC R9,EXTCR0+1`), are the mechanism that makes it possible — they exist to shadow whatever DAT format a virtual machine selects. Keep `arch/24bit/` as the differential baseline. | open |
+| **R-09** | No budgeted route to a bootable nucleus | M1 uses strategy B — `loadcore` plus `restart` into `DMKCPINT` — deferring `DMKCKP`, `DMKSAV` and the IPL-from-DASD path. Those three modules carry 70 of the 82 DAT references M1 avoided, so the deferral is real work postponed, not work removed. | M | H | **6** | Assign it to a milestone (I-11). It belongs after M2, because its DAT content is exactly what M2 establishes. Budget it as a milestone in its own right rather than as M3 overhead. | open |
+| **R-10** | CMS stage 2 unowned | M0–M4 give no guest a single extra byte. The 18 MB heap needs CMS converted, which has no milestone number, no work list, and 126 `DIAGNOSE` references whose parameter lists carry addresses. | M | H | **6** | Number it M5 now, with the measured survey attached: 4 architecture-sensitive instructions in 139 macro members, zero S/370 I/O, 7 inline 24-bit literals across 175 modules against CP's 217. Probably small — but "probably small and unnumbered" is how work goes missing. | open |
+| **R-11** | Analysis outruns implementation | Thirteen tests, thirteen documents, and zero lines of CP changed. Findings are measured against a moving CE tree, so they go stale; and the marginal analysis is now worth less than the first edited line. | H | M | **6** | Hard rule: no new analysis document until M1 step 1 has been executed. `heritage/vm370ce/` snapshots guard against staleness. Remaining open tests (R-20, R-12) are explicitly ranked below starting M1. | open |
+| **R-12** | Guest-visible storage-key semantics | Keys go 2 KB → 4 KB. `SWPKEY1`/`SWPKEY2`, `SWPREF1/2`, `SWPCHG1/2` collapse pairwise across 55 references — and it reaches `DMKPRV`, because a guest reading its own keys through `ISK` expects 2 KB semantics. This is guest-visible, not just paging code. | M | M | **4** | Standalone `ISK`/`SSK` test before the decision; then choose deliberately between simulating 2 KB semantics in `DMKPRV` and exposing 4 KB. Belongs with M3/M4, and until now had no milestone owner at all. | open |
+| **R-13** | z390 built-ins shadow CP macros | z390 directives silently shadow same-named CP macros: the macro is ignored and its operands parsed as something else. `TRACE` was found only because it happened to fail. A collision that *doesn't* fail produces a false `rc=0`. | M | M | **4** | Mechanical cross-check of CP's 59 macro names against z390's directive list before trusting any clean assembly. Cheap, and not yet done (I-05). | open |
+| **R-14** | OSMACRO/DOSMACRO unavailable | ~24 modules reference OS/VS macros (`MSSCOM`, `MODESET`, `WAITT`, `OSVSCOM`, `NUCON`, `VSCOMM`, `ACTDCB`) that are pinned build assets and not in Git. | M | M | **4** | Search CE's own disks first — now possible, since CE runs here. Failing that, ask Adrian for two specific macro libraries rather than "the build environment". None of the 24 is on M1's critical path. | open |
+| **R-15** | Constant sites needing per-site judgment | 217 reference sites to six architecture-dependent constants in `PSA.MACRO` — `XPAGNUM` (73), `CPCREG0` (38), `X2048BND` (25), `XRIGHT24` (23), `X40FFS` (18). Classification found they are not uniform: of 38 `XRIGHT16` sites, 3 break and 1 is a false positive. | M | M | **4** | Classification is complete, so the residual is per-site review at the sites flagged, not at all 217. `CPCREG0` is *not* a constant — it is a live CR0 save area — and must be treated as such. | open |
+| **R-16** | Corrupting the CE distribution | Bare-metal tests build their own channel programs with no operating system to stop them addressing the wrong subchannel. One near-miss already: a write command reached subchannel `0000` with a writable CE pack attached, and only the device rejecting the command code prevented a write. CP also writes continuously when running — spool, paging, warm start. | M | M | **4** | Disposable extraction; distribution zip stays read-only; `herc.conf` attaches one device and no DASD; `/cp shutdown` then `exit`, never a killed process. | mitigated |
+| **R-17** | CE's assembler rejects `XAOPS` | The macros use `DC X'B233',S(&ORB)` to make an S-format address constant resolve through the active `USING`. Validated under z390 — which is not CE's `ASSEMBLE`, an assembler predating 1983. | L | H | **3** | Probability is Low because this is *CP's own idiom*: 21 existing sites hand-encode unknown instructions the same way, including `DMKVATZP DC X'E60B',S(ARCHTECT,0(R9))`. M1 step 1 settles it in about an hour, and is the first thing to run. | open |
+| **R-18** | `wide/` supersedes the 31-bit route | If `VMCE-WIDE-PLAN.md` has selected a direct 64-bit route, the ordering argument is wrong and M1–M4 are misdirected. | L | H | **3** | One question to Adrian. And largely self-mitigating: the channel subsystem arrived with 370-XA and z/Architecture did not touch it, and page/segment geometry is identical at 4 KB/1 MB — so the two most expensive pieces carry forward unchanged either way. | open |
+| **R-19** | Counts are floors | The statement parser cannot see macro-generated instructions, so every count is a lower bound. | L | M | **2** | Largely closed: of 59 macros only 10 emit anything architecture-dependent, and weighted by invocation `TRANS` is the entire undercount (522 instructions). M1 step 3 — assemble nine modules and diff the errors against the predicted counts — is the detector, and it runs before any module is edited. | mitigated |
+| **R-20** | Multiple-device interrupt behaviour | An interruption arriving while another is pending, ISC with more than one class, and `DMKIOT`'s queue walk are untested. The only untested item left on the I/O path. | L | M | **2** | Build the test when a reason appears. Probability is Low because the likely finding is that the channel subsystem queues correctly; explicitly ranked below starting M1. | open |
+| **R-21** | Lab-only emulator patch leaks out | Hercules 3.13 needed `__thread` dropped from `float_exception_flags` and `float_rounding_mode` to link. Safe for a one-CPU lab with no floating point; wrong anywhere else, since those are per-CPU state. | L | M | **2** | Documented as lab-only in `../arch/31bit/README.md`. Never distribute that binary; never carry the patch into a real build. | mitigated |
+
+## Distribution
+
+| Weight | Count | IDs |
+|---|---|---|
+| 9 critical | 1 | R-01 |
+| 6 high | 10 | R-02 … R-11 |
+| 3–4 moderate | 7 | R-12 … R-18 |
+| 1–2 low | 3 | R-19 … R-21 |
+
+**Ten risks at weight 6 is an undifferentiated middle**, and that is honest
+rather than tidy: most of them are "certain work with a silent failure mode",
+which is exactly the profile of an architecture conversion. The discriminator
+between them is not weight but *which milestone carries them* — see the mapping
+below.
+
+## Which milestone retires which risk
+
+The gap this register was created to close. Previously the ranked risks and the
+milestone table did not reference each other, and R-12 had no owner at all.
+
+| Milestone | Risks it must retire |
+|---|---|
+| **M1** | R-02 (gates), R-03 (stub logout), R-04 (first real edits), R-13, R-17, R-19 |
+| **M2** | R-01, R-05, R-07, R-14 |
+| **M3a** | R-08 |
+| **M3b** | R-06 |
+| **M4** | R-12 |
+| *(unassigned)* | **R-09** — needs a milestone of its own; **R-10** — needs to be M5 |
+| *(continuous)* | R-11, R-15, R-16, R-18, R-20, R-21 |
+
+Two rows with no milestone is the finding. R-09 and R-10 are both weight 6 and
+both unowned, and R-10 is the one that delivers the project's actual goal.

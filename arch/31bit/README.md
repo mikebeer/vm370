@@ -266,23 +266,27 @@ because it is IPL'd by name through `DMKSNT`. Splitting them out keeps M2 to
 the table formats alone, and defers the `DMKATS` rework — the one piece of
 work the CP-67 finding *added* — until there is a guest to test it with.
 
-## The risk order changed
+## Risks and issues live in a register, not here
 
-The shared-segment question is closed and `DMKVAT` has been demoted twice, so
-the ranking is now:
+Risks used to be a four-item ranking in this section. They are now a scored
+register, separate from the milestones above, because the two answer different
+questions and were quietly interfering with each other:
 
-1. **The `SIO` condition-code contract.** `SIO` sets cc=1 with a CSW stored
-   *synchronously*; `SSCH` only queues. About a dozen `BC 4,…  BRANCH IF CSW
-   STORED` branches depend on the difference. **Correction: this is testable,
-   and an earlier claim here that Hercules cannot prototype it was wrong** —
-   see below. Still the top risk on merit, because it is semantic rather than
-   a field mapping, but it is no longer untestable.
-2. **Storage keys, 2 KB → 4 KB.** Reaches `DMKPRV`, because a guest reading
-   its own keys through `ISK` expects 2 KB semantics. Not just paging code.
-3. **Channel logout.** `TM CSW,X'04'` and friends, replaced by the ESW/ERW in
-   the IRB plus `STCRW`. The bit survives a copy; what it points at does not.
-4. **Whether `ARCHTECT`'s `CODE60`/`CODE70` rows are live.** Still the one
-   open question where Adrian may simply know the answer.
+- **[`../../docs/12-RISKS.md`](../../docs/12-RISKS.md)** — 21 risks with
+  probability, impact, weight (P × I) and a named mitigation each, plus a table
+  of **which milestone retires which risk**. That mapping is what this section
+  could not provide: it found two weight-6 risks owned by no milestone at all,
+  and one — guest-visible storage-key semantics reaching `DMKPRV` — that had no
+  owner anywhere.
+- **[`../../docs/13-ISSUES.md`](../../docs/13-ISSUES.md)** — known defects,
+  including the retracted claims. The top open item is a single macro: CP's
+  `MSG` blocks ~20 modules under z390, three of them DAT modules.
+
+The top risk is no longer the `SIO` condition-code contract, which
+`06-initial-status.rc` retired. It is **R-01: seventy hard-coded shift amounts
+across twelve modules**, which encode the page and segment geometry as bare
+numeric literals that no symbol rename will ever touch, and whose failure mode
+is a plausible translation to the wrong page.
 
 `DMKATS` frame sharing is new work but not a new risk — it is bounded, and
 IBM did it first.

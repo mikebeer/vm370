@@ -68,6 +68,8 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/09-DAT-WORK-SHAPE.md   what reading DMKBLD and DMKPGS revealed
     docs/10-BUILD-ENVIRONMENT.md what it takes to write CP code, measured
     docs/11-RUNNING-CE.md        CE running headless here, and what that closed
+    docs/12-RISKS.md            the risk register, scored and mapped to milestones
+    docs/13-ISSUES.md           known issues and defects, including retractions
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was
