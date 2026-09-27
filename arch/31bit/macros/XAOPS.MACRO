@@ -140,6 +140,47 @@
 *---------------------------------------------------------------------*
 * VERIFICATION STATUS                                                 *
 *                                                                     *
+* ACCEPTED BY CE ITSELF, 27 SEPTEMBER 2026.  THESE MACROS WERE READ   *
+* ONTO MAINT 191 THROUGH THE CARD READER, BUILT WITH                  *
+* MACLIB GEN XALIB XAOPS -- WHICH PRODUCED ALL TWELVE MEMBERS -- AND  *
+* XATEST ASSEMBLED AGAINST THEM BY VM/370 CE'S OWN ASSEMBLER XF:      *
+*                                                                     *
+*     ASSEMBLER (XF) DONE                                             *
+*     NO STATEMENTS FLAGGED IN THIS ASSEMBLY                          *
+*     HIGHEST SEVERITY WAS    0                                       *
+*     TOTAL RECORDS READ FROM SYSTEM LIBRARY      139                 *
+*                                                                     *
+* THE LIBRARY COUNT MATTERS: IT PROVES THE DEFINITIONS WERE FETCHED   *
+* FROM XALIB RATHER THAN THE CALLS BEING QUIETLY IGNORED.             *
+*                                                                     *
+* AND EVERY S-TYPE CONSTANT RESOLVED CORRECTLY THROUGH THE USING.     *
+* WITH  USING *,R15  ESTABLISHED AT X'02', SCHIB AT X'B8' ASSEMBLED   *
+* AS F0B6 -- BASE R15, DISPLACEMENT X'0B6' = B8 - 02.  ORB, IRB AND   *
+* PARM ARE ALL LIKEWISE EXACT.  THAT WAS THE ONE THING Z390 COULD     *
+* NOT SETTLE, BECAUSE Z390 IS NOT THIS ASSEMBLER.                     *
+*                                                                     *
+* THE DS 0H PAID OFF TOO: EVERY GENERATED INSTRUCTION LANDED ON A     *
+* HALFWORD BOUNDARY WITH NO PAD BYTE ANYWHERE IN THE SEQUENCE.        *
+*                                                                     *
+* FULL LISTING: validate/XATEST-CE-XF.LISTING                         *
+*                                                                     *
+* OBJECT BYTES AS EMITTED BY ASSEMBLER XF:                            *
+*                                                                     *
+*     STSCH  B234F0B6      CSCH   B2300000      BSM R1,0    0B10      *
+*     MSCH   B232F0B6      HSCH   B2310000      BSM 0,R4    0B04      *
+*     SSCH   B233F096      RSCH   B2380000      BASSM       0CEF      *
+*     TSCH   B235F0EA      SAL    B2370000                            *
+*     TPI    B236F04E      STCRW  B239F04E                            *
+*                                                                     *
+* THE FOUR THAT NEED NO MACRO ASSEMBLED NATIVELY IN THE SAME RUN,     *
+* CONFIRMING THE NOTE AT THE END OF THIS FILE:                        *
+*                                                                     *
+*     STOSM  AD04F052      LCTL   B711F04A                            *
+*     STNSM  ACFBF052      STCTL  B60FF056                            *
+*                                                                     *
+* HOW THEY WERE ORIGINALLY SOURCED, KEPT FOR PROVENANCE:              *
+*                                                                     *
+*                                                                     *
 * PROVEN BY EXECUTION.  THESE FIVE RAN CORRECTLY UNDER HERCULES 3.07, *
 * ARCHMODE ESA/390, FROM HAND-ASSEMBLED BYTES POKED INTO REAL STORAGE.*
 * MSCH ENABLED A SUBCHANNEL, SSCH STARTED A FORMAT-1 CHANNEL PROGRAM, *
@@ -151,8 +192,8 @@
 *     SSCH   B233        TSCH   B235                                  *
 *                                                                     *
 * NOT YET EXECUTED, BUT CONFIRMED BY A SECOND INDEPENDENT SOURCE --   *
-* THE Z390 ASSEMBLER'S OPCODE TABLE (TZ390.JAVA), WHICH IS NOT DERIVED *
-* FROM HERCULES:                                                      *
+* THE Z390 ASSEMBLER'S OPCODE TABLE (TZ390.JAVA), WHICH IS NOT        *
+* DERIVED FROM HERCULES:                                              *
 *                                                                     *
 *     CSCH   B230        TPI    B236        RSCH   B238               *
 *     HSCH   B231        SAL    B237        STCRW  B239               *

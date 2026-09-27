@@ -152,11 +152,34 @@ instructions the assembler does not know, including
 `DMKVATZP DC X'E60B',S(ARCHTECT,0(R9))` for the ECPS:VM assists.
 
 Five encodings — `MSCH`, `SSCH`, `TSCH`, `STSCH`, `BSM` — are proven by
-execution in the tests above. The other seven were read from Hercules source
-and are unverified; `macros/XATEST.ASSEMBLE` assembles one of each so the
-listing can be checked. One opcode is disputed: `RSCH` reads `B238` in the
-Hercules dispatch table and `B23B` in a reading of the 370-XA Reference
-Summary GX20-0157-2.
+execution in the tests above.
+
+**And as of 27 September all twelve are proven against CE's own assembler.**
+`XAOPS.MACRO` was read onto MAINT's 191 disk through the card reader,
+`MACLIB GEN XALIB XAOPS` produced all twelve members, and
+`macros/XATEST.ASSEMBLE` assembled against them:
+
+    ASSEMBLER (XF) DONE
+    NO STATEMENTS FLAGGED IN THIS ASSEMBLY
+    HIGHEST SEVERITY WAS    0
+    TOTAL RECORDS READ FROM SYSTEM LIBRARY      139
+
+The library count is the part that matters — it rules out a call being silently
+ignored, which is exactly how the first z390 validation fooled itself. Every
+object code matches, and every S-type displacement is arithmetically exact:
+with `USING *,R15` at `X'02'`, `SCHIB` at `X'B8'` assembled as `F0B6`. The
+listing is kept at `macros/validate/XATEST-CE-XF.LISTING`;
+`../../docs/14-M0-CLOSED.md` reads it off in full and also records **how to get
+a file into CE**, which every later step needs.
+
+The `RSCH` opcode is `B238`, now confirmed by the assembler that will build the
+nucleus. The `B23B` once flagged from the 370-XA Reference Summary is `RCHP`, a
+different instruction.
+
+**What is left in the assembly chapter**: the ESA/390 DAT instructions — `IPTE`,
+`IVSK`, `TPROT` — and the 4 KB-key trio `ISKE`/`SSKE`/`RRBE`, which M2 and the
+storage-key work will need. These are *unwritten, not unverified*: the mechanism
+is proven, so adding them is mechanical.
 
 ## What the conversion involves
 
@@ -243,7 +266,7 @@ else in this series that checks a condition code without checking the answer.
 
 | | | Status |
 |---|---|---|
-| **M0** | Assembler macros for the instructions CE does not know | **done** — every encoding executed or independently sourced; one listing check left |
+| **M0** | Assembler macros for the instructions CE does not know | **done, and verified on CE itself** — `MACLIB GEN` built all twelve members and Assembler XF assembled them with severity 0. `../../docs/14-M0-CLOSED.md` |
 | **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | not started — **the critical path** |
 | **M2** | DAT on with ESA/390 tables, **`TRANS`-bearing modules converted to AMODE 31**. No guests, no shared segments | not started, **unblocked** |
 | **M3** | One S/370-mode guest logs on and runs CMS — includes frame-level shared segments in `DMKATS` | not started |

@@ -6,7 +6,7 @@ very different things depending on whether something was executed, read, or
 counted.
 
 The one-line summary: **the hardware question is closed, the software is
-mapped, and no CP code has been written.**
+mapped, M0 is verified on CE itself, and no CP code has been written.**
 
 ---
 
@@ -181,11 +181,19 @@ nothing to map to.
   collides with CP's use of R13. Only matters where C meets assembler — and
   CE already has C components.
 
-### Milestone 0
+### Milestone 0 — now answered by execution, not documentation
 
-All twelve `XAOPS` encodings are sourced: five by execution, seven against
-z390's opcode table, which is not derived from Hercules. `RSCH` is `B238`; the
-`B23B` I once flagged is `RCHP`, a different instruction.
+**Moved up a category on 27 September.** All twelve `XAOPS` encodings were
+sourced five by execution and seven against z390's opcode table; they are now
+**accepted by CE's own Assembler XF**, with `MACLIB GEN` producing all twelve
+members, `HIGHEST SEVERITY WAS 0`, and 139 records read from the library — which
+is what rules out a silently ignored macro call. All seven S-type displacements
+are arithmetically exact, which is the one thing z390 could not vouch for.
+`RSCH` is `B238`, confirmed by the assembler that will build the nucleus. See
+`14-M0-CLOSED.md`.
+
+Still unwritten for M2: `IPTE`, `IVSK`, `TPROT`, and the 4 KB-key trio
+`ISKE`/`SSKE`/`RRBE`.
 
 ---
 

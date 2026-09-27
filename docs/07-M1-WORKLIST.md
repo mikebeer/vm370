@@ -136,9 +136,11 @@ are the ones with nothing to map to, and all three are channel-logout or
 
 ## The order to attack it
 
-1. **`XAOPS.MACRO` into the build.** `MACLIB GEN XALIB XAOPS`, then confirm a
-   module containing `SSCH` assembles. M0 is done but has never been used in
-   anger.
+1. ~~**`XAOPS.MACRO` into the build.**~~ **DONE, 27 September.**
+   `MACLIB GEN XALIB XAOPS` produced all twelve members and CE's Assembler XF
+   assembled `XATEST` — which contains `SSCH` — with `HIGHEST SEVERITY WAS 0`.
+   See `14-M0-CLOSED.md`, which also records the card-reader import recipe every
+   step below needs.
 2. **`PSA.MACRO`**: add the ESA/390 names at `X'B8'`/`X'BC'`, keep `INTTIO`
    where it is, and mark `CHANID`/`IOELPNTR`/`ECSWLOG` as S/370-only so
    anything still referencing them fails loudly rather than reading garbage.

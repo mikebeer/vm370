@@ -47,7 +47,7 @@ announced loudly, because the cost is the debugging, not the bug. CR6 is why
 | **R-14** | OSMACRO/DOSMACRO unavailable | ~24 modules reference OS/VS macros (`MSSCOM`, `MODESET`, `WAITT`, `OSVSCOM`, `NUCON`, `VSCOMM`, `ACTDCB`) that are pinned build assets and not in Git. | M | M | **4** | Search CE's own disks first — now possible, since CE runs here. Failing that, ask Adrian for two specific macro libraries rather than "the build environment". None of the 24 is on M1's critical path. | open |
 | **R-15** | Constant sites needing per-site judgment | 217 reference sites to six architecture-dependent constants in `PSA.MACRO` — `XPAGNUM` (73), `CPCREG0` (38), `X2048BND` (25), `XRIGHT24` (23), `X40FFS` (18). Classification found they are not uniform: of 38 `XRIGHT16` sites, 3 break and 1 is a false positive. | M | M | **4** | Classification is complete, so the residual is per-site review at the sites flagged, not at all 217. `CPCREG0` is *not* a constant — it is a live CR0 save area — and must be treated as such. | open |
 | **R-16** | Corrupting the CE distribution | Bare-metal tests build their own channel programs with no operating system to stop them addressing the wrong subchannel. One near-miss already: a write command reached subchannel `0000` with a writable CE pack attached, and only the device rejecting the command code prevented a write. CP also writes continuously when running — spool, paging, warm start. | M | M | **4** | Disposable extraction; distribution zip stays read-only; `herc.conf` attaches one device and no DASD; `/cp shutdown` then `exit`, never a killed process. | mitigated |
-| **R-17** | CE's assembler rejects `XAOPS` | The macros use `DC X'B233',S(&ORB)` to make an S-format address constant resolve through the active `USING`. Validated under z390 — which is not CE's `ASSEMBLE`, an assembler predating 1983. | L | H | **3** | Probability is Low because this is *CP's own idiom*: 21 existing sites hand-encode unknown instructions the same way, including `DMKVATZP DC X'E60B',S(ARCHTECT,0(R9))`. M1 step 1 settles it in about an hour, and is the first thing to run. | open |
+| **R-17** | ~~CE's assembler rejects `XAOPS`~~ | The macros use `DC X'B233',S(&ORB)` to make an S-format address constant resolve through the active `USING`. Validated under z390 — which is not CE's `ASSEMBLE`. | L | H | **3** | **CLOSED 27 Sep** — see [14-M0-CLOSED.md](14-M0-CLOSED.md). `MACLIB GEN XALIB XAOPS` produced all twelve members and CE's Assembler XF assembled `XATEST` with `HIGHEST SEVERITY WAS 0` and 139 records read from the library. All seven S-type displacements are arithmetically exact. Probability was correctly judged Low: this is CP's own idiom. | **closed** |
 | **R-18** | `wide/` supersedes the 31-bit route | If `VMCE-WIDE-PLAN.md` has selected a direct 64-bit route, the ordering argument is wrong and M1–M4 are misdirected. | L | H | **3** | One question to Adrian. And largely self-mitigating: the channel subsystem arrived with 370-XA and z/Architecture did not touch it, and page/segment geometry is identical at 4 KB/1 MB — so the two most expensive pieces carry forward unchanged either way. | open |
 | **R-19** | Counts are floors | The statement parser cannot see macro-generated instructions, so every count is a lower bound. | L | M | **2** | Largely closed: of 59 macros only 10 emit anything architecture-dependent, and weighted by invocation `TRANS` is the entire undercount (522 instructions). M1 step 3 — assemble nine modules and diff the errors against the predicted counts — is the detector, and it runs before any module is edited. | mitigated |
 | **R-20** | Multiple-device interrupt behaviour | An interruption arriving while another is pending, ISC with more than one class, and `DMKIOT`'s queue walk are untested. The only untested item left on the I/O path. | L | M | **2** | Build the test when a reason appears. Probability is Low because the likely finding is that the channel subsystem queues correctly; explicitly ranked below starting M1. | open |
@@ -59,7 +59,7 @@ announced loudly, because the cost is the debugging, not the bug. CR6 is why
 |---|---|---|
 | 9 critical | 1 | R-01 |
 | 6 high | 10 | R-02 … R-11 |
-| 3–4 moderate | 7 | R-12 … R-18 |
+| 3–4 moderate | 7 | R-12 … R-18 *(R-17 closed)* |
 | 1–2 low | 3 | R-19 … R-21 |
 
 **Ten risks at weight 6 is an undifferentiated middle**, and that is honest
@@ -75,7 +75,7 @@ milestone table did not reference each other, and R-12 had no owner at all.
 
 | Milestone | Risks it must retire |
 |---|---|
-| **M1** | R-02 (gates), R-03 (stub logout), R-04 (first real edits), R-13, R-17, R-19 |
+| **M1** | R-02 (gates), R-03 (stub logout), R-04 (first real edits), R-13, R-19 — ~~R-17~~ **retired 27 Sep** |
 | **M2** | R-01, R-05, R-07, R-14 |
 | **M3a** | R-08 |
 | **M3b** | R-06 |

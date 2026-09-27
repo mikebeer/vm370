@@ -18,7 +18,7 @@ with its own tests, its own tooling and its own honest status.
 | | | |
 |---|---|---|
 | **24-bit** | S/370 | **Works.** This is VM/370 CE as released. 16 MB ceiling. |
-| **31-bit** | ESA/390 | **Hardware proven, software not started.** Six standalone tests pass on stock Hercules. |
+| **31-bit** | ESA/390 | **Hardware proven, M0 complete, conversion not started.** Thirteen standalone tests pass on stock Hercules; CE's own assembler accepts the ESA/390 macros. |
 | **64-bit** | z/Architecture | **Not started.** Seeded by the `wide/` proofs in the CE tree. |
 
 Start at [`arch/31bit/README.md`](arch/31bit/README.md) — that is where the
@@ -70,6 +70,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/11-RUNNING-CE.md        CE running headless here, and what that closed
     docs/12-RISKS.md            the risk register, scored and mapped to milestones
     docs/13-ISSUES.md           known issues and defects, including retractions
+    docs/14-M0-CLOSED.md        CE's assembler accepts XAOPS -- and how to get files in
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was

@@ -1,0 +1,212 @@
+                                               EXTERNAL SYMBOL DICTIONARY                                      PAGE    1
+
+SYMBOL   TYPE  ID   ADDR  LENGTH LDID                                                            ASM 0201 07.10 09/27/26
+
+XATEST    SD  0001 000000 000140
+                                                                                                               PAGE    2
+
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 07.10 09/27/26
+
+                                      1 *---------------------------------------------------------------------*
+                                      2 * XATEST  -  ASSEMBLE ONE OF EACH MACRO AND CHECK THE BYTES           *
+                                      3 *                                                                     *
+                                      4 * THIS IS NOT MEANT TO RUN.  IT EXISTS SO THE ASSEMBLER LISTING CAN BE*
+                                      5 * COMPARED AGAINST KNOWN-GOOD ENCODINGS BEFORE ANY OF THESE MACROS IS *
+                                      6 * TRUSTED IN REAL CODE.  FIVE OF THE ENCODINGS BELOW HAVE ALREADY BEEN*
+                                      7 * EXECUTED SUCCESSFULLY UNDER HERCULES; THE REST COME FROM READING    *
+                                      8 * SOURCE, WHICH IS WHY THIS FILE EXISTS.                              *
+                                      9 *                                                                     *
+                                     10 *   GLOBAL MACLIB XALIB                                               *
+                                     11 *   ASSEMBLE XATEST (PRINT                                            *
+                                     12 *                                                                     *
+                                     13 * THEN READ XATEST LISTING AND COMPARE THE OBJECT COLUMN WITH THE     *
+                                     14 * EXPECTED VALUES IN THE COMMENTS.  THE BASE AND DISPLACEMENT HALFWORD*
+                                     15 * WILL DEPEND ON WHERE THE OPERANDS LAND, SO ONLY THE FIRST TWO BYTES *
+                                     16 * ARE FIXED -- BUT THOSE ARE THE ONES THAT DECIDE WHICH INSTRUCTION   *
+                                     17 * THE MACHINE EXECUTES.                                               *
+                                     18 *---------------------------------------------------------------------*
+                                     19 *
+                                     20 * PRINT GEN,DATA IS NOT COSMETIC.  WITH NOGEN THE MACRO-GENERATED DC
+                                     21 * STATEMENTS DO NOT APPEAR IN THE LISTING AT ALL, SO THE OBJECT BYTES
+                                     22 * THIS TEST EXISTS TO READ WOULD BE INVISIBLE.  DATA SHOWS EVERY BYTE
+                                     23 * OF A CONSTANT RATHER THAN THE FIRST EIGHT.
+                                     24 *
+                                     25          PRINT GEN,DATA
+000000                               26 XATEST   CSECT
+                                     27 *
+                                     28 * REGISTER EQUATES FIRST.  ASSEMBLER F WANTS THE SYMBOLS IN A USING
+                                     29 * STATEMENT ALREADY DEFINED, AND A FORWARD REFERENCE THERE WOULD FAIL
+                                     30 * FOR A REASON THAT HAS NOTHING TO DO WITH THE MACROS UNDER TEST.
+                                     31 *
+                            00000    32 R0       EQU   0
+                            00001    33 R1       EQU   1
+                            00002    34 R2       EQU   2
+                            00003    35 R3       EQU   3
+                            00004    36 R4       EQU   4
+                            0000E    37 R14      EQU   14
+                            0000F    38 R15      EQU   15
+                                     39 *
+000000 05F0                          40          BALR  R15,0
+                            00002    41          USING *,R15
+                                     42 *
+                                     43 * R1 MUST HOLD X'0001' IN THE HIGH HALFWORD AND THE SUBCHANNEL NUMBER
+                                     44 * IN THE LOW BEFORE ANY OF THE SUBCHANNEL INSTRUCTIONS.  BITS 0-15
+                                     45 * MUST BE EXACTLY 0001, NOT MERELY NON-ZERO.
+                                     46 *
+000002 5810 F046      00048          47          L     R1,SSIDW
+                                     48 *
+                                     49 *        EXPECT                     INSTRUCTION
+                                     50 *        ------                     -----------
+                                     51          STSCH SCHIB           *    B234  proven by execution
+000006                               52+         DS    0H
+000006 B234F0B6                      53+         DC    X'B234',S(SCHIB)
+                                     54          MSCH  SCHIB           *    B232  proven by execution
+00000A                               55+         DS    0H
+                                                                                                               PAGE    3
+
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 07.10 09/27/26
+
+00000A B232F0B6                      56+         DC    X'B232',S(SCHIB)
+                                     57          SSCH  ORB             *    B233  proven by execution
+00000E                               58+         DS    0H
+00000E B233F096                      59+         DC    X'B233',S(ORB)
+                                     60          TSCH  IRB             *    B235  proven by execution
+000012                               61+         DS    0H
+000012 B235F0EA                      62+         DC    X'B235',S(IRB)
+                                     63 * EXPECT B230 0000
+                                     64          CSCH
+000016                               65+         DS    0H
+000016 B2300000                      66+         DC    X'B230',X'0000'
+                                     67 * EXPECT B231 0000
+                                     68          HSCH
+00001A                               69+         DS    0H
+00001A B2310000                      70+         DC    X'B231',X'0000'
+                                     71 * EXPECT B238 0000 -- OPCODE DISPUTED, SEE XAOPS
+                                     72          RSCH
+00001E                               73+         DS    0H
+00001E B2380000                      74+         DC    X'B238',X'0000'
+                                     75 * EXPECT B237 0000
+                                     76          SAL
+000022                               77+         DS    0H
+000022 B2370000                      78+         DC    X'B237',X'0000'
+                                     79          TPI   PARM            *    B236
+000026                               80+         DS    0H
+000026 B236F04E                      81+         DC    X'B236',S(PARM)
+                                     82          STCRW PARM            *    B239
+00002A                               83+         DS    0H
+00002A B239F04E                      84+         DC    X'B239',S(PARM)
+                                     85 *
+                                     86          BSM   R1,0            *    0B10  proven by execution
+00002E                               87+         DS    0H
+00002E 0B10                          88+         DC    X'0B',AL1((R1)*16+(0))
+                                     89          BSM   0,R4            *    0B04  proven by execution
+000030                               90+         DS    0H
+000030 0B04                          91+         DC    X'0B',AL1((0)*16+(R4))
+                                     92          BASSM R14,R15         *    0CEF
+000032                               93+         DS    0H
+000032 0CEF                          94+         DC    X'0C',AL1((R14)*16+(R15))
+                                     95 *
+                                     96 * THESE NEED NO MACRO -- THE ASSEMBLER ALREADY KNOWS THEM, AND IF ANY
+                                     97 * OF THE FOUR FAILS TO ASSEMBLE THEN THE PROBLEM IS THE ASSEMBLER
+                                     98 * LEVEL RATHER THAN THE MACLIB.
+                                     99 *
+000034 AD04 F052      00054         100          STOSM MASKSAVE,X'04'  *    AD04  DAT on
+000038 ACFB F052      00054         101          STNSM MASKSAVE,X'FB'  *    ACFB  DAT off
+00003C B711 F04A      0004C         102          LCTL  1,1,CR1VAL      *    B711
+000040 B60F F056      00058         103          STCTL 0,15,CRSAVE     *    B60F
+                                    104 *
+000044 07FE                         105          BR    R14
+                                    106 *
+                                    107 *---------------------------------------------------------------------*
+                                    108 * OPERANDS.  THE ALIGNMENT RULES DIFFER WITHIN ONE SEQUENCE AND THE   *
+                                    109 * MACHINE ENFORCES EACH OF THEM SEPARATELY.                           *
+                                    110 *---------------------------------------------------------------------*
+                                                                                                               PAGE    4
+
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 07.10 09/27/26
+
+000048                              111          DS    0F
+000048 00010000                     112 SSIDW    DC    X'00010000'          X'0001' || SUBCHANNEL NUMBER
+00004C 00003001                     113 CR1VAL   DC    X'00003001'          STO X'3000', STL 1 = 32 ENTRIES
+000050                              114 PARM     DS    F
+000054                              115 MASKSAVE DS    X
+000058                              116          DS    0F
+000058                              117 CRSAVE   DS    16F                  STCTL 0,15 STORES ALL SIXTEEN
+                                    118 *
+                                    119 * ORB -- WORD ALIGNED.  THIRTY-TWO BYTES, NOT TWELVE: HERCULES FETCHES
+                                    120 * SIZEOF(ORB)-1 UNCONDITIONALLY WHATEVER THE EXTENSION BIT SAYS, SO A
+                                    121 * TWELVE-BYTE ORB AT THE END OF AN IMAGE TAKES AN ADDRESSING EXCEPTION
+                                    122 * ON A FETCH THE ARCHITECTURE SAYS NEVER HAPPENS.
+                                    123 *
+000098                              124          DS    0F
+000098 00000000                     125 ORB      DC    X'00000000'          INTERRUPTION PARAMETER, YOUR TAG
+00009C 00                           126          DC    X'00'                FLAG4: KEY 0 DISABLES CHANNEL KEY
+                                    127 *                                   CHECKING ENTIRELY
+00009D 80                           128          DC    X'80'                FLAG5: F=1, FORMAT-1 CCWS
+00009E 80                           129          DC    X'80'                LPM -- MUST BE 80.  SSCH TESTS
+                                    130 *                                   LPM AND PAM, AND PAM IS 80, SO 00
+                                    131 *                                   IS CC 3 RATHER THAN "ANY PATH"
+00009F 00                           132          DC    X'00'                FLAG7
+0000A0 00000130                     133          DC    A(MYCCW)             CCW ADDRESS, BIT 0 MUST BE ZERO
+0000A4 0000000000000000             134          DC    5F'0'                PAD TO THIRTY-TWO
+0000AC 0000000000000000
+0000B4 00000000
+                                    135 *
+0000B8                              136          DS    0F
+0000B8                              137 SCHIB    DS    XL52                 STSCH STORES 52, MSCH READS 28
+0000EC                              138          DS    0F
+0000EC                              139 IRB      DS    XL64                 TSCH STORES ALL 64
+                                    140 *
+                                    141 * THE CCW MUST BE ON A DOUBLEWORD BOUNDARY OR IT IS A CHANNEL PROGRAM
+                                    142 * CHECK -- A DIFFERENT RULE FROM THE ORB, SCHIB AND IRB, WHICH NEED
+                                    143 * ONLY A WORD.
+                                    144 *
+000130                              145          DS    0D
+000130 09                           146 MYCCW    DC    X'09'                WRITE WITH AUTO CARRIER RETURN
+000131 20                           147          DC    X'20'                SLI, SUPPRESS INCORRECT LENGTH
+000132 0006                         148          DC    AL2(L'MSG)
+000134 00000138                     149          DC    A(MSG)
+000138 E7C1E3C5E2E3                 150 MSG      DC    C'XATEST'
+                                    151 *
+000140                              152          LTORG
+                                    153 *
+                                    154          END
+                                                  RELOCATION DICTIONARY                                        PAGE    5
+
+POS.ID   REL.ID   FLAGS   ADDRESS                                                                ASM 0201 07.10 09/27/26
+
+ 0001     0001      0C     0000A0
+ 0001     0001      0C     000134
+                                                  CROSS-REFERENCE                                              PAGE    6
+
+SYMBOL    LEN   VALUE   DEFN    REFERENCES                                                       ASM 0201 07.10 09/27/26
+
+CRSAVE   00004 00000058 00117  00103
+CR1VAL   00004 0000004C 00113  00102
+IRB      00064 000000EC 00139  00062
+MASKSAVE 00001 00000054 00115  00100 00101
+MSG      00006 00000138 00150  00148 00149
+MYCCW    00001 00000130 00146  00133
+ORB      00004 00000098 00125  00059
+PARM     00004 00000050 00114  00081 00084
+R1       00001 00000001 00033  00047 00088
+R14      00001 0000000E 00037  00094 00105
+R15      00001 0000000F 00038  00040 00041 00094
+R4       00001 00000004 00036  00091
+SCHIB    00052 000000B8 00137  00053 00056
+SSIDW    00004 00000048 00112  00047
+                                                  ASSEMBLER DIAGNOSTICS AND STATISTICS                         PAGE    7
+
+                                                                                                 ASM 0201 07.10 09/27/26
+
+NO STATEMENTS FLAGGED IN THIS ASSEMBLY
+HIGHEST SEVERITY WAS    0
+OPTIONS FOR THIS ASSEMBLY
+  ALIGN, ALOGIC, BUFSIZE(STD), NODECK, ESD, FLAG(0), LINECOUNT(55), LIST, NOMCALL, YFLAG, WORKSIZE(2097152)
+  NOMLOGIC, NUMBER, OBJECT, NORENT, RLD, STMT, NOLIBMAC, TERMINAL, NOTEST, XREF(SHORT)
+  SYSPARM()
+WORK FILE BUFFER SIZE/NUMBER = 7294/ 1
+TOTAL RECORDS READ FROM SYSTEM INPUT        128
+TOTAL RECORDS READ FROM SYSTEM LIBRARY      139
+TOTAL RECORDS PUNCHED                         8
+TOTAL RECORDS PRINTED                       199

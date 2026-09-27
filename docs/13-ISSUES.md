@@ -25,7 +25,6 @@ retracted and corrected).
 | **I-01** | CP's `MSG` macro fails under z390 | `AZ390E error 35, expression parsing error` on lines like `MSG 'STORAGE IS VIRTUAL=REAL'`. `MSG.MACRO` does substring and length arithmetic on a quoted operand (`'&ARG2'(1,1) NE ''''`, `K'&ARG2-2`) and z390's expression parser disagrees with HLASM. **One macro blocking ~20 modules, including `DMKPGS`, `DMKBLD` and `DMKPTR` — three of the five DAT modules.** The single highest-leverage fix on this list. | open |
 | **I-02** | `DMKCPI` source encoding | `MZ390E error 138, invalid ascii source line 365` — the U+E000 private-use encoding the CE README describes. Applies only to some members; `DMKVAT` and `CORE` are clean. Reverse substitution verified to give `rc=0` on `DMKCPI`, taking the M1 set to 8 of 9, but the step is not yet in the pipeline. | fix known |
 | **I-03** | `DMKDSP` duplicate `USING` ranges | `MNOTE 4, 'Duplicate USING ranges found for - 2 and 0 using highest'`. HLASM tolerates overlapping `USING`; z390 escalates. A dialect difference, not a defect in CP. | worked around |
-| **I-04** | `XATEST` listing never checked | Seven of twelve `XAOPS` encodings are sourced from z390's opcode table rather than executed. `macros/XATEST.ASSEMBLE` exists to assemble one of each so the listing can be verified, and has never been run. Now executable on CE. | open |
 | **I-05** | 59 macro names never cross-checked against z390 directives | `TRACE` was found because it failed. Any CP macro name colliding with a z390 directive behaves identically but may not fail — producing a false clean assembly. The cross-check is mechanical and has not been run. Mitigation for R-13. | open |
 | **I-06** | `dat4b.py` fills unused PTEs with `X'20'` | `X'20'` is the *segment*-invalid bit; a page table entry needs `X'400'`. Harmless where it appears, because those entries are never referenced — but wrong if the idiom is copied, and it nearly was, into `lra1.py` case C. | open |
 | **I-07** | `herc.conf` carries an invalid codepage name | `CODEPAGE 819-1047` is rejected by Hercules 3.13 (`HHCCF051E`), which spells it `819/1047`. Non-fatal — the run continues on the default — so it is easy to miss entirely. | open |
@@ -55,6 +54,8 @@ retracted and corrected).
 | **I-21** | `RSCH` opcode "dispute" | Recorded as a genuine conflict between Hercules (`B238`) and a reading of the 370-XA Reference Summary (`B23B`). There was no dispute: z390's table gives `B238 RSCH, B239 STCRW, B23A STCPS, B23B RCHP`. `B23B` is RESET CHANNEL PATH, a different instruction. My error, not the sources'. | closed |
 | **I-22** | "Hercules cannot prototype the `SIO` gap" | Claimed that `ORB5_I` was ignored, so the `SIO` condition-code contract could not be tested before M1. Wrong: initial-status interruption has been in Hercules since **version 1.39, 24 November 1999**. `06-initial-status.rc` tests it and passes. Retracted in three documents. | closed |
 | **I-23** | "Segment 15 is the false alarm" | `04-SHARED-SEGMENTS.md` concluded that the segment-15 collision was benign, resting on saved-page analysis, with one caveat it could not check. Reading the real `USER DIRECT` closed that caveat **against** the conclusion: eight machines default to 15 MB, two to 14 MB, `XNET` to 16 MB, and 21 can be defined to 16 MB, so private storage routinely occupies exactly where CMS's shared segments sit. Corrected in `04`, `05` and `11`. | closed |
+| **I-04** | `XATEST` listing never checked | Seven of twelve `XAOPS` encodings came from z390's opcode table rather than from execution, and the listing that would confirm them had never been produced. Now produced by CE's own Assembler XF and saved as `macros/validate/XATEST-CE-XF.LISTING`; all twelve object codes read off it and correct. See [14-M0-CLOSED.md](14-M0-CLOSED.md). | fixed |
+| **I-26** | Duplicate spool file from `START` plus `devinit` | `CP START 00C` un-drains the real reader *and* triggers a read; a following `devinit` of the same device read the same file again, queueing two identical spool files. The second `READCARD` took the duplicate, so `XATEST ASSEMBLE` landed on disk as a 194-record copy of `XAOPS MACRO` and failed with `IFO047 UNEXPECTED END OF FILE ON SYSTEM INPUT` — a plausible-looking macro failure that was nothing of the kind. Fix: `devinit` once per new deck, and always check `LISTFILE`'s record count against the deck size. | fixed |
 | **I-24** | `CODE70` identified as ESA/390's `ARCHTECT` row | `CODE70` is 2 KB pages. **`CODEB0`** is the ESA/390 row — 4 KB pages, 1 MB segments, fullword PTEs, 2,048 segments. | closed |
 | **I-25** | `CPCREG0` classified as a constant | It is a live CR0 save area: `STCTL C0,C0,CPCREG0  SAVE IN REAL 0 FOR CP`. Would have been treated as a fixed bit pattern across 38 reference sites. | closed |
 
@@ -62,12 +63,12 @@ retracted and corrected).
 
 | Status | Count |
 |---|---|
-| open | 12 |
+| open | 11 |
 | fix known | 1 *(I-02, counted in open above)* |
 | environment | 4 |
-| closed / fixed | 9 |
+| closed / fixed | 11 |
 
-**Five of the nine closed entries are retracted claims of my own** — I-21,
+**Five of the eleven closed entries are retracted claims of my own** — I-21,
 I-22, I-23, I-24, I-25. Four of the five were wrong in the project's favour and
 one (I-23) was wrong against it. That ratio is itself worth watching: a review
 that only ever finds good news is not reviewing.
