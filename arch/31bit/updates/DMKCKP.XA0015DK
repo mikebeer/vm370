@@ -1,0 +1,93 @@
+./ R 00208000          $ 208100 100                                             
+*  SYSIPLDV IS WHERE DMKVMI PUTS IT NOW -- XA0011DK -- AND     XA0015DK         
+*  WHERE DMKCPI PUTS IT AT 00484000. I-47.                     XA0015DK         
+         LH    R0,SYSIPLDV         GET SYS IPL ADDRESS         XA0015DK         
+./ R 00269000          $ 269100 100                                             
+*  X'B8' WAS FOUR BYTES OF KEY, FLAGS AND DEVICE ADDRESS. IT   XA0015DK         
+*  IS NOW THE SUBSYSTEM ID WORD FOLLOWED BY THE INTERRUPTION   XA0015DK         
+*  PARAMETER -- EIGHT BYTES -- SO SAVE AND RESTORE BOTH,       XA0015DK         
+*  SYMBOLICALLY. I-53.                                         XA0015DK         
+         MVC   IOSSID(8),SAVEDEV RESTORE INTERRUPT INFO        XA0015DK         
+./ R 00274370 00274520 $ 00274371 001                                           
+*  THE COPY INTO THE ARCHITECTED INTERRUPT CODE IS GONE: THE   XA0015DK         
+*  VALUE CAME FROM SYSIPLDV ON THE LINE ABOVE AND NOTHING      XA0015DK         
+*  READS X'BA' NOW. THE WAIT LOOP KEEPS ITS SHAPE -- BC 7      XA0015DK         
+*  MEANS "UNTIL THE DEVICE IS CLEAR", AND XATIO CONSUMES       XA0015DK         
+*  STATUS WITH TSCH JUST AS TIO DID, SO THE LOOP STILL         XA0015DK         
+*  TERMINATES. *-4 BECOMES A LABEL. R-26.                      XA0015DK         
+         XASIO R1                  Issue the read ipl CCW      XA0015DK         
+         BC    4,LOADCK            CSW stored; check status    XA0015DK         
+         BC    7,IPLLOAD           Error on SIO, wait PSW      XA0015DK         
+CKPWT1   XATIO R1                  Loop for i/o completion     XA0015DK         
+         BC    7,CKPWT1            Keep trying                 XA0015DK         
+./ R 00307000 00312000 $ 00307100 100                                           
+*  TIOSYS1 ALREADY LABELS THE FIRST TEST, SO BNZ *-4 ONLY      XA0015DK         
+*  NEEDS ITS NAME. R-26.                                       XA0015DK         
+         XATIO R2             CLEAR DEVICE                     XA0015DK         
+         BNZ   TIOSYS1                                         XA0015DK         
+         XASIO R2             START                            XA0015DK         
+         BNZ   TIOSYS         CLEAR DEVICE AGAIN               XA0015DK         
+CKPWT2   XATIO R2             TEST                             XA0015DK         
+         BC    6,CKPWT2       LOOP IF BUSY OR STATUS STORED    XA0015DK         
+./ R 00319000          $ 319100 100                                             
+SAVESTAT MVC   SAVEDEV(8),IOSSID SAVE INTERRUPT INFORMATION    XA0015DK         
+./ R 00323000 00327000 $ 00323100 100                                           
+CKPCL3   XATIO R2             CLEAR IT                         XA0015DK         
+         BC    6,CKPCL3       LOOP IF BUSY OR STATUS STORED    XA0015DK         
+         XASIO R2             START IO (SENSE)                 XA0015DK         
+CKPWT3   XATIO R2             TEST IO                          XA0015DK         
+         BC    6,CKPWT3       LOOP IF BUSY OR STATUS STORED    XA0015DK         
+./ R 00331000 00336000 $ 00331100 100                                           
+*  00334000 BRANCHED BACK ONTO THE SIO, NOT ONTO A TEST, SO    XA0015DK         
+*  ITS LABEL GOES ON THE XASIO. R-26.                          XA0015DK         
+CKPCL4   XATIO R2             DRAIN ANYTHING PENDING           XA0015DK         
+         BC    7,CKPCL4       KEEP TRYING                      XA0015DK         
+CKPST4   XASIO R2             READ R0                          XA0015DK         
+         BC    7,CKPST4       TAKE ERROR PATH                  XA0015DK         
+CKPWT4   XATIO R2             TEST FOR COMPLETION              XA0015DK         
+         BC    7,CKPWT4       TRY AGAIN                        XA0015DK         
+./ R 00684000          $ 684100 100                                             
+CKPST5   XASIO R1             SLAM IT TO THE MSC               XA0015DK         
+./ R 00685000          $ 685100 100                                             
+         BC    2,CKPST5       BUSY, KEEP TRYING...             XA0015DK         
+./ R 00690000          $ 690100 100                                             
+CKPWT5   XATIO R1             CHECK OUT STATUS                 XA0015DK         
+./ R 00691000          $ 691100 100                                             
+         BC    2,CKPWT5       BUSY, KEEP TRYING.               XA0015DK         
+./ R 00713000          $ 713100 100                                             
+         XAHIO R1             HALT IO                          XA0015DK         
+./ R 00726000          $ 726100 100                                             
+         XAHIO R1             HALT IO                          XA0015DK         
+./ R 00772000 00774000 $ 00772100 100                                           
+*  THE INTERRUPTING DEVICE ADDRESS COMES FROM THE              XA0015DK         
+*  INTERRUPTION PARAMETER NOW, WHICH DMKCPI SET WITH MSCH.     XA0015DK         
+*  I-47, XA0013DK.                                             XA0015DK         
+         LH    R3,IOINTPRM+2  GET THE INTERRUPTING DEV ADDR    XA0015DK         
+CKPST7   XASIO R3             ISSUE SENSE TO IT                XA0015DK         
+         BC    2,CKPST7       BETTER NOT BE BUSY               XA0015DK         
+./ R 01488000          $ 1488100 100                                            
+         XASIO R2             START IO                         XA0015DK         
+./ R 01495500          $ 1495510 010                                            
+         CH    R2,IOINTPRM+2       RIGHT DEVICE ?              XA0015DK         
+./ R 01498000          $ 1498100 100                                            
+         MVC   SAVEDEV(8),IOSSID SAVE INTERRUPT INFORMATION    XA0015DK         
+./ R 01503000 01507000 $ 01503100 100                                           
+CKPCL9   XATIO R2                  CLEAR IT                    XA0015DK         
+         BC    6,CKPCL9            LOOP IF BUSY OR STATUS      XA0015DK         
+         XASIO R2                  START IO                    XA0015DK         
+CKPWT9   XATIO R2                  TEST IO                     XA0015DK         
+         BC    6,CKPWT9            LOOP IF BUSY OR STATUS      XA0015DK         
+./ R 01511000 01516000 $ 01511100 100                                           
+CKPCLA   XATIO R2             DRAIN ANYTHING PENDING           XA0015DK         
+         BC    7,CKPCLA       KEEP TRYING                      XA0015DK         
+CKPSTA   XASIO R2             READ R0                          XA0015DK         
+         BC    7,CKPSTA       TAKE ERROR PATH                  XA0015DK         
+CKPWTA   XATIO R2             TEST FOR COMPLETION              XA0015DK         
+         BC    7,CKPWTA       TRY AGAIN                        XA0015DK         
+./ R 01647000          $ 1647100 100                                            
+*  EIGHT BYTES NOW: SUBSYSTEM ID AND INTERRUPTION PARAMETER.   XA0015DK         
+*  THE XAIO WORK AREA IS PLACED HERE RATHER THAN AT THE END    XA0015DK         
+*  OF THE MODULE SO THAT WHATEVER BASE REGISTER ALREADY        XA0015DK         
+*  REACHES SAVEDEV REACHES IT.                                 XA0015DK         
+SAVEDEV  DS    2F             ERROR DEVICE: SSID AND PARM      XA0015DK         
+         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0015DK         

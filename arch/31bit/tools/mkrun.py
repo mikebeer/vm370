@@ -20,10 +20,19 @@ Two further rules are baked in, both learned the same way:
     flushes all of it into one file -- 66 spool files and 110,052 lines, once.
     Every run purges the printer too.  I-31.
 
-    python3 mkrun.py <ce-dir> <runN> DMKEIG:XA0008DK DMKIOG:XA0009DK ...
+    python3 mkrun.py <ce-dir> <runN> [spec ...]
 
-Each argument is a module whose deck and AUXLCL are staged and then assembled.
-Writes <ce-dir>/hercules.rc and <ce-dir>/io/r*.txt, and prints the launch line.
+Each spec is one of:
+
+    MODULE:DECK           stage MODULE.DECK and MODULE.AUXLCL, then VMFASM it
+    read:MEMBER:FILETYPE  stage and read a plain member, assemble nothing
+    mac:LIBNAME           VMFMAC that library
+    asm:MODULE            VMFASM a module already on disk
+
+Specs run in the order given, so a `read:` of a macro, then `mac:DMKLCL`, then
+`asm:` of something that uses it, is a complete sequence.  Hand-editing the
+generated rc is how run33 was lost -- CMS dropped to CP READ and every later
+command came back `?CP: READCARD` -- so extra work goes through a spec.
 """
 import os
 import sys
@@ -62,13 +71,30 @@ def card(text):
 
 def main():
     ce, run = sys.argv[1], sys.argv[2]
-    mods = [a.split(':') for a in sys.argv[3:]]
+    specs = [a for a in sys.argv[3:] if not a.startswith('--')]
 
     rc = [BOOT]
     n = 0
-    for mod, deck in mods:
-        for ft, src in ((deck, '%s.%s' % (mod, deck)),
-                        ('AUXLCL', '%s.AUXLCL' % mod)):
+    asm = []
+    mac = []
+    for spec in specs:
+        parts = spec.split(':')
+        if parts[0] == 'mac':
+            mac.append(parts[1])       # emitted after CPACC, which it needs
+            continue
+        if parts[0] == 'asm':
+            asm.append(parts[1])
+            continue
+        if parts[0] == 'read':
+            member, filetype = parts[1], parts[2]
+            files = [(filetype, '%s.%s' % (member, filetype))]
+            mod = member
+        else:
+            mod, deck = parts
+            asm.append(mod)
+            files = [(deck, '%s.%s' % (mod, deck)),
+                     ('AUXLCL', '%s.AUXLCL' % mod)]
+        for ft, src in files:
             path = os.path.join(UPDATES, src)
             if not os.path.exists(path):
                 raise SystemExit('missing deck: ' + path)
@@ -87,16 +113,19 @@ def main():
                       'pause 20\n' % (io, mod.lower(), ft.lower()))
             n += 1
 
-    for mod, _ in mods:
-        rc.append('/listfile %s * a (date\npause 12\n' % mod.lower())
+    # CPACC is VMSETUP CP; VMFMAC and VMFASM both depend on it, so it comes
+    # first however the specs were ordered.
     rc.append('/cpacc\npause 25\n')
-    for mod, _ in mods:
-        rc.append('/vmfasm %s dmklcl\npause 90\n' % mod.lower())
+    for lib in mac:
+        rc.append('/vmfmac %s %s\npause 70\n' % (lib.lower(), lib.lower()))
+    for mod in asm:
+        rc.append('/vmfasm %s dmklcl\npause 95\n' % mod.lower())
     rc.append('/cp shutdown\npause 25\nexit\n')
 
     with open(os.path.join(ce, 'hercules.rc'), 'w') as f:
         f.write(''.join(rc))
-    print('%d card files, %d modules to assemble' % (n, len(mods)))
+    print('%d card files, %d modules to assemble: %s'
+          % (n, len(asm), ' '.join(asm)))
     print('cd %s && nohup hercules -f vm370ce.conf > %s.log 2>&1 &'
           % (ce, run))
     return 0

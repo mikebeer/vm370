@@ -26,7 +26,7 @@ IOSTCAW  ST    R2,CAW         KEPT -- SEE BELOW                XA0004DK
          DS    0F                                              XA0004DK         
 ORBTMPL  DC    1F'0'          INTERRUPTION PARAMETER           XA0004DK         
          DC    X'00'          FLAG4: KEY ZERO                  XA0004DK         
-         DC    AL1(ORB5F)     FLAG5: FORMAT-1 CCWS             XA0004DK         
+         DC    X'00'          FLAG5: FORMAT-0 CCWS -- R-27     XA0004DK         
          DC    AL1(ORBLPMOK)  LPM -- MUST BE X'80'             XA0004DK         
          DC    X'00'          FLAG7                            XA0004DK         
          DC    6F'0'          CCW ADDRESS AND PAD              XA0004DK         

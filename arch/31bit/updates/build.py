@@ -41,6 +41,7 @@ XA11 = 'XA0011DK'
 XA12 = 'XA0012DK'
 XA13 = 'XA0013DK'
 XA14 = 'XA0014DK'
+XA15 = 'XA0015DK'
 
 
 def psa():
@@ -264,7 +265,7 @@ def dmkios():
         "         DS    0F",
         "ORBTMPL  DC    1F'0'          INTERRUPTION PARAMETER",
         "         DC    X'00'          FLAG4: KEY ZERO",
-        "         DC    AL1(ORB5F)     FLAG5: FORMAT-1 CCWS",
+        "         DC    X'00'          FLAG5: FORMAT-0 CCWS -- R-27",
         "         DC    AL1(ORBLPMOK)  LPM -- MUST BE X'80'",
         "         DC    X'00'          FLAG7",
         "         DC    6F'0'          CCW ADDRESS AND PAD",
@@ -832,6 +833,188 @@ def dmksys():
     return d
 
 
+def dmkckp():
+    """The first bootstrap module: checkpoint and shutdown.
+
+    Twenty-three channel sites, all in polled loops, converted through the XAIO
+    macros so the condition-code reasoning stays in one place.  Three separate
+    hazard classes meet in this one module, which is why it was worth reading
+    rather than pattern-matching:
+
+      * `INTTIO` four times, in both of its roles (I-47): 00208000 reads the IPL
+        device address DMKVMI left, 00274370 copies `SYSIPLDV` into the
+        architected slot for no reason ESA/390 recognises, and 00772000 and
+        01495500 read what the hardware stored.
+      * Absolute lowcore three times (I-53): `MVC SAVEDEV(4),184` twice and
+        `MVC 184(4),SAVEDEV` once -- a save and restore of the interruption
+        information around DMKCKP's own I/O.  X'B8' is four bytes of
+        key/flags/device address in S/370 and eight of subsystem ID plus
+        interruption parameter in ESA/390, so `SAVEDEV` widens to two fullwords
+        and the moves become symbolic.
+      * Sixteen backward self-relative branches that span a converted
+        instruction (R-26), each becoming a label **in this deck**.  The other
+        twenty-six in the module are forward branches over unconverted code and
+        are correct as they stand; they belong to the 64-bit pass, which has the
+        list in `tools/selfrel.py`.
+
+    Three things deliberately left alone, each worth stating because leaving
+    them alone is a decision:
+
+      * The `ST Rx,CAW` stores.  The CAW is now an ordinary word of CP's
+        storage, and `XASIO` reads the CCW address straight out of it, so every
+        one of those stores keeps working and the diff stays small.
+      * The `CLC CSW+4(2),=AL1(CE+DE,0)` tests and `MVC SAVECSW(12),CSW`.
+        `XATIO` rebuilds a CSW at the architected location from the IRB, so all
+        the status logic is untouched -- which is most of the module.
+      * `CCW X'08',*-8-DMKCKP+X'800',0,0` at 00460000, 00467000 and 00475000.
+        These are self-relative **CCWs**, not branches, and with format-0 CCWs
+        (R-27) the layout and the eight-byte length are both unchanged, so a
+        TIC pointing back eight bytes still points at the previous CCW.
+    """
+    d = Deck(XA15)
+    nxt = lambda s: next_seq(SRC + '/DMKCKP.ASSEMBLE', s)
+
+    def one(seq, lines, inc=100, first=None):
+        d.replace(seq, first=first or str(int(seq) + inc), inc=inc,
+                  limit=nxt(seq), lines=lines)
+
+    # --- 00208000: the IPL device address DMKVMI now leaves in SYSIPLDV.
+    one('00208000', Deck.comment(
+        "SYSIPLDV IS WHERE DMKVMI PUTS IT NOW -- XA0011DK -- AND WHERE DMKCPI "
+        "PUTS IT AT 00484000. I-47.") + [
+        "         LH    R0,SYSIPLDV         GET SYS IPL ADDRESS",
+    ])
+
+    # --- 00269000 and 00319000/01498000: the interruption information.
+    one('00269000', Deck.comment(
+        "X'B8' WAS FOUR BYTES OF KEY, FLAGS AND DEVICE ADDRESS. IT IS NOW THE "
+        "SUBSYSTEM ID WORD FOLLOWED BY THE INTERRUPTION PARAMETER -- EIGHT "
+        "BYTES -- SO SAVE AND RESTORE BOTH, SYMBOLICALLY. I-53.") + [
+        "         MVC   IOSSID(8),SAVEDEV RESTORE INTERRUPT INFO",
+    ])
+
+    # --- L1, the IPL read: 00274370 through 00274520.
+    d.replace('00274370', '00274520', first='00274371', inc=1,
+              limit=nxt('00274520'), lines=Deck.comment(
+        "THE COPY INTO THE ARCHITECTED INTERRUPT CODE IS GONE: THE VALUE CAME "
+        "FROM SYSIPLDV ON THE LINE ABOVE AND NOTHING READS X'BA' NOW. THE "
+        "WAIT LOOP KEEPS ITS SHAPE -- BC 7 MEANS \"UNTIL THE DEVICE IS CLEAR\", "
+        "AND XATIO CONSUMES STATUS WITH TSCH JUST AS TIO DID, SO THE LOOP "
+        "STILL TERMINATES. *-4 BECOMES A LABEL. R-26.") + [
+        "         XASIO R1                  Issue the read ipl CCW",
+        "         BC    4,LOADCK            CSW stored; check status",
+        "         BC    7,IPLLOAD           Error on SIO, wait PSW",
+        "CKPWT1   XATIO R1                  Loop for i/o completion",
+        "         BC    7,CKPWT1            Keep trying",
+    ])
+
+    # --- L2: 00307000 through 00312000.  TIOSYS1 at 00306000 already labels
+    #     the first test, so BNZ *-4 simply names it.
+    d.replace('00307000', '00312000', first='00307100', inc=100,
+              limit=nxt('00312000'), lines=Deck.comment(
+        "TIOSYS1 ALREADY LABELS THE FIRST TEST, SO BNZ *-4 ONLY NEEDS ITS "
+        "NAME. R-26.") + [
+        "         XATIO R2             CLEAR DEVICE",
+        "         BNZ   TIOSYS1",
+        "         XASIO R2             START",
+        "         BNZ   TIOSYS         CLEAR DEVICE AGAIN",
+        "CKPWT2   XATIO R2             TEST",
+        "         BC    6,CKPWT2       LOOP IF BUSY OR STATUS STORED",
+    ])
+
+    # --- 00319000: the other half of the save/restore pair.
+    one('00319000', [
+        "SAVESTAT MVC   SAVEDEV(8),IOSSID SAVE INTERRUPT INFORMATION",
+    ])
+
+    # --- L3: 00323000 through 00327000.
+    d.replace('00323000', '00327000', first='00323100', inc=100,
+              limit=nxt('00327000'), lines=[
+        "CKPCL3   XATIO R2             CLEAR IT",
+        "         BC    6,CKPCL3       LOOP IF BUSY OR STATUS STORED",
+        "         XASIO R2             START IO (SENSE)",
+        "CKPWT3   XATIO R2             TEST IO",
+        "         BC    6,CKPWT3       LOOP IF BUSY OR STATUS STORED",
+    ])
+
+    # --- L4: 00331000 through 00336000.  Note 00334000 branches back to the
+    #     SIO itself, not to a test.
+    d.replace('00331000', '00336000', first='00331100', inc=100,
+              limit=nxt('00336000'), lines=Deck.comment(
+        "00334000 BRANCHED BACK ONTO THE SIO, NOT ONTO A TEST, SO ITS LABEL "
+        "GOES ON THE XASIO. R-26.") + [
+        "CKPCL4   XATIO R2             DRAIN ANYTHING PENDING",
+        "         BC    7,CKPCL4       KEEP TRYING",
+        "CKPST4   XASIO R2             READ R0",
+        "         BC    7,CKPST4       TAKE ERROR PATH",
+        "CKPWT4   XATIO R2             TEST FOR COMPLETION",
+        "         BC    7,CKPWT4       TRY AGAIN",
+    ])
+
+    # --- L5: 00684000/00685000 and 00690000/00691000, separated by live code.
+    one('00684000', ["CKPST5   XASIO R1             SLAM IT TO THE MSC"])
+    one('00685000', ["         BC    2,CKPST5       BUSY, KEEP TRYING..."])
+    one('00690000', ["CKPWT5   XATIO R1             CHECK OUT STATUS"])
+    one('00691000', ["         BC    2,CKPWT5       BUSY, KEEP TRYING."])
+
+    # --- L6: the two halts.  HSCH covers HIO and HDV alike.
+    one('00713000', ["         XAHIO R1             HALT IO"])
+    one('00726000', ["         XAHIO R1             HALT IO"])
+
+    # --- L7: 00772000 through 00774000.
+    d.replace('00772000', '00774000', first='00772100', inc=100,
+              limit=nxt('00774000'), lines=Deck.comment(
+        "THE INTERRUPTING DEVICE ADDRESS COMES FROM THE INTERRUPTION "
+        "PARAMETER NOW, WHICH DMKCPI SET WITH MSCH. I-47, XA0013DK.") + [
+        "         LH    R3,IOINTPRM+2  GET THE INTERRUPTING DEV ADDR",
+        "CKPST7   XASIO R3             ISSUE SENSE TO IT",
+        "         BC    2,CKPST7       BETTER NOT BE BUSY",
+    ])
+
+    # --- 01488000: a lone start with no adjacent self-relative branch.
+    one('01488000', ["         XASIO R2             START IO"])
+
+    # --- 01495500 and 01498000.
+    one('01495500', [
+        "         CH    R2,IOINTPRM+2       RIGHT DEVICE ?",
+    ], inc=10)
+    one('01498000', [
+        "         MVC   SAVEDEV(8),IOSSID SAVE INTERRUPT INFORMATION",
+    ])
+
+    # --- L9: 01503000 through 01507000.
+    d.replace('01503000', '01507000', first='01503100', inc=100,
+              limit=nxt('01507000'), lines=[
+        "CKPCL9   XATIO R2                  CLEAR IT",
+        "         BC    6,CKPCL9            LOOP IF BUSY OR STATUS",
+        "         XASIO R2                  START IO",
+        "CKPWT9   XATIO R2                  TEST IO",
+        "         BC    6,CKPWT9            LOOP IF BUSY OR STATUS",
+    ])
+
+    # --- L10: 01511000 through 01516000.
+    d.replace('01511000', '01516000', first='01511100', inc=100,
+              limit=nxt('01516000'), lines=[
+        "CKPCLA   XATIO R2             DRAIN ANYTHING PENDING",
+        "         BC    7,CKPCLA       KEEP TRYING",
+        "CKPSTA   XASIO R2             READ R0",
+        "         BC    7,CKPSTA       TAKE ERROR PATH",
+        "CKPWTA   XATIO R2             TEST FOR COMPLETION",
+        "         BC    7,CKPWTA       TRY AGAIN",
+    ])
+
+    # --- SAVEDEV widens, and the work area goes next to it so that whatever
+    #     base register already reaches SAVEDEV reaches XAIOWORK too.
+    one('01647000', Deck.comment(
+        "EIGHT BYTES NOW: SUBSYSTEM ID AND INTERRUPTION PARAMETER. THE XAIO "
+        "WORK AREA IS PLACED HERE RATHER THAN AT THE END OF THE MODULE SO "
+        "THAT WHATEVER BASE REGISTER ALREADY REACHES SAVEDEV REACHES IT.") + [
+        "SAVEDEV  DS    2F             ERROR DEVICE: SSID AND PARM",
+        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -892,6 +1075,11 @@ def main():
     aux(os.path.join(HERE, 'DMKSYS.AUXLCL'),
         [(XA14, 'RUN UNIPROCESSOR: AP=NO, SO NO CONCS AT IPL')])
 
+    ckp = dmkckp()
+    ckp.write(os.path.join(HERE, 'DMKCKP.%s' % XA15))
+    aux(os.path.join(HERE, 'DMKCKP.AUXLCL'),
+        [(XA15, 'CHANNEL SUBSYSTEM VIA XAIO, AND THE INTTIO SITES')])
+
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
@@ -921,7 +1109,8 @@ def main():
                  'DMKVMI.%s' % XA11, 'DMKVMI.AUXLCL',
                  'DMKIOT.%s' % XA12, 'DMKIOT.AUXLCL',
                  'DMKCPI.%s' % XA13, 'DMKCPI.AUXLCL',
-                 'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL',
+                 'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

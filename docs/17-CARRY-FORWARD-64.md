@@ -211,3 +211,58 @@ This is the one place where doing the 31-bit stage first makes the 64-bit stage
 *cheaper in a way that requires deliberate effort now* rather than as a
 by-product. Left alone, 912 sites wait for z/Architecture. Cleared as we go, they
 do not.
+
+## CCW format: a 16 MB ceiling with no escape hatch
+
+The 31-bit conversion leaves the ORB's `ORB5_F` bit **zero**, requesting format-0
+CCWs (`R-27`). That is the right call now and it is the single largest
+simplification in the project: format 0 is `code, addr(3), flags, count` — the
+S/370 CCW layout byte for byte — so **all 240 static CCW statements in 23 nucleus
+modules keep working unconverted**, and so does everything `DMKCCW` builds at
+runtime.
+
+It also sets a hard ceiling. A format-0 CCW's data address is 24 bits, and
+Hercules enforces the architecture's rule that the escape hatch is closed too:
+
+    /* Program check if Format-0 CCW and IDAW address > 16M      */
+    /* SA22-7201-05:                                             */
+    /*  p. 16-25, Invalid IDAW Address                           */
+    || (!(dev->orb.flag5 & ORB5_F) && (idawaddr & 0xFF000000))
+
+So indirect data addressing does **not** rescue format 0: an IDAW above 16 MB is
+a channel program check. With format-0 CCWs, channel I/O cannot touch storage
+above the line at all, however the rest of CP is converted.
+
+### What that means for the order of work
+
+This is a third independent 16 MB gate, alongside the two already recorded:
+
+| Gate | What it blocks | Where |
+|---|---|---|
+| `ISK`/`SSK`/`RRB` mask to 24 bits | managing keys for frames above the line | `R-25`, 67 sites |
+| Format-0 CCWs, IDAWs included | **I/O to or from storage above the line** | `R-27`, 240 CCWs |
+| 24-bit fields in `CORTABLE` and friends | addressing the frames at all | `R-01`, `R-02` |
+
+All three must be lifted together before real storage passes 16 MB, because each
+one alone makes the others pointless. That is a coherent later project rather
+than a loose end, and it is the right shape: large *virtual* storage — which is
+what M5 delivers — needs none of them.
+
+### What the format-1 switch actually costs
+
+Less than the 240 figure suggests, because of where CCWs come from:
+
+* **The 240 static CCWs** are real work, but they are `CCW` macro invocations,
+  so the *macro* can emit either format. One macro change plus a reassembly
+  covers most of them, which is a far better position than 240 hand edits.
+* **Guest channel programs need no change at all.** A virtual machine is an
+  S/370 machine and builds format-0 CCWs; `DMKCCW` already *translates* them
+  into real channel programs rather than passing them through. So the switch is
+  a change to what `DMKCCW` writes, not to what guests write — and the guest
+  side stays S/370 even after CP is 64-bit.
+* **`XAIO` and `DMKIOS` need one bit each.** Both build the ORB in one place,
+  which is why `R-27` was cheap to correct when it was found wrong.
+
+So the carry-forward verdict is **parameterise, don't defer**: make CCW format a
+single assembly-time choice now, while `XAIO` and the ORB templates are being
+written, rather than finding 240 sites again later.
