@@ -89,6 +89,44 @@ DC_VERDICT = {
 }
 
 
+# Lowcore referenced by absolute address instead of by PSA symbol.  A scan for
+# renamed symbols cannot see these at all, and they are the same hazard: the
+# field at that address means something else under ESA/390.  Verified by hand --
+# a bare decimal in an operand is far more often a length or a message number.
+ABS_LOWCORE = {
+    ('DMKCKP', '184'): "MVC SAVEDEV(4),184 -- X'B8', now the subsystem ID word",
+    ('DMKLD00E', '72'): "ST 2,72 x3 -- X'48', the CAW, which ESA/390 has not",
+}
+
+
+def abs_sites(src):
+    """Absolute-numeric references to lowcore, reported for review.
+
+    Found in DMKCKP by reading the module, not by any tool: `MVC SAVEDEV(4),184`
+    stores from absolute 184 = X'B8'.  DMKLD00E then turned out to have three
+    `ST 2,72` -- the CAW -- written the same way, and it uses bare register
+    numbers throughout, so nothing about it matches the usual patterns.  I-53.
+    """
+    # MVI and CLI are excluded: their second operand is an immediate byte, never
+    # an address.  Including them gave nine false positives -- pages per
+    # cylinder, RECMAX, byte counts -- against two real sites.
+    pat = re.compile(r"^\s+(?:MVC|L|ST|LH|STH|CLC|IC|STC|XC|NC|OC)\s+"
+                     r"[A-Z0-9()+,']+,(\d{2,3})(?:\s|$)")
+    out = []
+    for name in sorted(os.listdir(src)):
+        if not name.endswith('.ASSEMBLE'):
+            continue
+        mod = name[:-9]
+        for line in open(os.path.join(src, name), errors='replace'):
+            m = pat.match(line[:71])
+            if not m or '(' in m.group(0).split(',')[-1]:
+                continue
+            addr = m.group(1)
+            if 64 <= int(addr) <= 200:
+                out.append((mod, addr, ABS_LOWCORE.get((mod, addr), 'REVIEW')))
+    return out
+
+
 def dc_sites(src, nucleus):
     """Find S/370-only instructions hand-coded as DC constants."""
     pat = re.compile(r"^\s+DC\s+X'([0-9A-F]{4})", re.I)
@@ -185,6 +223,14 @@ def main():
         live = [d for d in dc if d[3] == 'instruction' and d[4]]
         print('%-46s %d' % ('  live nucleus instruction sites', len(live)))
         print('%-46s %s' % ('  modules', ' '.join(sorted({d[0] for d in live}))))
+
+    ab = abs_sites(src)
+    if ab:
+        print()
+        print('LOWCORE BY ABSOLUTE ADDRESS (invisible to the symbol scan)')
+        print('-' * 66)
+        for mod, addr, note in ab:
+            print('%-9s %-5s %s' % (mod, addr, note))
 
     if '--all' in sys.argv:
         for op in sorted(hits):
