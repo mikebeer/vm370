@@ -27,6 +27,7 @@ from mkdeck import Deck, aux, verify              # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 XA1 = 'XA0001DK'
 XA2 = 'XA0002DK'
+XA3 = 'XA0003DK'
 
 
 def psa():
@@ -140,6 +141,35 @@ def rbloks():
     return d
 
 
+def ioblok():
+    """IOBORB and IOBIRB: the ORB and IRB, one per outstanding operation.
+
+    Not a global work area.  DMKIOS's own prologue says
+    ATTRIBUTES = REENTRANT, RESIDENT and the module contains no STNSM,
+    STOSM or SSM anywhere -- it never disables -- so a single shared ORB
+    or IRB could be overwritten by a re-entry between being built and
+    being used.  The IOBLOK is the right granularity and CP already does
+    exactly this with IOBCSW, the real CSW per operation.
+
+    Inserted before  IOBSIZE EQU (*-IOBLOK)/8  so the size symbol grows.
+    96 bytes is a whole number of doublewords, so the truncating divide
+    in that EQU stays exact.
+    """
+    d = Deck(XA3)
+    d.insert('00044000', first='00044100', inc=10, limit='00045000',
+             lines=Deck.comment(
+        "ESA/390 OPERATION REQUEST BLOCK AND INTERRUPTION RESPONSE BLOCK, "
+        "ONE PER OUTSTANDING OPERATION. DMKIOS IS REENTRANT AND NEVER "
+        "DISABLES -- IT HAS NO STNSM, STOSM OR SSM ANYWHERE -- SO THESE "
+        "CANNOT BE A SHARED WORK AREA. MAPPED WITH ORBLOK AND IRBLOK IN "
+        "XABLOKS. THE IRB IS SIXTY-FOUR BYTES BECAUSE TSCH ALWAYS STORES "
+        "ALL SIXTY-FOUR, EVEN THOUGH M1 READS ONLY THE SCSW.") + [
+        "IOBORB   DS    XL32           ORB -- MAP WITH ORBLOK",
+        "IOBIRB   DS    XL64           IRB -- MAP WITH IRBLOK",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -152,13 +182,20 @@ def main():
         [(XA2, 'RDEVSSID: ESA/390 SUBSYSTEM IDENTIFICATION WORD')])
 
     # VMFMAC's list EXEC: one line per member, format copied from 194/DMKMAC.EXEC
+    i = ioblok()
+    i.write(os.path.join(HERE, 'IOBLOKS.%s' % XA3))
+    aux(os.path.join(HERE, 'IOBLOKS.AUXLCL'),
+        [(XA3, 'IOBORB AND IOBIRB: PER-OPERATION ORB AND IRB')])
+
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
-        for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY')):
+        for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
+                          ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
     for name in ('PSA.%s' % XA1, 'PSA.AUXLCL', 'RBLOKS.%s' % XA2,
-                 'RBLOKS.AUXLCL', 'DMKLCL.EXEC'):
+                 'RBLOKS.AUXLCL', 'IOBLOKS.%s' % XA3, 'IOBLOKS.AUXLCL',
+                 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
