@@ -28,6 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 XA1 = 'XA0001DK'
 XA2 = 'XA0002DK'
 XA3 = 'XA0003DK'
+XA4 = 'XA0004DK'
 
 
 def psa():
@@ -164,8 +165,133 @@ def ioblok():
         "CANNOT BE A SHARED WORK AREA. MAPPED WITH ORBLOK AND IRBLOK IN "
         "XABLOKS. THE IRB IS SIXTY-FOUR BYTES BECAUSE TSCH ALWAYS STORES "
         "ALL SIXTY-FOUR, EVEN THOUGH M1 READS ONLY THE SCSW.") + [
-        "IOBORB   DS    XL32           ORB -- MAP WITH ORBLOK",
-        "IOBIRB   DS    XL64           IRB -- MAP WITH IRBLOK",
+        "IOBORB   DS    0XL32          ORB -- SEE ORBLOK IN XABLOKS",
+        "IOBOPARM DS    1F             INTERRUPTION PARAMETER",
+        "IOBOFL4  DS    1X             KEY AND SUSPEND CONTROL",
+        "IOBOFL5  DS    1X             FORMAT, PREFETCH, INIT STATUS",
+        "IOBOLPM  DS    1X             LOGICAL PATH MASK",
+        "IOBOFL7  DS    1X             LENGTH AND EXTENSION CONTROL",
+        "IOBOCCW  DS    1F             CCW ADDRESS FOR THIS OPERATION",
+        "         DS    5F             PAD -- SEE ORBLOK",
+        "IOBIRB   DS    0XL64          IRB -- SEE IRBLOK IN XABLOKS",
+        "IOBISCSW DS    0XL12          SUBCHANNEL STATUS WORD",
+        "IOBIFL0  DS    1X             KEY, SUSPEND, DEFERRED CC",
+        "IOBIFL1  DS    1X             FORMAT, INIT STATUS, ZERO CC",
+        "IOBIFL2  DS    1X             FUNCTION AND ACTIVITY CONTROL",
+        "IOBIFL3  DS    1X             ACTIVITY AND STATUS CONTROL",
+        "IOBICCW  DS    1F             CCW ADDRESS",
+        "IOBIDST  DS    1X             DEVICE STATUS     -- TO CSW+4",
+        "IOBISST  DS    1X             SUBCHANNEL STATUS -- TO CSW+5",
+        "IOBICNT  DS    1H             RESIDUAL COUNT    -- TO CSW+6",
+        "         DS    XL20           EXTENDED STATUS WORD",
+        "         DS    XL32           EXTENDED CONTROL WORD",
+    ])
+    return d
+
+
+def dmkios():
+    """M1 step 4, first increment: the SSCH path.
+
+    Four edits, per 20-DMKIOS-DESIGN.md.  Deliberately NOT the whole of step
+    4: the four TIO sites, two HDV sites and two TCH sites are a second deck,
+    because each needs its condition-code flow re-derived rather than
+    substituted, and those instructions still assemble as S/370 meanwhile.
+
+    Every access uses a base CP already holds -- R10 for the IOBLOK, R8 for
+    the RDEVBLOK, R0 for the PSA -- so no register is borrowed anywhere and
+    no USING is added.  That was worth the redesign: at the SSCH site the
+    only demonstrably free register is R15, and "demonstrably" rested on a
+    trace call twenty lines later.
+    """
+    d = Deck(XA4)
+
+    # 1. Build the ORB alongside the CAW.  The CAW store STAYS: 1,917 CAW and
+    #    CSW references in CP keep reading it, and the shim keeps the CSW
+    #    honest, which is the whole premise of the conversion.
+    d.replace('01194000', first='01194100', inc=10, limit='01195000',
+              lines=['IOSTCAW  ST    R2,CAW         KEPT -- SEE BELOW'] +
+              Deck.comment(
+        "THE CAW STORE STAYS. 1,917 CAW AND CSW REFERENCES ACROSS CP KEEP "
+        "READING BOTH, AND IOSXCC1 BELOW KEEPS THE CSW HONEST. THAT IS THE "
+        "PREMISE OF THE WHOLE I/O CONVERSION: CHANGE THE TEN INSTRUCTIONS, "
+        "NOT THE 1,917 REFERENCES.") + [
+        "         MVC   IOBORB,ORBTMPL BUILD THE ORB -- IMPLICIT L'32",
+        "         ST    R2,IOBOCCW     CCW ADDRESS FOR THIS OPERATION",
+    ])
+
+    # 2. SIO -> SSCH.  The operand meaning inverts: SIO takes the device
+    #    address in R1 and ignores its operand; SSCH takes the subsystem id
+    #    in R1 and the ORB as its operand.  LH R1,IOBRADD upstream is left
+    #    alone because IOSQTIO still needs the device address in R1.
+    d.replace('01206000', first='01206100', inc=10, limit='01207000',
+              lines=Deck.comment(
+        "SIO TOOK THE DEVICE ADDRESS IN R1 AND IGNORED ITS OPERAND. SSCH "
+        "TAKES THE SUBSYSTEM ID IN R1 AND THE ORB AS ITS OPERAND -- THE TWO "
+        "SWAP ROLES. THE LH R1,IOBRADD UPSTREAM IS LEFT ALONE BECAUSE "
+        "IOSQTIO STILL WANTS THE DEVICE ADDRESS THERE.") + [
+        "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         SSCH  IOBORB         START SUBCHANNEL",
+    ])
+
+    # 3. cc1 no longer means "CSW stored", so route it through the shim.
+    d.replace('01241000', first='01241100', inc=10, limit='01242000', lines=[
+        "         BC    4,IOSXCC1      CC 1 = STATUS PENDING, NOT CSW",
+    ])
+
+    # 4. The shim and the ORB template, placed out of line between RETYCNT
+    #    and IOSNSIO1 -- an area reached only by branch, so nothing falls
+    #    into it.  RETYCNT DC F'40000' sitting there already is the
+    #    precedent.
+    d.insert('02651100', first='02651110', inc=10, limit='02652000',
+             lines=Deck.comment(
+        "ORB TEMPLATE. EVERYTHING EXCEPT THE CCW ADDRESS, WHICH IOSTCAW "
+        "STORES. LPM MUST BE X'80': SSCH TESTS ORB.LPM AGAINST PMCW.PAM AND "
+        "PAM IS X'80', SO A ZERO LPM MEANS NO PATH AVAILABLE RATHER THAN ANY "
+        "PATH, AND SSCH THEN RETURNS CONDITION CODE 3 WITH NO DIAGNOSTIC OF "
+        "ANY KIND. THAT COST A CYCLE IN THE BARE-METAL TESTS.") + [
+        "         DS    0F",
+        "ORBTMPL  DC    1F'0'          INTERRUPTION PARAMETER",
+        "         DC    X'00'          FLAG4: KEY ZERO",
+        "         DC    AL1(ORB5F)     FLAG5: FORMAT-1 CCWS",
+        "         DC    AL1(ORBLPMOK)  LPM -- MUST BE X'80'",
+        "         DC    X'00'          FLAG7",
+        "         DC    6F'0'          CCW ADDRESS AND PAD",
+        "         SPACE 1",
+     ] + Deck.comment(
+        "IOSXCC1 IS THE CSW SHIM. SIO CONDITION CODE 1 MEANT HERE IS YOUR "
+        "CSW, NOW. SSCH CONDITION CODE 1 MEANS STATUS IS PENDING, GO AND "
+        "FETCH IT. SO TSCH THE IRB, SYNTHESISE A CSW AT X'40' FROM THE SCSW, "
+        "AND JOIN THE ORIGINAL PATH. NO REGISTER IS USED: THE IOBLOK BASE IN "
+        "R10 AND THE PSA BASE IN R0 ARE BOTH ALREADY ESTABLISHED.") + [
+        "         SPACE 1",
+     ] + Deck.comment(
+        "CSW BYTE 0 IS SET TO ZERO, WHICH LEAVES THE LOGOUT-PENDING BIT "
+        "X'04' ALWAYS OFF, SO EVERY TM CSW,X'04' IN CP FALLS THROUGH. THE "
+        "ESA/390 REPLACEMENT FOR CHANNEL LOGOUT IS THE ESW AND ERW IN THE "
+        "IRB PLUS STCRW, AND THAT BELONGS TO RISK R-03 AND NOT TO M1. "
+        "STUBBING IT THIS WAY LOSES ERROR DETAIL; IT DOES NOT INVENT ANY, "
+        "WHICH IS THE SAFE DIRECTION TO FAIL.") + [
+        "         SPACE 1",
+     ] + Deck.comment(
+        "THE CCW ADDRESS IS COPIED STRAIGHT ACROSS. S/370 DEFINED THE CSW "
+        "ADDRESS AS EIGHT PAST THE LAST CCW USED; WHETHER THE SCSW USES THE "
+        "SAME CONVENTION FOR EVERY STATUS TYPE IS NOT YET CHECKED, AND M1 "
+        "READS STATUS BYTES RATHER THAN THIS ADDRESS. TO BE SETTLED BEFORE "
+        "ANY CODE RELIES ON THE VALUE.") + [
+        "         SPACE 1",
+        "IOSXCC1  DS    0H             ESA/390 CC 1: STATUS PENDING",
+        "         TSCH  IOBIRB         FETCH IT, CLEAR THE SUBCHANNEL",
+        "         MVI   CSW,X'00'      KEY ZERO, LOGOUT NEVER PENDING",
+        "         MVC   CSW+4(4),IOBIDST STATUS AND RESIDUAL COUNT",
+        "         MVC   CSW+1(3),IOBICCW+1 CCW ADDRESS, LOW 3 BYTES",
+        "         B     IOSCC1         NOW PROCEED AS S/370 DID",
+    ])
+
+    # 5. XABLOKS for ORB5F and ORBLPMOK.  Placed with the other COPYs so the
+    #    DSECTs land after the CSECT, which is where block definitions
+    #    already go in this module.
+    d.insert('02801000', first='02801500', inc=100, limit='02802000', lines=[
+        "         COPY  XABLOKS        ESA/390 CHANNEL SUBSYS BLOCKS",
     ])
     return d
 
@@ -187,15 +313,27 @@ def main():
     aux(os.path.join(HERE, 'IOBLOKS.AUXLCL'),
         [(XA3, 'IOBORB AND IOBIRB: PER-OPERATION ORB AND IRB')])
 
+    o = dmkios()
+    o.write(os.path.join(HERE, 'DMKIOS.%s' % XA4))
+    aux(os.path.join(HERE, 'DMKIOS.AUXLCL'),
+        [(XA4, 'SSCH PATH: ORB, SUBSYSTEM ID, AND THE CSW SHIM')])
+
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
+        # XAOPS must be here, not in a separate XALIB: DMKLCL.CNTRL's MACS
+        # record is  DMKLCL DMKHRC DMKMAC DMSLCL CMSHRC CMSLIB OSMACRO  and
+        # VMFASM globals exactly that list, so a macro library CP's control
+        # file does not name is invisible however well it was built.  The
+        # first DMKIOS assembly failed on precisely this: IFO078 UNDEFINED
+        # OP CODE for SSCH and TSCH, with every other new symbol resolved.
         for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
-                          ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY')):
+                          ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
+                          ('XAOPS', 'MACRO')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
     for name in ('PSA.%s' % XA1, 'PSA.AUXLCL', 'RBLOKS.%s' % XA2,
                  'RBLOKS.AUXLCL', 'IOBLOKS.%s' % XA3, 'IOBLOKS.AUXLCL',
-                 'DMKLCL.EXEC'):
+                 'DMKIOS.%s' % XA4, 'DMKIOS.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

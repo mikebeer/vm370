@@ -6,5 +6,23 @@
 *  WITH ORBLOK AND IRBLOK IN XABLOKS. THE IRB IS SIXTY-FOUR    XA0003DK         
 *  BYTES BECAUSE TSCH ALWAYS STORES ALL SIXTY-FOUR, EVEN       XA0003DK         
 *  THOUGH M1 READS ONLY THE SCSW.                              XA0003DK         
-IOBORB   DS    XL32           ORB -- MAP WITH ORBLOK           XA0003DK         
-IOBIRB   DS    XL64           IRB -- MAP WITH IRBLOK           XA0003DK         
+IOBORB   DS    0XL32          ORB -- SEE ORBLOK IN XABLOKS     XA0003DK         
+IOBOPARM DS    1F             INTERRUPTION PARAMETER           XA0003DK         
+IOBOFL4  DS    1X             KEY AND SUSPEND CONTROL          XA0003DK         
+IOBOFL5  DS    1X             FORMAT, PREFETCH, INIT STATUS    XA0003DK         
+IOBOLPM  DS    1X             LOGICAL PATH MASK                XA0003DK         
+IOBOFL7  DS    1X             LENGTH AND EXTENSION CONTROL     XA0003DK         
+IOBOCCW  DS    1F             CCW ADDRESS FOR THIS OPERATION   XA0003DK         
+         DS    5F             PAD -- SEE ORBLOK                XA0003DK         
+IOBIRB   DS    0XL64          IRB -- SEE IRBLOK IN XABLOKS     XA0003DK         
+IOBISCSW DS    0XL12          SUBCHANNEL STATUS WORD           XA0003DK         
+IOBIFL0  DS    1X             KEY, SUSPEND, DEFERRED CC        XA0003DK         
+IOBIFL1  DS    1X             FORMAT, INIT STATUS, ZERO CC     XA0003DK         
+IOBIFL2  DS    1X             FUNCTION AND ACTIVITY CONTROL    XA0003DK         
+IOBIFL3  DS    1X             ACTIVITY AND STATUS CONTROL      XA0003DK         
+IOBICCW  DS    1F             CCW ADDRESS                      XA0003DK         
+IOBIDST  DS    1X             DEVICE STATUS     -- TO CSW+4    XA0003DK         
+IOBISST  DS    1X             SUBCHANNEL STATUS -- TO CSW+5    XA0003DK         
+IOBICNT  DS    1H             RESIDUAL COUNT    -- TO CSW+6    XA0003DK         
+         DS    XL20           EXTENDED STATUS WORD             XA0003DK         
+         DS    XL32           EXTENDED CONTROL WORD            XA0003DK         

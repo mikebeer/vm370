@@ -1,0 +1,63 @@
+./ R 01194000          $ 01194100 010                                           
+IOSTCAW  ST    R2,CAW         KEPT -- SEE BELOW                XA0004DK         
+*  THE CAW STORE STAYS. 1,917 CAW AND CSW REFERENCES ACROSS    XA0004DK         
+*  CP KEEP READING BOTH, AND IOSXCC1 BELOW KEEPS THE CSW       XA0004DK         
+*  HONEST. THAT IS THE PREMISE OF THE WHOLE I/O CONVERSION:    XA0004DK         
+*  CHANGE THE TEN INSTRUCTIONS, NOT THE 1,917 REFERENCES.      XA0004DK         
+         MVC   IOBORB,ORBTMPL BUILD THE ORB -- IMPLICIT L'32   XA0004DK         
+         ST    R2,IOBOCCW     CCW ADDRESS FOR THIS OPERATION   XA0004DK         
+./ R 01206000          $ 01206100 010                                           
+*  SIO TOOK THE DEVICE ADDRESS IN R1 AND IGNORED ITS OPERAND.  XA0004DK         
+*  SSCH TAKES THE SUBSYSTEM ID IN R1 AND THE ORB AS ITS        XA0004DK         
+*  OPERAND -- THE TWO SWAP ROLES. THE LH R1,IOBRADD UPSTREAM   XA0004DK         
+*  IS LEFT ALONE BECAUSE IOSQTIO STILL WANTS THE DEVICE        XA0004DK         
+*  ADDRESS THERE.                                              XA0004DK         
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
+./ R 01241000          $ 01241100 010                                           
+         BC    4,IOSXCC1      CC 1 = STATUS PENDING, NOT CSW   XA0004DK         
+./ I 02651100 $ 02651110 010                                                    
+*  ORB TEMPLATE. EVERYTHING EXCEPT THE CCW ADDRESS, WHICH      XA0004DK         
+*  IOSTCAW STORES. LPM MUST BE X'80': SSCH TESTS ORB.LPM       XA0004DK         
+*  AGAINST PMCW.PAM AND PAM IS X'80', SO A ZERO LPM MEANS NO   XA0004DK         
+*  PATH AVAILABLE RATHER THAN ANY PATH, AND SSCH THEN RETURNS  XA0004DK         
+*  CONDITION CODE 3 WITH NO DIAGNOSTIC OF ANY KIND. THAT COST  XA0004DK         
+*  A CYCLE IN THE BARE-METAL TESTS.                            XA0004DK         
+         DS    0F                                              XA0004DK         
+ORBTMPL  DC    1F'0'          INTERRUPTION PARAMETER           XA0004DK         
+         DC    X'00'          FLAG4: KEY ZERO                  XA0004DK         
+         DC    AL1(ORB5F)     FLAG5: FORMAT-1 CCWS             XA0004DK         
+         DC    AL1(ORBLPMOK)  LPM -- MUST BE X'80'             XA0004DK         
+         DC    X'00'          FLAG7                            XA0004DK         
+         DC    6F'0'          CCW ADDRESS AND PAD              XA0004DK         
+         SPACE 1                                               XA0004DK         
+*  IOSXCC1 IS THE CSW SHIM. SIO CONDITION CODE 1 MEANT HERE    XA0004DK         
+*  IS YOUR CSW, NOW. SSCH CONDITION CODE 1 MEANS STATUS IS     XA0004DK         
+*  PENDING, GO AND FETCH IT. SO TSCH THE IRB, SYNTHESISE A     XA0004DK         
+*  CSW AT X'40' FROM THE SCSW, AND JOIN THE ORIGINAL PATH. NO  XA0004DK         
+*  REGISTER IS USED: THE IOBLOK BASE IN R10 AND THE PSA BASE   XA0004DK         
+*  IN R0 ARE BOTH ALREADY ESTABLISHED.                         XA0004DK         
+         SPACE 1                                               XA0004DK         
+*  CSW BYTE 0 IS SET TO ZERO, WHICH LEAVES THE LOGOUT-PENDING  XA0004DK         
+*  BIT X'04' ALWAYS OFF, SO EVERY TM CSW,X'04' IN CP FALLS     XA0004DK         
+*  THROUGH. THE ESA/390 REPLACEMENT FOR CHANNEL LOGOUT IS THE  XA0004DK         
+*  ESW AND ERW IN THE IRB PLUS STCRW, AND THAT BELONGS TO      XA0004DK         
+*  RISK R-03 AND NOT TO M1. STUBBING IT THIS WAY LOSES ERROR   XA0004DK         
+*  DETAIL; IT DOES NOT INVENT ANY, WHICH IS THE SAFE           XA0004DK         
+*  DIRECTION TO FAIL.                                          XA0004DK         
+         SPACE 1                                               XA0004DK         
+*  THE CCW ADDRESS IS COPIED STRAIGHT ACROSS. S/370 DEFINED    XA0004DK         
+*  THE CSW ADDRESS AS EIGHT PAST THE LAST CCW USED; WHETHER    XA0004DK         
+*  THE SCSW USES THE SAME CONVENTION FOR EVERY STATUS TYPE IS  XA0004DK         
+*  NOT YET CHECKED, AND M1 READS STATUS BYTES RATHER THAN      XA0004DK         
+*  THIS ADDRESS. TO BE SETTLED BEFORE ANY CODE RELIES ON THE   XA0004DK         
+*  VALUE.                                                      XA0004DK         
+         SPACE 1                                               XA0004DK         
+IOSXCC1  DS    0H             ESA/390 CC 1: STATUS PENDING     XA0004DK         
+         TSCH  IOBIRB         FETCH IT, CLEAR THE SUBCHANNEL   XA0004DK         
+         MVI   CSW,X'00'      KEY ZERO, LOGOUT NEVER PENDING   XA0004DK         
+         MVC   CSW+4(4),IOBIDST STATUS AND RESIDUAL COUNT      XA0004DK         
+         MVC   CSW+1(3),IOBICCW+1 CCW ADDRESS, LOW 3 BYTES     XA0004DK         
+         B     IOSCC1         NOW PROCEED AS S/370 DID         XA0004DK         
+./ I 02801000 $ 02801500 100                                                    
+         COPY  XABLOKS        ESA/390 CHANNEL SUBSYS BLOCKS    XA0004DK         

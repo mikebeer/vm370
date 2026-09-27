@@ -2,3 +2,4 @@
  &1 &2 RBLOKS   COPY                                                            
  &1 &2 IOBLOKS  COPY                                                            
  &1 &2 XABLOKS  COPY                                                            
+ &1 &2 XAOPS    MACRO                                                           
