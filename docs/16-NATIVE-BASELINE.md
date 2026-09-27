@@ -122,6 +122,19 @@ checked without a mainframe — still holds. But z390's error output must be rea
 as *dialect disagreement until proven otherwise*, and the authority on whether CP
 assembles is the assembler that builds CP.
 
+## Superseded upward: 186 modules, not 18
+
+**27 September, later the same day.** `ASMDMK DMKHRC` ran CE's own EXEC over all
+186 members it lists. **186 assembled, 185 with `NO STATEMENTS FLAGGED`**, and the
+one flagged module is `DMKRIO` at severity 4 with four
+`UNSUPPORTED DEVICE TYPE` MNOTEs for 3375/3390 DASD in the site configuration --
+and its TEXT deck was still created. About 90 seconds of virtual CPU for the lot.
+
+So the claim below is not "eighteen modules assemble", it is **essentially all of
+CP assembles on CE's own Assembler XF**. See
+[21-NUCLEUS-GAP.md](21-NUCLEUS-GAP.md), which uses this to put a number on the
+distance to a nucleus.
+
 ## What this means for the milestones
 
 | | |
