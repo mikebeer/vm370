@@ -26,6 +26,7 @@ from mkdeck import Deck, aux, verify              # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 XA1 = 'XA0001DK'
+XA2 = 'XA0002DK'
 
 
 def psa():
@@ -83,6 +84,18 @@ def psa():
         "IOSSID   DS    1F -           ESA/390 SUBSYSTEM ID WORD",
         "INTKFLIN EQU   IOSSID -       S/370 NAME, SAME FULLWORD",
         "IOSCHNO  EQU   IOSSID+2 -     ESA/390 SUBCHANNEL NUMBER",
+        "*",
+        "*  AND A GUEST'S PAGE 0 IS NOT CP'S LOWCORE.  PSA SERVES",
+        "*  BOTH: CP'S OWN REAL LOWCORE, AND A TEMPLATE FOR A",
+        "*  VIRTUAL MACHINE'S PAGE 0 -- EVERY  X-PSA(,R2)  SITE.",
+        "*  GUESTS STAY S/370-MODE THROUGH M4, SO A GUEST-PSA",
+        "*  DISPLACEMENT KEEPS ITS S/370 MEANING.  DMKDSP BUILDS A",
+        "*  GUEST INTERRUPT CODE HERE FROM VDEVADD+VCUADD+VCHADD, A",
+        "*  VIRTUAL DEVICE ADDRESS AND NOT A SUBCHANNEL NUMBER, SO IT",
+        "*  NEEDS ITS OWN NAME: IOSCHNO WOULD READ AS THE OPPOSITE",
+        "*  OF THE TRUTH.  S370CHID AND S370ECSW ALREADY SERVE THE",
+        "*  OTHER TWO GUEST-PSA SITES CORRECTLY.",
+        "G370TIO  EQU   IOSSID+2 -     GUEST S/370 DEVICE ADDRESS",
     ])
 
     # --- X'BC': carve the interruption parameter out of the reserved area.
@@ -93,18 +106,59 @@ def psa():
     return d
 
 
+def rbloks():
+    """RDEVSSID: the subsystem-identification word, per 20-DMKIOS-DESIGN.md.
+
+    Subchannel numbers are not derivable from device addresses, so CP has to
+    learn the mapping with STSCH at initialisation and keep it somewhere.
+    RDEVBLOK is the right home -- CP already chains it by device address.
+
+    Stored as a FULLWORD holding X'0001' in the high halfword and the
+    subchannel in the low, so each SSCH site becomes one instruction
+    (L R1,RDEVSSID) rather than a load, a shift and an OR.
+
+    Inserted immediately before  RDEVSIZE EQU (*-RDEVBLOK)/8  so the size
+    symbol grows with the block.  A full DOUBLEWORD is added rather than a
+    fullword: the EQU divides by 8 and truncates, so growing by 8 keeps
+    whatever alignment the block already had and cannot shrink RDEVSIZE.
+    LDEVRDEV DS (RDEVSIZE*8)X grows with it automatically.
+    """
+    d = Deck(XA2)
+    d.insert('00162300', first='00162310', inc=10, limit='00163000',
+             lines=Deck.comment(
+        "ESA/390 SUBSYSTEM IDENTIFICATION. SUBCHANNEL NUMBERS ARE NOT "
+        "DERIVABLE FROM DEVICE ADDRESSES -- THEY ARE ASSIGNED IN "
+        "CONFIGURATION ORDER -- SO CP LEARNS THE MAPPING WITH STSCH AT "
+        "INITIALISATION AND KEEPS IT HERE. HELD AS A FULLWORD OF "
+        "X'0001' || SUBCHANNEL SO THAT EVERY SSCH SITE IS ONE INSTRUCTION, "
+        "L R1,RDEVSSID, WITH NO SHIFTING OR MASKING. THE SECOND FULLWORD "
+        "KEEPS THE BLOCK A WHOLE DOUBLEWORD LONGER, BECAUSE RDEVSIZE "
+        "DIVIDES BY 8 AND TRUNCATES.") + [
+        "RDEVSSID DS    1F -           X'0001' || SUBCHANNEL NUMBER",
+        "         DS    1F -           RESERVED, KEEPS RDEVSIZE EXACT",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
     aux(os.path.join(HERE, 'PSA.AUXLCL'),
         [(XA1, 'ESA/390 LOWCORE: SUBSYSTEM ID AND INTERRUPTION PARAMETER')])
 
+    r = rbloks()
+    r.write(os.path.join(HERE, 'RBLOKS.%s' % XA2))
+    aux(os.path.join(HERE, 'RBLOKS.AUXLCL'),
+        [(XA2, 'RDEVSSID: ESA/390 SUBSYSTEM IDENTIFICATION WORD')])
+
     # VMFMAC's list EXEC: one line per member, format copied from 194/DMKMAC.EXEC
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
-        f.write(' &1 &2 PSA      MACRO'.ljust(80) + '\n')
+        for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY')):
+            f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
-    for name in ('PSA.%s' % XA1, 'PSA.AUXLCL', 'DMKLCL.EXEC'):
+    for name in ('PSA.%s' % XA1, 'PSA.AUXLCL', 'RBLOKS.%s' % XA2,
+                 'RBLOKS.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

@@ -62,6 +62,26 @@ class Deck:
     def source(self, text):
         self._card(text, with_id=True)
 
+    @staticmethod
+    def comment(text, indent='*  '):
+        """Word-wrap prose into assembler comment lines that fit the card.
+
+        Hand-wrapping comments to 61 columns is exactly the fiddly,
+        error-prone work that R-04 is about, and it cost several iterations
+        before this existed.  Pass a paragraph; get cards back.
+        """
+        out, line = [], indent
+        for word in text.split():
+            cand = line + ('' if line == indent else ' ') + word
+            if len(cand) > TEXT_COL:
+                out.append(line.rstrip())
+                line = indent + word
+            else:
+                line = cand
+        if line.strip() != indent.strip():
+            out.append(line.rstrip())
+        return out
+
     # ------------------------------------------------------------ operations
     def _seqcheck(self, first, inc, count, limit):
         """A deck that numbers past the next surviving record corrupts the
