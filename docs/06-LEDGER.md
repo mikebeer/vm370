@@ -212,8 +212,13 @@ these need nobody else. Roughly in value order:
 
 ## 5. Open, needs Adrian
 
-1. **Are `ARCHTECT`'s `CODE60`/`CODE70` rows live, or dead future-proofing?**
-   The one question where he may simply know.
+1. ~~**Are `ARCHTECT`'s `CODE60`/`CODE70` rows live?**~~ **ANSWERED from the
+   source** — see `02-CP-VERIFIED.md`. Neither live-for-CP nor dead: the index
+   comes from `IC R9,EXTCR0+1`, the *guest's* CR0, so all eight rows exist to
+   shadow whatever DAT format a virtual machine selects. CP names only
+   `CODE80` ("STANDARD VM/370 FORMAT"). **This was the last item needing
+   Adrian, so the plan now has no external dependency.** It also corrected the
+   row: `CODEB0`, not `CODE70`, is ESA/390's geometry.
 2. Is the `DMKATS` frame-sharing reading right?
 3. Has `VMCE-WIDE-PLAN.md` selected a direct 64-bit route that supersedes
    this?

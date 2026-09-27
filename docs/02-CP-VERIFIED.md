@@ -103,6 +103,82 @@ needs is not a new concept to `DMKVAT`; it is an existing table row.
 (`DMKATS`, named saved systems), because that is a compatibility decision
 rather than a parameter, and no table row solves it.
 
+### Correction, 27 September: the ESA/390-shaped row is `CODEB0`, not `CODE70`
+
+The whole table has now been decoded, and I picked the wrong row. `CODE70` is
+**2 KB** pages — "SMALL PAGE" in S/370 means 2 KB — so its 1 MB segment holds
+512 of them, which is why `PAGTLEN` is 2048. The row that matches ESA/390 is
+**`CODEB0`**: "LARGE PAGE, LARGE SEG, FULLWORD ENTRIES".
+
+All eight rows, decoded from `PAGEMSK`/`SEGMASK`/`PAGTLEN` and cross-checked
+against each other:
+
+| Row | Page | Segment | PTE | Segments | Address space | `PAGTLEN` |
+|---|---|---|---|---|---|---|
+| `CODE40` | 2 KB | 64 KB | halfword | 512 | 32 MB | 64 |
+| `CODE50` | 2 KB | 1 MB | halfword | 16 | 16 MB | 1024 |
+| `CODE60` | 2 KB | 64 KB | **fullword** | 4096 | 256 MB | 128 |
+| `CODE70` | 2 KB | **1 MB** | **fullword** | 2048 | **2 GB** | 2048 |
+| **`CODE80`** | **4 KB** | **64 KB** | **halfword** | **256** | **16 MB** | **32** |
+| `CODE90` | 4 KB | 1 MB | halfword | 16 | 16 MB | 512 |
+| `CODEA0` | 4 KB | 64 KB | fullword | 4096 | 256 MB | 64 |
+| **`CODEB0`** | **4 KB** | **1 MB** | **fullword** | **2048** | **2 GB** | **1024** |
+
+`CODE80` is CP's own geometry and matches everything `03-CP-INVENTORY.md`
+documents independently — 4 KB pages, 64 KB segments, halfword PTEs, 16 MB.
+That agreement is what validates the decoding of the other seven.
+
+**`CODEB0` is ESA/390's geometry exactly**: 256 pages of 4 KB to a 1 MB
+segment, 2048 segments, fullword entries, 1024-byte page tables.
+
+`PAGSHFT` is not "shift to get the page number" but "shift to get the byte
+offset into the page table", so the entry size is baked into it — `CODEB0`'s
+10 against `CODE90`'s 11 is the halfword-to-fullword difference.
+
+### What is still missing, and it is one row
+
+`CODEB0` has the right geometry and the wrong PTE flag positions. It carries
+`PINVBIT X'08'`, whereas ESA/390 puts the page-invalid bit at bit 21, which as
+a byte mask is `X'04'` — and `CODE70` already has `X'04'`.
+
+`PINVBIT` is used as the **`MVCL` padding character** to fill a whole page
+table with invalid entries:
+
+    LA    R1,PINVBIT(R9) INVALID BIT FOR THIS FORMAT
+    ICM   R15,B'1000',0(R1)   GET PADDING CHAR = INV. BIT
+    LH    R1,PAGTLEN(R9) PAGE TABLE LENGTH IN BYTES
+    MVCL  R0,R14         SET ALL PAGE TABLE ENTRIES INV.
+
+A fullword filled with `X'04'` gives `X'04040404'`: bit 21 set, and none of
+ESA/390's must-be-zero bits (`X'80000900'`) violated. So it works.
+
+**So the row ESA/390 needs is `CODEB0`'s geometry with `CODE70`'s
+`PINVBIT`** — a hybrid of two rows that already exist. `ZEROBIT` is the one
+field to derive rather than copy: ESA/390's must-be-zero bits in that byte are
+`X'09'`, matching neither row's `X'02'` or `X'06'`.
+
+### And the liveness question is answered — it does not need Adrian
+
+`01-PROPOSAL.md` asked whether `CODE60`/`CODE70` are live or dead
+future-proofing. **Neither.** Two facts settle it:
+
+    394   LA    R1,CODE80-ARCHTECT  SET STANDARD VM/370 FORMAT
+
+is the only place CP names a row — it sets `CODE80` as the default, for change
+detection. And the index comes from the guest:
+
+    177   SLR   R9,R9
+    178   IC    R9,EXTCR0+1    ARCHITECTURE CONTRL BYTE
+    180   ALR   R9,R9          DOUBLE IT FOR TABLE INDEX
+
+`EXTCR0` is the ECBLOK's **virtual** CR0 image. So the row is selected by
+**whatever DAT format the virtual machine puts in its own CR0**, and all eight
+exist so that `DMKVAT` can shadow any S/370 DAT format a guest chooses. They
+are live for guests and unused by CP for itself.
+
+Which means the question can be closed here rather than asked: **the plan now
+has no external dependency.**
+
 ---
 
 ## 2. The CAW/CSW shim survives contact with `DMKIOS`
