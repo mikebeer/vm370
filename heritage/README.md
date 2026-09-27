@@ -72,18 +72,24 @@ carries of CP-67, and what the surviving recovery does and does not contain.
 - [IBM CP-40](https://en.wikipedia.org/wiki/IBM_CP-40) — the predecessor,
   for where the design originates
 
-## A differential baseline, not preserved here
+## A corroborating copy, not a baseline
 
 [`g4ugm/vm370.source`](https://github.com/g4ugm/vm370.source) — Dave Wade's
-VM/370 release source, 187 CP and 174 CMS `.ASSEMBLE` members. It is
-deliberately *not* snapshotted into this repository: it is 37 MB of source this
-project does not build, and CE is the tree being converted.
+VM/370 release source, 187 CP and 174 CMS `.ASSEMBLE` members. Deliberately not
+snapshotted here: it is 37 MB this project does not build.
 
-Its value is as a differential baseline. Diffing CE against it showed that
-**every one of its 187 CP modules is in CE, byte-identical apart from a trailing
-newline and CE's control-byte encoding** — which verifies, for the first time,
-that the analysis in `../docs/` was measured against IBM's Release 6 source
-rather than a community fork. See `../docs/15-PRISTINE-BASELINE.md`.
+**It is not an independent IBM baseline.** It carries CE's own community update
+markers — `HRC065DK`, `EXTRN HDKD7CIO` — so it is the same *resolved* tree as
+CE's `source/cp`, and an earlier claim here that diffing against it verified CE
+against IBM was wrong. See `../docs/15-UPDATE-LEVELS.md`.
 
-It contains no `.MACRO` or `.COPY` members, so it does not supply the
+What it is good for: independent corroboration that CE's update resolution is
+not corrupt, since a separately maintained copy agrees line for line.
+
+**The genuine IBM baseline is inside CE**, at `maintenance/files/394` (CP) and
+`393` (CMS), with 1,281 IBM PTF decks on 294 and 354 CE decks on 094 — and every
+changed line carries its update id in columns 73-80, which is more precise than
+any diff.
+
+g4ugm contains no `.MACRO` or `.COPY` members, so it does not supply the
 OSMACRO/DOSMACRO libraries (risk `R-14`).

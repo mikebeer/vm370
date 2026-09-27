@@ -71,7 +71,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/12-RISKS.md            the risk register, scored and mapped to milestones
     docs/13-ISSUES.md           known issues and defects, including retractions
     docs/14-M0-CLOSED.md        the assembly chapter, measured shut
-    docs/15-PRISTINE-BASELINE.md CE's CP source is IBM's, verified by diff
+    docs/15-UPDATE-LEVELS.md    CE's three update levels, and a retracted claim
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was

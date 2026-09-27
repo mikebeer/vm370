@@ -56,6 +56,7 @@ retracted and corrected).
 | **I-23** | "Segment 15 is the false alarm" | `04-SHARED-SEGMENTS.md` concluded that the segment-15 collision was benign, resting on saved-page analysis, with one caveat it could not check. Reading the real `USER DIRECT` closed that caveat **against** the conclusion: eight machines default to 15 MB, two to 14 MB, `XNET` to 16 MB, and 21 can be defined to 16 MB, so private storage routinely occupies exactly where CMS's shared segments sit. Corrected in `04`, `05` and `11`. | closed |
 | **I-04** | `XATEST` listing never checked | Seven of twelve `XAOPS` encodings came from z390's opcode table rather than from execution, and the listing that would confirm them had never been produced. Now produced by CE's own Assembler XF and saved as `macros/validate/XATEST-CE-XF.LISTING`; all twelve object codes read off it and correct. See [14-M0-CLOSED.md](14-M0-CLOSED.md). | fixed |
 | **I-26** | Duplicate spool file from `START` plus `devinit` | `CP START 00C` un-drains the real reader *and* triggers a read; a following `devinit` of the same device read the same file again, queueing two identical spool files. The second `READCARD` took the duplicate, so `XATEST ASSEMBLE` landed on disk as a 194-record copy of `XAOPS MACRO` and failed with `IFO047 UNEXPECTED END OF FILE ON SYSTEM INPUT` — a plausible-looking macro failure that was nothing of the kind. Fix: `devinit` once per new deck, and always check `LISTFILE`'s record count against the deck size. | fixed |
+| **I-27** | "g4ugm verifies CE against IBM" | Claimed that diffing `g4ugm/vm370.source` against CE proved CE's CP source is IBM's Release 6 source unmodified. The diff was right; the conclusion was not. g4ugm carries CE's own `HRC` update markers and references CE-only `HDK*` modules, so it is the same resolved tree — two copies of one tree agreeing proves nothing about IBM. The check that would have caught it is one `grep` for the other tree's change ids. Corrected in [15-UPDATE-LEVELS.md](15-UPDATE-LEVELS.md); the real baseline is CE's own `maintenance/files/394`. | closed |
 | **I-24** | `CODE70` identified as ESA/390's `ARCHTECT` row | `CODE70` is 2 KB pages. **`CODEB0`** is the ESA/390 row — 4 KB pages, 1 MB segments, fullword PTEs, 2,048 segments. | closed |
 | **I-25** | `CPCREG0` classified as a constant | It is a live CR0 save area: `STCTL C0,C0,CPCREG0  SAVE IN REAL 0 FOR CP`. Would have been treated as a fixed bit pattern across 38 reference sites. | closed |
 
@@ -66,9 +67,9 @@ retracted and corrected).
 | open | 11 |
 | fix known | 1 *(I-02, counted in open above)* |
 | environment | 4 |
-| closed / fixed | 11 |
+| closed / fixed | 12 |
 
-**Five of the eleven closed entries are retracted claims of my own** — I-21,
-I-22, I-23, I-24, I-25. Four of the five were wrong in the project's favour and
-one (I-23) was wrong against it. That ratio is itself worth watching: a review
+**Six of the twelve closed entries are retracted claims of my own** — I-21,
+I-22, I-23, I-24, I-25. Four were wrong in the project's favour, one (I-23) against it, and one
+(I-27) was wrong in the flattering direction — which is the one to watch. That ratio is itself worth watching: a review
 that only ever finds good news is not reviewing.
