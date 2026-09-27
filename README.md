@@ -19,7 +19,7 @@ with its own tests, its own tooling and its own honest status.
 |---|---|---|
 | **24-bit** | S/370 | **Works.** This is VM/370 CE as released. 16 MB ceiling. |
 | **31-bit** | ESA/390 | **Hardware proven, M0 complete, conversion not started.** Thirteen standalone tests pass on stock Hercules; CE's own assembler accepts the ESA/390 macros. |
-| **64-bit** | z/Architecture | **Not started.** Seeded by the `wide/` proofs in the CE tree. |
+| **64-bit** | z/Architecture | **Not started.** Seeded by the `wide/` proofs in the CE tree. `docs/17-CARRY-FORWARD-64.md` records what the 31-bit work hands it. |
 
 Start at [`arch/31bit/README.md`](arch/31bit/README.md) — that is where the
 active work is, and it is the only directory with executable results in it.
@@ -73,6 +73,7 @@ which is precisely what `arch/31bit`'s M3 tests.
     docs/14-M0-CLOSED.md        the assembly chapter, measured shut
     docs/15-UPDATE-LEVELS.md    CE's three update levels, and a retracted claim
     docs/16-NATIVE-BASELINE.md  18 CP modules assemble clean on CE, unmodified
+    docs/R01-SHIFT-SITES.md     the 70 geometry shift sites, site by site
 
 **`06` is the status account** — sorted by strength of evidence, because
 "checked" means very different things depending on whether something was

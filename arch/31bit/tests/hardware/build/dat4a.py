@@ -118,14 +118,18 @@ a.data("MASKSAVE", lambda s: b"\x00", "", align=1)
 a.layout().assemble(size=0x1100)   # must reach PAGETAB16 at 30C0
 
 # --------------------------------------------------------------- tables
-INVALID = (0x20).to_bytes(4, "big")
+# X'20' invalidates a SEGMENT-table entry; a PAGE-table entry needs X'400'.
+# Using one constant for both leaves unused PTEs valid and aliased to real
+# page 0.  See docs/13-ISSUES.md I-06.
+STE_INVALID = (0x20).to_bytes(4, "big")
+PTE_INVALID = (0x400).to_bytes(4, "big")
 for i in range(32):
-    a.put(SEGTAB + 4*i, INVALID)
+    a.put(SEGTAB + 4*i, STE_INVALID)
 a.put(SEGTAB + 4*0,  PAGETAB0.to_bytes(4, "big"))     # PTL 0, valid
 a.put(SEGTAB + 4*16, PAGETAB16.to_bytes(4, "big"))    # PTL 0, valid
 for i in range(16):
     a.put(PAGETAB0 + 4*i, (i * 0x1000).to_bytes(4, "big"))   # identity
-    a.put(PAGETAB16 + 4*i, INVALID if i != 5 else (0x7000).to_bytes(4, "big"))
+    a.put(PAGETAB16 + 4*i, PTE_INVALID if i != 5 else (0x7000).to_bytes(4, "big"))
 
 a.check_align(("CRVALS",4,"LCTL"), ("A5000",4,"L"), ("A7000",4,"L"),
               ("AHIGH",4,"L"), ("A31",4,"L"), ("A24",4,"L"),

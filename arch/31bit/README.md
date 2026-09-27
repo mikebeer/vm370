@@ -294,30 +294,73 @@ else in this series that checks a condition code without checking the answer.
 
 ## Milestones
 
-| | | Status |
-|---|---|---|
-| **M0** | Assembler macros for the instructions CE does not know | **done, verified on CE, and measured complete** — 24 members, severity 0, and a 351-mnemonic probe showing nothing needed is missing. `../../docs/14-M0-CLOSED.md` |
-| **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | **steps 1 and 3 done** — `XAOPS` accepted by CE's assembler, and all nine modules assemble clean unmodified. Step 2 (`PSA.MACRO`) is the first change. **The critical path** |
-| **M2** | DAT on with ESA/390 tables, **`TRANS`-bearing modules converted to AMODE 31**. No guests, no shared segments | not started, **unblocked**, and baselined — the DAT five assemble clean |
-| **M3** | One S/370-mode guest logs on and runs CMS — includes frame-level shared segments in `DMKATS` | not started |
-| **M4** | Two guests, isolated | not started |
+Each milestone isolates one class of failure, so that when it fails the cause
+can only be in one place. That is the whole design, and it is why the
+definitions below were tightened on 27 September: three of them could be
+**passed by a broken system**, and two pieces of work belonged to no milestone
+at all. See `../../docs/13-ISSUES.md` `I-08` through `I-12`.
+
+| | | Exit criterion | Status |
+|---|---|---|---|
+| **M0** | Assembler macros for the instructions CE does not know | `MACLIB GEN` builds them and CE's own assembler emits the documented opcodes | **done, verified on CE, measured complete** — 24 members, severity 0, 351-mnemonic probe. `../../docs/14-M0-CLOSED.md` |
+| **M1** | CP IPLs in ESA/390 mode, DAT off, no paging, no guests | CP writes its initialisation message **and then accepts a command typed at the console** | **steps 1 and 3 done** — `XAOPS` accepted, nine modules clean unmodified. Step 2 (`PSA`) is the first change. **The critical path** |
+| **M2** | DAT on with ESA/390 tables; `TRANS`-bearing modules at AMODE 31 | `DMKBLD` builds a table set and `TRANS` returns the **correct above-the-line real address** for a virtual address in it, self-checked and reported | not started, **unblocked**, baselined — the DAT five assemble clean |
+| **M3a** | CP IPLs from DASD | a nucleus written by `DMKLDR`/`DMKSAVNC` is read back by `DMKCKP`/`DMKSAVRS` and reaches the console prompt with no `loadcore` | not started |
+| **M3b** | One S/370-mode guest runs CMS | a guest logs on and **`IPL 190`** — by device address, so no `DMKSNT` and no sharing — reaching `CMS` ready | not started |
+| **M3c** | Shared segments at frame granularity | **`IPL CMS`** by saved-system name works, and two guests sharing it cannot see each other's private storage | not started |
+| **M4** | Two guests, isolated | both run concurrently, and a guest reading its own storage keys through `ISK` still sees 2 KB semantics | not started |
+| **M5** | CMS runs in a 31-bit virtual machine | an application allocates and uses a heap above the 16 MB line | not started — **the only milestone that delivers the stated goal** |
+
+### Why these criteria, and not the obvious ones
+
+**M1's used to be "writes one console message", which a dead CP passes.**
+`07-io-interrupt.rc` measured it: with CR6 zero, the message prints, the CCW
+runs, the device does its work, and the CPU sits in an enabled wait forever.
+Requiring CP to *accept a command afterwards* puts `DMKCNSIN` on the path, so
+the interruption must actually have been delivered. One word's difference
+between a criterion that means something and one that does not.
+
+**M2's used to name no observable at all.** "DAT on, no guests" is close to a
+contradiction, because CP's own execution is largely real-mode and the tables it
+builds are for virtual machines — with nothing to dispatch, nothing translates.
+The criterion above makes it a self-check inside CP, which is testable without a
+guest and fails loudly if `LRA` is being asked a truncated question.
+
+**M3 used to bundle three independent risks.** A nucleus that IPLs, a guest that
+runs CMS, and frame-level sharing are three separate things that could each
+fail, and the split is available in the machinery: `IPL 190` needs no `DMKSNT`,
+no `DMKATS` and no sharing, while `IPL CMS` by name needs all three. M3a exists
+because `R-09` had no owner — `DMKCKP`, `DMKSAV` and the nucleus-write path were
+deferred out of M1 under strategy B and picked up by nothing.
+
+**M5 exists because M0–M4 give no guest a single extra byte.** A 31-bit CP with
+S/370-mode guests is what VM/XA did, and it is useful — CP's nucleus, free
+storage, paging pool and trace table move above the line, so more guests fit —
+but the 18 MB heap needs CMS. The survey says CMS is far cleaner than CP on this
+axis: 4 architecture-sensitive instructions across 139 macro members, zero S/370
+I/O, 7 inline 24-bit literals against CP's 217 named references. Probably small.
+"Probably small and unnumbered" is how work goes missing.
+
+### What moved, and why
 
 **M2 was blocked and is not any more.** It waited on a compatibility decision
 about shared segments at 1 MB granularity, which was the plan's only external
-dependency. `../../docs/05-CP67-PRIOR-ART.md` removes it: sharing frames
-rather than page tables keeps 4 KB granularity, so no saved-system layout
-changes and nobody has to rule on `CMSOLD`. The critical path is now
-M0 → M1 → M2 → M3, entirely self-directed.
+dependency. `../../docs/05-CP67-PRIOR-ART.md` removes it: sharing frames rather
+than page tables keeps 4 KB granularity, so no saved-system layout changes and
+nobody has to rule on `CMSOLD`.
 
-**AMODE 31 conversion moved INTO M2**, per the `LRA` finding above: without
-it, `TRANS` cannot see an above-the-line virtual address, so M2's tables would
-be correct and unusable.
+**AMODE 31 conversion moved INTO M2**, per the `LRA` finding above: without it
+`TRANS` cannot see an above-the-line virtual address, so M2's tables would be
+correct and unusable.
 
-**Shared segments moved from M2 to M3, which is where they are actually
-needed.** CP does not need shared segments to run with DAT on; CMS needs them
-because it is IPL'd by name through `DMKSNT`. Splitting them out keeps M2 to
-the table formats alone, and defers the `DMKATS` rework — the one piece of
+**Shared segments moved from M2 to M3c.** CP does not need them to run with DAT
+on; CMS needs them because it is IPL'd by name through `DMKSNT`. That keeps M2
+to the table formats alone and defers the `DMKATS` rework — the one piece of
 work the CP-67 finding *added* — until there is a guest to test it with.
+
+The critical path is M0 → M1 → M2 → M3a → M3b → M3c → M4 → M5, entirely
+self-directed: no external dependency remains, `R-14` having closed when the
+OS/VS macro libraries turned up on CE's own S disk.
 
 ## Risks and issues live in a register, not here
 

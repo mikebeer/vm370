@@ -31,7 +31,7 @@ announced loudly, because the cost is the debugging, not the bug. CR6 is why
 
 | ID | Risk | Description | P | I | W | Mitigation | Status |
 |---|---|---|---|---|---|---|---|
-| **R-01** | Geometry in bare shift literals | 70 hard-coded shift amounts across twelve modules encode the 64 KB/1 MB segment and halfword/fullword PTE geometry as bare numeric literals. No symbol rename touches them; a missed one yields a *correct-looking* translation to the wrong page. | H | H | **9** | Enumerate all 70 with a script and convert each to a named `EQU` **before** changing any geometry, so the change has one definition point. Pre-M2 task, mechanical, cheap. | open |
+| **R-01** | Geometry in bare shift literals | 70 hard-coded shift amounts across twelve modules encode the 64 KB/1 MB segment and halfword/fullword PTE geometry as bare numeric literals. No symbol rename touches them; a missed one yields a *correct-looking* translation to the wrong page. | H | H | **9** | **Enumerated 27 Sep: [R01-SHIFT-SITES.md](R01-SHIFT-SITES.md)**, all 70 with module, line, sequence anchor and the module's own comment, produced by `../arch/31bit/tools/shifts.py` so it is re-runnable against a moving tree. Four symbols cover them — `PAGSHFT` 4→8, `SEGSHFT` 16→20, `PTLSHFT` 6→10, `KEYSHFT` 11→12 — and naming them is M2's first act, before any geometry changes. One compound site (`DMKBLD` 232, `SLL R1,4+4`) needed reading rather than substitution and is resolved in the table. | **enumerated** |
 | **R-02** | Silent-gate omissions | A required control bit omitted, with no diagnostic and a symptom that looks like success. Three found already: CR0 translation format, `PMCW5_E`, and CR6 — where the console line prints, the device works, and the CPU hangs forever. There is no reason to think three is all of them. | M | H | **6** | Keep a gates checklist in `../arch/31bit/tests/hardware/`; make every milestone exit criterion require *progress past* the observable, never the observable itself (see I-08). Assert CR0/CR6/PMCW enable at every CP entry during M1–M2. | open |
 | **R-03** | Channel logout has no equivalent | `TM CSW,X'04'` and friends survive a copy; what they point at does not. The ESW/ERW in the IRB plus `STCRW` replace `CHANID`, `IOELPNTR` and `ECSWLOG`, which have nothing to map to. | H | M | **6** | Map every logout site; stub all of them to "permanent error" for M1–M2 so the paths assemble and fail loudly; implement ESW/ERW properly only when a real device error needs diagnosing. | open |
 | **R-04** | Column-sensitive source corrupted by tooling | CP source is strictly column-sensitive: columns 1–71 are code, 72 is continuation, 73–80 carry `@V40759`-style change markers. Any script touching 217 constant sites or 70 shift literals can push markers into column 72. | H | M | **6** | **Largely neutralised by writing the conversion as an `AUXLCL` update level** ([15-UPDATE-LEVELS.md](15-UPDATE-LEVELS.md)): update decks insert, delete or replace whole records anchored on the sequence numbers in 73–80 and never rewrite a line in place, so the `TRACE`→`CPTRACE` failure mode cannot occur. Residual applies only to tooling that does edit base source. | **mitigated** |
@@ -78,12 +78,15 @@ milestone table did not reference each other, and R-12 had no owner at all.
 |---|---|
 | **M1** | R-02 (gates), R-03 (stub logout), R-04 (first real edits), R-13, R-19 — ~~R-17~~ **retired 27 Sep** |
 | **M2** | R-01, R-05, R-07 — ~~R-14~~ **retired 27 Sep** |
-| **M1 onward** | R-22 — arrives with the `AUXLCL` mechanism |
-| **M3a** | R-08 |
-| **M3b** | R-06 |
+| **M3a** | **R-09** — now owned, having had no milestone until the definitions were fixed |
+| **M3b** | R-08 |
+| **M3c** | R-06 |
 | **M4** | R-12 |
-| *(unassigned)* | **R-09** — needs a milestone of its own; **R-10** — needs to be M5 |
-| *(continuous)* | R-11, R-15, R-16, R-18, R-20, R-21 |
+| **M5** | **R-10** — likewise now owned |
+| *(continuous)* | R-11, R-15, R-16, R-18, R-20, R-21, R-22 |
 
-Two rows with no milestone is the finding. R-09 and R-10 are both weight 6 and
-both unowned, and R-10 is the one that delivers the project's actual goal.
+**Every risk now has a milestone.** R-09 (no budgeted route to a bootable
+nucleus) and R-10 (CMS stage 2 unowned) were the two weight-6 rows this table
+was created to expose, and both were unowned because no milestone covered them.
+M3a and M5 exist for exactly that reason.
+

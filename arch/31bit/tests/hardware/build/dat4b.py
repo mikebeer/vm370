@@ -105,14 +105,23 @@ a.data("MASKSAVE", lambda s: b"\x00", "", align=1)
 
 a.layout().assemble(size=0x1100)   # must reach PAGETAB16 at 30C0
 
-INVALID = (0x20).to_bytes(4, "big")
+# The two invalid bits are NOT the same, and using one for both is a real bug
+# rather than a cosmetic one.  A segment-table entry is invalid when X'20' is
+# set; a PAGE-table entry is invalid when X'400' is set.  Filling unused page
+# table entries with X'20' leaves bit 0x400 CLEAR, so the hardware reads them
+# as VALID entries whose page-frame real address is zero -- every unmapped page
+# in the segment quietly aliased real page 0.  Harmless here only because the
+# test touches one entry.  See docs/13-ISSUES.md I-06.
+STE_INVALID = (0x20).to_bytes(4, "big")    # segment-table entry: bit 26
+PTE_INVALID = (0x400).to_bytes(4, "big")   # page-table entry:    bit 21
+
 for i in range(32):
-    a.put(SEGTAB + 4*i, INVALID)
+    a.put(SEGTAB + 4*i, STE_INVALID)
 a.put(SEGTAB + 4*0,  PAGETAB0.to_bytes(4, "big"))
 a.put(SEGTAB + 4*16, PAGETAB16.to_bytes(4, "big"))
 for i in range(16):
     a.put(PAGETAB0 + 4*i, (i * 0x1000).to_bytes(4, "big"))
-    a.put(PAGETAB16 + 4*i, INVALID if i != 5 else REAL.to_bytes(4, "big"))
+    a.put(PAGETAB16 + 4*i, PTE_INVALID if i != 5 else REAL.to_bytes(4, "big"))
 
 a.check_align(("CRVALS",4,"LCTL"), ("A5000",4,"L"), ("AREAL",4,"L"),
               ("AVIRT",4,"L"), ("A31",4,"L"),
