@@ -29,6 +29,8 @@ XA1 = 'XA0001DK'
 XA2 = 'XA0002DK'
 XA3 = 'XA0003DK'
 XA4 = 'XA0004DK'
+XA6 = 'XA0006DK'
+XA7 = 'XA0007DK'
 
 
 def psa():
@@ -296,6 +298,41 @@ def dmkios():
     return d
 
 
+def guest_psa():
+    """The two sites where a renamed PSA field is a GUEST lowcore displacement.
+
+    I-36.  PSA serves both CP's own real lowcore and a template for a virtual
+    machine's page 0.  Guests stay S/370-mode through M4, so these keep their
+    S/370 meaning: there is no semantic change here at all, only a symbol that
+    says what the code already does.
+
+    Each clears a whole nucleus module, which is the best ratio available in
+    the nine the PSA rename broke.
+    """
+    dsp = Deck(XA6)
+    dsp.replace('01209000', first='01209100', inc=10, limit='01210000',
+                lines=Deck.comment(
+        "R2 POINTS AT THE GUEST'S PAGE 0, NOT CP'S LOWCORE -- EVERY REFERENCE "
+        "HERE IS X-PSA(,R2). THE VALUE IS VDEVADD+VCUADD+VCHADD, A VIRTUAL "
+        "DEVICE ADDRESS, AND THE GUEST IS AN S/370 MACHINE, SO THIS FIELD "
+        "KEEPS ITS S/370 MEANING. G370TIO NAMES THAT; IOSCHNO WOULD CLAIM A "
+        "SUBCHANNEL NUMBER AND BE WRONG. NO SEMANTIC CHANGE.") + [
+        "         STCM  R0,7,G370TIO-PSA-1(R2)  GUEST INTERRUPT CODE",
+    ])
+
+    prv = Deck(XA7)
+    prv.replace('01400000', first='01400100', inc=10, limit='01401000',
+                lines=Deck.comment(
+        "STIDC SIMULATION FOR A VIRTUAL MACHINE. R2 POINTS AT THE GUEST'S "
+        "PAGE 0, AND AN S/370 GUEST'S STIDC MUST STILL STORE A CHANNEL ID AT "
+        "ITS OWN X'A8'. S370CHID IS THE RIGHT NAME FOR THAT, AND IT IS THE "
+        "NAME THE CP LOWCORE RENAME ALREADY PRODUCED -- A PLEASANT ACCIDENT. "
+        "NO SEMANTIC CHANGE.") + [
+        "         ST    R5,S370CHID-PSA(0,R2) GUEST CHANNEL ID",
+    ])
+    return dsp, prv
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -318,6 +355,14 @@ def main():
     aux(os.path.join(HERE, 'DMKIOS.AUXLCL'),
         [(XA4, 'SSCH PATH: ORB, SUBSYSTEM ID, AND THE CSW SHIM')])
 
+    dsp, prv = guest_psa()
+    dsp.write(os.path.join(HERE, 'DMKDSP.%s' % XA6))
+    aux(os.path.join(HERE, 'DMKDSP.AUXLCL'),
+        [(XA6, 'GUEST LOWCORE: G370TIO FOR THE S/370 INTERRUPT CODE')])
+    prv.write(os.path.join(HERE, 'DMKPRV.%s' % XA7))
+    aux(os.path.join(HERE, 'DMKPRV.AUXLCL'),
+        [(XA7, 'GUEST LOWCORE: S370CHID FOR STIDC SIMULATION')])
+
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
         # XAOPS must be here, not in a separate XALIB: DMKLCL.CNTRL's MACS
         # record is  DMKLCL DMKHRC DMKMAC DMSLCL CMSHRC CMSLIB OSMACRO  and
@@ -333,7 +378,9 @@ def main():
     ok = True
     for name in ('PSA.%s' % XA1, 'PSA.AUXLCL', 'RBLOKS.%s' % XA2,
                  'RBLOKS.AUXLCL', 'IOBLOKS.%s' % XA3, 'IOBLOKS.AUXLCL',
-                 'DMKIOS.%s' % XA4, 'DMKIOS.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKIOS.%s' % XA4, 'DMKIOS.AUXLCL',
+                 'DMKDSP.%s' % XA6, 'DMKDSP.AUXLCL',
+                 'DMKPRV.%s' % XA7, 'DMKPRV.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

@@ -1,0 +1,8 @@
+./ R 01400000          $ 01400100 010                                           
+*  STIDC SIMULATION FOR A VIRTUAL MACHINE. R2 POINTS AT THE    XA0007DK         
+*  GUEST'S PAGE 0, AND AN S/370 GUEST'S STIDC MUST STILL       XA0007DK         
+*  STORE A CHANNEL ID AT ITS OWN X'A8'. S370CHID IS THE RIGHT  XA0007DK         
+*  NAME FOR THAT, AND IT IS THE NAME THE CP LOWCORE RENAME     XA0007DK         
+*  ALREADY PRODUCED -- A PLEASANT ACCIDENT. NO SEMANTIC        XA0007DK         
+*  CHANGE.                                                     XA0007DK         
+         ST    R5,S370CHID-PSA(0,R2) GUEST CHANNEL ID          XA0007DK         
