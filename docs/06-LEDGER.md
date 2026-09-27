@@ -268,7 +268,11 @@ The honest end of the ledger.
 
 ## 8. And the thing no amount of reading settles
 
-**No CP code has been written.** Everything above is evidence, measurement or
+**No CP code has been written** — but the reason is no longer build access.
+`10-BUILD-ENVIRONMENT.md` measured it: **132 of 201 CP modules assemble today
+under z390 on Linux**, including `DMKIOS`, `DMKPSA`, `DMKVAT` and `DMKATS`, and
+seven of the M1 nine. Development needs no mainframe environment; only
+producing a bootable nucleus does. Everything above is evidence, measurement or
 documentation. M1 — CP IPLing in ESA/390 mode with DAT off, writing one
 initialisation message — is still the first line of real work, and the point
 at which the estimates start being tested rather than refined.
