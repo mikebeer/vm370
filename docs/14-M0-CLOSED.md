@@ -1,4 +1,4 @@
-# M0 closed: CE's own assembler accepts XAOPS
+# M0 closed: the assembly chapter, measured shut
 
 27 September 2026. `12-RISKS.md` opened with **R-17 — CE's assembler rejects
 `XAOPS`** — at probability Low, impact High, because the macros had only ever
@@ -106,21 +106,83 @@ measured rather than asserted.
 assembled natively in the same run. The claim that CE's assembler already knows
 them, which CP's own usage implied, is now direct evidence.
 
-## What is genuinely left in the assembly chapter
+## Is that complete? Measured, not judged
 
-Honest scope: **the channel subsystem and mode switching are fully closed. The
-ESA/390 DAT instructions are not written yet.** `XAOPS.MACRO` says so in its own
-"NOT INCLUDED, AND WHY" section, and M2 will need them:
+The first answer to "is the list complete?" was twelve. The second was
+"twelve plus six". Both were guesses, and both were wrong — so the third answer
+is a measurement.
 
-- `IPTE` — invalidate page table entry
-- `IVSK` — insert virtual storage key
-- `TPROT` — test protection
-- `ISKE` / `SSKE` / `RRBE` — the 4 KB-key counterparts of `ISK`/`SSK`/`RRB`,
-  which `R-12` will need
+`tools/mkprobe.py` extracts every mnemonic Hercules marks available in ESA/390
+mode (`GENx370x390x900` or `GENx___x390x900`, excluding `GENx___x___x900` which
+is z/Architecture only) and emits each as a bare statement with **no operands**.
+Operand syntax is irrelevant, because only one message is counted:
 
-These are **unwritten, not unverified**, and the distinction matters: the
-mechanism they would use is now proven, so adding them is a mechanical exercise
-with a known cost rather than an open question.
+    IFO078  UNDEFINED OP CODE      the assembler does not know the mnemonic
+    IFO210  TOO FEW OPERANDS       it knows it, and objected to the operands
+
+That turns 351 instructions into one assembly and one grep. Assembled with the
+`GLOBAL MACLIB` list **cleared**, so nothing could resolve as a macro and look
+like a known instruction — the failure mode that made the first z390 validation
+worthless.
+
+| | |
+|---|---|
+| ESA/390 mnemonics probed | **351** |
+| `IFO078` — unknown to Assembler XF | **186** |
+| `IFO210` — known to XF | **163** |
+| accepted with no operands at all | 2 |
+
+Full tables: `../arch/31bit/macros/validate/XF-UNDEFINED.txt` and
+`XF-KNOWN.txt`.
+
+### Where the 186 fall
+
+All 24 macros in `XAOPS.MACRO` are confirmed present in the unknown list — none
+of them was a macro for an instruction XF already had. The other 162 group by
+facility:
+
+| Facility | Count | Relevant to CP? |
+|---|---|---|
+| Decimal and binary floating point | 64 | no |
+| Access registers, dual address space | 32 | no — CP uses neither |
+| z/Architecture additions and misc | 32 | no |
+| Vector facility | 26 | no |
+| Expanded storage and paging | 4 | `MVPG`, `PGIN`, `PGOUT`, `LKPG` — **not now** |
+| `BAS` / `BASR` | 2 | no — `BAL`/`BALR` self-correct in 31-bit mode |
+| Unclassified (`IESBE`, `SRNMT`) | 2 | no |
+
+**The probe changed the answer twice more.** `PTLB` was assumed missing and is
+not — it is S/370 `B20D` and XF knows it, so it needs no macro. And `XSCH`
+(cancel subchannel) and `CHSC` (channel subsystem call) were not on any earlier
+list at all, yet both belong to the channel subsystem. They are now macros 23
+and 24, which is what makes the completeness claim clean:
+
+> **Every channel subsystem instruction, every ESA/390 DAT instruction, and
+> every 4 KB storage-key instruction that Assembler XF does not know now has a
+> macro, and each one has been assembled by that assembler.**
+
+`XSCH` is worth a sentence of its own: it cancels a start function that has not
+yet reached the device, which S/370 had no equivalent of, because `SIO` either
+started or did not. That is exactly the asynchrony `R-03` and the `SIO`
+condition-code work are about.
+
+### The four deliberately left out, and why they are noted
+
+`MVPG`, `PGIN`, `PGOUT` and `LKPG` are the expanded-storage and page-movement
+group. `MVPG` in particular would be a natural fit for `DMKPGS` and `DMKPTR`,
+which copy pages. None is needed by any milestone, and adding an unused macro is
+maintenance surface for no gain — but they are the only entries among the 162
+that a later stage might actually want, so they are recorded rather than
+forgotten.
+
+### And one practical consequence worth knowing before writing code
+
+Among the 186 unknown are **`LHI`, `AHI`, `CHI`, `MHI`** (halfword immediate
+arithmetic) and **`BRAS`, `BRC`** (relative branching). So every new instruction
+sequence written for this conversion needs a base register and a literal pool,
+exactly as the rest of CP does. **New code cannot be written in a more modern
+style than the code around it.** That kills a tempting shortcut before anyone
+reaches for it.
 
 ## How to get a file into CE, which is the reusable part
 
@@ -185,6 +247,7 @@ fallback and can still be printed afterwards, which is the safer order.
 | **I-21** | reconfirmed on the authority that matters — `RSCH` is `B238` |
 | **M0** | complete. No asterisk, no listing check outstanding |
 | **M1 step 1** | done |
+| **the completeness question** | answered by measurement: 351 mnemonics probed, 186 unknown to XF, all 24 that the conversion needs now covered and assembled |
 
 M1 step 2 is `PSA.MACRO` — add the ESA/390 names at `X'B8'`/`X'BC'`, keep
 `INTTIO` where it is, and mark `CHANID`/`IOELPNTR`/`ECSWLOG` S/370-only. Step 3

@@ -1,11 +1,10 @@
                                                EXTERNAL SYMBOL DICTIONARY                                      PAGE    1
 
-SYMBOL   TYPE  ID   ADDR  LENGTH LDID                                                            ASM 0201 07.10 09/27/26
+SYMBOL   TYPE  ID   ADDR  LENGTH LDID                                                            ASM 0201 08.25 09/27/26
 
-XATEST    SD  0001 000000 000140
-                                                                                                               PAGE    2
+XATEST    SD  0001 000000 000170                                                                                                               PAGE    2
 
-  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 07.10 09/27/26
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 08.25 09/27/26
 
                                       1 *---------------------------------------------------------------------*
                                       2 * XATEST  -  ASSEMBLE ONE OF EACH MACRO AND CHECK THE BYTES           *
@@ -53,26 +52,25 @@ XATEST    SD  0001 000000 000140
                                      44 * IN THE LOW BEFORE ANY OF THE SUBCHANNEL INSTRUCTIONS.  BITS 0-15
                                      45 * MUST BE EXACTLY 0001, NOT MERELY NON-ZERO.
                                      46 *
-000002 5810 F046      00048          47          L     R1,SSIDW
+000002 5810 F07A      0007C          47          L     R1,SSIDW
                                      48 *
                                      49 *        EXPECT                     INSTRUCTION
                                      50 *        ------                     -----------
                                      51          STSCH SCHIB           *    B234  proven by execution
 000006                               52+         DS    0H
-000006 B234F0B6                      53+         DC    X'B234',S(SCHIB)
+000006 B234F0EA                      53+         DC    X'B234',S(SCHIB)
                                      54          MSCH  SCHIB           *    B232  proven by execution
-00000A                               55+         DS    0H
-                                                                                                               PAGE    3
+00000A                               55+         DS    0H                                                                                                               PAGE    3
 
-  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 07.10 09/27/26
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 08.25 09/27/26
 
-00000A B232F0B6                      56+         DC    X'B232',S(SCHIB)
+00000A B232F0EA                      56+         DC    X'B232',S(SCHIB)
                                      57          SSCH  ORB             *    B233  proven by execution
 00000E                               58+         DS    0H
-00000E B233F096                      59+         DC    X'B233',S(ORB)
+00000E B233F0CA                      59+         DC    X'B233',S(ORB)
                                      60          TSCH  IRB             *    B235  proven by execution
 000012                               61+         DS    0H
-000012 B235F0EA                      62+         DC    X'B235',S(IRB)
+000012 B235F11E                      62+         DC    X'B235',S(IRB)
                                      63 * EXPECT B230 0000
                                      64          CSCH
 000016                               65+         DS    0H
@@ -91,113 +89,163 @@ XATEST    SD  0001 000000 000140
 000022 B2370000                      78+         DC    X'B237',X'0000'
                                      79          TPI   PARM            *    B236
 000026                               80+         DS    0H
-000026 B236F04E                      81+         DC    X'B236',S(PARM)
+000026 B236F082                      81+         DC    X'B236',S(PARM)
                                      82          STCRW PARM            *    B239
 00002A                               83+         DS    0H
-00002A B239F04E                      84+         DC    X'B239',S(PARM)
+00002A B239F082                      84+         DC    X'B239',S(PARM)
                                      85 *
-                                     86          BSM   R1,0            *    0B10  proven by execution
-00002E                               87+         DS    0H
-00002E 0B10                          88+         DC    X'0B',AL1((R1)*16+(0))
-                                     89          BSM   0,R4            *    0B04  proven by execution
-000030                               90+         DS    0H
-000030 0B04                          91+         DC    X'0B',AL1((0)*16+(R4))
-                                     92          BASSM R14,R15         *    0CEF
-000032                               93+         DS    0H
-000032 0CEF                          94+         DC    X'0C',AL1((R14)*16+(R15))
-                                     95 *
-                                     96 * THESE NEED NO MACRO -- THE ASSEMBLER ALREADY KNOWS THEM, AND IF ANY
-                                     97 * OF THE FOUR FAILS TO ASSEMBLE THEN THE PROBLEM IS THE ASSEMBLER
-                                     98 * LEVEL RATHER THAN THE MACLIB.
+                                     86 *
+                                     87 * ESA/390 DAT, 4 KB KEYS, AND THE REST OF THE CHANNEL BLOCK.  ADDED
+                                     88 * AFTER XAPROBE MEASURED WHICH MNEMONICS ASSEMBLER XF ACTUALLY LACKS.
+                                     89 *
+                                     90          IPTE  R1,R2           *    B2210012
+00002E                               91+         DS    0H
+00002E B2210012                      92+         DC    X'B221',X'00',AL1((R1)*16+(R2))
+                                     93          IVSK  R1,R2           *    B2230012
+000032                               94+         DS    0H
+000032 B2230012                      95+         DC    X'B223',X'00',AL1((R1)*16+(R2))
+                                     96          TPROT 0(R1),0(R2)     *    E501  SSE, SIX BYTES
+000036                               97+         DS    0H
+000036 E50110002000                  98+         DC    X'E501',S(0(R1)),S(0(R2))
                                      99 *
-000034 AD04 F052      00054         100          STOSM MASKSAVE,X'04'  *    AD04  DAT on
-000038 ACFB F052      00054         101          STNSM MASKSAVE,X'FB'  *    ACFB  DAT off
-00003C B711 F04A      0004C         102          LCTL  1,1,CR1VAL      *    B711
-000040 B60F F056      00058         103          STCTL 0,15,CRSAVE     *    B60F
-                                    104 *
-000044 07FE                         105          BR    R14
-                                    106 *
-                                    107 *---------------------------------------------------------------------*
-                                    108 * OPERANDS.  THE ALIGNMENT RULES DIFFER WITHIN ONE SEQUENCE AND THE   *
-                                    109 * MACHINE ENFORCES EACH OF THEM SEPARATELY.                           *
-                                    110 *---------------------------------------------------------------------*
-                                                                                                               PAGE    4
+                                    100          ISKE  R1,R2           *    B2290012
+00003C                              101+         DS    0H
+00003C B2290012                     102+         DC    X'B229',X'00',AL1((R1)*16+(R2))
+                                    103          SSKE  R1,R2           *    B22B0012
+000040                              104+         DS    0H
+000040 B22B0012                     105+         DC    X'B22B',X'00',AL1((R1)*16+(R2))
+                                    106          RRBE  R1,R2           *    B22A0012
+000044                              107+         DS    0H
+000044 B22A0012                     108+         DC    X'B22A',X'00',AL1((R1)*16+(R2))
+                                    109          TB    R1,R2           *    B22C0012
+000048                              110+         DS    0H                                                                                                               PAGE    4
 
-  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 07.10 09/27/26
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 08.25 09/27/26
 
-000048                              111          DS    0F
-000048 00010000                     112 SSIDW    DC    X'00010000'          X'0001' || SUBCHANNEL NUMBER
-00004C 00003001                     113 CR1VAL   DC    X'00003001'          STO X'3000', STL 1 = 32 ENTRIES
-000050                              114 PARM     DS    F
-000054                              115 MASKSAVE DS    X
-000058                              116          DS    0F
-000058                              117 CRSAVE   DS    16F                  STCTL 0,15 STORES ALL SIXTEEN
-                                    118 *
-                                    119 * ORB -- WORD ALIGNED.  THIRTY-TWO BYTES, NOT TWELVE: HERCULES FETCHES
-                                    120 * SIZEOF(ORB)-1 UNCONDITIONALLY WHATEVER THE EXTENSION BIT SAYS, SO A
-                                    121 * TWELVE-BYTE ORB AT THE END OF AN IMAGE TAKES AN ADDRESSING EXCEPTION
-                                    122 * ON A FETCH THE ARCHITECTURE SAYS NEVER HAPPENS.
-                                    123 *
-000098                              124          DS    0F
-000098 00000000                     125 ORB      DC    X'00000000'          INTERRUPTION PARAMETER, YOUR TAG
-00009C 00                           126          DC    X'00'                FLAG4: KEY 0 DISABLES CHANNEL KEY
-                                    127 *                                   CHECKING ENTIRELY
-00009D 80                           128          DC    X'80'                FLAG5: F=1, FORMAT-1 CCWS
-00009E 80                           129          DC    X'80'                LPM -- MUST BE 80.  SSCH TESTS
-                                    130 *                                   LPM AND PAM, AND PAM IS 80, SO 00
-                                    131 *                                   IS CC 3 RATHER THAN "ANY PATH"
-00009F 00                           132          DC    X'00'                FLAG7
-0000A0 00000130                     133          DC    A(MYCCW)             CCW ADDRESS, BIT 0 MUST BE ZERO
-0000A4 0000000000000000             134          DC    5F'0'                PAD TO THIRTY-TWO
-0000AC 0000000000000000
-0000B4 00000000
-                                    135 *
-0000B8                              136          DS    0F
-0000B8                              137 SCHIB    DS    XL52                 STSCH STORES 52, MSCH READS 28
-0000EC                              138          DS    0F
-0000EC                              139 IRB      DS    XL64                 TSCH STORES ALL 64
-                                    140 *
-                                    141 * THE CCW MUST BE ON A DOUBLEWORD BOUNDARY OR IT IS A CHANNEL PROGRAM
-                                    142 * CHECK -- A DIFFERENT RULE FROM THE ORB, SCHIB AND IRB, WHICH NEED
-                                    143 * ONLY A WORD.
+000048 B22C0012                     111+         DC    X'B22C',X'00',AL1((R1)*16+(R2))
+                                    112 *
+                                    113          STCPS CRSAVE          *    B23A  HAS A STORAGE OPERAND
+00004C                              114+         DS    0H
+00004C B23AF08A                     115+         DC    X'B23A',S(CRSAVE)
+                                    116          RCHP                  *    B23B0000
+000050                              117+         DS    0H
+000050 B23B0000                     118+         DC    X'B23B',X'0000'
+                                    119          SCHM                  *    B23C0000
+000054                              120+         DS    0H
+000054 B23C0000                     121+         DC    X'B23C',X'0000'
+                                    122          XSCH                  *    B2760000
+000058                              123+         DS    0H
+000058 B2760000                     124+         DC    X'B276',X'0000'
+                                    125          CHSC                  *    B25F0000
+00005C                              126+         DS    0H
+00005C B25F0000                     127+         DC    X'B25F',X'0000'
+                                    128 *
+                                    129 * PTLB NEEDS NO MACRO.  IT IS S/370 (B20D) AND XAPROBE CONFIRMED XF
+                                    130 * ALREADY KNOWS IT -- THE ONE CANDIDATE THAT TURNED OUT NOT TO BE A
+                                    131 * GAP.  ASSEMBLED HERE SO THE LISTING RECORDS THAT.
+                                    132 *
+000060 B20D 0000      00000         133          PTLB                  *    B20D
+                                    134 *
+                                    135          BSM   R1,0            *    0B10  proven by execution
+000064                              136+         DS    0H
+000064 0B10                         137+         DC    X'0B',AL1((R1)*16+(0))
+                                    138          BSM   0,R4            *    0B04  proven by execution
+000066                              139+         DS    0H
+000066 0B04                         140+         DC    X'0B',AL1((0)*16+(R4))
+                                    141          BASSM R14,R15         *    0CEF
+000068                              142+         DS    0H
+000068 0CEF                         143+         DC    X'0C',AL1((R14)*16+(R15))
                                     144 *
-000130                              145          DS    0D
-000130 09                           146 MYCCW    DC    X'09'                WRITE WITH AUTO CARRIER RETURN
-000131 20                           147          DC    X'20'                SLI, SUPPRESS INCORRECT LENGTH
-000132 0006                         148          DC    AL2(L'MSG)
-000134 00000138                     149          DC    A(MSG)
-000138 E7C1E3C5E2E3                 150 MSG      DC    C'XATEST'
-                                    151 *
-000140                              152          LTORG
+                                    145 * THESE NEED NO MACRO -- THE ASSEMBLER ALREADY KNOWS THEM, AND IF ANY
+                                    146 * OF THE FOUR FAILS TO ASSEMBLE THEN THE PROBLEM IS THE ASSEMBLER
+                                    147 * LEVEL RATHER THAN THE MACLIB.
+                                    148 *
+00006A AD04 F086      00088         149          STOSM MASKSAVE,X'04'  *    AD04  DAT on
+00006E ACFB F086      00088         150          STNSM MASKSAVE,X'FB'  *    ACFB  DAT off
+000072 B711 F07E      00080         151          LCTL  1,1,CR1VAL      *    B711
+000076 B60F F08A      0008C         152          STCTL 0,15,CRSAVE     *    B60F
                                     153 *
-                                    154          END
-                                                  RELOCATION DICTIONARY                                        PAGE    5
+00007A 07FE                         154          BR    R14
+                                    155 *
+                                    156 *---------------------------------------------------------------------*
+                                    157 * OPERANDS.  THE ALIGNMENT RULES DIFFER WITHIN ONE SEQUENCE AND THE   *
+                                    158 * MACHINE ENFORCES EACH OF THEM SEPARATELY.                           *
+                                    159 *---------------------------------------------------------------------*
+00007C                              160          DS    0F
+00007C 00010000                     161 SSIDW    DC    X'00010000'          X'0001' || SUBCHANNEL NUMBER
+000080 00003001                     162 CR1VAL   DC    X'00003001'          STO X'3000', STL 1 = 32 ENTRIES
+000084                              163 PARM     DS    F
+000088                              164 MASKSAVE DS    X
+00008C                              165          DS    0F                                                                                                               PAGE    5
 
-POS.ID   REL.ID   FLAGS   ADDRESS                                                                ASM 0201 07.10 09/27/26
+  LOC  OBJECT CODE    ADDR1 ADDR2  STMT   SOURCE STATEMENT                                       ASM 0201 08.25 09/27/26
 
- 0001     0001      0C     0000A0
- 0001     0001      0C     000134
-                                                  CROSS-REFERENCE                                              PAGE    6
+00008C                              166 CRSAVE   DS    16F                  STCTL 0,15 STORES ALL SIXTEEN
+                                    167 *
+                                    168 * ORB -- WORD ALIGNED.  THIRTY-TWO BYTES, NOT TWELVE: HERCULES FETCHES
+                                    169 * SIZEOF(ORB)-1 UNCONDITIONALLY WHATEVER THE EXTENSION BIT SAYS, SO A
+                                    170 * TWELVE-BYTE ORB AT THE END OF AN IMAGE TAKES AN ADDRESSING EXCEPTION
+                                    171 * ON A FETCH THE ARCHITECTURE SAYS NEVER HAPPENS.
+                                    172 *
+0000CC                              173          DS    0F
+0000CC 00000000                     174 ORB      DC    X'00000000'          INTERRUPTION PARAMETER, YOUR TAG
+0000D0 00                           175          DC    X'00'                FLAG4: KEY 0 DISABLES CHANNEL KEY
+                                    176 *                                   CHECKING ENTIRELY
+0000D1 80                           177          DC    X'80'                FLAG5: F=1, FORMAT-1 CCWS
+0000D2 80                           178          DC    X'80'                LPM -- MUST BE 80.  SSCH TESTS
+                                    179 *                                   LPM AND PAM, AND PAM IS 80, SO 00
+                                    180 *                                   IS CC 3 RATHER THAN "ANY PATH"
+0000D3 00                           181          DC    X'00'                FLAG7
+0000D4 00000160                     182          DC    A(MYCCW)             CCW ADDRESS, BIT 0 MUST BE ZERO
+0000D8 0000000000000000             183          DC    5F'0'                PAD TO THIRTY-TWO
+0000E0 0000000000000000
+0000E8 00000000
+                                    184 *
+0000EC                              185          DS    0F
+0000EC                              186 SCHIB    DS    XL52                 STSCH STORES 52, MSCH READS 28
+000120                              187          DS    0F
+000120                              188 IRB      DS    XL64                 TSCH STORES ALL 64
+                                    189 *
+                                    190 * THE CCW MUST BE ON A DOUBLEWORD BOUNDARY OR IT IS A CHANNEL PROGRAM
+                                    191 * CHECK -- A DIFFERENT RULE FROM THE ORB, SCHIB AND IRB, WHICH NEED
+                                    192 * ONLY A WORD.
+                                    193 *
+000160                              194          DS    0D
+000160 09                           195 MYCCW    DC    X'09'                WRITE WITH AUTO CARRIER RETURN
+000161 20                           196          DC    X'20'                SLI, SUPPRESS INCORRECT LENGTH
+000162 0006                         197          DC    AL2(L'MSG)
+000164 00000168                     198          DC    A(MSG)
+000168 E7C1E3C5E2E3                 199 MSG      DC    C'XATEST'
+                                    200 *
+000170                              201          LTORG
+                                    202 *
+                                    203          END                                                  RELOCATION DICTIONARY                                        PAGE    6
 
-SYMBOL    LEN   VALUE   DEFN    REFERENCES                                                       ASM 0201 07.10 09/27/26
+POS.ID   REL.ID   FLAGS   ADDRESS                                                                ASM 0201 08.25 09/27/26
 
-CRSAVE   00004 00000058 00117  00103
-CR1VAL   00004 0000004C 00113  00102
-IRB      00064 000000EC 00139  00062
-MASKSAVE 00001 00000054 00115  00100 00101
-MSG      00006 00000138 00150  00148 00149
-MYCCW    00001 00000130 00146  00133
-ORB      00004 00000098 00125  00059
-PARM     00004 00000050 00114  00081 00084
-R1       00001 00000001 00033  00047 00088
-R14      00001 0000000E 00037  00094 00105
-R15      00001 0000000F 00038  00040 00041 00094
-R4       00001 00000004 00036  00091
-SCHIB    00052 000000B8 00137  00053 00056
-SSIDW    00004 00000048 00112  00047
-                                                  ASSEMBLER DIAGNOSTICS AND STATISTICS                         PAGE    7
+ 0001     0001      0C     0000D4
+ 0001     0001      0C     000164
+                                                  CROSS-REFERENCE                                              PAGE    7
 
-                                                                                                 ASM 0201 07.10 09/27/26
+SYMBOL    LEN   VALUE   DEFN    REFERENCES                                                       ASM 0201 08.25 09/27/26
+
+CRSAVE   00004 0000008C 00166  00115 00152
+CR1VAL   00004 00000080 00162  00151
+IRB      00064 00000120 00188  00062
+MASKSAVE 00001 00000088 00164  00149 00150
+MSG      00006 00000168 00199  00197 00198
+MYCCW    00001 00000160 00195  00182
+ORB      00004 000000CC 00174  00059
+PARM     00004 00000084 00163  00081 00084
+R1       00001 00000001 00033  00047 00092 00095 00098 00102 00105 00108 00111 00137
+R14      00001 0000000E 00037  00143 00154
+R15      00001 0000000F 00038  00040 00041 00143
+R2       00001 00000002 00034  00092 00095 00098 00102 00105 00108 00111
+R4       00001 00000004 00036  00140
+SCHIB    00052 000000EC 00186  00053 00056
+SSIDW    00004 0000007C 00161  00047                                                  ASSEMBLER DIAGNOSTICS AND STATISTICS                         PAGE    8
+
+                                                                                                 ASM 0201 08.25 09/27/26
 
 NO STATEMENTS FLAGGED IN THIS ASSEMBLY
 HIGHEST SEVERITY WAS    0
@@ -206,7 +254,7 @@ OPTIONS FOR THIS ASSEMBLY
   NOMLOGIC, NUMBER, OBJECT, NORENT, RLD, STMT, NOLIBMAC, TERMINAL, NOTEST, XREF(SHORT)
   SYSPARM()
 WORK FILE BUFFER SIZE/NUMBER = 7294/ 1
-TOTAL RECORDS READ FROM SYSTEM INPUT        128
-TOTAL RECORDS READ FROM SYSTEM LIBRARY      139
+TOTAL RECORDS READ FROM SYSTEM INPUT        153
+TOTAL RECORDS READ FROM SYSTEM LIBRARY      267
 TOTAL RECORDS PUNCHED                         8
-TOTAL RECORDS PRINTED                       199
+TOTAL RECORDS PRINTED                       251

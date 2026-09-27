@@ -1,0 +1,108 @@
+*---------------------------------------------------------------------*
+* XAPROBE  -  WHICH ESA/390 MNEMONICS DOES CE'S ASSEMBLER XF KNOW?    *
+*                                                                     *
+* XAOPS EXISTS BECAUSE CE'S ASSEMBLER PREDATES 370-XA.  THAT RAISES A *
+* QUESTION XAOPS CANNOT ANSWER: IS THE LIST COMPLETE?  GUESSING WHICH *
+* MNEMONICS A 1970S ASSEMBLER KNOWS IS EXACTLY THE KIND OF ASSUMPTION *
+* THIS PROJECT HAS BEEN WRONG ABOUT BEFORE, SO THIS FILE MEASURES IT  *
+* INSTEAD.  EVERY CANDIDATE APPEARS AS A NATIVE MNEMONIC; WHATEVER    *
+* THE ASSEMBLER FLAGS IS THE GAP, AND NOTHING ELSE IS.                *
+*                                                                     *
+* RUN WITH NO MACLIB GLOBAL AT ALL:                                   *
+*                                                                     *
+*   GLOBAL MACLIB                                                     *
+*   ASSEMBLE XAPROBE (DISK                                            *
+*                                                                     *
+* CLEARING THE GLOBAL LIST MATTERS.  WITH XALIB ACTIVE, A NAME THAT   *
+* HAPPENS TO MATCH A MACRO WOULD RESOLVE QUIETLY AND LOOK LIKE AN     *
+* INSTRUCTION THE ASSEMBLER KNOWS -- THE SAME CONFUSION THAT MADE THE *
+* FIRST Z390 VALIDATION WORTHLESS.                                    *
+*---------------------------------------------------------------------*
+         PRINT GEN,DATA
+XAPROBE  CSECT
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R4       EQU   4
+R14      EQU   14
+R15      EQU   15
+         BALR  R15,0
+         USING *,R15
+*---------------------------------------------------------------------*
+* GROUP 1 -- CONTROLS.  EVERY ONE OF THESE IS S/370 AND MUST BE       *
+* ACCEPTED.  IF ANY IS FLAGGED THEN THE PROBE ITSELF IS BROKEN AND    *
+* THE REST OF THE RESULT MEANS NOTHING.                               *
+*---------------------------------------------------------------------*
+         LRA   R1,0(0,R2)
+         ISK   R1,R2
+         SSK   R1,R2
+         RRB   0(R2)
+         LCTL  R1,R1,WORD
+         STCTL R0,R0,WORD
+         STOSM BYTE,X'04'
+         STNSM BYTE,X'FB'
+         STIDP DWORD
+         STIDC WORD
+         CS    R1,R2,WORD
+         STCK  DWORD
+         SPX   WORD
+         STPX  WORD
+         STAP  HWORD
+         SIGP  R0,R1,0(R2)
+*---------------------------------------------------------------------*
+* GROUP 2 -- ESA/390 DAT.  M2 NEEDS THESE.                            *
+*---------------------------------------------------------------------*
+         PTLB
+         IPTE  R1,R2
+         IVSK  R1,R2
+         TPROT 0(R1),0(R2)
+*---------------------------------------------------------------------*
+* GROUP 3 -- ESA/390 4 KB STORAGE KEYS.  R-12 NEEDS THESE, BECAUSE A  *
+* GUEST READING ITS OWN KEYS THROUGH ISK EXPECTS 2 KB SEMANTICS AND   *
+* DMKPRV HAS TO BRIDGE THAT.                                          *
+*---------------------------------------------------------------------*
+         ISKE  R1,R2
+         SSKE  R1,R2
+         RRBE  R1,R2
+         TB    R1,R2
+*---------------------------------------------------------------------*
+* GROUP 4 -- THE REST OF THE CHANNEL-SUBSYSTEM BLOCK.  XAOPS STOPS AT *
+* B239; B23A THROUGH B23C ARE CHANNEL-PATH AND MONITOR CONTROL, WHICH *
+* THE CHANNEL-LOGOUT REWRITE (R-03) MAY WANT.                         *
+*---------------------------------------------------------------------*
+         RCHP
+         STCPS WORD
+         SCHM
+*---------------------------------------------------------------------*
+* GROUP 5 -- INFORMATIONAL, NOT REQUIRED.  IF XF KNOWS ANY OF THESE   *
+* THE CONVERSION CODE CAN BE WRITTEN MORE CLEANLY -- RELATIVE         *
+* BRANCHES AND HALFWORD IMMEDIATES WOULD REMOVE A LOT OF LITERAL AND  *
+* BASE-REGISTER FIDDLING FROM NEW CODE.  NOTHING DEPENDS ON THEM.     *
+*---------------------------------------------------------------------*
+         LHI   R1,1
+         AHI   R1,1
+         CHI   R1,1
+         MHI   R1,1
+         BRAS  R14,BRTGT
+         BRC   15,BRTGT
+BRTGT    DS    0H
+         MVST  R1,R2
+         CLST  R1,R2
+         SRST  R1,R2
+         CUSE  R2,R4
+         LURA  R1,R2
+         STURA R1,R2
+         STCKE DWORD16
+         TRACE R0,R1,WORD
+*
+         BR    R14
+*
+         DS    0F
+WORD     DS    F
+HWORD    DS    H
+BYTE     DS    X
+         DS    0D
+DWORD    DS    D
+DWORD16  DS    2D
+         LTORG
+         END

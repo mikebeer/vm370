@@ -131,9 +131,9 @@ hazard is only at **mode boundaries** — a base register established in
 
 ## Milestone 0 — instructions for CE's assembler
 
-`macros/` holds `XAOPS.MACRO`: twelve ESA/390 instructions as macros, because
-CE's assembler predates 1983 and knows neither the channel subsystem nor
-`BSM`.
+`macros/` holds `XAOPS.MACRO`: **twenty-four** ESA/390 instructions as macros,
+because CE's assembler predates 1983 and knows neither the channel subsystem nor
+`BSM`. The count is measured rather than chosen — see below.
 
     SSCH     MACRO
     &LAB     SSCH  &ORB
@@ -154,9 +154,9 @@ instructions the assembler does not know, including
 Five encodings — `MSCH`, `SSCH`, `TSCH`, `STSCH`, `BSM` — are proven by
 execution in the tests above.
 
-**And as of 27 September all twelve are proven against CE's own assembler.**
+**And as of 27 September all of them are proven against CE's own assembler.**
 `XAOPS.MACRO` was read onto MAINT's 191 disk through the card reader,
-`MACLIB GEN XALIB XAOPS` produced all twelve members, and
+`MACLIB GEN XALIB XAOPS` produced all twenty-four members, and
 `macros/XATEST.ASSEMBLE` assembled against them:
 
     ASSEMBLER (XF) DONE
@@ -167,19 +167,49 @@ execution in the tests above.
 The library count is the part that matters — it rules out a call being silently
 ignored, which is exactly how the first z390 validation fooled itself. Every
 object code matches, and every S-type displacement is arithmetically exact:
-with `USING *,R15` at `X'02'`, `SCHIB` at `X'B8'` assembled as `F0B6`. The
-listing is kept at `macros/validate/XATEST-CE-XF.LISTING`;
-`../../docs/14-M0-CLOSED.md` reads it off in full and also records **how to get
-a file into CE**, which every later step needs.
+with `USING *,R15` at `X'02'`, `SCHIB` at `X'B8'` assembled as `F0B6`. On a
+later run the same operand had moved and assembled as `F0E2` — still exact,
+which is better evidence than repeating identical bytes. The listing is kept at
+`macros/validate/XATEST-CE-XF.LISTING`.
 
 The `RSCH` opcode is `B238`, now confirmed by the assembler that will build the
 nucleus. The `B23B` once flagged from the 370-XA Reference Summary is `RCHP`, a
-different instruction.
+different instruction — and `RCHP` is now a macro in its own right.
 
-**What is left in the assembly chapter**: the ESA/390 DAT instructions — `IPTE`,
-`IVSK`, `TPROT` — and the 4 KB-key trio `ISKE`/`SSKE`/`RRBE`, which M2 and the
-storage-key work will need. These are *unwritten, not unverified*: the mechanism
-is proven, so adding them is mechanical.
+### The list is complete, and that is measured
+
+`tools/mkprobe.py` generates a probe containing **every** mnemonic Hercules
+marks available in ESA/390 mode, each with no operands, so that only
+`IFO078 UNDEFINED OP CODE` has to be counted. Assembled with the `GLOBAL MACLIB`
+list cleared:
+
+| | |
+|---|---|
+| mnemonics probed | **351** |
+| unknown to Assembler XF | **186** |
+| known to XF | 163 |
+
+Of the 186, the 24 macros cover every one belonging to the channel subsystem, to
+ESA/390 DAT, or to the 4 KB storage keys. The other 162 are floating point (64),
+access registers and dual address space (32), z/Architecture additions (32), the
+vector facility (26), expanded storage (4), `BAS`/`BASR` (2) and two
+unclassified — none of which CP uses. Tables in `macros/validate/`.
+
+The probe corrected the guess twice more: **`PTLB` needs no macro** (it is S/370
+`B20D` and XF knows it), while **`XSCH` and `CHSC` were on no earlier list** yet
+both belong to the channel subsystem.
+
+**One consequence to know before writing any code.** `LHI`, `AHI`, `CHI`, `MHI`,
+`BRAS` and `BRC` are all unknown to XF. Every new sequence written for this
+conversion needs a base register and a literal pool, exactly like the code around
+it. New code cannot be written in a more modern style than its neighbours.
+
+**What is left in the assembly chapter**: nothing the milestones need. The four
+expanded-storage and page-movement instructions — `MVPG`, `PGIN`, `PGOUT`,
+`LKPG` — are the only entries among the 162 a later stage might want, and `MVPG`
+is the one worth remembering, since `DMKPGS` and `DMKPTR` copy pages. They are
+recorded in `XAOPS.MACRO` rather than defined, because an unused macro is
+maintenance surface for no gain.
 
 ## What the conversion involves
 
@@ -266,7 +296,7 @@ else in this series that checks a condition code without checking the answer.
 
 | | | Status |
 |---|---|---|
-| **M0** | Assembler macros for the instructions CE does not know | **done, and verified on CE itself** — `MACLIB GEN` built all twelve members and Assembler XF assembled them with severity 0. `../../docs/14-M0-CLOSED.md` |
+| **M0** | Assembler macros for the instructions CE does not know | **done, verified on CE, and measured complete** — 24 members, severity 0, and a 351-mnemonic probe showing nothing needed is missing. `../../docs/14-M0-CLOSED.md` |
 | **M1** | CP IPLs in ESA/390 mode and writes to the console — DAT off, no paging, no guests, no DASD beyond IPL | not started — **the critical path** |
 | **M2** | DAT on with ESA/390 tables, **`TRANS`-bearing modules converted to AMODE 31**. No guests, no shared segments | not started, **unblocked** |
 | **M3** | One S/370-mode guest logs on and runs CMS — includes frame-level shared segments in `DMKATS` | not started |

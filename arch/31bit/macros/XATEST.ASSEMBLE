@@ -63,6 +63,31 @@ R15      EQU   15
          TPI   PARM            *    B236
          STCRW PARM            *    B239
 *
+*
+* ESA/390 DAT, 4 KB KEYS, AND THE REST OF THE CHANNEL BLOCK.  ADDED
+* AFTER XAPROBE MEASURED WHICH MNEMONICS ASSEMBLER XF ACTUALLY LACKS.
+*
+         IPTE  R1,R2           *    B2210012
+         IVSK  R1,R2           *    B2230012
+         TPROT 0(R1),0(R2)     *    E501  SSE, SIX BYTES
+*
+         ISKE  R1,R2           *    B2290012
+         SSKE  R1,R2           *    B22B0012
+         RRBE  R1,R2           *    B22A0012
+         TB    R1,R2           *    B22C0012
+*
+         STCPS CRSAVE          *    B23A  HAS A STORAGE OPERAND
+         RCHP                  *    B23B0000
+         SCHM                  *    B23C0000
+         XSCH                  *    B2760000
+         CHSC                  *    B25F0000
+*
+* PTLB NEEDS NO MACRO.  IT IS S/370 (B20D) AND XAPROBE CONFIRMED XF
+* ALREADY KNOWS IT -- THE ONE CANDIDATE THAT TURNED OUT NOT TO BE A
+* GAP.  ASSEMBLED HERE SO THE LISTING RECORDS THAT.
+*
+         PTLB                  *    B20D
+*
          BSM   R1,0            *    0B10  proven by execution
          BSM   0,R4            *    0B04  proven by execution
          BASSM R14,R15         *    0CEF

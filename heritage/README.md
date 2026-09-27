@@ -71,3 +71,19 @@ carries of CP-67, and what the surviving recovery does and does not contain.
   [CP-67](https://en.wikipedia.org/wiki/CP-67) — background and dates
 - [IBM CP-40](https://en.wikipedia.org/wiki/IBM_CP-40) — the predecessor,
   for where the design originates
+
+## A differential baseline, not preserved here
+
+[`g4ugm/vm370.source`](https://github.com/g4ugm/vm370.source) — Dave Wade's
+VM/370 release source, 187 CP and 174 CMS `.ASSEMBLE` members. It is
+deliberately *not* snapshotted into this repository: it is 37 MB of source this
+project does not build, and CE is the tree being converted.
+
+Its value is as a differential baseline. Diffing CE against it showed that
+**every one of its 187 CP modules is in CE, byte-identical apart from a trailing
+newline and CE's control-byte encoding** — which verifies, for the first time,
+that the analysis in `../docs/` was measured against IBM's Release 6 source
+rather than a community fork. See `../docs/15-PRISTINE-BASELINE.md`.
+
+It contains no `.MACRO` or `.COPY` members, so it does not supply the
+OSMACRO/DOSMACRO libraries (risk `R-14`).
