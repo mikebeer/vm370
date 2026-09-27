@@ -153,6 +153,13 @@ are the ones with nothing to map to, and all three are channel-logout or
    `15-UPDATE-LEVELS.md`. Note `R-22`: `UPSTREAM.md` records that `PSA`'s
    sequence-number increment already needed special handling, so this member is
    one of the anchor-fragile ones.
+
+   **DONE, 27 September.** Delivered as `PSA.XA0001DK`, applied last over
+   thirteen existing update levels, built into `DMKLCL MACLIB` with
+   `VMFMAC DMKLCL DMKLCL`. Five of six pre-registered predictions held; the
+   sixth found `I-30`. `DMKIOG` and `DMKPRV` fail on the renamed S/370 fields
+   and `DMKIOT`/`DMKDSP` on `INTTIO`, exactly as intended, while eleven other
+   modules stay clean. See `19-M1-STEP2.md`.
 3. ~~**Assemble the nine modules unchanged** and collect the errors.~~ **DONE,
    27 September, and the error list is empty.** All nine assemble on CE with
    `CPACC` then `VMFASM <module> DMKLCL`, every one reporting

@@ -303,7 +303,7 @@ at all. See `../../docs/13-ISSUES.md` `I-08` through `I-12`.
 | | | Exit criterion | Status |
 |---|---|---|---|
 | **M0** | Assembler macros for the instructions CE does not know | `MACLIB GEN` builds them and CE's own assembler emits the documented opcodes | **done, verified on CE, measured complete** — 24 members, severity 0, 351-mnemonic probe. `../../docs/14-M0-CLOSED.md` |
-| **M1** | CP IPLs in ESA/390 mode, DAT off, no paging, no guests | CP writes its initialisation message **and then accepts a command typed at the console** | **steps 1 and 3 done** — `XAOPS` accepted, nine modules clean unmodified. Step 2 (`PSA`) is the first change. **The critical path** |
+| **M1** | CP IPLs in ESA/390 mode, DAT off, no paging, no guests | CP writes its initialisation message **and then accepts a command typed at the console** | **steps 1, 2 and 3 done** — `XAOPS` accepted; all nine modules clean unmodified; and `PSA` changed, as an `AUXLCL` update level, with the predicted modules failing loudly. Step 4 is `DMKIOS`. **The critical path** |
 | **M2** | DAT on with ESA/390 tables; `TRANS`-bearing modules at AMODE 31 | `DMKBLD` builds a table set and `TRANS` returns the **correct above-the-line real address** for a virtual address in it, self-checked and reported | not started, **unblocked**, baselined — the DAT five assemble clean |
 | **M3a** | CP IPLs from DASD | a nucleus written by `DMKLDR`/`DMKSAVNC` is read back by `DMKCKP`/`DMKSAVRS` and reaches the console prompt with no `loadcore` | not started |
 | **M3b** | One S/370-mode guest runs CMS | a guest logs on and **`IPL 190`** — by device address, so no `DMKSNT` and no sharing — reaching `CMS` ready | not started |

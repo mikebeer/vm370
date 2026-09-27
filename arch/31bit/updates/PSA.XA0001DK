@@ -1,0 +1,43 @@
+./ R 00173000 00175000 $ 00173100 100                                           
+*  S/370 ONLY -- NO ESA/390 COUNTERPART.  RENAMED, NOT         XA0001DK         
+*  DELETED, SO A SURVIVING REFERENCE FAILS TO ASSEMBLE         XA0001DK         
+*  RATHER THAN READ LOWCORE THAT NOW MEANS SOMETHING ELSE.     XA0001DK         
+*  STIDC IS GONE, AND THE CHANNEL SUBSYSTEM REPLACES           XA0001DK         
+*  CHANNEL LOGOUT WITH THE ESW AND ERW IN THE IRB PLUS         XA0001DK         
+*  STCRW.  DELETING THEM WOULD LEAVE NO TRACE OF A             XA0001DK         
+*  DECISION A 64-BIT PASS HAS TO MAKE AGAIN.  EXPECTED TO      XA0001DK         
+*  BREAK DMKIOG DMKPRV DMKCCH DMKEIG -- ALL CHANNEL-ERROR      XA0001DK         
+*  AND STIDC-SIMULATION PATHS.  SEE RISK R-03.                 XA0001DK         
+S370CHID DS    1F -           STIDC CHANNEL ID, S/370          XA0001DK         
+S370IOEL DS    1F -           IO EXTENDED LOGOUT PTR, S/370    XA0001DK         
+S370ECSW DS    1F -           LIMITED CHANNEL LOGOUT, S/370    XA0001DK         
+./ R 00175100          $ 00175110 010                                           
+         ORG   S370ECSW                                        XA0001DK         
+./ R 00175300          $ 00175310 010                                           
+S370EBY3 DS    1X             3RD BYTE OF LCL, S/370           XA0001DK         
+./ R 00177000 00178000 $ 00177100 010                                           
+*  X'B8' IS THE ESA/390 SUBSYSTEM-IDENTIFICATION WORD,         XA0001DK         
+*  X'BC' THE INTERRUPTION PARAMETER.  CP'S INTKFLIN            XA0001DK         
+*  ALREADY SAT ON THAT EXACT FULLWORD, AND ITS LOW             XA0001DK         
+*  HALFWORD IS THE SUBCHANNEL NUMBER, BECAUSE THE              XA0001DK         
+*  SUBSYSTEM ID IS X'0001' IN THE HIGH HALFWORD.  SO           XA0001DK         
+*  NOTHING MOVES AND NOTHING CHANGES WIDTH; ONLY THE           XA0001DK         
+*  MEANING DOES.  MEASURED IN 07-io-interrupt.rc, WHICH        XA0001DK         
+*  READ X'B8' FOR FOUR BYTES AND MATCHED 00010000.             XA0001DK         
+*                                                              XA0001DK         
+*  INTTIO IS RENAMED WITH NO ALIAS, DELIBERATELY.  19 OF       XA0001DK         
+*  ITS 21 REFERENCES COMPARE IT AGAINST A DEVICE ADDRESS       XA0001DK         
+*  -- WHICH A SUBCHANNEL NUMBER IS NOT -- SO AN ALIAS          XA0001DK         
+*  WOULD LET EVERY ONE KEEP ASSEMBLING AND SILENTLY            XA0001DK         
+*  COMPARE THE WRONG THING.  THAT IS RISK R-02, THE JOINT      XA0001DK         
+*  TOP RISK, AND THIS IS THE CHEAPEST PLACE TO MAKE IT         XA0001DK         
+*  LOUD.                                                       XA0001DK         
+*                                                              XA0001DK         
+*  THESE OFFSETS ARE UNCHANGED IN Z/ARCHITECTURE, SO THE       XA0001DK         
+*  NAMES BELOW CARRY FORWARD WITHOUT EDIT.                     XA0001DK         
+IOSSID   DS    1F -           ESA/390 SUBSYSTEM ID WORD        XA0001DK         
+INTKFLIN EQU   IOSSID -       S/370 NAME, SAME FULLWORD        XA0001DK         
+IOSCHNO  EQU   IOSSID+2 -     ESA/390 SUBCHANNEL NUMBER        XA0001DK         
+./ R 00179000          $ 00179010 010                                           
+IOINTPRM DS    1F -           ESA/390 IO INTERRUPT PARAMETER   XA0001DK         
+         DS    10F -          RESERVED FOR HARDWARE USE        XA0001DK         
