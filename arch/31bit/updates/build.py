@@ -1384,6 +1384,43 @@ def dmkckp():
     #     table origin and CR3 is the PSW-key mask and secondary ASN, so it
     #     would set two registers wrong at once -- the kind of site a scan for
     #     `C2` never sees, because it names a range.  I-73.
+    # The work area goes among the CONSTANTS at 00517500, and the reason is
+    # the IPL, not the assembler.  Two earlier placements were wrong for two
+    # different reasons and the second one only shows up on a real machine.
+    #
+    # Inside CLR1 was the first attempt; CE rejected it with IFO224 LENGTH
+    # ERROR because 250-odd bytes took CLR1SIZE past the 256-byte limit of the
+    # XC that clears it.  The length error was the lucky part -- CLR1 is
+    # *zeroed at startup* and XAIOWORK holds the executable lookup subroutine,
+    # so it would have been erased at runtime with no diagnostic at all.  I-55.
+    #
+    # After CLR1SIZE was the second, and it assembled clean, linked clean and
+    # died at IPL.  DMKCKPT is one CSECT addressed by TWO base registers --
+    # `USING DMKCKPT,R12,R13`, R12 = X'800' and R13 = X'1800' -- and the IPL
+    # record reads only the FIRST 4096 bytes.  The second 4096 arrive later,
+    # via `LDCCW  CCW 6,0+X'1800',CC+SILI,4096` at 00476000 -- a read that is
+    # itself driven by XAIO.  So XAIO above offset X'1000' cannot work: the
+    # code that performs the read needs a subroutine that only exists after
+    # the read.  Measured in the punched deck, the bodies sat at X'16F2'
+    # through X'179A' and `BAL R14,X'752'(R13)` branched to X'1752', 1,618
+    # bytes past anything ever loaded -- into zeros, which decode as an
+    # operation exception.  I-86.
+    #
+    # 00517500 is WAIT16, measured at offset X'05B0' in the deck, inside the
+    # constants block that runs to the LTORG at 00537000.  Nothing falls
+    # through it -- every neighbour is a DC -- and it leaves XAIOWORK entirely
+    # below X'1000' with room to spare.
+    d.insert('00517500', first='00517510', inc=10,
+             limit=nxt('00517500'),
+             lines=Deck.comment(
+        "BELOW OFFSET X'1000' ON PURPOSE: THE IPL RECORD READS ONLY THE FIRST "
+        "4096 BYTES OF DMKCKPT, AND XAIO IS WHAT DRIVES THE READ THAT FETCHES "
+        "THE REST. ALSO OUTSIDE CLR1 AND ALLOCBUF, WHICH ARE ZEROED AT "
+        "RUNTIME. I-55, I-86.") + [
+        "         DS    0D             ORB AND IRB WANT ALIGNMENT",
+        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+    ])
+
     d.replace('00546000', first='00546010', inc=10,
               limit=next_seq(SRC + '/DMKCKP.ASSEMBLE', '00546000'),
               lines=Deck.comment(
@@ -1464,23 +1501,6 @@ def dmkckp():
         "REGION GROWS BY FOUR BYTES -- FROM ABOUT 136 TO 140, WELL INSIDE THE "
         "XC LENGTH LIMIT OF 256.") + [
         "SAVEDEV  DS    2F             ERROR DEVICE: SSID AND PARM",
-    ])
-
-    # The work area goes AFTER CLR1SIZE, and that placement is the whole point.
-    # Putting XAIOWORK inside CLR1 was the first attempt and CE rejected it with
-    # IFO224 LENGTH ERROR: 250-odd bytes took CLR1SIZE past the 256-byte limit
-    # of the XC that clears it.  The length error was the lucky part -- the real
-    # hazard is that CLR1 is *zeroed at startup*, and XAIOWORK contains the
-    # executable lookup subroutine, so it would have been erased at runtime with
-    # no diagnostic at all.  Here it is outside CLR1 and ahead of ALLOCBUF, so
-    # outside the ACBUFF clear as well.  I-55.
-    d.insert('01674000', first='01674100', inc=100,
-             limit=nxt('01674000'),
-             lines=Deck.comment(
-        "OUTSIDE EVERY CLEARED REGION ON PURPOSE: CLR1 ENDS ON THE LINE ABOVE "
-        "AND ALLOCBUF BEGINS BELOW, AND BOTH ARE ZEROED AT RUNTIME. XAIOWORK "
-        "HOLDS EXECUTABLE CODE. I-55.") + [
-        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
     ])
 
     # XAIO's subroutines take the CCW format from ORBCCWFM in XABLOKS, so the

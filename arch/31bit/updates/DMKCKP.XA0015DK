@@ -46,6 +46,13 @@ CKPST4   XASIO R2             READ R0                          XA0015DK
          BC    7,CKPST4       TAKE ERROR PATH                  XA0015DK         
 CKPWT4   XATIO R2             TEST FOR COMPLETION              XA0015DK         
          BC    7,CKPWT4       TRY AGAIN                        XA0015DK         
+./ I 00517500 $ 00517510 010                                                    
+*  BELOW OFFSET X'1000' ON PURPOSE: THE IPL RECORD READS ONLY  XA0015DK         
+*  THE FIRST 4096 BYTES OF DMKCKPT, AND XAIO IS WHAT DRIVES    XA0015DK         
+*  THE READ THAT FETCHES THE REST. ALSO OUTSIDE CLR1 AND       XA0015DK         
+*  ALLOCBUF, WHICH ARE ZEROED AT RUNTIME. I-55, I-86.          XA0015DK         
+         DS    0D             ORB AND IRB WANT ALIGNMENT       XA0015DK         
+         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0015DK         
 ./ R 00546000          $ 00546010 010                                           
 *  WAS LCTL C2,C3,X8FF -- ENABLE ALL CHANNELS. NEITHER         XA0015DK         
 *  REGISTER IS A CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O  XA0015DK         
@@ -99,10 +106,5 @@ CKPWTA   XATIO R2             TEST FOR COMPLETION              XA0015DK
 *  CLR1(CLR1SIZE), SO THE REGION GROWS BY FOUR BYTES -- FROM   XA0015DK         
 *  ABOUT 136 TO 140, WELL INSIDE THE XC LENGTH LIMIT OF 256.   XA0015DK         
 SAVEDEV  DS    2F             ERROR DEVICE: SSID AND PARM      XA0015DK         
-./ I 01674000 $ 01674100 100                                                    
-*  OUTSIDE EVERY CLEARED REGION ON PURPOSE: CLR1 ENDS ON THE   XA0015DK         
-*  LINE ABOVE AND ALLOCBUF BEGINS BELOW, AND BOTH ARE ZEROED   XA0015DK         
-*  AT RUNTIME. XAIOWORK HOLDS EXECUTABLE CODE. I-55.           XA0015DK         
-         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0015DK         
 ./ I 01723000 $ 01723100 100                                                    
          COPY  XABLOKS                                         XA0015DK         
