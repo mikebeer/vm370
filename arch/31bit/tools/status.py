@@ -66,11 +66,13 @@ HANDLED = {
     'DMKIOS': 'run44',
     'DMKVSJ': 'run46',
 }
+HANDLED['DMKCPI'] = 'run51'
 
 # Where 'clean on CE, TXTLCL produced' undersells what the deck actually did.
 CONVERTED_NOTE = {
     'DMKIOS': 'all 10 channel sites done, via IOSX* shims',
     'DMKVSJ': 'CLRCH deleted, not converted -- CLCH is always a TCH',
+    'DMKCPI': 'all 20 live channel sites; the 21st is dead, I-69',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source

@@ -35,6 +35,50 @@ CPIDISCN DS    0H             NEXT SUBCHANNEL                  XA0013DK
          LA    R2,1(0,R2)     BUMP THE SUBCHANNEL NUMBER       XA0013DK         
          BCT   R3,CPIDISC     PROBE THE WHOLE RANGE            XA0013DK         
          DROP  R4                                              XA0013DK         
+./ R 01045000          $ 1045100 100                                            
+CPIHIO   XAHIO R15            ISSUE HIO                        XA0013DK         
+./ R 01053000 01056000 $ 01053100 100                                           
+         XATIO R15            TO CLEAR HEX 70 STATUS           XA0013DK         
+         XATIO R15            FROM 3705                        XA0013DK         
+         XATIO R15            (CODE FOR 3705 ONLY)             XA0013DK         
+         XATIO R15                                             XA0013DK         
+./ R 01069000          $ 1069100 100                                            
+CPITIO1  XATIO R15            TIO                              XA0013DK         
+./ R 01096000          $ 1096100 100                                            
+CHKRSRL2 XASIO R15            ATTEMPT THE "RELEASE"            XA0013DK         
+./ R 01111000          $ 1111100 100                                            
+CHKRSRL3 XATIO R15            IF CONDITION-CODE 0,             XA0013DK         
+./ R 01154000          $ 1154100 100                                            
+CPISIO1  XASIO R15            ISSUE SIO                        XA0013DK         
+./ R 01166000          $ 1166100 100                                            
+CPIALLOC XATIO R15            ISSUE TIO                        XA0013DK         
+./ R 01200000          $ 1200100 100                                            
+CPISIO3  XASIO R15            START THE READ                   XA0013DK         
+./ R 01225000          $ 1225100 100                                            
+CPSIO1   XASIO R15            SUSPEND IMMEDIATE                XA0013DK         
+./ R 01231000          $ 1231100 100                                            
+CPTIO    XATIO R15            CHECK OUT STATUS,CC=0            XA0013DK         
+./ R 01239000          $ 1239100 100                                            
+CPIOWNA  XATIO R15            DRAIN FOR CE/DE                  XA0013DK         
+./ R 01568000          $ 1568100 100                                            
+SNSIO    XASIO R15            ISSUE SENSE COMMAND              XA0013DK         
+./ R 01587000          $ 1587100 100                                            
+SNTIO    XATIO R15            CLEAR THE SUBCHANNEL             XA0013DK         
+./ R 01719000          $ 1719100 100                                            
+         XATIO R15            MAKE SURE IT EXISTS              XA0013DK         
+./ R 01723000 01724000 $ 01723100 100                                           
+STRTGRF  XATIO R15            TEST DEVICE                      XA0013DK         
+         BC    2,STRTGRF      LOOP IF BUSY                     XA0013DK         
+./ R 01726000          $ 1726100 100                                            
+STRTSIO  XASIO R15            START SENSE TO DEVICE            XA0013DK         
+./ R 01758000          $ 1758100 100                                            
+TSTGRF   XATIO R15            TEST FOR SENSE END               XA0013DK         
+./ I 01761000 $ 01761010 010                                                    
+*  XAIO WORK AREAS AND LOOKUP. XABLOKS IS ALREADY COPIED AT    XA0013DK         
+*  03506100, AND ORBCCWFM IS USED THERE AS AN MVI IMMEDIATE,   XA0013DK         
+*  WHICH XF RESOLVES AS A FORWARD REFERENCE -- UNLIKE A        XA0013DK         
+*  LENGTH MODIFIER. I-51.                                      XA0013DK         
+         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0013DK         
 ./ R 01928000 01929000 $ 01928100 100                                           
 *  CR2 HELD X'FFFFFFFF' AS THE S/370 CHANNEL MASK. ON ESA/390  XA0013DK         
 *  CR2 IS THE DISPATCHABLE-UNIT-CONTROL-TABLE ORIGIN AND MUST  XA0013DK         

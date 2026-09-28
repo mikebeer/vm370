@@ -39,6 +39,7 @@ DECLARED = {
     ('DMKSAV', '00601000'): 'DMKSAVNC, build machine, S/370 -- I-59',
     ('DMKSAV', '00613100'): 'DMKSAVNC, build machine, S/370 -- I-59',
     ('DMKSAV', '00613300'): 'DMKSAVNC, build machine, S/370 -- I-59',
+    ('DMKCPI', '00485480'): 'channel-set probe, dead under AP=NO -- I-69',
 }
 
 KEY = ('ISK', 'SSK', 'RRB')

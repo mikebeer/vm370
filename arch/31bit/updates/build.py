@@ -847,6 +847,86 @@ def dmkcpi():
         "         DROP  R4                                        ",
     ])
 
+    # --- The twenty live channel sites, all of them `SIO 0(R15)` or
+    #     `TIO 0(R15)` in the device-mount loop, every one following the same
+    #     shape: the instruction, `BAL R1,TRACESUB` with an inline trace code,
+    #     then `BC` masks to labels.  `TRACESUB` already had to preserve the
+    #     condition code for the S/370 instruction, so nothing about that
+    #     changes; the XAIO macros return the code through `BR R14` and the
+    #     `LM` that follows does not disturb it.  R15 survives because the
+    #     call-site macro saves and restores R14, R15, R0 and R1.
+    #
+    #     The twenty-first site, the `SIO` at 00485480, is deliberately NOT
+    #     here: it is inside the channel-set-switching probe, which
+    #     `CLI N0(R2),YES` at 00483000 skips because `DMKSYSAP` is `N` under
+    #     `AP=NO` (XA0014DK).  The unconvertible `CONCS` sits four instructions
+    #     before it, so the block is dead as a unit and half-converting an AP
+    #     path would be worse than leaving it whole.  Declared in
+    #     tools/coverage.py rather than silently skipped.  I-69.
+    cpi = lambda seq, line, to=None, extra=(): d.replace(
+        seq, to, first=str(int(seq) + 100), inc=100,
+        limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', to or seq),
+        lines=[line] + list(extra))
+
+    cpi('01045000', "CPIHIO   XAHIO R15            ISSUE HIO")
+
+    # Four consecutive drains for the 3705, with no test between them.
+    d.replace('01053000', '01056000', first='01053100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01056000'), lines=[
+        "         XATIO R15            TO CLEAR HEX 70 STATUS",
+        "         XATIO R15            FROM 3705",
+        "         XATIO R15            (CODE FOR 3705 ONLY)",
+        "         XATIO R15",
+    ])
+
+    cpi('01069000', "CPITIO1  XATIO R15            TIO")
+    cpi('01096000', 'CHKRSRL2 XASIO R15            ATTEMPT THE "RELEASE"')
+    cpi('01111000', "CHKRSRL3 XATIO R15            IF CONDITION-CODE 0,")
+    cpi('01154000', "CPISIO1  XASIO R15            ISSUE SIO")
+    cpi('01166000', "CPIALLOC XATIO R15            ISSUE TIO")
+    cpi('01200000', "CPISIO3  XASIO R15            START THE READ")
+    cpi('01225000', "CPSIO1   XASIO R15            SUSPEND IMMEDIATE")
+    cpi('01231000', "CPTIO    XATIO R15            CHECK OUT STATUS,CC=0")
+    cpi('01239000', "CPIOWNA  XATIO R15            DRAIN FOR CE/DE")
+    cpi('01568000', "SNSIO    XASIO R15            ISSUE SENSE COMMAND")
+    cpi('01587000', "SNTIO    XATIO R15            CLEAR THE SUBCHANNEL")
+    cpi('01719000', "         XATIO R15            MAKE SURE IT EXISTS")
+
+    # The module's one backward self-relative branch that spans a converted
+    # instruction.  STRTGRF already labels the target, so `*-4` only needs the
+    # name it could have used all along.  R-26.
+    d.replace('01723000', '01724000', first='01723100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01724000'), lines=[
+        "STRTGRF  XATIO R15            TEST DEVICE",
+        "         BC    2,STRTGRF      LOOP IF BUSY",
+    ])
+
+    cpi('01726000', "STRTSIO  XASIO R15            START SENSE TO DEVICE")
+    cpi('01758000', "TSTGRF   XATIO R15            TEST FOR SENSE END")
+
+    # --- The work area, after TSTGRF's `BR R14` at 01761000 and before the
+    #     LTORG.  Placement is forced, not chosen: `DROP R12,R13` at 01767000
+    #     ends the DMKCPINT addressability domain and `USING DMKCPIEM,R12,R13`
+    #     begins another, so XAIOWORK's OWN references -- `BAL R14,XAIOFIND`,
+    #     `MVC XAIOORB+8(4),CAW` -- are assembled against whichever base is
+    #     active where the macro expands.  Put it with the other work areas at
+    #     01930000 and those displacements would be computed off DMKCPIEM
+    #     while every caller runs with R12/R13 holding the DMKCPINT base, which
+    #     assembles perfectly and addresses garbage.  Here the USING is the
+    #     callers' own.  I-70.
+    #
+    #     Nothing falls into it: 01761000 is `BR R14`.  And nothing zeroes it
+    #     -- DMKCPI's two MVCLs clear CPULOG..PSENDCLR and PSBCLR2..PSECLR2,
+    #     which are PSA symbols, not this CSECT.  I-55.
+    d.insert('01761000', first='01761010', inc=10,
+             limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01761000'),
+             lines=Deck.comment(
+        "XAIO WORK AREAS AND LOOKUP. XABLOKS IS ALREADY COPIED AT 03506100, "
+        "AND ORBCCWFM IS USED THERE AS AN MVI IMMEDIATE, WHICH XF RESOLVES "
+        "AS A FORWARD REFERENCE -- UNLIKE A LENGTH MODIFIER. I-51.") + [
+        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+    ])
+
     # --- CR2 and CR6.  CR2 is one word, CR3-CR13 are the eleven that follow, so
     #     the replacement splits that DC to give CR6 a value of its own.
     d.replace('01928000', '01929000', first='01928100', inc=100,
