@@ -4,7 +4,7 @@
 `STIDC` in DMKIOG was found by reading one module.  That is not a method: an
 S/370-only instruction assembles perfectly under Assembler XF -- the assembler
 has no idea which architecture the object will run on -- and then takes an
-operation exception at execution.  The 173-module nucleus cannot be read line
+operation exception at execution.  The 183-module nucleus cannot be read line
 by line, so the sweep is mechanical.
 
 Hercules's own opcode table is the oracle.  A row marked
@@ -176,9 +176,10 @@ def main():
     table = s370_only(opcode_c)
     src = os.path.join(root, 'source', 'cp')
     nucleus = {m.group(1) for m in re.finditer(
-        r'&1 &2 &3 (\S+)',
-        open(os.path.join(root, 'maintenance', 'files', '194',
-                          'CPLOAD.EXEC')).read())} - {'LOADER', 'LDT'}
+        r'(?m)^&1 &2 &3 (\S+)',    # anchored: DMKSST is commented out, I-66
+        open(os.path.join(root, 'maintenance', 'files', '094',
+                          'CPLOAD.EXEC')).read())} - {'LOADER', 'LDT',
+                                                      'SLC', 'SPB'}
 
     hits = {}
     for name in sorted(os.listdir(src)):

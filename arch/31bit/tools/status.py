@@ -5,8 +5,9 @@ The project has registers for risks, issues and milestones but no view of
 where each CP module stands. A hand-written table would go stale on the next
 deck, so this derives the state from four sources:
 
-  * the nucleus load list          maintenance/files/194/CPLOAD.EXEC
-  * what ASMDMK assembles          maintenance/files/194/ASMDMK.EXEC
+  * the nucleus load list          maintenance/files/094/CPLOAD.EXEC
+  * what the build assembles       194/ASMDMK.EXEC + 094/HRCASM.EXEC
+                                   + 094/LDFASM.EXEC
   * which modules we have changed   arch/31bit/updates/*.AUXLCL
   * which modules the PSA rename    a scan of source/cp for the renamed
     breaks                          symbols
@@ -131,12 +132,26 @@ def listed(path, pattern):
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else '/home/claude/vmce'
     M = os.path.join(root, 'maintenance', 'files', '194')
+    C = os.path.join(root, 'maintenance', 'files', '094')
     src = os.path.join(root, 'source', 'cp')
 
-    nucleus = [m for m in listed(os.path.join(M, 'CPLOAD.EXEC'),
-                                 r'&1 &2 &3 (\S+)')
-               if m not in ('LOADER', 'LDT')]
-    asmdmk = set(listed(os.path.join(M, 'ASMDMK.EXEC'), r'EXEC VMFASM (\S+)'))
+    # 094's CPLOAD.EXEC, not 194's.  Both exist, they differ by eleven modules,
+    # and CMS's search order reaches F (094) before G (194), so 094's is the
+    # one VMFLOAD actually reads -- confirmed by run47, where
+    # `VMFLOAD CPLOAD DMKLCL` said SYSTEM LOAD DECK COMPLETE.  I-66.
+    # `^` with re.M, because CPLOAD.EXEC comments modules out with a `*` in
+    # column 1 and a pattern that does not anchor counts them: `DMKSST` is
+    # commented out and inflated the nucleus to 184.  I-66.
+    nucleus = [m for m in listed(os.path.join(C, 'CPLOAD.EXEC'),
+                                 r'(?m)^&1 &2 &3 (\S+)')
+               if m not in ('LOADER', 'LDT', 'SLC', 'SPB')]
+    # Three EXECs assemble it, not one: the base 186 plus CE's own additions.
+    asmdmk = set()
+    for path, pat in ((os.path.join(M, 'ASMDMK.EXEC'), r'EXEC VMFASM (\S+)'),
+                      (os.path.join(C, 'HRCASM.EXEC'), r'&1 &2 (\S+)\s+DMKHRC'),
+                      (os.path.join(C, 'LDFASM.EXEC'), r'EXEC VMFASM (\S+)')):
+        if os.path.exists(path):
+            asmdmk |= set(listed(path, pat))
 
     changed = {f.split('.')[0] for f in os.listdir(UPDATES)
                if f.endswith('.AUXLCL')}
