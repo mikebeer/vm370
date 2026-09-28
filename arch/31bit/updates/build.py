@@ -44,6 +44,7 @@ XA14 = 'XA0014DK'
 XA15 = 'XA0015DK'
 XA16 = 'XA0016DK'
 XA17 = 'XA0017DK'
+XA18 = 'XA0018DK'
 
 
 def psa():
@@ -1385,6 +1386,97 @@ def dmksav():
     return d
 
 
+def dmkvsj():
+    """The guest's CLEAR CHANNEL, which stops being passed through to hardware.
+
+    `DMKVSJ` simulates the guest's `HIO` and `CLCH`.  When the virtual channel is
+    **dedicated** -- `VCHSTAT` has `VCHDED`, set only by `DMKVCH`'s
+    `ATTACH CHANNEL` at seq 00570000 -- CP hands the guest's `CLCH` straight to
+    the hardware as a real `CLRCH`, hand-assembled because Assembler XF has no
+    such mnemonic:
+
+        00169000  BNO   CLCHEXIT       NO, TREAT CLCH AS A TCH
+        00170000  SWITCH               MAKE SURE WE ARE ON I/O PROC
+        00171000  LH    R1,VCHADD      GET CHANNEL ADDR - REAL=VIRTUAL
+        00172000* CLRCH 0(R1)          ISSUE REAL CLRCH INSTRUCTION
+        00173000  DC    X'9F01'        ISSUE REAL CLRCH INSTRUCTION
+        00174000  DC    S(0(1))        FOR SPECIFIED CHANNEL
+
+    This is the last live DC-encoded channel instruction in the nucleus, the
+    other being `DMKCPI`'s `CONCS`, which `AP=NO` already makes dead (`I-50`).
+    It is also the one site in the whole conversion where the right answer is to
+    **delete the function rather than convert it**, and it took three findings
+    to be sure of that.
+
+    **`RCHP` is not the successor of `CLRCH`.**  X'B23B' is `GENx___x390x900`, so
+    it exists exactly where `CLRCH` does not, which makes it look like the
+    substitution.  It is not: it resets a *channel path*, which in ESA/390 is a
+    shared resource the channel subsystem owns, not a channel a guest can be
+    given.  VM/XA dropped dedicated channels for this reason.
+
+    **The obvious conversion program-checks.**  `RCHP` takes its CHPID in R1
+    bits 24-31 and takes an operand exception if bits 0-23 are non-zero
+    (`io.c`: `if(regs->GR_L(1) & 0xFFFFFF00) program_interrupt(OPERAND)`).
+    `VCHADD` is a channel address in device-number form -- X'0300' for channel
+    3 -- so `LH R1,VCHADD` followed by `RCHP` is an operand exception every
+    time.  A shift would silence that, and Hercules even assigns
+    `chpid = devnum >> 8` (`config.c:724`), so it would appear to work.
+
+    **And appearing to work is the trap.**  `chp_reset` calls `device_reset` on
+    every device on the path, and `device_reset` is the one thing that clears
+    `PMCW5_E` and the interruption parameter (`docs/24-INTTIO.md`).  CP sets both
+    exactly once, at IPL, in `XA0013DK`, and has no code anywhere that re-enables
+    a subchannel -- so a single guest `CLCH` would permanently disable every
+    device on that channel, and SSCH would return cc3 for the rest of the IPL
+    with no diagnostic.  `chp_reset` then queues a channel report
+    (`build_chp_reset_chrpt`), and CP has no channel-report machinery at all.
+
+    So the pass-through goes.  `CLCH` is now always simulated as a `TCH`, which
+    is what this module already did for every channel that was not dedicated --
+    the `BNO CLCHEXIT` one instruction earlier.  `DMKVSICH` documents its entry
+    contract as "ALL OTHER REGISTERS CONTAIN THE SAME VALUES THAT THEY HAD IN
+    DMKVSJ", and nothing between 00165000 and 00169000 alters a register, so
+    taking that branch unconditionally is state-identical to taking it on the
+    `BNO`.  `I-62`.
+
+    The whole block 00168000-00195000 is replaced rather than left dead, so no
+    `CLRCH` remains in the nucleus for a later reader to find.  Three things make
+    that safe: `CCTRACE` at 00177000 is referenced from nowhere in CP -- it is
+    already a dead label -- `CLRCHNOT` is referenced only from inside the block,
+    and the `AIF`/`ANOP` pair at 00175000/00188000 is entirely within the range,
+    so the conditional assembly is removed as a unit.  `&TRACE(9) SETB 1` in
+    `OPTIONS.COPY`, so it was live code, not skipped text.
+
+    `DMKVSJCC` at 00162000 keeps counting virtual `CLCH`s, so nothing a monitor
+    or `Q STAT` reads changes.  The module has no renamed PSA symbol and no
+    column-scan channel instruction, so this deck is the whole of its work.
+    """
+    d = Deck(XA18)
+    nxt = lambda s: next_seq(SRC + '/DMKVSJ.ASSEMBLE', s)
+
+    d.replace('00168000', '00195000', first='00168100', inc=100,
+              limit=nxt('00195000'), lines=Deck.comment(
+        "THE DEDICATED-CHANNEL PASS-THROUGH IS GONE. IT ISSUED A REAL CLRCH, "
+        "DC X'9F01', FOR A GUEST WHOSE CHANNEL WAS ATTACHED WHOLE. ESA/390 HAS "
+        "NO CHANNEL TO CLEAR: RCHP B23B RESETS A CHANNEL PATH, WHICH THE "
+        "CHANNEL SUBSYSTEM OWNS AND SHARES, AND IS A DIFFERENT OPERATION.") +
+        Deck.comment(
+        "CONVERTING IT WOULD BE WORSE THAN LEAVING IT. RCHP TAKES A CHPID IN "
+        "R1 BITS 24-31 AND PROGRAM-CHECKS ON BITS 0-23, AND VCHADD IS X'0300' "
+        "FOR CHANNEL 3. WORSE, CHP_RESET CALLS DEVICE_RESET ON EVERY DEVICE ON "
+        "THE PATH, WHICH CLEARS PMCW5E AND THE INTERRUPTION PARAMETER -- SET "
+        "ONCE AT IPL BY XA0013DK AND NEVER AGAIN. ONE GUEST CLCH WOULD DISABLE "
+        "THE WHOLE CHANNEL FOR GOOD.") +
+        Deck.comment(
+        "SO CLCH IS ALWAYS A TCH NOW, AS IT ALREADY WAS FOR EVERY CHANNEL THAT "
+        "WAS NOT DEDICATED. DMKVSICH WANTS THE REGISTERS DMKVSJ HELD AND "
+        "NOTHING SINCE 00165000 TOUCHED ONE, SO THE BRANCH IS UNCONDITIONAL "
+        "AND STATE-IDENTICAL. DMKVSJCC STILL COUNTS. I-62.") + [
+        "         B     CLCHEXIT       SIMULATE CLCH AS A TCH",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -1465,6 +1557,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
         [(XA10, 'CHANNEL CHECK: NO LCL ANALYSIS, TERMINATE INSTEAD')])
 
+    j = dmkvsj()
+    j.write(os.path.join(HERE, 'DMKVSJ.%s' % XA18))
+    aux(os.path.join(HERE, 'DMKVSJ.AUXLCL'),
+        [(XA18, 'CLCH IS ALWAYS SIMULATED: NO REAL CLRCH ON ESA/390')])
+
     with open(os.path.join(HERE, 'DMKLCL.EXEC'), 'w') as f:
         # XAOPS must be here, not in a separate XALIB: DMKLCL.CNTRL's MACS
         # record is  DMKLCL DMKHRC DMKMAC DMSLCL CMSHRC CMSLIB OSMACRO  and
@@ -1492,7 +1589,8 @@ def main():
                  'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL',
                  'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL',
                  'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL',
-                 'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL',
+                 'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

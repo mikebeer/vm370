@@ -35,6 +35,14 @@ import sys
 SUPPLEMENT = {'HDV': '9E01', 'SIOF': '9C01', 'CLRIO': '9D01',
               'CLRCH': '9F01', 'TIOB': '9D02'}
 
+# DC-encoded sites the conversion has closed.  Neither was closed by converting
+# the instruction, which is why they are worth naming rather than deleting from
+# the report: the sweep reads base source and cannot see an UPDATE level.
+DC_CLOSED = {
+    'DMKCPI': 'CONCS is dead under AP=NO -- XA0014DK, I-50',
+    'DMKVSJ': 'CLRCH removed, CLCH always simulated -- XA0018DK, I-62',
+}
+
 # What each one becomes.  ISKE, SSKE, RRBE and IVSK are GENx370x390x900 -- valid
 # in every mode -- so the storage-key family is a mechanical substitution.  The
 # channel family is not: cc1 from TIO means "CSW stored", cc1 from TSCH means
@@ -223,6 +231,13 @@ def main():
         live = [d for d in dc if d[3] == 'instruction' and d[4]]
         print('%-46s %d' % ('  live nucleus instruction sites', len(live)))
         print('%-46s %s' % ('  modules', ' '.join(sorted({d[0] for d in live}))))
+        # The sweep reads base source, and the conversion is an UPDATE level,
+        # so a site stays visible here after its deck has closed it -- the same
+        # caveat HANDLED carries in status.py.  Both of these are now dealt
+        # with, and neither is dealt with by converting the instruction.
+        for mod, why in sorted(DC_CLOSED.items()):
+            if mod in {d[0] for d in live}:
+                print('  %-8s closed: %s' % (mod, why))
 
     ab = abs_sites(src)
     if ab:

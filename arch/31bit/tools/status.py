@@ -55,6 +55,13 @@ HANDLED = {
     'DMKDMP': 'run38',
     'DMKSAV': 'run42',
     'DMKIOS': 'run44',
+    'DMKVSJ': 'run46',
+}
+
+# Where 'clean on CE, TXTLCL produced' undersells what the deck actually did.
+CONVERTED_NOTE = {
+    'DMKIOS': 'all 10 channel sites done, via IOSX* shims',
+    'DMKVSJ': 'CLRCH deleted, not converted -- CLCH is always a TCH',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
@@ -158,8 +165,7 @@ def main():
             note = ('in DMKLCL MACLIB, rebuilt by VMFMAC'
                     if mod not in nucleus else
                     'clean on CE (%s), TXTLCL produced' % HANDLED.get(mod, '?'))
-            if mod == 'DMKIOS':
-                note = 'all 10 channel sites done, via IOSX* shims'
+            note = CONVERTED_NOTE.get(mod, note)
         elif mod in changed and mod in broken:
             state = 'PARTIAL'
             note = NEEDS.get(mod, '')
