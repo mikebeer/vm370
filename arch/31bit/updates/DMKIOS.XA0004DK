@@ -16,6 +16,40 @@ IOSTCAW  ST    R2,CAW         KEPT -- SEE BELOW                XA0004DK
          SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
 ./ R 01241000          $ 01241100 010                                           
          BC    4,IOSXCC1      CC 1 = STATUS PENDING, NOT CSW   XA0004DK         
+./ R 01263000          $ 01263100 100                                           
+         STM   R14,R1,IOBXSAV  ISSUE REQUESTED TEST I/O        XA0004DK         
+         BAL   R14,IOSXTIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
+./ R 01274000          $ 01274100 100                                           
+IOSQHIO  STM   R14,R1,IOBXSAV  ISSUE REQUESTED HALT I/O        XA0004DK         
+         BAL   R14,IOSXHIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
+./ R 01356000 01357000 $ 01356100 100                                           
+*  THE ONLY MASK CHANGE IN THIS MODULE. BC 2 WAITED ON TIO'S   XA0004DK         
+*  CC2, CHANNEL BUSY, WHICH TSCH NEVER RETURNS. THE WAIT       XA0004DK         
+*  INTENDED IS UNTIL STATUS IS PRESENT, AND AFTER              XA0004DK         
+*  NORMALISATION THAT IS CC1 -- SO LOOP WHILE THE DEVICE       XA0004DK         
+*  STILL READS FREE.                                           XA0004DK         
+IOSTIO   STM   R14,R1,IOBXSAV  YES - CLEAR STATUS              XA0004DK         
+         BAL   R14,IOSXTIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
+         BC    8,IOSTIO       WAIT UNTIL STATUS IS THERE       XA0004DK         
+./ R 01480000          $ 1480100 100                                            
+         CR    R1,R1          ALWAYS AVAILABLE: SETS CC0       XA0004DK         
+./ R 01489000          $ 1489100 100                                            
+TESTCHAN CR    R1,R1          ALWAYS AVAILABLE: SETS CC0       XA0004DK         
+./ R 01525000          $ 01525100 100                                           
+HIORLOOP STM   R14,R1,IOBXSAV  TRY AGAIN TO HALT IT            XA0004DK         
+         BAL   R14,IOSXHIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
+./ R 02617000          $ 02617100 100                                           
+         STM   R14,R1,IOBXSAV  SEE IF IT'S REALLY BUSY         XA0004DK         
+         BAL   R14,IOSXTIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
+./ R 02627250          $ 02627260 010                                           
+         STM   R14,R1,IOBXSAV  IS IT BUSY ?                    XA0004DK         
+         BAL   R14,IOSXTIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
 ./ I 02651100 $ 02651110 010                                                    
 *  ORB TEMPLATE. EVERYTHING EXCEPT THE CCW ADDRESS, WHICH      XA0004DK         
 *  IOSTCAW STORES. LPM MUST BE X'80': SSCH TESTS ORB.LPM       XA0004DK         
@@ -59,5 +93,47 @@ IOSXCC1  DS    0H             ESA/390 CC 1: STATUS PENDING     XA0004DK
          MVC   CSW+4(4),IOBIDST STATUS AND RESIDUAL COUNT      XA0004DK         
          MVC   CSW+1(3),IOBICCW+1 CCW ADDRESS, LOW 3 BYTES     XA0004DK         
          B     IOSCC1         NOW PROCEED AS S/370 DID         XA0004DK         
+         SPACE 1                                               XA0004DK         
+*  IOSXTIO NORMALISES TSCH BACK TO TIO'S CONDITION CODES. TIO  XA0004DK         
+*  CCTHE DEVICE WAS FREE; TSCH CC1 MEANS NOTHING IS PENDING,   XA0004DK         
+*  WHICHSAME FACT WITH THE OPPOSITE CODE. WHEN STATUS IS       XA0004DK         
+*  PRESENT A CSBUILT AT X'40' SO EVERY TM CSW+4 AROUND THE     XA0004DK         
+*  CALL SITES STILL                                            XA0004DK         
+         SPACE 1                                               XA0004DK         
+IOSXTIO  DS    0H             TSCH, WITH TIO'S CONDITION CODE  XA0004DK         
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         TSCH  IOBIRB         TEST SUBCHANNEL                  XA0004DK         
+         BC    4,IOSXTIOF     CC1: NOTHING PENDING = FREE      XA0004DK         
+         BC    3,IOSXTIOX     CC2 AND CC3 PASS THROUGH         XA0004DK         
+         MVI   CSW,X'00'      BUILD THE CSW THE CALLER EXPECT  XA0004DK         
+         MVC   CSW+1(3),IOBICCW+1  CCW ADDRESS                 XA0004DK         
+         MVC   CSW+4(4),IOBIDST  STATUS AND COUNT              XA0004DK         
+         LA    R15,1          TELL THE CALLER CSW STORED,      XA0004DK         
+         LCR   R15,R15        WHICH IS CC1. LTR WOULD GIVE CC  XA0004DK         
+         BR    R14                                             XA0004DK         
+IOSXTIOF DS    0H             DEVICE FREE: TIO CALLED THAT CC  XA0004DK         
+         SR    R15,R15        ZERO RESULT, SO CC0              XA0004DK         
+IOSXTIOX DS    0H                                              XA0004DK         
+         BR    R14                                             XA0004DK         
+         SPACE 1                                               XA0004DK         
+IOSXHIO  DS    0H             HSCH REPLACES HIO AND HDV ALIKE  XA0004DK         
+*  THE DISTINCTION WAS BETWEEN HALTING A CHANNEL AND HALTING   XA0004DK         
+*  DEVICE, AND A SUBCHANNEL IS ALWAYS EXACTLY ONE DEVICE. THE  XA0004DK         
+*  CONDITION CODES ALREADY AGREE CLOSELY ENOUGH THAT THE       XA0004DK         
+*  BC 8+2+1 MASKS AT THE CALL SITES ARE LEFT ALONE.            XA0004DK         
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         HSCH  0              HALT SUBCHANNEL                  XA0004DK         
+         BR    R14                                             XA0004DK         
+         SPACE 1                                               XA0004DK         
+IOSXSIO  DS    0H             SSCH FOR THE SENSE PATH          XA0004DK         
+         MVC   IOBORB,ORBTMPL BUILD THE ORB                    XA0004DK         
+         MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET       XA0004DK         
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
+         BR    R14                                             XA0004DK         
+./ R 02654000          $ 02654100 100                                           
+IOSNSIO  STM   R14,R1,IOBXSAV  ATTEMPT TO DO SENSE             XA0004DK         
+         BAL   R14,IOSXSIO                                     XA0004DK         
+         LM    R14,R1,IOBXSAV                                  XA0004DK         
 ./ I 02801000 $ 02801500 100                                                    
          COPY  XABLOKS        ESA/390 CHANNEL SUBSYS BLOCKS    XA0004DK         

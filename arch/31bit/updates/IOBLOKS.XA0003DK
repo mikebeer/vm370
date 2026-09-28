@@ -26,3 +26,6 @@ IOBISST  DS    1X             SUBCHANNEL STATUS -- TO CSW+5    XA0003DK
 IOBICNT  DS    1H             RESIDUAL COUNT    -- TO CSW+6    XA0003DK         
          DS    XL20           EXTENDED STATUS WORD             XA0003DK         
          DS    XL32           EXTENDED CONTROL WORD            XA0003DK         
+IOBXSAV  DS    4F             R14, R15, R0, R1 IN THE SHIMS    XA0003DK         
+*  PER-IOBLOK, SO THE SHIMS STAY REENTRANT -- XAIO'S STATIC    XA0003DK         
+*  WORK AREA IS NOT, WHICH IS WHY DMKIOS CANNOT USE XAIO.      XA0003DK         

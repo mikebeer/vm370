@@ -54,6 +54,7 @@ HANDLED = {
     'DMKCKP': 'run38',
     'DMKDMP': 'run38',
     'DMKSAV': 'run42',
+    'DMKIOS': 'run44',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
@@ -158,7 +159,7 @@ def main():
                     if mod not in nucleus else
                     'clean on CE (%s), TXTLCL produced' % HANDLED.get(mod, '?'))
             if mod == 'DMKIOS':
-                note = 'SSCH path done; TIO/HDV/TCH sites outstanding'
+                note = 'all 10 channel sites done, via IOSX* shims'
         elif mod in changed and mod in broken:
             state = 'PARTIAL'
             note = NEEDS.get(mod, '')

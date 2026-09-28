@@ -200,6 +200,9 @@ def ioblok():
         "IOBICNT  DS    1H             RESIDUAL COUNT    -- TO CSW+6",
         "         DS    XL20           EXTENDED STATUS WORD",
         "         DS    XL32           EXTENDED CONTROL WORD",
+        "IOBXSAV  DS    4F             R14, R15, R0, R1 IN THE SHIMS",
+        "*  PER-IOBLOK, SO THE SHIMS STAY REENTRANT -- XAIO'S STATIC",
+        "*  WORK AREA IS NOT, WHICH IS WHY DMKIOS CANNOT USE XAIO.",
     ])
     return d
 
@@ -257,6 +260,70 @@ def dmkios():
     #    and IOSNSIO1 -- an area reached only by branch, so nothing falls
     #    into it.  RETYCNT DC F'40000' sitting there already is the
     #    precedent.
+    # --- M1 step 4, second increment: the remaining nine sites.
+    #
+    # Each one goes through a normalising shim, for the same reason XAIO does:
+    # the branches after every site test S/370 condition codes, and there are
+    # four of them at 01269000 alone -- BC 8,IOSDVFRE / BC 4,TIOCC1 /
+    # BC 1,IOSCC3 / B IOSQBSY.  A shim that hands back the code TIO would have
+    # set leaves all of them untouched, which in the scheduler is worth a great
+    # deal more than the instructions it costs.
+    #
+    # STM R14,R1 wraps to save R14, R15, R0 and R1 into IOBXSAV, and LM
+    # restores them without disturbing the condition code -- the same pattern
+    # XAIO uses, but with the save area inside the IOBLOK so it stays
+    # reentrant.  R1 comes back holding IOBRADD, which every site still wants.
+    # --- The nine remaining sites, in ascending anchor order because UPDATE
+    # reads the source once, forward.  Every one is the same four-instruction
+    # call: STM R14,R1 wraps to save R14, R15, R0 and R1 into IOBXSAV, BAL to
+    # the shim, LM to restore -- and LM does not alter the condition code, so
+    # the code the shim set survives into the caller's branches.  R1 comes back
+    # holding IOBRADD, which every site still wants.
+    def call(seq, first, inc, limit, shim, text, lab=''):
+        d.replace(seq, first=first, inc=inc, limit=limit, lines=[
+            "%-8s STM   R14,R1,IOBXSAV  %s" % (lab, text),
+            "         BAL   R14,%s" % shim,
+            "         LM    R14,R1,IOBXSAV",
+        ])
+
+    call('01263000', '01263100', 100, '01264000', 'IOSXTIO',
+         'ISSUE REQUESTED TEST I/O')
+    call('01274000', '01274100', 100, '01275000', 'IOSXHIO',
+         'ISSUE REQUESTED HALT I/O', lab='IOSQHIO')
+
+    # 01356000 keeps its IOSTIO label and its own loop, whose BC 2 tested
+    # "channel busy".  TSCH never returns CC2, so that loop would never repeat.
+    # The wait it wants is "until status is present", which after normalisation
+    # is CC1 -- so this is the one site in the module where a mask changes.
+    d.replace('01356000', '01357000', first='01356100', inc=100,
+              limit='01358000', lines=Deck.comment(
+        "THE ONLY MASK CHANGE IN THIS MODULE. BC 2 WAITED ON TIO'S CC2, "
+        "CHANNEL BUSY, WHICH TSCH NEVER RETURNS. THE WAIT INTENDED IS UNTIL "
+        "STATUS IS PRESENT, AND AFTER NORMALISATION THAT IS CC1 -- SO LOOP "
+        "WHILE THE DEVICE STILL READS FREE.") + [
+        "IOSTIO   STM   R14,R1,IOBXSAV  YES - CLEAR STATUS",
+        "         BAL   R14,IOSXTIO",
+        "         LM    R14,R1,IOBXSAV",
+        "         BC    8,IOSTIO       WAIT UNTIL STATUS IS THERE",
+    ])
+
+    # 01480000 and 01489000: TCH has no counterpart at all.  The channel
+    # subsystem exposes no per-channel busy state -- every subchannel is
+    # independently addressable -- so both sites force the available path.
+    # CR R1,R1 sets CC0 in two bytes and clobbers nothing, which matters
+    # because R1 here holds RCHADD, a channel address, not a device address.
+    for seq, lab in (('01480000', ''), ('01489000', 'TESTCHAN')):
+        d.replace(seq, first=str(int(seq) + 100), inc=100,
+                  limit=str(int(seq) + 1000), lines=[
+            "%-8s CR    R1,R1          ALWAYS AVAILABLE: SETS CC0" % lab,
+        ])
+
+    call('01525000', '01525100', 100, '01526000', 'IOSXHIO',
+         'TRY AGAIN TO HALT IT', lab='HIORLOOP')
+    call('02617000', '02617100', 100, '02618000', 'IOSXTIO',
+         "SEE IF IT'S REALLY BUSY")
+    call('02627250', '02627260', 10, '02627300', 'IOSXTIO', 'IS IT BUSY ?')
+
     d.insert('02651100', first='02651110', inc=10, limit='02652000',
              lines=Deck.comment(
         "ORB TEMPLATE. EVERYTHING EXCEPT THE CCW ADDRESS, WHICH IOSTCAW "
@@ -300,7 +367,54 @@ def dmkios():
         "         MVC   CSW+4(4),IOBIDST STATUS AND RESIDUAL COUNT",
         "         MVC   CSW+1(3),IOBICCW+1 CCW ADDRESS, LOW 3 BYTES",
         "         B     IOSCC1         NOW PROCEED AS S/370 DID",
+        "         SPACE 1",
+    ] + Deck.comment("IOSXTIO NORMALISES TSCH BACK TO TIO'S CONDITION CODES. TIO CC"
+        "THE DEVICE WAS FREE; TSCH CC1 MEANS NOTHING IS PENDING, WHICH"
+        "SAME FACT WITH THE OPPOSITE CODE. WHEN STATUS IS PRESENT A CS"
+        "BUILT AT X'40' SO EVERY TM CSW+4 AROUND THE CALL SITES STILL") + [
+        "         SPACE 1",
+        "IOSXTIO  DS    0H             TSCH, WITH TIO'S CONDITION CODE",
+        "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         TSCH  IOBIRB         TEST SUBCHANNEL",
+        "         BC    4,IOSXTIOF     CC1: NOTHING PENDING = FREE",
+        "         BC    3,IOSXTIOX     CC2 AND CC3 PASS THROUGH",
+        "         MVI   CSW,X'00'      BUILD THE CSW THE CALLER EXPECT",
+        "         MVC   CSW+1(3),IOBICCW+1  CCW ADDRESS",
+        "         MVC   CSW+4(4),IOBIDST  STATUS AND COUNT",
+        "         LA    R15,1          TELL THE CALLER CSW STORED,",
+        "         LCR   R15,R15        WHICH IS CC1. LTR WOULD GIVE CC",
+        "         BR    R14",
+        "IOSXTIOF DS    0H             DEVICE FREE: TIO CALLED THAT CC",
+        "         SR    R15,R15        ZERO RESULT, SO CC0",
+        "IOSXTIOX DS    0H",
+        "         BR    R14",
+        "         SPACE 1",
+        "IOSXHIO  DS    0H             HSCH REPLACES HIO AND HDV ALIKE",
+        "*  THE DISTINCTION WAS BETWEEN HALTING A CHANNEL AND HALTING",
+        "*  DEVICE, AND A SUBCHANNEL IS ALWAYS EXACTLY ONE DEVICE. THE",
+        "*  CONDITION CODES ALREADY AGREE CLOSELY ENOUGH THAT THE",
+        "*  BC 8+2+1 MASKS AT THE CALL SITES ARE LEFT ALONE.",
+        "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         HSCH  0              HALT SUBCHANNEL",
+        "         BR    R14",
+        "         SPACE 1",
+        "IOSXSIO  DS    0H             SSCH FOR THE SENSE PATH",
+        "         MVC   IOBORB,ORBTMPL BUILD THE ORB",
+        "         MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET",
+        "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         SSCH  IOBORB         START SUBCHANNEL",
+        "         BR    R14",
+    
     ])
+
+    # 02654000 is the sense SSCH.  It comes after the shims because UPDATE
+    # reads the file once, forward, and its anchor is higher than theirs.
+    d.replace('02654000', first='02654100', inc=100, limit='02655000', lines=[
+        "IOSNSIO  STM   R14,R1,IOBXSAV  ATTEMPT TO DO SENSE",
+        "         BAL   R14,IOSXSIO",
+        "         LM    R14,R1,IOBXSAV",
+    ])
+
 
     # 5. XABLOKS for ORB5F and ORBLPMOK.  Placed with the other COPYs so the
     #    DSECTs land after the CSECT, which is where block definitions
