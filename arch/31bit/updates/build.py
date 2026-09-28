@@ -46,6 +46,7 @@ XA16 = 'XA0016DK'
 XA17 = 'XA0017DK'
 XA18 = 'XA0018DK'
 XA19 = 'XA0019DK'
+XA20 = 'XA0020DK'
 
 
 def psa():
@@ -351,6 +352,18 @@ def dmkios():
 
     call('01525000', '01525100', 100, '01526000', 'IOSXHIO',
          'TRY AGAIN TO HALT IT', lab='HIORLOOP')
+    d.replace('01563000', first='1563010', inc=10,
+              limit=next_seq(SRC + '/DMKIOS.ASSEMBLE', '01563000'),
+              lines=Deck.comment("WAS LCTL C2,C2,TEMPSAVE. CR2 IS THE DUCT ORIGIN ON ESA/390, NOT A CHANNEL MASK, AND THERE IS NO PER-CHANNEL MASK TO PUT IT IN INSTEAD. THE STCTL AND THE ARITHMETIC ABOVE ARE HARMLESS AND STAY, SO NO LABEL MOVES. DISABLING A FAILING CHANNEL DURING CHANNEL-CHECK RECOVERY: THE CHANNEL SUBSYSTEM OWNS PATH RECOVERY NOW.") + [
+        "         DS    0H             THE LCTL IS GONE. I-73.",
+    ])
+
+    d.replace('01585000', first='1585010', inc=10,
+              limit=next_seq(SRC + '/DMKIOS.ASSEMBLE', '01585000'),
+              lines=Deck.comment("WAS LCTL C2,C2,TEMPSAVE. CR2 IS THE DUCT ORIGIN ON ESA/390, NOT A CHANNEL MASK, AND THERE IS NO PER-CHANNEL MASK TO PUT IT IN INSTEAD. THE STCTL AND THE ARITHMETIC ABOVE ARE HARMLESS AND STAY, SO NO LABEL MOVES. REENABLING IT AFTERWARDS.") + [
+        "         DS    0H             THE LCTL IS GONE. I-73.",
+    ])
+
     call('02617000', '02617100', 100, '02618000', 'IOSXTIO',
          "SEE IF IT'S REALLY BUSY")
     call('02627250', '02627260', 10, '02627300', 'IOSXTIO', 'IS IT BUSY ?')
@@ -828,6 +841,19 @@ def dmkiot():
          "         CLC   IOBRADD(2),IOINTPRM+2 IS THIS ONE FOR US?"),
         ('00324000', '00324100', 100, '00325000',
          "         LH    R3,IOINTPRM+2  ALSO THE DEVICE ADDRESS."),
+        # --- CR2, twice, either side of the interrupt-entry path: the S/370
+        #     code masks the failing channel and restores it afterwards.  On
+        #     ESA/390 CR2 is the dispatchable-unit-control-table origin and
+        #     there is no per-channel mask to put it in instead, so the load
+        #     goes.  The STCTL and the arithmetic above each one are harmless
+        #     and stay, so no label or branch target moves.  I-73.
+        ('00346000', '00346010', 10, None,
+         Deck.comment("WAS LCTL C2,C2,TEMPSAVE -- MASK THE FAILING "
+                      "CHANNEL. I-73.")
+         + ["         DS    0H             THE LCTL IS GONE"]),
+        ('00369000', '00369010', 10, None,
+         Deck.comment("WAS LCTL C2,C2,TEMPSAVE -- AND RESTORE IT.")
+         + ["         DS    0H             THE LCTL IS GONE"]),
         ('00410100', '00410110', 10, '00410200',
          "         CLC   IOINTPRM+2(2),IOBRADD"),
         ('00513000', '00513100', 100, '00514000',
@@ -839,7 +865,9 @@ def dmkiot():
         ('00873000', '00873100', 100, '00874000',
          "         CLC   IOINTPRM+2(2),2(R14) ALTERNATE CONSOLE?"),
     ):
-        d.replace(seq, first=first, inc=inc, limit=limit, lines=[text])
+        d.replace(seq, first=first, inc=inc,
+                  limit=limit or next_seq(SRC + '/DMKIOT.ASSEMBLE', seq),
+                  lines=text if isinstance(text, list) else [text])
     return d
 
 
@@ -1034,6 +1062,21 @@ def dmkcpi():
     ])
 
     cpi('01726000', "STRTSIO  XASIO R15            START SENSE TO DEVICE")
+    # --- CR2, twice, around an LPSW that waits for a 3277 interruption:
+    #     save CR2, load a CHANMASK, wait, restore.  On ESA/390 the wait is
+    #     governed by the PSW I/O bit and CR6, both already right, so dropping
+    #     both loads leaves it enabled for all I/O -- which is what it wants,
+    #     since CHANRET only returns and retries.  I-73.
+    for seq, why in (('01749000', 'LOAD OUR NEW MASK'),
+                     ('01752000', 'RESTORE CTRL REG')):
+        d.replace(seq, first=str(int(seq) + 10).zfill(8), inc=10,
+                  limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', seq),
+                  lines=Deck.comment(
+            "WAS LCTL C2,C2,... -- %s. CR2 IS THE DUCT ORIGIN ON ESA/390. "
+            "THE WAIT IS GOVERNED BY THE PSW I/O BIT AND CR6. I-73." % why) + [
+            "         DS    0H             THE LCTL IS GONE",
+        ])
+
     cpi('01758000', "TSTGRF   XATIO R15            TEST FOR SENSE END")
 
     # --- The work area, after TSTGRF's `BR R14` at 01761000 and before the
@@ -1281,6 +1324,21 @@ def dmkckp():
     ])
 
     # --- L5: 00684000/00685000 and 00690000/00691000, separated by live code.
+    # --- CR2 and CR3 together.  `LCTL C2,C3,X8FF` loads X'FFFFFFFF' into
+    #     both from a field of FFs, to "enable all channels" before the
+    #     checkpoint write.  On ESA/390 CR2 is the dispatchable-unit-control-
+    #     table origin and CR3 is the PSW-key mask and secondary ASN, so it
+    #     would set two registers wrong at once -- the kind of site a scan for
+    #     `C2` never sees, because it names a range.  I-73.
+    d.replace('00546000', first='00546010', inc=10,
+              limit=next_seq(SRC + '/DMKCKP.ASSEMBLE', '00546000'),
+              lines=Deck.comment(
+        "WAS LCTL C2,C3,X8FF -- ENABLE ALL CHANNELS. NEITHER REGISTER IS A "
+        "CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O SUBCLASS MASK AND "
+        "ALREADY HAS ALL EIGHT. I-73.") + [
+        "         DS    0H             THE LCTL IS GONE",
+    ])
+
     one('00684000', ["CKPST5   XASIO R1             SLAM IT TO THE MSC"])
     one('00685000', ["         BC    2,CKPST5       BUSY, KEEP TRYING..."])
     one('00690000', ["CKPWT5   XATIO R1             CHECK OUT STATUS"])
@@ -1411,6 +1469,12 @@ def dmkdmp():
     def blk(frm, to, lines, first=None, inc=100):
         d.replace(frm, to, first=first or str(int(frm) + inc), inc=inc,
                   limit=nxt(to), lines=lines)
+
+    d.replace('00295000', first='00295010', inc=10,
+              limit=next_seq(SRC + '/DMKDMP.ASSEMBLE', '00295000'),
+              lines=Deck.comment("WAS LCTL C2,C2,ALLONES -- RE-ENABLE CHANNEL 0. THERE IS NO CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O SUBCLASS MASK AND IS ALREADY ALL EIGHT SUBCLASSES. I-73.") + [
+        "         DS    0H             THE LCTL IS GONE. I-73.",
+    ])
 
     one('00710300', ["         XASIO R15            START IO"])
 
@@ -1754,6 +1818,46 @@ def dmkvsj():
     return d
 
 
+def dmkfre():
+    """Three CR2 loads that meant "disable channel zero while we are extending".
+
+        TS    XTNDLOCK-PSA(R14)  TEST & SET 'EXTEND LOCK'
+        BNZ   ERROR10            EXTEND WHILE EXTENDING -- DIE NOW
+        ...
+        STCTL C2,C2,TEMPSAVE     GET CURRENT EXTENDED IO MASKS
+        NI    TEMPSAVE,X'7F'     DISABLE CHANNEL ZERO
+        LCTL  C2,C2,TEMPSAVE     WHILE WE ARE EXTENDING
+
+    On ESA/390 CR2 is the dispatchable-unit-control-table origin, so the load
+    writes a channel mask into a register that is not one.  What to put there
+    instead is the interesting question, and the answer is nothing.
+
+    **The mutual exclusion does not depend on it.**  `TS XTNDLOCK` two
+    instructions earlier is the real lock, and it aborts on re-entry.  The CR2
+    masking is belt and braces for channel 0 alone -- devices on other channels
+    could always interrupt -- so removing it weakens a guard that was already
+    partial rather than removing the guard.
+
+    **And the obvious substitute would be worse.**  The nearest ESA/390
+    equivalent is masking the I/O-interruption subclass in CR6, but every
+    subchannel is ISC 0 here, so that would mask *all* I/O -- and the extend
+    calls `DMKPTRFR`, which does paging I/O and waits for it.  A faithful-
+    looking conversion would deadlock the very path it was protecting.  `I-73`.
+    """
+    d = Deck(XA20)
+    for seq in ('00645000', '00698000', '00723000'):
+        d.replace(seq, first=str(int(seq) + 10).zfill(8), inc=10,
+                  limit=next_seq(SRC + '/DMKFRE.ASSEMBLE', seq),
+                  lines=Deck.comment(
+            "WAS LCTL C2,C2,TEMPSAVE -- DISABLE CHANNEL ZERO WHILE "
+            "EXTENDING. TS XTNDLOCK IS THE REAL LOCK AND IS UNCHANGED; "
+            "MASKING CR6 INSTEAD WOULD DEADLOCK THE DMKPTRFR CALL INSIDE "
+            "THE EXTEND. I-73.") + [
+            "         DS    0H             THE LCTL IS GONE",
+        ])
+    return d
+
+
 def dmkcfo():
     """The `SET CPASSIST` command's CR6 store, which is the last way in.
 
@@ -1867,6 +1971,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
         [(XA10, 'CHANNEL CHECK: NO LCL ANALYSIS, TERMINATE INSTEAD')])
 
+    e = dmkfre()
+    e.write(os.path.join(HERE, 'DMKFRE.%s' % XA20))
+    aux(os.path.join(HERE, 'DMKFRE.AUXLCL'),
+        [(XA20, 'NO CHANNEL MASK: CR2 IS THE DUCT ORIGIN ON ESA/390')])
+
     f = dmkcfo()
     f.write(os.path.join(HERE, 'DMKCFO.%s' % XA19))
     aux(os.path.join(HERE, 'DMKCFO.AUXLCL'),
@@ -1906,7 +2015,8 @@ def main():
                  'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL',
                  'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL',
                  'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL',
-                 'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL',
+                 'DMKFRE.%s' % XA20, 'DMKFRE.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

@@ -42,6 +42,21 @@ TESTCHAN CR    R1,R1          ALWAYS AVAILABLE: SETS CC0       XA0004DK
 HIORLOOP STM   R14,R1,IOBXSAV  TRY AGAIN TO HALT IT            XA0004DK         
          BAL   R14,IOSXHIO                                     XA0004DK         
          LM    R14,R1,IOBXSAV                                  XA0004DK         
+./ R 01563000          $ 1563010 010                                            
+*  WAS LCTL C2,C2,TEMPSAVE. CR2 IS THE DUCT ORIGIN ON          XA0004DK         
+*  ESA/390, NOT A CHANNEL MASK, AND THERE IS NO PER-CHANNEL    XA0004DK         
+*  MASK TO PUT IT IN INSTEAD. THE STCTL AND THE ARITHMETIC     XA0004DK         
+*  ABOVE ARE HARMLESS AND STAY, SO NO LABEL MOVES. DISABLING   XA0004DK         
+*  A FAILING CHANNEL DURING CHANNEL-CHECK RECOVERY: THE        XA0004DK         
+*  CHANNEL SUBSYSTEM OWNS PATH RECOVERY NOW.                   XA0004DK         
+         DS    0H             THE LCTL IS GONE. I-73.          XA0004DK         
+./ R 01585000          $ 1585010 010                                            
+*  WAS LCTL C2,C2,TEMPSAVE. CR2 IS THE DUCT ORIGIN ON          XA0004DK         
+*  ESA/390, NOT A CHANNEL MASK, AND THERE IS NO PER-CHANNEL    XA0004DK         
+*  MASK TO PUT IT IN INSTEAD. THE STCTL AND THE ARITHMETIC     XA0004DK         
+*  ABOVE ARE HARMLESS AND STAY, SO NO LABEL MOVES. REENABLING  XA0004DK         
+*  IT AFTERWARDS.                                              XA0004DK         
+         DS    0H             THE LCTL IS GONE. I-73.          XA0004DK         
 ./ R 02617000          $ 02617100 100                                           
          STM   R14,R1,IOBXSAV  SEE IF IT'S REALLY BUSY         XA0004DK         
          BAL   R14,IOSXTIO                                     XA0004DK         

@@ -8,6 +8,12 @@
          CLC   IOBRADD(2),IOINTPRM+2 IS THIS ONE FOR US?       XA0012DK         
 ./ R 00324000          $ 00324100 100                                           
          LH    R3,IOINTPRM+2  ALSO THE DEVICE ADDRESS.         XA0012DK         
+./ R 00346000          $ 00346010 010                                           
+*  WAS LCTL C2,C2,TEMPSAVE -- MASK THE FAILING CHANNEL. I-73.  XA0012DK         
+         DS    0H             THE LCTL IS GONE                 XA0012DK         
+./ R 00369000          $ 00369010 010                                           
+*  WAS LCTL C2,C2,TEMPSAVE -- AND RESTORE IT.                  XA0012DK         
+         DS    0H             THE LCTL IS GONE                 XA0012DK         
 ./ R 00410100          $ 00410110 010                                           
          CLC   IOINTPRM+2(2),IOBRADD                           XA0012DK         
 ./ R 00513000          $ 00513100 100                                           

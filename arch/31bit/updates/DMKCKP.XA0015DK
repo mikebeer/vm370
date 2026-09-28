@@ -46,6 +46,11 @@ CKPST4   XASIO R2             READ R0                          XA0015DK
          BC    7,CKPST4       TAKE ERROR PATH                  XA0015DK         
 CKPWT4   XATIO R2             TEST FOR COMPLETION              XA0015DK         
          BC    7,CKPWT4       TRY AGAIN                        XA0015DK         
+./ R 00546000          $ 00546010 010                                           
+*  WAS LCTL C2,C3,X8FF -- ENABLE ALL CHANNELS. NEITHER         XA0015DK         
+*  REGISTER IS A CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O  XA0015DK         
+*  SUBCLASS MASK AND ALREADY HAS ALL EIGHT. I-73.              XA0015DK         
+         DS    0H             THE LCTL IS GONE                 XA0015DK         
 ./ R 00684000          $ 684100 100                                             
 CKPST5   XASIO R1             SLAM IT TO THE MSC               XA0015DK         
 ./ R 00685000          $ 685100 100                                             

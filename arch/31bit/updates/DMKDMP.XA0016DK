@@ -1,3 +1,8 @@
+./ R 00295000          $ 00295010 010                                           
+*  WAS LCTL C2,C2,ALLONES -- RE-ENABLE CHANNEL 0. THERE IS NO  XA0016DK         
+*  CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O SUBCLASS MASK  XA0016DK         
+*  AND IS ALREADY ALL EIGHT SUBCLASSES. I-73.                  XA0016DK         
+         DS    0H             THE LCTL IS GONE. I-73.          XA0016DK         
 ./ R 00710300          $ 710400 100                                             
          XASIO R15            START IO                         XA0016DK         
 ./ R 00722000          $ 722100 100                                             

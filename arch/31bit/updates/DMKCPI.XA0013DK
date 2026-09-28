@@ -88,6 +88,16 @@ STRTGRF  XATIO R15            TEST DEVICE                      XA0013DK
          BC    2,STRTGRF      LOOP IF BUSY                     XA0013DK         
 ./ R 01726000          $ 1726100 100                                            
 STRTSIO  XASIO R15            START SENSE TO DEVICE            XA0013DK         
+./ R 01749000          $ 01749010 010                                           
+*  WAS LCTL C2,C2,... -- LOAD OUR NEW MASK. CR2 IS THE DUCT    XA0013DK         
+*  ORIGIN ON ESA/390. THE WAIT IS GOVERNED BY THE PSW I/O BIT  XA0013DK         
+*  AND CR6. I-73.                                              XA0013DK         
+         DS    0H             THE LCTL IS GONE                 XA0013DK         
+./ R 01752000          $ 01752010 010                                           
+*  WAS LCTL C2,C2,... -- RESTORE CTRL REG. CR2 IS THE DUCT     XA0013DK         
+*  ORIGIN ON ESA/390. THE WAIT IS GOVERNED BY THE PSW I/O BIT  XA0013DK         
+*  AND CR6. I-73.                                              XA0013DK         
+         DS    0H             THE LCTL IS GONE                 XA0013DK         
 ./ R 01758000          $ 1758100 100                                            
 TSTGRF   XATIO R15            TEST FOR SENSE END               XA0013DK         
 ./ I 01761000 $ 01761010 010                                                    

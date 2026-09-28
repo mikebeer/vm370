@@ -1,0 +1,18 @@
+./ R 00645000          $ 00645010 010                                           
+*  WAS LCTL C2,C2,TEMPSAVE -- DISABLE CHANNEL ZERO WHILE       XA0020DK         
+*  EXTENDING. TS XTNDLOCK IS THE REAL LOCK AND IS UNCHANGED;   XA0020DK         
+*  MASKING CR6 INSTEAD WOULD DEADLOCK THE DMKPTRFR CALL        XA0020DK         
+*  INSIDE THE EXTEND. I-73.                                    XA0020DK         
+         DS    0H             THE LCTL IS GONE                 XA0020DK         
+./ R 00698000          $ 00698010 010                                           
+*  WAS LCTL C2,C2,TEMPSAVE -- DISABLE CHANNEL ZERO WHILE       XA0020DK         
+*  EXTENDING. TS XTNDLOCK IS THE REAL LOCK AND IS UNCHANGED;   XA0020DK         
+*  MASKING CR6 INSTEAD WOULD DEADLOCK THE DMKPTRFR CALL        XA0020DK         
+*  INSIDE THE EXTEND. I-73.                                    XA0020DK         
+         DS    0H             THE LCTL IS GONE                 XA0020DK         
+./ R 00723000          $ 00723010 010                                           
+*  WAS LCTL C2,C2,TEMPSAVE -- DISABLE CHANNEL ZERO WHILE       XA0020DK         
+*  EXTENDING. TS XTNDLOCK IS THE REAL LOCK AND IS UNCHANGED;   XA0020DK         
+*  MASKING CR6 INSTEAD WOULD DEADLOCK THE DMKPTRFR CALL        XA0020DK         
+*  INSIDE THE EXTEND. I-73.                                    XA0020DK         
+         DS    0H             THE LCTL IS GONE                 XA0020DK         

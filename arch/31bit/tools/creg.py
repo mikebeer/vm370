@@ -57,6 +57,17 @@ HANDLED = {
     ('DMKDSP', '02542000'): 'was 0(R6), now CPCREG6 -- XA0006DK',
     ('DMKPRV', '00780000'): 'was VMMICRO, now CPCREG6 -- XA0007DK',
     ('DMKCFO', '00612200'): 'the ST that wrecked CPCREG6 is gone -- XA0019DK',
+    ('DMKCKP', '00546000'): 'LCTL C2,C3 removed -- XA0015DK',
+    ('DMKCPI', '01749000'): 'removed -- XA0013DK',
+    ('DMKCPI', '01752000'): 'removed -- XA0013DK',
+    ('DMKDMP', '00295000'): 'removed -- XA0016DK',
+    ('DMKFRE', '00645000'): 'removed -- XA0020DK',
+    ('DMKFRE', '00698000'): 'removed -- XA0020DK',
+    ('DMKFRE', '00723000'): 'removed -- XA0020DK',
+    ('DMKIOS', '01563000'): 'removed -- XA0004DK',
+    ('DMKIOS', '01585000'): 'removed -- XA0004DK',
+    ('DMKIOT', '00346000'): 'removed -- XA0012DK',
+    ('DMKIOT', '00369000'): 'removed -- XA0012DK',
 }
 
 # Sites left alone, with the reason.  A store is not a load: STCTL saves
@@ -68,6 +79,13 @@ DECLARED = {
         'area the HARDWARE writes -- and ESA/390 lays that area out '
         'differently, so the displacement is probably wrong. Only reachable on '
         'a machine check, which Hercules does not generate. I-72.',
+    ('DMKSAV', '00418600'):
+        'inside DMKSAVNC, which the standalone loader enters on the BUILD '
+        'machine in S/370 mode and which must stay S/370 -- the same reason '
+        'its five SIO and TIO sites are declared. I-59.',
+    ('DMKLD00E', '02869170'):
+        'the nucleus loader is shared with the CMS build and leaves the '
+        'conversion scope entirely. I-60.',
 }
 
 OPS = ('LCTL', 'STCTL')
