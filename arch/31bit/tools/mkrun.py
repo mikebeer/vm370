@@ -31,6 +31,9 @@ Each spec is one of:
     cmd:<text>[:<secs>]   run one CMS command, default 10 seconds
     herc:<text>[:<secs>]  run one Hercules command, default 8 seconds
 
+`--punch <file>` attaches the card punch ahead of the IPL; see below for why
+that is the only place it can go.
+
 Specs run in the order given, so a `read:` of a macro, then `mac:DMKLCL`, then
 `asm:` of something that uses it, is a complete sequence.  Hand-editing the
 generated rc is how run33 was lost -- CMS dropped to CP READ and every later
@@ -61,9 +64,12 @@ UPDATES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 #     vmfasm dmkcpi      T= 0.53/1.08    the largest single module
 #     vmfasm dmkcns      T= 0.22/0.43
 #
-# So an assembly is about a second of work and the old 95-second pause was
-# ninety-four seconds of waiting, eleven times over in one run.  30 seconds
-# covers the slowest module with room to spare; a READCARD is about 8.  I-33.
+# BUT `T=` is CMS's VIRTUAL CPU time, not wall clock, and I read it as wall
+# clock and cut the pause to 30 -- after which two runs issued `vmfasm` and
+# reached `cp shutdown` before the assembly had printed anything.  Emulated
+# wall time is what the pause has to cover, and that lies somewhere between 30
+# and 95 seconds, so 75 with the old 95 as the known-good fallback.  The
+# lesson of I-33 stands; the number I derived from it did not.
 #
 # The null line after IPL answers DMKWRM's start-type prompt in the normal case,
 # where warm-start data exists and a default start is wanted.  `cold` follows it
@@ -126,7 +132,12 @@ def card(text, src=''):
 
 def main():
     ce, run = sys.argv[1], sys.argv[2]
-    specs = [a for a in sys.argv[3:] if not a.startswith('--')]
+    skip = set()
+    for i, a in enumerate(sys.argv):
+        if a == '--punch':
+            skip.add(i + 1)
+    specs = [a for i, a in enumerate(sys.argv[3:], 3)
+             if not a.startswith('--') and i not in skip]
 
     # `--bare` omits the CMS boot entirely, for a STANDALONE ipl: loading the
     # punched CP deck through the card reader runs DMKLD00E and DMKSAVNC with
@@ -134,6 +145,33 @@ def main():
     # nothing to purge.  Everything still comes from specs rather than a
     # hand-edited rc, which is the rule run33 taught.
     rc = [] if '--bare' in sys.argv else [BOOT]
+
+    # `--punch <file>` attaches the card punch AFTER the IPL and before the
+    # specs.  Getting a deck out of CP takes TWO runs and the reason is not
+    # obvious: VMFLOAD's spool file is not queued when VMFLOAD ends, it is
+    # queued when CP SHUTS DOWN.  So `CP START 00D` in the same run finds an
+    # empty queue and punches nothing, and the deck comes out during the NEXT
+    # run instead.
+    #
+    # Neither the config nor a pre-IPL devinit survives to catch it.  Both were
+    # tried.  With CE's own line
+    #
+    #     000D    3525    io/punch.txt ascii
+    #
+    # 18,894 records went into that ascii punch and were lost; pointing that
+    # same line at a binary file did not help either, and a `devinit` placed
+    # ahead of BOOT is undone by the IPL's system reset -- the run reported
+    # `PUN 00D START FOR OUTPUT` for 18,894 records and produced no file at
+    # all.  Only a devinit issued after the IPL takes.  So the shape that
+    # works is: run N does the VMFLOAD and shuts down; run N+1 devinits the
+    # punch after IPL and issues `CP START 00D CLASS A NOSEP`.
+    #
+    # NO `ascii` operand: an object deck is EBCDIC, and the translation would
+    # mangle every TXT record while leaving the ESD card names readable, so a
+    # corrupted deck would still scan as if it were fine.  I-78.
+    if '--punch' in sys.argv:
+        rc.append('devinit 000d %s\npause 10\n'
+                  % sys.argv[sys.argv.index('--punch') + 1])
     n = 0
     asm = []
     mac = []
@@ -212,9 +250,9 @@ def main():
     for text, secs, guest in cmd:
         rc.append('%s%s\npause %d\n' % ('/' if guest else '', text, secs))
     for lib in mac:
-        rc.append('/vmfmac %s %s\npause 45\n' % (lib.lower(), lib.lower()))
+        rc.append('/vmfmac %s %s\npause 90\n' % (lib.lower(), lib.lower()))
     for mod in asm:
-        rc.append('/vmfasm %s dmklcl\npause 30\n' % mod.lower())
+        rc.append('/vmfasm %s dmklcl\npause 75\n' % mod.lower())
     if '--bare' in sys.argv:
         rc.append('exit\n')          # no CP to shut down
     else:
