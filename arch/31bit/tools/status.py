@@ -68,6 +68,7 @@ HANDLED = {
 }
 HANDLED['DMKCPI'] = 'run55'
 HANDLED.update({'DMKCFO': 'run53', 'DMKFRE': 'run55', 'DMKPSA': 'run53'})
+HANDLED['DMKIOT'] = 'run58'
 
 # Where 'clean on CE, TXTLCL produced' undersells what the deck actually did.
 CONVERTED_NOTE = {
@@ -77,6 +78,7 @@ CONVERTED_NOTE = {
     'DMKCFO': 'CPCREG6 is the IO subclass mask now -- I-71',
     'DMKFRE': 'three CR2 channel masks removed -- I-73',
     'DMKPSA': 'reassembled for CPCREG6; TXTHRC, not TXTLCL',
+    'DMKIOT': 'all 5 channel sites, via the XAIOB macro set',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
