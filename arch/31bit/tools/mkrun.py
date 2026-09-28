@@ -53,8 +53,17 @@ import sys
 UPDATES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        '..', 'updates')
 
-# Pauses are sized to the work rather than padded: a VMFASM of a nucleus module
-# takes 45-70 seconds of emulated CPU on this host, a READCARD about 8.  I-33.
+# Pauses are sized to the work rather than padded, and the sizes here are
+# MEASURED rather than estimated -- which took two goes.  `Ready; T=` gives CPU
+# and total seconds for each command:
+#
+#     asmdmk dmklcl      T=35.31/65.81   all 186 nucleus modules
+#     vmfasm dmkcpi      T= 0.53/1.08    the largest single module
+#     vmfasm dmkcns      T= 0.22/0.43
+#
+# So an assembly is about a second of work and the old 95-second pause was
+# ninety-four seconds of waiting, eleven times over in one run.  30 seconds
+# covers the slowest module with room to spare; a READCARD is about 8.  I-33.
 #
 # The null line after IPL answers DMKWRM's start-type prompt in the normal case,
 # where warm-start data exists and a default start is wanted.  `cold` follows it
@@ -119,7 +128,12 @@ def main():
     ce, run = sys.argv[1], sys.argv[2]
     specs = [a for a in sys.argv[3:] if not a.startswith('--')]
 
-    rc = [BOOT]
+    # `--bare` omits the CMS boot entirely, for a STANDALONE ipl: loading the
+    # punched CP deck through the card reader runs DMKLD00E and DMKSAVNC with
+    # no operating system underneath, so there is nothing to log on to and
+    # nothing to purge.  Everything still comes from specs rather than a
+    # hand-edited rc, which is the rule run33 taught.
+    rc = [] if '--bare' in sys.argv else [BOOT]
     n = 0
     asm = []
     mac = []
@@ -193,14 +207,18 @@ def main():
     # decks, and nothing a `cmd:` might do is harmed by the CP disks being
     # there.  The VMFMAC/VMFASM block still follows, so a command can set
     # something up for an assembly.
-    rc.append('/cpacc\npause 25\n')
+    if '--bare' not in sys.argv:
+        rc.append('/cpacc\npause 25\n')
     for text, secs, guest in cmd:
         rc.append('%s%s\npause %d\n' % ('/' if guest else '', text, secs))
     for lib in mac:
-        rc.append('/vmfmac %s %s\npause 70\n' % (lib.lower(), lib.lower()))
+        rc.append('/vmfmac %s %s\npause 45\n' % (lib.lower(), lib.lower()))
     for mod in asm:
-        rc.append('/vmfasm %s dmklcl\npause 95\n' % mod.lower())
-    rc.append('/cp shutdown\npause 25\nexit\n')
+        rc.append('/vmfasm %s dmklcl\npause 30\n' % mod.lower())
+    if '--bare' in sys.argv:
+        rc.append('exit\n')          # no CP to shut down
+    else:
+        rc.append('/cp shutdown\npause 25\nexit\n')
 
     with open(os.path.join(ce, 'hercules.rc'), 'w') as f:
         f.write(''.join(rc))
