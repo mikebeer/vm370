@@ -38,6 +38,35 @@ all 240 static CCW statements in the nucleus are untouched — including the
 self-relative ones, `CCW X'08',*-8-DMKCKP+X'800',0,0`, because CCWs keep both
 their layout and their eight bytes.
 
+## Why writing a CSW at X'40' is architecturally safe, not just convenient
+
+The shim writes a CSW at the architected CSW location and reads the CAW from
+X'48', which looked like a pragmatic reuse of storage. The ESA/390 assigned
+storage layout says it is better than that — those words are **reserved for
+S/370 and untouched by ESA/390 hardware**:
+
+    /*040*/ DBLWRD csw;       /* Channel status word (S370)*/
+    /*048*/ FWORD  caw;       /* Channel address word(S370)*/
+    /*0A8*/ FWORD  chanid;    /* Channel id (S370)         */
+    /*0AC*/ FWORD  ioelptr;   /* I/O extended logout (S370)*/
+    /*0B0*/ FWORD  lcl;       /* Limited chan logout (S370)*/
+    /*0B8*/ FWORD  ioid;      /* I/O interrupt device id   */
+    /*0BC*/ FWORD  ioparm;    /* I/O interrupt parameter   */
+
+Three consequences worth having in writing.
+
+The CSW and CAW are ours to use as scratch: no ESA/390 hardware writes either,
+so the shim cannot be overwritten under it. That also legitimises `DMKLD00E`'s
+`ZCSW EQU 64` / `ZCAW EQU 72` and its three `ST 2,72` by absolute address — they
+are storing into a word the architecture leaves alone.
+
+The three fields the `PSA` rename marked `S370CHID`, `S370IOEL` and `S370ECSW`
+are exactly the three the architecture itself marks `(S370)`, at X'A8', X'AC'
+and X'B0'. The rename agreed with the architecture without having consulted it.
+
+And `IOSSID` at X'B8' with `IOINTPRM` at X'BC' match `ioid` and `ioparm`
+precisely, so `MVC SAVEDEV(8),IOSSID` in `DMKCKP` saves the right eight bytes.
+
 ## The condition-code inversion, written once
 
 | | cc0 | cc1 | cc2 | cc3 |
@@ -108,3 +137,41 @@ needs the name it could have used all along.
 Forward branches over unconverted code are correct as they stand and are left
 alone — they belong to the 64-bit pass, which gets the full list of 912 from
 `tools/selfrel.py`.
+
+## DMKLD00E: three suspected problems, one real
+
+`DMKLD00E` is the nucleus loader — the first CP code that runs — and it looked
+like the hardest of the four. Checking each worry in turn, only one survived.
+
+**It has no PSA symbols.** True, and it is the real problem. `DMKLD00E` defines
+its own `ZCSW EQU 64` and `ZCAW EQU 72` and also stores by absolute address,
+`ST 2,72` three times (`I-53`). `XAIO`'s subroutines reference `CAW` and `CSW`,
+which would not resolve there.
+
+*Fix:* `XAIOWORK` now takes `CAW=` and `CSW=` keyword parameters defaulting to
+`CAW` and `CSW`, so `DMKLD00E` invokes `XAIOWORK CAW=ZCAW,CSW=ZCSW`. The names
+are needed only by the subroutines, and `XAIOWORK` is what emits them, so they
+are ordinary keyword parameters — no `GBLC`, no per-call-site clutter, and the
+other three modules are unaffected.
+
+*And the absolute stores need no change at all.* `ZCAW EQU 72` is X'48', which
+the ESA/390 assigned-storage layout reserves for S/370 and never writes. So
+`ST 2,72` is storing into a word the architecture leaves alone, and `XAIO` reads
+the same word. Unlike `DMKCKP`'s `184`, this one is harmless.
+
+**It has no register equates.** False. `COPY EQU` at seq 02916000 brings
+`R0`-`R15`, and Assembler XF's second pass resolves the forward references. None
+of the four bootstrap modules defines them locally; all four get them from
+`EQU.COPY`.
+
+**Its bare register numbers will not fit the macro.** False. `XAIO` expands
+`LR R1,&DEV`, and `&DEV` is substituted textually, so `XASIO 2` assembles
+exactly as `XASIO R2` does. `DMKLD00E`'s `0(2)`, `0(8)` and `0(1)` need only the
+register number carried across.
+
+**What is left** is ordinary work: 19 sites, 7 backward branches to label, and
+two oddities to leave alone deliberately — `BC 1,*-8` at 00421000, which spans
+back over a `TM ZCSW+4,X'10'` onto the `TIO` and so does need a label; and
+`LPSW *-8` at 02090000, which loads a PSW from eight bytes before itself. That
+last one is not near any converted instruction, so it stays, and it belongs to
+the 64-bit pass along with the other 905.

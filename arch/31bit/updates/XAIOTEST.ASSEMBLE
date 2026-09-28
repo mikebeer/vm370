@@ -75,4 +75,5 @@ TESTBAD  DS    0H
          SPACE 2
          LTORG
          PSA
+         COPY  XABLOKS        FOR ORBCCWFM
          END

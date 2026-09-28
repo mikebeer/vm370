@@ -252,9 +252,23 @@ what M5 delivers — needs none of them.
 
 Less than the 240 figure suggests, because of where CCWs come from:
 
-* **The 240 static CCWs** are real work, but they are `CCW` macro invocations,
-  so the *macro* can emit either format. One macro change plus a reassembly
-  covers most of them, which is a far better position than 240 hand edits.
+* **The 240 static CCWs cannot be fixed by a macro.** I claimed they could, on
+  the assumption that `CCW` was a macro invocation. It is not: `CCW` is
+  Assembler XF's own instruction, XF has no `CCW1` (that arrived with Assembler
+  H), and XF **refuses to define a macro of that name at all** —
+  `IFO043 MACRO PROTOTYPE STATEMENT HAS INVALID OP CODE`, tested on CE as
+  `CCWTEST`. So a source macro cannot shadow it. `OPSYN` might, and CP uses it
+  nowhere; that is untested and would be the thing to try first.
+
+* **But the format is per-operation, which is the way out.** `ORB5_F` lives in
+  the ORB, so it is chosen per `SSCH` and not globally. Format-0 and format-1
+  channel programs can coexist in one running system. So the migration does not
+  have to be a flag day over 240 sites: the paths that actually need to reach
+  storage above 16 MB — paging I/O above all — can build format-1 CCWs
+  explicitly with `DC`, while every other path keeps its `CCW` statements and its
+  format-0 ORB untouched. That turns "240 edits" into "however many channel
+  programs need high storage", which is a much smaller and much better-targeted
+  number.
 * **Guest channel programs need no change at all.** A virtual machine is an
   S/370 machine and builds format-0 CCWs; `DMKCCW` already *translates* them
   into real channel programs rather than passing them through. So the switch is

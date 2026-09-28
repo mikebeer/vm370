@@ -266,7 +266,7 @@ def dmkios():
         "         DS    0F",
         "ORBTMPL  DC    1F'0'          INTERRUPTION PARAMETER",
         "         DC    X'00'          FLAG4: KEY ZERO",
-        "         DC    X'00'          FLAG5: FORMAT-0 CCWS -- R-27",
+        "         DC    AL1(ORBCCWFM)  FLAG5: CCW FORMAT -- R-27",
         "         DC    AL1(ORBLPMOK)  LPM -- MUST BE X'80'",
         "         DC    X'00'          FLAG7",
         "         DC    6F'0'          CCW ADDRESS AND PAD",
@@ -1030,6 +1030,13 @@ def dmkckp():
         "HOLDS EXECUTABLE CODE. I-55.") + [
         "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
     ])
+
+    # XAIO's subroutines take the CCW format from ORBCCWFM in XABLOKS, so the
+    # module needs that COPY.  It goes here, with DMKCKP's own COPY list just
+    # before END, and nowhere else: XABLOKS ends in DSECTs, so anything placed
+    # after it lands in the last DSECT instead of the CSECT.
+    d.insert('01723000', first='01723100', inc=100, limit='01724000',
+             lines=["         COPY  XABLOKS"])
     return d
 
 
@@ -1165,6 +1172,7 @@ def dmkdmp():
         "AFTER THE CLOSING ORG. DMKDMP'S ONLY CLEARS ARE XC SENSDATA(24) AND "
         "AN MVCL OVER REAL PAGES 1 TO 3, SO NOTHING ZEROES THIS. I-55.") + [
         "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+        "         COPY  XABLOKS        FOR ORBCCWFM, THE CCW FORMAT",
     ])
     return d
 

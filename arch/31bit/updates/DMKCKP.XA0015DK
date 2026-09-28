@@ -95,3 +95,5 @@ SAVEDEV  DS    2F             ERROR DEVICE: SSID AND PARM      XA0015DK
 *  LINE ABOVE AND ALLOCBUF BEGINS BELOW, AND BOTH ARE ZEROED   XA0015DK         
 *  AT RUNTIME. XAIOWORK HOLDS EXECUTABLE CODE. I-55.           XA0015DK         
          XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0015DK         
+./ I 01723000 $ 01723100 100                                                    
+         COPY  XABLOKS                                         XA0015DK         

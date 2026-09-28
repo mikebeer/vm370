@@ -1,0 +1,44 @@
+CCWTEST  TITLE 'CCWTEST - CAN A SOURCE MACRO SHADOW THE CCW INSTRUCTION'
+         PRINT GEN,DATA
+*---------------------------------------------------------------------*
+*  ONE QUESTION, DECIDED BY EXPERIMENT RATHER THAN BY ARGUMENT.        *
+*                                                                     *
+*  CP HAS 240 CCW STATEMENTS IN 23 NUCLEUS MODULES.  `CCW` IS          *
+*  ASSEMBLER XF'S OWN INSTRUCTION AND EMITS THE FORMAT-0 LAYOUT ONLY;  *
+*  XF HAS NO CCW1, WHICH ARRIVED WITH ASSEMBLER H.  SO WHEN REAL       *
+*  STORAGE OUTGROWS 16 MB AND FORMAT-1 CCWS BECOME NECESSARY (R-27),   *
+*  THE COST IS EITHER                                                  *
+*                                                                     *
+*    ONE MACRO,  IF A SOURCE MACRO NAMED CCW TAKES PRECEDENCE OVER     *
+*                THE ASSEMBLER INSTRUCTION OF THE SAME NAME, OR        *
+*    240 EDITS,  IF IT DOES NOT.                                       *
+*                                                                     *
+*  I CLAIMED THE FORMER IN 17-CARRY-FORWARD-64.MD WITHOUT CHECKING.    *
+*  THIS MODULE CHECKS.  IT DEFINES A CCW MACRO THAT EMITS A            *
+*  RECOGNISABLE EIGHT BYTES, THEN USES CCW TWICE.  WITH PRINT GEN THE  *
+*  LISTING SHOWS WHICH WON:                                            *
+*                                                                     *
+*    X'DDDDDDDDDDDDDDDD'  THE MACRO WON  -- ONE MACRO FIXES 240 SITES  *
+*    X'0200100000000050'  THE INSTRUCTION WON -- 240 EDITS, OR OPSYN   *
+*                                                                     *
+*  A THIRD OUTCOME IS POSSIBLE AND WOULD ALSO BE AN ANSWER: THE        *
+*  ASSEMBLER MAY REJECT THE DEFINITION OUTRIGHT.                       *
+*---------------------------------------------------------------------*
+         MACRO
+&NAME    CCW   &CODE,&ADDR,&FLAGS,&COUNT
+&NAME    DC    8X'DD'         MACRO EXPANSION MARKER
+         MEND
+         SPACE 2
+CCWTEST  CSECT
+DATA     DS    CL80
+         SPACE 1
+*  TWO USES, WITH OPERANDS THE ASSEMBLER INSTRUCTION WOULD ACCEPT, SO
+*  THAT WHICHEVER WINS PRODUCES EIGHT BYTES AND THE LISTING IS READABLE
+*  EITHER WAY.
+FIRST    CCW   X'02',DATA,X'00',80
+SECOND   CCW   X'01',DATA,X'40',16
+         SPACE 1
+*  A CONTROL: DC IS DEFINITELY THE ASSEMBLER'S, AND NOTHING SHADOWS IT.
+THIRD    DC    X'0000000000000000'
+         SPACE 2
+         END
