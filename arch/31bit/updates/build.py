@@ -1728,7 +1728,17 @@ def dmksav():
 
     # --- The work area, immediately before END.  XABLOKS must come after
     #     XAIOWORK and last of all, because it ends in DSECTs.
-    d.insert('00685000', first='00685100', inc=100, limit=nxt('00685000'),
+    # --- Anchored at 00684000, which is `COPY EQU`, and NOT at 00685000,
+    #     which is the `PSA` macro call.  `./ I 00685000` inserts AFTER that
+    #     record, so XAIOWORK expanded inside `PSA DSECT` -- where DS and DC
+    #     generate no storage and the subroutines generate no object code at
+    #     all.  The module still assembled clean, because every symbol was
+    #     defined: XAIOSIO and friends simply became OFFSETS INTO THE PSA.
+    #     With `USING PSA,R0` in force, `BAL R14,XAIOSIO` then branched to
+    #     absolute low storage, and the first IPL of the converted nucleus
+    #     took an operation exception at X'000208' -- inside TEMPSAVE, on a
+    #     stored TOD clock value.  I-77.
+    d.insert('00684000', first='00684100', inc=100, limit=nxt('00684000'),
              lines=Deck.comment(
         "NO XC OR MVCL EXISTS ANYWHERE IN DMKSAV, SO NOTHING ZEROES THIS AND "
         "THE PLACEMENT NEEDED NONE OF DMKCKP'S CARE. XABLOKS LAST: IT ENDS IN "

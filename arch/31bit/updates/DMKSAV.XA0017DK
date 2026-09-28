@@ -16,7 +16,7 @@ SAVST2   XASIO R10            START IT UP                      XA0017DK
          BC    7,SAVST2       UNTIL FREE                       XA0017DK         
 SAVWT2   XATIO R10            TEST FOR COMPLETION              XA0017DK         
          BC    7,SAVWT2       TRY AGAIN                        XA0017DK         
-./ I 00685000 $ 00685100 100                                                    
+./ I 00684000 $ 00684100 100                                                    
 *  NO XC OR MVCL EXISTS ANYWHERE IN DMKSAV, SO NOTHING ZEROES  XA0017DK         
 *  THIS AND THE PLACEMENT NEEDED NONE OF DMKCKP'S CARE.        XA0017DK         
 *  XABLOKS LAST: IT ENDS IN DSECTS. I-55.                      XA0017DK         

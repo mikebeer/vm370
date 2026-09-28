@@ -176,6 +176,58 @@ def audit(segs):
     print('%d S/370 sites left in the deck, %d ESA/390 sites in it' % (o, x))
 
 
+def loadmap(path):
+    """Assign each CSECT a load address the way the loader would, and report it.
+
+    The loader is what decides where a module lands, and when it goes wrong it
+    says so only on a printer that may not be listening.  This does the same
+    arithmetic on the host: walk the deck in order, and for each SD in an ESD
+    card give the section the next address, rounded up to a doubleword.  TXT
+    cards carry CSECT-RELATIVE addresses, so a module's absolute extent is its
+    base plus the highest TXT address and length it holds.
+
+    That is the loader's ESD pass, not its RLD pass, so the addresses are
+    right and the relocated contents are not -- which is enough to answer
+    "where did DMKSAVNC go" and "does anything overlap low storage".
+    """
+    addr, rows, cur = 0, [], None
+    for c in cards(path):
+        if kind(c) == 'ESD':
+            n = int.from_bytes(c[10:12], 'big')
+            for off in range(16, 16 + n, 16):
+                item = c[off:off + 16]
+                if len(item) < 16:
+                    break
+                name = item[0:8].decode('cp037').strip()
+                typ, ln = item[8], int.from_bytes(item[13:16], 'big')
+                if typ in (0x00, 0x04) and name:          # SD, PC
+                    addr = (addr + 7) & ~7
+                    cur = [name, addr, ln, 0]
+                    rows.append(cur)
+                    addr += ln
+        elif kind(c) == 'TXT' and cur is not None:
+            a2 = int.from_bytes(c[5:8], 'big')
+            n2 = int.from_bytes(c[10:12], 'big')
+            cur[3] = max(cur[3], a2 + n2)
+    print()
+    print('LOAD MAP, as the loader would assign it')
+    print('%-9s %-9s %-9s %-8s %s' % ('CSECT', 'FROM', 'TO', 'LENGTH', 'NOTE'))
+    print('-' * 62)
+    for name, base, ln, hi in rows:
+        note = ''
+        if hi > ln:
+            note = 'TXT OVERRUNS ITS ESD LENGTH by %d' % (hi - ln)
+        if base < 0x300 and ln:
+            note = (note + '  ' if note else '') + 'covers low storage'
+        print('%-9s %08X  %08X  %6d  %s' % (name, base, base + ln, ln, note))
+    print('-' * 62)
+    print('%d sections, %d bytes, top at %08X' % (len(rows), addr, addr))
+    for want in ('DMKSAVNC', 'DMKCPINT', 'DMKPSA'):
+        for name, base, ln, hi in rows:
+            if name == want:
+                print('  %-9s at %08X' % (name, base))
+
+
 def main():
     path = sys.argv[1]
     segs = segment(path)
@@ -204,6 +256,9 @@ def main():
                 print()
                 print('  %s: %d cards, %d bytes of text'
                       % (name, len(seg), len(t)))
+
+    if '--map' in sys.argv:
+        loadmap(path)
 
     if '--audit' in sys.argv:
         audit(segs)
