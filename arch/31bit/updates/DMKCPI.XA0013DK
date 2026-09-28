@@ -35,6 +35,16 @@ CPIDISCN DS    0H             NEXT SUBCHANNEL                  XA0013DK
          LA    R2,1(0,R2)     BUMP THE SUBCHANNEL NUMBER       XA0013DK         
          BCT   R3,CPIDISC     PROBE THE WHOLE RANGE            XA0013DK         
          DROP  R4                                              XA0013DK         
+./ R 00615000          $ 00615100 100                                           
+*  WAS LCTL C6,C6,ZEROES -- NO CP ASSIST UNTIL IPL COMPLETE.   XA0013DK         
+*  ZERO IS NOW NO I/O INTERRUPTIONS AT ALL.                    XA0013DK         
+         LCTL  C6,C6,CPCREG6  IO SUBCLASS MASK, NOT AN ASSIST  XA0013DK         
+./ R 00619000          $ 00619100 100                                           
+*  WAS MVC CPCREG6,ZEROES -- CLEAR CP ASSIST ENABLE FLAG.      XA0013DK         
+*  CPCREG6 IS THE IO SUBCLASS MASK NOW AND MUST NOT BE         XA0013DK         
+*  CLEARED; THE ASSIST IS ALREADY OFF BECAUSE EVERY ECPS:VM    XA0013DK         
+*  OPCODE IS S/370-ONLY.                                       XA0013DK         
+         DS    0H             THE CLEAR IS GONE, NOT MOVED     XA0013DK         
 ./ R 01045000          $ 1045100 100                                            
 CPIHIO   XAHIO R15            ISSUE HIO                        XA0013DK         
 ./ R 01053000 01056000 $ 01053100 100                                           
@@ -64,6 +74,13 @@ CPIOWNA  XATIO R15            DRAIN FOR CE/DE                  XA0013DK
 SNSIO    XASIO R15            ISSUE SENSE COMMAND              XA0013DK         
 ./ R 01587000          $ 1587100 100                                            
 SNTIO    XATIO R15            CLEAR THE SUBCHANNEL             XA0013DK         
+./ R 01653000          $ 1653100 100                                            
+         LCTL  C6,C6,CPCREG6  IO SUBCLASS MASK, NOT A MICBLOK  XA0013DK         
+./ R 01674000          $ 01674100 100                                           
+*  WAS LCTL C6,C6,ZEROES -- RESET ASSIST CONTROL REGISTER.     XA0013DK         
+*  THE VERY NEXT THING THIS MODULE DOES IS WRITE THE CONSOLE   XA0013DK         
+*  MESSAGE, WHICH NEEDS AN I/O INTERRUPTION. I-71.             XA0013DK         
+         LCTL  C6,C6,CPCREG6  RE-ASSERT THE IO SUBCLASS MASK   XA0013DK         
 ./ R 01719000          $ 1719100 100                                            
          XATIO R15            MAKE SURE IT EXISTS              XA0013DK         
 ./ R 01723000 01724000 $ 01723100 100                                           

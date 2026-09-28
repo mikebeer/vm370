@@ -1,3 +1,6 @@
+./ R 00780000          $ 00780100 100                                           
+*  WAS LCTL C6,C6,VMMICRO -- RELOAD ASSIST CREG.               XA0007DK         
+         LCTL  C6,C6,CPCREG6  IO SUBCLASS MASK, NOT AN ASSIST  XA0007DK         
 ./ R 01400000          $ 01400100 010                                           
 *  STIDC SIMULATION FOR A VIRTUAL MACHINE. R2 POINTS AT THE    XA0007DK         
 *  GUEST'S PAGE 0, AND AN S/370 GUEST'S STIDC MUST STILL       XA0007DK         

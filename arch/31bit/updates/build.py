@@ -45,6 +45,7 @@ XA15 = 'XA0015DK'
 XA16 = 'XA0016DK'
 XA17 = 'XA0017DK'
 XA18 = 'XA0018DK'
+XA19 = 'XA0019DK'
 
 
 def psa():
@@ -121,6 +122,35 @@ def psa():
         "IOINTPRM DS    1F -           ESA/390 IO INTERRUPT PARAMETER",
         "         DS    10F -          RESERVED FOR HARDWARE USE",
     ])
+    # --- CR6.  `CPCREG6 DC F'0'` is CP's one value for control register 6, and
+    #     on S/370 it carried the CP-assist and VM-assist enable bits.  On
+    #     ESA/390 CR6 is the I/O-INTERRUPTION SUBCLASS MASK (`esa390.h`: "CR6 is
+    #     the I/O interruption subclass mask"), so zero means no I/O
+    #     interruption is ever presented -- the same silent gate `XA0013DK`
+    #     closed in CTLREGS, reopened by every routine that reloads CR6.
+    #
+    #     Giving CPCREG6 the mask turns the problem into its own fix: CP
+    #     already reloads CR6 from here on the dispatch path, so the value it
+    #     keeps re-asserting becomes the correct one.  The `OI CPCREG6,X'02'`
+    #     in DMKCPI needs no change at all -- OI addresses byte 0, and X'02' is
+    #     already on in X'FF' -- which is luck, but checkable luck.
+    #
+    #     This generates storage only in DMKPSA: `PSA.MACRO` opens with
+    #     `AIF ('&SYSECT' EQ 'DMKPSA').PSA1`, so every other module gets a
+    #     DSECT and no DC.  The field keeps its length, so no other module's
+    #     offsets move.  I-71.
+    d.replace('00243000', first='00243010', inc=10, limit='00244000',
+              lines=Deck.comment(
+        "WAS DC F'0' -- CP ASSIST AND VMA MASK. ON ESA/390 CR6 IS THE I/O "
+        "INTERRUPTION SUBCLASS MASK AND ZERO PRESENTS NOTHING. ALL EIGHT "
+        "SUBCLASSES ENABLED; SUBCHANNELS DEFAULT TO ISC 0. I-71.") + [
+        "*  DS 0F BECAUSE LCTL TAKES A SPECIFICATION EXCEPTION ON A",
+        "*  MISALIGNED OPERAND AND DC X DOES NOT ALIGN. THE OLD DC F",
+        "*  ALIGNED IMPLICITLY; THIS SAYS IT.",
+        "CPCREG6  DS    0F             FULLWORD ALIGNED",
+        "         DC    X'FF000000'    CR6 -- IO SUBCLASS MASK",
+    ])
+
     return d
 
 
@@ -448,7 +478,56 @@ def guest_psa():
         "         STCM  R0,7,G370TIO-PSA-1(R2)  GUEST INTERRUPT CODE",
     ])
 
+    # --- CR6 on the dispatch path, two sites, both found only because the
+    #     sweep expands register RANGES.  I-71.
+    #
+    #     02422000 loads the GUEST's control registers 4 through 13 into the
+    #     real ones for an EC-mode virtual machine.  CR6 is the third of them,
+    #     so a virtual machine's assist word lands in the real I/O-interruption
+    #     subclass mask.  The range splits either side of it; ECBLOK's EXTCR4
+    #     through EXTCR13 are consecutive fullwords, so EXTCR7 names the second
+    #     half exactly.
+    dsp.replace('02422000', first='02422100', inc=100,
+                limit=next_seq(SRC + '/DMKDSP.ASSEMBLE', '02422000'),
+                lines=Deck.comment(
+        "WAS LCTL C4,C13,EXTCR4. CR6 IS THE I/O SUBCLASS MASK ON ESA/390 AND "
+        "IS NOT THE GUEST'S TO SET, SO THE RANGE SPLITS AROUND IT.") + [
+        "         LCTL  C4,C5,EXTCR4   USER'S VALUES, BUT NOT CR6",
+        "         LCTL  C7,C13,EXTCR7  THE REST OF THEM",
+    ])
+
+    #     02542000 is the unconditional one, and the reason CTLREGS alone was
+    #     never going to be enough: it reloads CR6 on EVERY dispatch, from
+    #     CPCREG6 by default and from the user's VMMICRO when the assist is on
+    #     for both system and user.  With the assist off -- the CE default and
+    #     the only possibility on ESA/390, where every ECPS:VM opcode is
+    #     S/370-only -- the module's own comment says what happens: "NO - LEAVE
+    #     CREG6 ZERO".  CPCREG6 now carries the mask (XA0001DK), so naming it
+    #     directly makes the dispatcher re-assert the right value on every
+    #     dispatch instead of destroying it.
+    dsp.replace('02542000', first='02542100', inc=100,
+                limit=next_seq(SRC + '/DMKDSP.ASSEMBLE', '02542000'),
+                lines=Deck.comment(
+        "WAS LCTL C6,C6,0(R6) -- LOAD APPROPRIATE VMA VALUE, WITH R6 SET TO "
+        "CPCREG6 OR VMMICRO ABOVE. NEITHER IS A SUBCLASS MASK, AND THIS RUNS "
+        "ON EVERY DISPATCH. I-71.") + [
+        "         LCTL  C6,C6,CPCREG6  SUBCLASS MASK, EVERY DISPATCH",
+    ])
+
     prv = Deck(XA7)
+    # --- CR6 again, and this one IS guarded -- `TM CPSTAT2,CPMICON` and an
+    #     ICM on VMMADDR both have to pass.  On ESA/390 they never will, so
+    #     this is belt and braces rather than a live defect; it is converted
+    #     anyway because leaving one path that can still write a MICBLOK
+    #     pointer into the I/O subclass mask is how I-71 happened in the first
+    #     place.  I-71.
+    prv.replace('00780000', first='00780100', inc=100,
+                limit=next_seq(SRC + '/DMKPRV.ASSEMBLE', '00780000'),
+                lines=Deck.comment(
+        "WAS LCTL C6,C6,VMMICRO -- RELOAD ASSIST CREG.") + [
+        "         LCTL  C6,C6,CPCREG6  IO SUBCLASS MASK, NOT AN ASSIST",
+    ])
+
     prv.replace('01400000', first='01400100', inc=10, limit='01401000',
                 lines=Deck.comment(
         "STIDC SIMULATION FOR A VIRTUAL MACHINE. R2 POINTS AT THE GUEST'S "
@@ -847,6 +926,32 @@ def dmkcpi():
         "         DROP  R4                                        ",
     ])
 
+    # --- CR6, four sites.  On ESA/390 CR6 is the I/O-interruption subclass
+    #     mask, and `XA0001DK` now gives `CPCREG6` the value X'FF000000'.  Every
+    #     load of CR6 therefore loads CPCREG6, whatever the S/370 code thought
+    #     it was setting -- a uniform rule rather than four judgements.  I-71.
+    #
+    #     00607000's `OI CPCREG6,X'02'` is deliberately left alone: OI addresses
+    #     byte 0, and X'02' is already on in X'FF', so it is a no-op now.
+    d.replace('00615000', first='00615100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '00615000'),
+              lines=Deck.comment(
+        "WAS LCTL C6,C6,ZEROES -- NO CP ASSIST UNTIL IPL COMPLETE. ZERO IS "
+        "NOW NO I/O INTERRUPTIONS AT ALL.") + [
+        "         LCTL  C6,C6,CPCREG6  IO SUBCLASS MASK, NOT AN ASSIST",
+    ])
+
+    #     00619000 clears the field itself, on the wrong-assist-level path, so
+    #     the mask would survive the LCTLs and then be zeroed at the source.
+    d.replace('00619000', first='00619100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '00619000'),
+              lines=Deck.comment(
+        "WAS MVC CPCREG6,ZEROES -- CLEAR CP ASSIST ENABLE FLAG. CPCREG6 IS "
+        "THE IO SUBCLASS MASK NOW AND MUST NOT BE CLEARED; THE ASSIST IS "
+        "ALREADY OFF BECAUSE EVERY ECPS:VM OPCODE IS S/370-ONLY.") + [
+        "         DS    0H             THE CLEAR IS GONE, NOT MOVED",
+    ])
+
     # --- The twenty live channel sites, all of them `SIO 0(R15)` or
     #     `TIO 0(R15)` in the device-mount loop, every one following the same
     #     shape: the instruction, `BAL R1,TRACESUB` with an inline trace code,
@@ -890,6 +995,33 @@ def dmkcpi():
     cpi('01239000', "CPIOWNA  XATIO R15            DRAIN FOR CE/DE")
     cpi('01568000', "SNSIO    XASIO R15            ISSUE SENSE COMMAND")
     cpi('01587000', "SNTIO    XATIO R15            CLEAR THE SUBCHANNEL")
+    # --- The VM-assist probe's two CR6 loads.  The probe itself is left
+    #     running and is correct as it stands: it enters problem state and
+    #     issues `SSM`, which the assist microcode would intercept and which
+    #     without it raises a privileged-operation exception -- so on ESA/390,
+    #     where every ECPS:VM opcode is GENx370x___x___, it lands on CPIPROG
+    #     and marks the assist unavailable, which is the right answer arrived
+    #     at by the module's own design.  Only the CR6 values are wrong.  The
+    #     probe runs with I/O masked in TESTPSW (X'040D0000', bit 6 off), so
+    #     CR6's value cannot matter to it either way.
+    cpi('01653000', "         LCTL  C6,C6,CPCREG6  IO SUBCLASS MASK, NOT A MICBLOK")
+
+    #     01674000 is the one that decides M1.  `LCTL C6,C6,ZEROES` is the
+    #     last instruction before the EJECT whose next comment reads "LOCATE
+    #     OPERATOR'S CONSOLE & ATTEMPT TO WRITE SYSTEM MSG" -- so CP zeroed the
+    #     I/O-interruption subclass mask immediately before the console write
+    #     that M1 exists to produce, and would have waited forever for an
+    #     interruption that is never presented.
+    d.replace('01674000', first='01674100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '01674000'),
+              lines=Deck.comment(
+        "WAS LCTL C6,C6,ZEROES -- RESET ASSIST CONTROL REGISTER. THE VERY "
+        "NEXT THING THIS MODULE DOES IS WRITE THE CONSOLE MESSAGE, WHICH "
+        "NEEDS AN I/O INTERRUPTION. I-71.") + [
+        "         LCTL  C6,C6,CPCREG6  RE-ASSERT THE IO SUBCLASS MASK",
+    ])
+
+
     cpi('01719000', "         XATIO R15            MAKE SURE IT EXISTS")
 
     # The module's one backward self-relative branch that spans a converted
@@ -1622,6 +1754,39 @@ def dmkvsj():
     return d
 
 
+def dmkcfo():
+    """The `SET CPASSIST` command's CR6 store, which is the last way in.
+
+    `SETCPAC6` is reached from the `SET CPASSIST ON|OFF` command path with R7
+    holding X'02000000' or zero, and it does
+
+        SETCPAC6 ST    R7,CPCREG6     RESET CP ASSIST ENABLE MASK
+                 LCTL  C6,C6,CPCREG6  AND RESET CREG. 6 FOR CP ASSIST
+
+    -- so it overwrites `CPCREG6` itself rather than merely loading it.  Since
+    `XA0001DK` makes that field the I/O-interruption subclass mask, the store
+    would destroy the mask at its source and the `LCTL` would then commit the
+    damage, and no amount of fixing the loads elsewhere would help.
+
+    The store goes and the `LCTL` stays, so the command still reloads CR6 with
+    the correct value.  CP's own record of whether the assist is on lives in
+    `CPSTAT2` (`CPASTAVL`, `CPASTON`), not in this word, so nothing that reads
+    the assist state is affected.  The label is kept -- it is a branch target.
+    `I-71`.
+    """
+    d = Deck(XA19)
+    d.replace('00612100', first='00612110', inc=10,
+              limit=next_seq(SRC + '/DMKCFO.ASSEMBLE', '00612100'),
+              lines=Deck.comment(
+        "WAS ST R7,CPCREG6 -- RESET CP ASSIST ENABLE MASK, WITH R7 HOLDING "
+        "X'02000000' OR ZERO. CPCREG6 IS THE I/O SUBCLASS MASK NOW AND THIS "
+        "WOULD OVERWRITE IT AT SOURCE. THE LCTL BELOW STAYS AND NOW LOADS "
+        "THE RIGHT VALUE. LABEL KEPT: IT IS A BRANCH TARGET. I-71.") + [
+        "SETCPAC6 DS    0H             THE STORE IS GONE, NOT MOVED",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -1702,6 +1867,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
         [(XA10, 'CHANNEL CHECK: NO LCL ANALYSIS, TERMINATE INSTEAD')])
 
+    f = dmkcfo()
+    f.write(os.path.join(HERE, 'DMKCFO.%s' % XA19))
+    aux(os.path.join(HERE, 'DMKCFO.AUXLCL'),
+        [(XA19, 'CPCREG6 IS THE IO SUBCLASS MASK, NOT AN ASSIST WORD')])
+
     j = dmkvsj()
     j.write(os.path.join(HERE, 'DMKVSJ.%s' % XA18))
     aux(os.path.join(HERE, 'DMKVSJ.AUXLCL'),
@@ -1735,7 +1905,8 @@ def main():
                  'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL',
                  'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL',
                  'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL',
-                 'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL',
+                 'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

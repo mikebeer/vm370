@@ -53,3 +53,13 @@ G370TIO  EQU   IOSSID+2 -     GUEST S/370 DEVICE ADDRESS       XA0001DK
 ./ R 00179000          $ 00179010 010                                           
 IOINTPRM DS    1F -           ESA/390 IO INTERRUPT PARAMETER   XA0001DK         
          DS    10F -          RESERVED FOR HARDWARE USE        XA0001DK         
+./ R 00243000          $ 00243010 010                                           
+*  WAS DC F'0' -- CP ASSIST AND VMA MASK. ON ESA/390 CR6 IS    XA0001DK         
+*  THE I/O INTERRUPTION SUBCLASS MASK AND ZERO PRESENTS        XA0001DK         
+*  NOTHING. ALL EIGHT SUBCLASSES ENABLED; SUBCHANNELS DEFAULT  XA0001DK         
+*  TO ISC 0. I-71.                                             XA0001DK         
+*  DS 0F BECAUSE LCTL TAKES A SPECIFICATION EXCEPTION ON A     XA0001DK         
+*  MISALIGNED OPERAND AND DC X DOES NOT ALIGN. THE OLD DC F    XA0001DK         
+*  ALIGNED IMPLICITLY; THIS SAYS IT.                           XA0001DK         
+CPCREG6  DS    0F             FULLWORD ALIGNED                 XA0001DK         
+         DC    X'FF000000'    CR6 -- IO SUBCLASS MASK          XA0001DK         

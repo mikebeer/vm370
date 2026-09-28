@@ -6,3 +6,14 @@
 *  MEANING. G370TIO NAMES THAT; IOSCHNO WOULD CLAIM A          XA0006DK         
 *  SUBCHANNEL NUMBER AND BE WRONG. NO SEMANTIC CHANGE.         XA0006DK         
          STCM  R0,7,G370TIO-PSA-1(R2)  GUEST INTERRUPT CODE    XA0006DK         
+./ R 02422000          $ 02422100 100                                           
+*  WAS LCTL C4,C13,EXTCR4. CR6 IS THE I/O SUBCLASS MASK ON     XA0006DK         
+*  ESA/390 AND IS NOT THE GUEST'S TO SET, SO THE RANGE SPLITS  XA0006DK         
+*  AROUND IT.                                                  XA0006DK         
+         LCTL  C4,C5,EXTCR4   USER'S VALUES, BUT NOT CR6       XA0006DK         
+         LCTL  C7,C13,EXTCR7  THE REST OF THEM                 XA0006DK         
+./ R 02542000          $ 02542100 100                                           
+*  WAS LCTL C6,C6,0(R6) -- LOAD APPROPRIATE VMA VALUE, WITH    XA0006DK         
+*  R6 SET TO CPCREG6 OR VMMICRO ABOVE. NEITHER IS A SUBCLASS   XA0006DK         
+*  MASK, AND THIS RUNS ON EVERY DISPATCH. I-71.                XA0006DK         
+         LCTL  C6,C6,CPCREG6  SUBCLASS MASK, EVERY DISPATCH    XA0006DK         
