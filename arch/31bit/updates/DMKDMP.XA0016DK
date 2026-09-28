@@ -18,6 +18,8 @@ DMPST2   XASIO R15            READ R0 FOR ALT TRACK ADDR       XA0016DK
          BC    7,DMPST2       LOOP UNTIL STARTED               XA0016DK         
 DMPWT2   XATIO R15            TEST FOR COMPLETION              XA0016DK         
          BC    7,DMPWT2       TRY AGAIN                        XA0016DK         
+./ R 00769000          $ 769100 100                                             
+SIOIPL   XASIO R15            RE-READ THE IPL RECORD           XA0016DK         
 ./ R 00775000          $ 775100 100                                             
 TIOIPL   XATIO R15            TEST                             XA0016DK         
 ./ R 00776000          $ 776100 100                                             
@@ -59,6 +61,8 @@ WAITRET  CH    R15,IOINTPRM+2 INTERRUPT FROM RIGHT DEVICE ?    XA0016DK
 ./ R 01157000 01158000 $ 1157100 100                                            
 DMPWT7   XATIO R15            TEST                             XA0016DK         
          BC    2,DMPWT7       CC=2; CHANNEL STILL BUSY         XA0016DK         
+./ R 01161000          $ 1161100 100                                            
+PRSIO    XASIO R15            START                            XA0016DK         
 ./ R 01169000 01170000 $ 1169100 100                                            
 GOTIO    XATIO R15            ISSUE TIO TO 'DUMP' DEVICE       XA0016DK         
          BC    2,GOTIO        CC=2, CHANNEL STILL BUSY         XA0016DK         

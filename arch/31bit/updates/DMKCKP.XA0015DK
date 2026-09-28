@@ -58,6 +58,10 @@ CKPWT5   XATIO R1             CHECK OUT STATUS                 XA0015DK
          XAHIO R1             HALT IO                          XA0015DK         
 ./ R 00726000          $ 726100 100                                             
          XAHIO R1             HALT IO                          XA0015DK         
+./ R 00733000          $ 733100 100                                             
+NONGRAF  XATIO R1             CLEAR OUTSTANDING STATUS         XA0015DK         
+./ R 00742000          $ 742100 100                                             
+SNSIO    XASIO R1             START I/O SENSE OPERATION        XA0015DK         
 ./ R 00772000 00774000 $ 00772100 100                                           
 *  THE INTERRUPTING DEVICE ADDRESS COMES FROM THE              XA0015DK         
 *  INTERRUPTION PARAMETER NOW, WHICH DMKCPI SET WITH MSCH.     XA0015DK         

@@ -125,10 +125,25 @@ diagnostic anywhere.
 
 | Module | I/O sites | backward branches spanning them | `INTTIO` |
 |---|---|---|---|
-| `DMKCKP` | 23 | 16 | 4 |
-| `DMKDMP` | 22 | 17 | 3 |
-| `DMKLD00E` | 19 | tbd | — (3 absolute CAW refs) |
-| `DMKSAV` | 11 | tbd | — |
+| `DMKCKP` | **25** | 16 | 4 |
+| `DMKDMP` | **22 channel + 4 key** | 17 | 3 |
+| `DMKLD00E` | 19 (out of scope) | — | — (3 absolute CAW refs) |
+| `DMKSAV` | 11, of which 6 convert | — | — |
+
+The two bold figures are corrections. `DMKCKP` was counted as 23 by hand and
+converted 23, so the two the count never included — a `TIO` at 00733000 and an
+`SIO` at 00742000 — stayed S/370 **inside the drain loop whose `HIO` at
+00726000 had just been converted**. `DMKDMP` kept an `SIO` at 00769000 whose
+own cc0 target `TIOIPL` was converted, and a `PRSIO` at 01161000 between two
+converted sites. Each would have taken an operation exception on the
+instruction after one that had just been converted, and each assembled
+perfectly.
+
+Nothing caught it for three commits, because every check in the project
+answered a different question. `tools/coverage.py` now closes that gap by
+diffing `s370only.py`'s site list against each deck's own `./ R` and `./ D`
+ranges, and `tools/deckscan.py` checks the punched object deck, which is
+ground truth. `I-67`.
 
 Five of `DMKDMP`'s seventeen are free: `TIOIPL`, `DRAINEND`, `DOMONSIO`, `DOTIO`
 and `GOTIO` already label the instruction the branch targets, so the branch only

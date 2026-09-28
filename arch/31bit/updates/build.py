@@ -1078,6 +1078,18 @@ def dmkckp():
     one('00713000', ["         XAHIO R1             HALT IO"])
     one('00726000', ["         XAHIO R1             HALT IO"])
 
+    # --- L6a: the two sites this deck left INSIDE the loop it converted.
+    #     00726000's halt was converted and these two were not, so the drain
+    #     loop would have taken an operation exception on its own next
+    #     instruction.  Found by auditing the punched deck rather than the
+    #     source -- tools/deckscan.py and tools/coverage.py.  I-67.
+    #     Every branch around both is to a label, so no mask and no
+    #     self-relative target changes: BC 2/1/4 after the TIO keep meaning
+    #     busy, not operational and CSW stored, which is what XATIO restores,
+    #     and TSTUC's `TM CSW+4,UC` reads the CSW XATIO rebuilds.
+    one('00733000', ["NONGRAF  XATIO R1             CLEAR OUTSTANDING STATUS"])
+    one('00742000', ["SNSIO    XASIO R1             START I/O SENSE OPERATION"])
+
     # --- L7: 00772000 through 00774000.
     d.replace('00772000', '00774000', first='00772100', inc=100,
               limit=nxt('00774000'), lines=Deck.comment(
@@ -1214,6 +1226,12 @@ def dmkdmp():
         "         BC    7,DMPWT2       TRY AGAIN",
     ], first='00738031', inc=1)
 
+    # --- Two sites this deck left inside loops it converted, found by
+    #     auditing the punched deck.  I-67.  00769000 is the SIO whose own
+    #     cc0 target TIOIPL was converted at 00775000, so the IPL re-read
+    #     started with an S/370 instruction and finished with an ESA/390 one.
+    one('00769000', ["SIOIPL   XASIO R15            RE-READ THE IPL RECORD"])
+
     # TIOIPL already labels the target, so the branch just names it.  00776500
     # and 00776600 sit between these two, so they are separate edits.
     one('00775000', ["TIOIPL   XATIO R15            TEST"])
@@ -1275,6 +1293,11 @@ def dmkdmp():
         "DMPWT7   XATIO R15            TEST",
         "         BC    2,DMPWT7       CC=2; CHANNEL STILL BUSY",
     ])
+
+    # PRSIO sat between DMPWT7 and GOTIO, both converted.  Its own following
+    # branch is `BC 8+4+2,*+8`, which is FORWARD over a BAL and so still skips
+    # the same eight bytes after conversion -- left alone deliberately.  I-67.
+    one('01161000', ["PRSIO    XASIO R15            START"])
 
     blk('01169000', '01170000', [
         "GOTIO    XATIO R15            ISSUE TIO TO 'DUMP' DEVICE",
@@ -1473,6 +1496,48 @@ def dmkvsj():
         "NOTHING SINCE 00165000 TOUCHED ONE, SO THE BRANCH IS UNCONDITIONAL "
         "AND STATE-IDENTICAL. DMKVSJCC STILL COUNTS. I-62.") + [
         "         B     CLCHEXIT       SIMULATE CLCH AS A TCH",
+    ])
+
+    # --- 00324000.  The module's OTHER S/370 instruction, missed the first
+    #     time round because the scan that cleared the module was an ad-hoc
+    #     one-liner with a bug in it.  I-67.
+    #
+    #     This one is a real conversion, not a deletion: `HDV` halts a device,
+    #     `HSCH` halts a subchannel, and a subchannel is exactly one device.
+    #     Unlike `DMKIOS`'s `IOSXHIO`, a bare pass-through will not do here,
+    #     because the cc1 path at `HIOSTCSW` does `CLC CSW+4(2),ZEROES` and
+    #     `LH R5,CSW+4` -- it reads the architected CSW and hands the status to
+    #     the guest.  `HSCH` cc1 means status *pending*, not stored, so a bare
+    #     `HSCH` would give the guest whatever was in the CSW beforehand.
+    #
+    #     Two registers make this cheap.  R3 still points at the RDEVBLOK from
+    #     00308000 (nothing between reassigns it), so `RDEVSSID` is in hand and
+    #     no subchannel scan is needed; and R10 is the active IOBLOK, verified
+    #     non-zero and equal to `VDEVIOB` at 00312000, so the IRB has somewhere
+    #     per-IOBLOK to live and the module stays REENTRANT, which its own
+    #     header at seq 00015000 requires.  R1, R14 and R15 are all dead here:
+    #     R1 was the mask stored to `VMIOACTV` at 00319000, and R14/R15 were
+    #     the `BAL` linkage to `SCANALL`.  R5 must survive and does.
+    #     Numbered by ten: the next surviving record is 00325000, which
+    #     leaves nine slots at the usual increment and this needs sixteen.
+    d.replace('00324000', first='00324010', inc=10,
+              limit=nxt('00324000'), lines=Deck.comment(
+        "HSCH FOR HDV. THE CC0/CC2/CC3 PATHS FALL THROUGH WITH THE "
+        "CONDITION CODE INTACT, SINCE BC DOES NOT DISTURB IT. ONLY CC1 "
+        "NEEDS WORK: HSCH LEAVES STATUS PENDING WHERE HDV STORED A CSW, "
+        "AND HIOSTCSW READS CSW+4. I-67.") + [
+        "         L     R1,RDEVSSID-RDEVBLOK(R3)  SUBSYSTEM ID",
+        "         HSCH  0              HALT THE SUBCHANNEL",
+        "         BC    4,VSJHDV1      CC1: GO MAKE THE CSW REAL",
+        "         B     VSJHDV2        CC0, CC2, CC3 STAND AS THEY ARE",
+        "VSJHDV1  L     R1,RDEVSSID-RDEVBLOK(R3)  AGAIN, TSCH WANTS IT",
+        "         TSCH  IOBIRB-IOBLOK(R10)  CLEAR THE PENDING STATUS",
+        "         MVI   CSW,X'00'      REBUILD THE CSW HDV LEFT",
+        "         MVC   CSW+1(3),IOBICCW+1-IOBLOK(R10)",
+        "         MVC   CSW+4(4),IOBIDST-IOBLOK(R10)",
+        "         LA    R1,1           AND GIVE BACK CC1. LA THEN LCR:",
+        "         LCR   R1,R1          LTR ON 1 WOULD SET CC2. I-44.",
+        "VSJHDV2  DS    0H",
     ])
     return d
 

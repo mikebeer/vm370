@@ -17,3 +17,20 @@
 *  ONE, SO THE BRANCH IS UNCONDITIONAL AND STATE-IDENTICAL.    XA0018DK         
 *  DMKVSJCC STILL COUNTS. I-62.                                XA0018DK         
          B     CLCHEXIT       SIMULATE CLCH AS A TCH           XA0018DK         
+./ R 00324000          $ 00324010 010                                           
+*  HSCH FOR HDV. THE CC0/CC2/CC3 PATHS FALL THROUGH WITH THE   XA0018DK         
+*  CONDITION CODE INTACT, SINCE BC DOES NOT DISTURB IT. ONLY   XA0018DK         
+*  CC1 NEEDS WORK: HSCH LEAVES STATUS PENDING WHERE HDV        XA0018DK         
+*  STORED A CSW, AND HIOSTCSW READS CSW+4. I-67.               XA0018DK         
+         L     R1,RDEVSSID-RDEVBLOK(R3)  SUBSYSTEM ID          XA0018DK         
+         HSCH  0              HALT THE SUBCHANNEL              XA0018DK         
+         BC    4,VSJHDV1      CC1: GO MAKE THE CSW REAL        XA0018DK         
+         B     VSJHDV2        CC0, CC2, CC3 STAND AS THEY ARE  XA0018DK         
+VSJHDV1  L     R1,RDEVSSID-RDEVBLOK(R3)  AGAIN, TSCH WANTS IT  XA0018DK         
+         TSCH  IOBIRB-IOBLOK(R10)  CLEAR THE PENDING STATUS    XA0018DK         
+         MVI   CSW,X'00'      REBUILD THE CSW HDV LEFT         XA0018DK         
+         MVC   CSW+1(3),IOBICCW+1-IOBLOK(R10)                  XA0018DK         
+         MVC   CSW+4(4),IOBIDST-IOBLOK(R10)                    XA0018DK         
+         LA    R1,1           AND GIVE BACK CC1. LA THEN LCR:  XA0018DK         
+         LCR   R1,R1          LTR ON 1 WOULD SET CC2. I-44.    XA0018DK         
+VSJHDV2  DS    0H                                              XA0018DK         
