@@ -26,7 +26,7 @@ Each spec is one of:
 
     MODULE:DECK           stage MODULE.DECK and MODULE.AUXLCL, then VMFASM it
     read:MEMBER:FILETYPE  stage and read a plain member, assemble nothing
-    mac:LIBNAME           VMFMAC that library
+    mac:LIBNAME           VMFMAC that library, restaging its EXEC member list
     asm:MODULE            VMFASM a module already on disk
     cmd:<text>[:<secs>]   run one CMS command, default 10 seconds
     herc:<text>[:<secs>]  run one Hercules command, default 8 seconds
@@ -92,9 +92,26 @@ pause 8
 """
 
 
-def card(text):
+def card(text, src=''):
+    """One 80-column card, with column 72 asserted blank.
+
+    Column 72 is the continuation column.  A character there makes Assembler XF
+    read the NEXT card as a continuation, and the next card then fails with
+    `IFO026 CHARACTERS APPEAR BETWEEN THE BEGIN AND CONTINUE COLUMNS` -- an
+    error that names the wrong card and says nothing about column 72.
+
+    `mkdeck.py` has enforced this for generated decks since R-04.  Hand-written
+    files staged with `read:` had no such check, and `XAIOB.MACRO` arrived with
+    a 72-column comment box whose closing `*` sat exactly there.  Same failure,
+    new door.  I-74.
+    """
     if len(text) > 80:
-        raise ValueError('card over 80 columns: ' + text)
+        raise ValueError('card over 80 columns%s: %s' % (src, text))
+    if len(text) >= 72 and text[71] != ' ':
+        raise ValueError(
+            'column 72 is the continuation column and is not blank%s.  XF will '
+            'read the next card as a continuation and flag IT, not this one:\n'
+            '  %s\n  %s^' % (src, text, ' ' * 71))
     return '%-80s\n' % text
 
 
@@ -111,6 +128,13 @@ def main():
         parts = spec.split(':')
         if parts[0] == 'mac':
             mac.append(parts[1])       # emitted after CPACC, which it needs
+            # VMFMAC builds the library from <lib> EXEC, which IS the member
+            # list, so rebuilding without refreshing that list silently builds
+            # the OLD set.  run56 added XAIOB.MACRO, read it, rebuilt DMKLCL
+            # and got `IFO078 UNDEFINED OP CODE` on every XAB* -- because the
+            # EXEC on the A-disk still named six members, not seven.  Staging
+            # it here makes that impossible rather than remembered.  I-74.
+            specs.append('read:%s:EXEC' % parts[1])
             continue
         if parts[0] == 'asm':
             asm.append(parts[1])
@@ -152,7 +176,7 @@ def main():
             with open(os.path.join(ce, 'io', io + '.txt'), 'w') as f:
                 f.write(card('ID MAINT NAME %s %s' % (mod, ft)))
                 for line in open(path):
-                    f.write(card(line.rstrip('\n')))
+                    f.write(card(line.rstrip('\n'), ' in ' + src))
             # devinit then START: the reader must be re-started after each
             # file is attached, per CE's own operating practice.
             rc.append('devinit 000c io/%s.txt ascii eof trunc\n'

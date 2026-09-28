@@ -18,9 +18,26 @@
          CLC   IOINTPRM+2(2),IOBRADD                           XA0012DK         
 ./ R 00513000          $ 00513100 100                                           
          LH    R1,IOINTPRM+2  ADDR. OF INTERRUPTING UNIT       XA0012DK         
+./ R 00514000          $ 00514010 010                                           
+         XABTIO               IN CASE CHANNEL END WITH IT.     XA0012DK         
+./ R 00515000          $ 00515010 010                                           
+RSIO     XABSIO               NOW CLEAR CONTENTION             XA0012DK         
 ./ R 00846000          $ 00846100 100                                           
          LH    R4,IOINTPRM+2  SAVE INTERRUPT DEVICE ADDR.      XA0012DK         
 ./ R 00864000          $ 00864100 100                                           
          CLC   IOINTPRM+2(2),2(R14) IS IT PRIMARY CONSOLE?     XA0012DK         
 ./ R 00873000          $ 00873100 100                                           
          CLC   IOINTPRM+2(2),2(R14) ALTERNATE CONSOLE?         XA0012DK         
+./ R 01053000          $ 01053010 010                                           
+         XABTIO               SEE IF IT'S REALLY BUSY          XA0012DK         
+./ R 01063300          $ 01063310 010                                           
+         XABTIO               IS IT BUSY ?                     XA0012DK         
+./ R 01079000          $ 01079010 010                                           
+IOTNSIO  XABSIO               ATTEMPT TO DO SENSE              XA0012DK         
+./ I 01159000 $ 01159010 010                                                    
+*  XAIOB WORK AREAS AND SHIMS. REENTRANT BY CONSTRUCTION: THE  XA0012DK         
+*  ORB, IRB AND REGISTER SAVE AREA ALL LIVE IN THE IOBLOK,     XA0012DK         
+*  AND THE SUBCHANNEL COMES FROM RDEVSSID RATHER THAN A SCAN.  XA0012DK         
+         XAIOBWRK             XAIOB SHIMS                      XA0012DK         
+./ I 01170000 $ 01170010 010                                                    
+         COPY  XABLOKS        FOR ORBCCWFM                     XA0012DK         

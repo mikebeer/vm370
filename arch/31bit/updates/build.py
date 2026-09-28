@@ -858,16 +858,57 @@ def dmkiot():
          "         CLC   IOINTPRM+2(2),IOBRADD"),
         ('00513000', '00513100', 100, '00514000',
          "         LH    R1,IOINTPRM+2  ADDR. OF INTERRUPTING UNIT"),
+        # --- The five channel sites, all `0(R1)` and all on paths that must
+        #     WORK rather than merely assemble: this is interrupt entry, and
+        #     the console interruption M1 waits for arrives here.  They use
+        #     XAIOB rather than XAIO because DMKIOT declares REENTRANT in its
+        #     own prologue (seq 00052000) and a static work area cannot be
+        #     shared by two concurrent I/Os.  `USING RDEVBLOK,R8` and
+        #     `USING IOBLOK,R10` are established at 00187000 and never
+        #     dropped, so the subchannel comes from RDEVSSID and the storage
+        #     from the IOBLOK.  R1 is left loaded and simply unused; the macro
+        #     restores it, so nothing downstream notices.
+        ('00514000', '00514010', 10, None,
+         ["         XABTIO               IN CASE CHANNEL END WITH IT."]),
+        ('00515000', '00515010', 10, None,
+         ["RSIO     XABSIO               NOW CLEAR CONTENTION"]),
         ('00846000', '00846100', 100, '00847000',
          "         LH    R4,IOINTPRM+2  SAVE INTERRUPT DEVICE ADDR."),
         ('00864000', '00864100', 100, '00865000',
          "         CLC   IOINTPRM+2(2),2(R14) IS IT PRIMARY CONSOLE?"),
         ('00873000', '00873100', 100, '00874000',
          "         CLC   IOINTPRM+2(2),2(R14) ALTERNATE CONSOLE?"),
+        ('01053000', '01053010', 10, None,
+         ["         XABTIO               SEE IF IT'S REALLY BUSY"]),
+        ('01063300', '01063310', 10, None,
+         ["         XABTIO               IS IT BUSY ?"]),
+        ('01079000', '01079010', 10, None,
+         ["IOTNSIO  XABSIO               ATTEMPT TO DO SENSE"]),
     ):
         d.replace(seq, first=first, inc=inc,
                   limit=limit or next_seq(SRC + '/DMKIOT.ASSEMBLE', seq),
                   lines=text if isinstance(text, list) else [text])
+
+    # --- The work area, before the LTORG at 01160000.  Everything from
+    #     01150000 is DC and EQU, so nothing falls into it, and the module has
+    #     a single addressability domain -- `USING DMKIOT,R12,R9` at 00192000
+    #     with no matching DROP -- so the callers' base registers are the ones
+    #     in force here.  I-70.
+    d.insert('01159000', first='01159010', inc=10,
+             limit=next_seq(SRC + '/DMKIOT.ASSEMBLE', '01159000'),
+             lines=Deck.comment(
+        "XAIOB WORK AREAS AND SHIMS. REENTRANT BY CONSTRUCTION: THE ORB, "
+        "IRB AND REGISTER SAVE AREA ALL LIVE IN THE IOBLOK, AND THE "
+        "SUBCHANNEL COMES FROM RDEVSSID RATHER THAN A SCAN.") + [
+        "         XAIOBWRK             XAIOB SHIMS",
+    ])
+
+    # --- XABLOKS last of all, after the other COPYs: it ends in DSECTs, and
+    #     ORBCCWFM is used in XAIOBWRK above as a DC operand, which XF resolves
+    #     as a forward reference.  I-51.
+    d.insert('01170000', first='01170010', inc=10,
+             limit=next_seq(SRC + '/DMKIOT.ASSEMBLE', '01170000'),
+             lines=["         COPY  XABLOKS        FOR ORBCCWFM"])
     return d
 
 
@@ -1995,7 +2036,8 @@ def main():
         # OP CODE for SSCH and TSCH, with every other new symbol resolved.
         for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
                           ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
-                          ('XAOPS', 'MACRO'), ('XAIO', 'MACRO')):
+                          ('XAOPS', 'MACRO'), ('XAIO', 'MACRO'),
+                          ('XAIOB', 'MACRO')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True

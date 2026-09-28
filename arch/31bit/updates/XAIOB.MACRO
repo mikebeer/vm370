@@ -1,0 +1,128 @@
+         MACRO
+         XAIOBWRK
+.*-----------------------------------------------------------------*
+.*  XAIOB -- THE REENTRANT COUNTERPART OF XAIO.                     *
+.*                                                                  *
+.*  XAIO KEEPS ITS WORK AREAS IN A STATIC BLOCK AND FINDS A         *
+.*  SUBCHANNEL BY SCANNING WITH STSCH.  BOTH CHOICES ARE RIGHT FOR  *
+.*  THE MODULE IT WAS BUILT FOR AND WRONG HERE:                     *
+.*                                                                  *
+.*    A STATIC WORK AREA CANNOT BE USED BY A REENTRANT MODULE, AND  *
+.*    DMKIOS, DMKIOT AND DMKCNS ALL DECLARE REENTRANT IN THEIR OWN  *
+.*    PROLOGUES.                                                    *
+.*                                                                  *
+.*    THE STSCH SCAN EXISTS BECAUSE DMKDMP RUNS AFTER AN ABEND, WHEN*
+.*    CP'S CONTROL BLOCKS ARE EXACTLY WHAT CANNOT BE TRUSTED.  THESE*
+.*    THREE RUN WITH THE SYSTEM HEALTHY AND WITH THE BLOCKS ALREADY *
+.*    IN HAND, SO THE SCAN WOULD BE UP TO 256 STSCHS TO LEARN WHAT  *
+.*    RDEVSSID ALREADY SAYS.                                          *
+.*                                                                  *
+.*  SO THIS SET TAKES ITS SUBCHANNEL FROM RDEVSSID AND ITS STORAGE  *
+.*  FROM THE IOBLOK, WHICH MAKES IT REENTRANT BY CONSTRUCTION: EVERY*
+.*  BYTE IT WRITES BELONGS TO THE I/O IT IS DRIVING.                *
+.*                                                                  *
+.*  IT THEREFORE REQUIRES, AND DOES NOT CHECK, THAT                 *
+.*                                                                  *
+.*        USING RDEVBLOK,R8                                         *
+.*        USING IOBLOK,R10                                          *
+.*        USING PSA,R0                                              *
+.*                                                                  *
+.*  ARE ALL IN FORCE, AND THAT R8'S RDEVBLOK IS THE DEVICE BEING    *
+.*  OPERATED ON.  ALL THREE MODULES ESTABLISH R8 AND R10 IN THEIR   *
+.*  PROLOGUES AND NEVER DROP THEM.  THE THIRD CONDITION IS THE ONE  *
+.*  TO CHECK PER SITE: IN DMKCNS EVERY CALLER GETS ITS DEVICE FROM  *
+.*  CALL DMKSCNRD, WHICH RETURNS R8'S OWN ADDRESS, AND IN DMKIOT    *
+.*  FROM IOBRADD OR FROM THE INTERRUPTING DEVICE, WHOSE RDEVBLOK IS *
+.*  WHAT R8 HOLDS IN THE INTERRUPT HANDLER.                         *
+.*                                                                  *
+.*  THE BODIES ARE DMKIOS'S IOSX* SHIMS, WHICH HAVE ASSEMBLED CLEAN *
+.*  SINCE RUN44, COPIED RATHER THAN REWRITTEN.  DMKIOS KEEPS ITS OWN*
+.*  COPY FOR NOW AND SHOULD MOVE TO THIS MACRO ONCE M1 PASSES, SO   *
+.*  THAT THE CHANGE IS MADE AGAINST A WORKING BASELINE INSTEAD OF   *
+.*  BEFORE ONE EXISTS.                                              *
+.*-----------------------------------------------------------------*
+         SPACE 1
+XAIOBORB DS    0H             ORB TEMPLATE. EVERYTHING BUT THE
+*                             CCW ADDRESS, WHICH THE CALLER SET IN
+*                             THE CAW AND WHICH IS COPIED IN BELOW.
+         DC    F'0'           INTERRUPTION PARAMETER
+         DC    X'00'          KEY, S, C, M, Y, F, P -- ALL ZERO
+         DC    AL1(ORBCCWFM)  CCW FORMAT: ORBCCWFM, NOT A LITERAL
+         DC    X'80'          LPM -- LOGICAL PATH MASK, NOT ZERO
+         DC    X'00'          RESERVED
+         SPACE 1
+.*  R14 AND R15 ARE THE ONLY REGISTERS THESE TOUCH BESIDES R1, AND
+.*  THE CALL-SITE MACRO SAVES R14, R15, R0 AND R1 IN IOBXSAV -- WHICH
+.*  LIVES IN THE IOBLOK, SO TWO CONCURRENT I/OS SAVE INTO DIFFERENT
+.*  PLACES.  THE LM THAT RESTORES THEM DOES NOT DISTURB THE CONDITION
+.*  CODE THE SUBROUTINE SET.
+         SPACE 1
+XAIOBSIO DS    0H             SSCH, WITH SIO'S CONDITION CODES
+         MVC   IOBORB(12),XAIOBORB  BUILD THE ORB
+         MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER
+         SSCH  IOBORB         START SUBCHANNEL
+         BR    R14            SSCH AND SIO AGREE ON CC0/2/3, AND
+*                             THEIR CC1 DIFFERS IN WORDING ONLY
+         SPACE 1
+XAIOBTIO DS    0H             TSCH, WITH TIO'S CONDITION CODES
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER
+         TSCH  IOBIRB         TEST SUBCHANNEL
+         BC    4,XAIOBTIF     CC1: NOTHING PENDING = DEVICE FREE
+         BC    3,XAIOBTIX     CC2 AND CC3 PASS THROUGH UNCHANGED
+         MVI   CSW,X'00'      BUILD THE CSW THE CALLER EXPECTS
+         MVC   CSW+1(3),IOBICCW+1  CCW ADDRESS
+         MVC   CSW+4(4),IOBIDST    STATUS AND RESIDUAL COUNT
+         LA    R15,1          TELL THE CALLER CSW STORED,
+         LCR   R15,R15        WHICH IS CC1. LTR WOULD GIVE CC2.
+         BR    R14
+XAIOBTIF DS    0H             DEVICE FREE: TIO CALLED THAT CC0
+         SR    R15,R15        ZERO RESULT, SO CC0
+XAIOBTIX DS    0H
+         BR    R14
+         SPACE 1
+XAIOBHIO DS    0H             HSCH REPLACES HIO AND HDV ALIKE.
+*                             THE DISTINCTION WAS BETWEEN HALTING A
+*                             CHANNEL AND HALTING A DEVICE, AND A
+*                             SUBCHANNEL IS ALWAYS EXACTLY ONE DEVICE.
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER
+         HSCH  0              HALT SUBCHANNEL
+         BR    R14
+         SPACE 1
+XAIOBCIO DS    0H             CSCH FOR CLRIO. THE ONLY CLRIO IN THE
+*                             NUCLEUS IS DMKCNS'S, AND CSCH SETS ONLY
+*                             CC0 -- CLEARED -- OR CC3 -- NOT VALID,
+*                             NOT ENABLED OR NOT THERE.  THOSE ARE
+*                             EXACTLY THE TWO THE CALLER TESTS.
+         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER
+         CSCH  0              CLEAR SUBCHANNEL
+         BR    R14
+         MEND
+.*
+         MACRO
+&NAME    XABSIO
+&NAME    STM   R14,R1,IOBXSAV
+         BAL   R14,XAIOBSIO
+         LM    R14,R1,IOBXSAV
+         MEND
+.*
+         MACRO
+&NAME    XABTIO
+&NAME    STM   R14,R1,IOBXSAV
+         BAL   R14,XAIOBTIO
+         LM    R14,R1,IOBXSAV
+         MEND
+.*
+         MACRO
+&NAME    XABHIO
+&NAME    STM   R14,R1,IOBXSAV
+         BAL   R14,XAIOBHIO
+         LM    R14,R1,IOBXSAV
+         MEND
+.*
+         MACRO
+&NAME    XABCIO
+&NAME    STM   R14,R1,IOBXSAV
+         BAL   R14,XAIOBCIO
+         LM    R14,R1,IOBXSAV
+         MEND
