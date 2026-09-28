@@ -1,0 +1,24 @@
+./ R 00149100 00150000 $ 00149200 100                                           
+*  THE LABEL HERE IS SIO, WHICH IS ALSO A MNEMONIC -- THAT     XA0017DK         
+*  HAS ALWAYS BEEN TRUE IN THIS MODULE AND STILL ASSEMBLES.    XA0017DK         
+*  R-26: *-4 NAMES IT.                                         XA0017DK         
+SIO      XASIO R10                                             XA0017DK         
+         BC    7,SIO                                           XA0017DK         
+./ R 00163000 00166000 $ 00163100 100                                           
+SAVST1   XASIO R10            START SENSE IO                   XA0017DK         
+         BNZ   SAVST1         ..                               XA0017DK         
+SAVCL1   XATIO R10            CLEAR IO                         XA0017DK         
+         BNZ   SAVCL1         ..                               XA0017DK         
+./ R 00166050 00166100 $ 00166051 001                                           
+SAVCL2   XATIO R10            DRAIN ANY INTERRUPTS             XA0017DK         
+         BC    7,SAVCL2                                        XA0017DK         
+SAVST2   XASIO R10            START IT UP                      XA0017DK         
+         BC    7,SAVST2       UNTIL FREE                       XA0017DK         
+SAVWT2   XATIO R10            TEST FOR COMPLETION              XA0017DK         
+         BC    7,SAVWT2       TRY AGAIN                        XA0017DK         
+./ I 00685000 $ 00685100 100                                                    
+*  NO XC OR MVCL EXISTS ANYWHERE IN DMKSAV, SO NOTHING ZEROES  XA0017DK         
+*  THIS AND THE PLACEMENT NEEDED NONE OF DMKCKP'S CARE.        XA0017DK         
+*  XABLOKS LAST: IT ENDS IN DSECTS. I-55.                      XA0017DK         
+         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0017DK         
+         COPY  XABLOKS        FOR ORBCCWFM, THE CCW FORMAT     XA0017DK         

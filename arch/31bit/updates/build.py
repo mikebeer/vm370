@@ -43,6 +43,7 @@ XA13 = 'XA0013DK'
 XA14 = 'XA0014DK'
 XA15 = 'XA0015DK'
 XA16 = 'XA0016DK'
+XA17 = 'XA0017DK'
 
 
 def psa():
@@ -1177,6 +1178,99 @@ def dmkdmp():
     return d
 
 
+def dmksav():
+    """The saved-system reader and writer: the simplest of the four.
+
+    **Only six of its eleven channel sites are converted, and that is the whole
+    point of the module.**  DMKSAV has two entry points that run in different
+    architectures:
+
+        00129000  DMKSAV   CSECT      IPL entry -- reads the saved nucleus
+        00205000  DMKSAVRS BALR R3,0  restore path
+        00380000  DMKSAVNC DS   0H    the LDT target -- WRITES it at build time
+
+    `CPLOAD.EXEC`'s last card is `LDT DMKSAVNC`, so `DMKSAVNC` is entered by the
+    standalone loader deck while the nucleus is being built -- on the build
+    machine, in S/370 mode.  Its five sites (00426000, 00429000, 00601000,
+    00613100, 00613300) must therefore stay `SIO` and `TIO`, and `00430000`'s
+    `BC 7,*-4` stays with them because the instruction it spans is unchanged.
+
+    The six sites at 00149100 to 00166090 are on the IPL and restore side, which
+    runs on the **target** machine in ESA/390 mode, and those are converted.  A
+    module holding both is not a contradiction: the two paths are never executed
+    in the same IPL.  I-59.
+
+    No `INTTIO`, no absolute lowcore, and **no `XC` or `MVCL` anywhere in the
+    module** -- so unlike `DMKCKP` there is no cleared region for `XAIOWORK` to
+    avoid (I-55).  It has
+    `USING PSA,R0` and `COPY EQU`, so `CAW`, `CSW` and the register equates all
+    resolve and no `XAIOWORK` parameters are needed.
+
+    Four sites were invisible to a first scan because the label in columns 1-8 is
+    the mnemonic itself -- `SIO SIO 0(R10)`, `QDISK`, `SNSRTSIO`, `SNSRTTIO`.  A
+    scan keyed on the operation field finds them; one keyed on leading whitespace
+    does not.  Three of those four turn out to be DMKSAVNC's and are left alone;
+    the `SIO` label survives conversion unchanged, and `BC 7,*-4` becomes
+    `BC 7,SIO`, which reads oddly and is correct.
+
+    The one thing to watch is size.  `USING DMKSAV,R3` is a **single** base
+    register, so the module has 4 KB of addressability rather than the 8 KB that
+    `DMKDMP` had when it overflowed (I-56).  Eleven sites at fourteen bytes plus
+    the work area is about 550 bytes of growth; the module is small, so it should
+    fit, but this is the module where a compact call site matters most.
+    """
+    d = Deck(XA17)
+    nxt = lambda s: next_seq(SRC + '/DMKSAV.ASSEMBLE', s)
+
+    def blk(frm, to, lines, first=None, inc=100):
+        d.replace(frm, to, first=first or str(int(frm) + inc), inc=inc,
+                  limit=nxt(to), lines=lines)
+
+    def one(seq, lines, inc=100):
+        blk(seq, None, lines, inc=inc)
+
+    # --- 00149100 and 00150000.  The label is literally SIO.
+    d.replace('00149100', '00150000', first='00149200', inc=100,
+              limit=nxt('00150000'), lines=Deck.comment(
+        "THE LABEL HERE IS SIO, WHICH IS ALSO A MNEMONIC -- THAT HAS ALWAYS "
+        "BEEN TRUE IN THIS MODULE AND STILL ASSEMBLES. R-26: *-4 NAMES IT.") + [
+        "SIO      XASIO R10",
+        "         BC    7,SIO",
+    ])
+
+    # --- 00163000 to 00166000.
+    d.replace('00163000', '00166000', first='00163100', inc=100,
+              limit=nxt('00166000'), lines=[
+        "SAVST1   XASIO R10            START SENSE IO",
+        "         BNZ   SAVST1         ..",
+        "SAVCL1   XATIO R10            CLEAR IO",
+        "         BNZ   SAVCL1         ..",
+    ])
+
+    # --- 00166050 to 00166100.  The gap to 00166110 is ten, so number by one.
+    d.replace('00166050', '00166100', first='00166051', inc=1,
+              limit=nxt('00166100'), lines=[
+        "SAVCL2   XATIO R10            DRAIN ANY INTERRUPTS",
+        "         BC    7,SAVCL2",
+        "SAVST2   XASIO R10            START IT UP",
+        "         BC    7,SAVST2       UNTIL FREE",
+        "SAVWT2   XATIO R10            TEST FOR COMPLETION",
+        "         BC    7,SAVWT2       TRY AGAIN",
+    ])
+
+    # --- The work area, immediately before END.  XABLOKS must come after
+    #     XAIOWORK and last of all, because it ends in DSECTs.
+    d.insert('00685000', first='00685100', inc=100, limit=nxt('00685000'),
+             lines=Deck.comment(
+        "NO XC OR MVCL EXISTS ANYWHERE IN DMKSAV, SO NOTHING ZEROES THIS AND "
+        "THE PLACEMENT NEEDED NONE OF DMKCKP'S CARE. XABLOKS LAST: IT ENDS IN "
+        "DSECTS. I-55.") + [
+        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+        "         COPY  XABLOKS        FOR ORBCCWFM, THE CCW FORMAT",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -1247,6 +1341,11 @@ def main():
     aux(os.path.join(HERE, 'DMKDMP.AUXLCL'),
         [(XA16, 'CHANNEL SUBSYSTEM VIA XAIO, AND THE INTTIO SITES')])
 
+    sav = dmksav()
+    sav.write(os.path.join(HERE, 'DMKSAV.%s' % XA17))
+    aux(os.path.join(HERE, 'DMKSAV.AUXLCL'),
+        [(XA17, 'CHANNEL SUBSYSTEM VIA XAIO')])
+
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
@@ -1278,7 +1377,8 @@ def main():
                  'DMKCPI.%s' % XA13, 'DMKCPI.AUXLCL',
                  'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL',
                  'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL',
-                 'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL',
+                 'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),

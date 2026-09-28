@@ -53,6 +53,7 @@ HANDLED = {
     'DMKSYS': 'run31',
     'DMKCKP': 'run38',
     'DMKDMP': 'run38',
+    'DMKSAV': 'run42',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
@@ -61,6 +62,7 @@ BASELINE_WARN = {'DMKRIO': 'RDEVICE 3375/3390 UNSUPPORTED DEVICE TYPE, sev 4'}
 
 # What each broken module actually needs, from reading its sites.
 NEEDS = {
+    'DMKSAV': 'IPL side converted; DMKSAVNC stays S/370 -- I-59',
     'DMKSYS': 'AP=NO so DMKCPI never executes CONCS -- I-50',
     'DMKCPI': 'CR6 subclass mask and subchannel discovery -- M1 step 6',
     'DMKIOT': 'convert: 10 INTTIO sites, interrupt entry -- M1 step 5',
