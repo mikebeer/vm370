@@ -1,0 +1,4 @@
+# The tools import each other -- coverage.py imports s370only.py -- so running
+# one leaves bytecode next to the source.  Nothing generated belongs in here.
+__pycache__/
+*.pyc
