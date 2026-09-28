@@ -66,13 +66,17 @@ HANDLED = {
     'DMKIOS': 'run44',
     'DMKVSJ': 'run46',
 }
-HANDLED['DMKCPI'] = 'run51'
+HANDLED['DMKCPI'] = 'run55'
+HANDLED.update({'DMKCFO': 'run53', 'DMKFRE': 'run55', 'DMKPSA': 'run53'})
 
 # Where 'clean on CE, TXTLCL produced' undersells what the deck actually did.
 CONVERTED_NOTE = {
     'DMKIOS': 'all 10 channel sites done, via IOSX* shims',
     'DMKVSJ': 'CLRCH deleted, not converted -- CLCH is always a TCH',
     'DMKCPI': 'all 20 live channel sites; the 21st is dead, I-69',
+    'DMKCFO': 'CPCREG6 is the IO subclass mask now -- I-71',
+    'DMKFRE': 'three CR2 channel masks removed -- I-73',
+    'DMKPSA': 'reassembled for CPCREG6; TXTHRC, not TXTLCL',
 }
 
 # Severity-4 MNOTEs for 3375/3390 in CE's site configuration, not a source
