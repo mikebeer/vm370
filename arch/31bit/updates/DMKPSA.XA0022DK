@@ -1,0 +1,22 @@
+./ R 00646000 00647000 $ 00646100 100                                           
+*  HSCH FOR HIO. NO STORAGE AND NO CONDITION-CODE WORK: THE    XA0022DK         
+*  BC 8+1,EXTEXIT BELOW MEANS THE SAME THING UNDER HSCH. R1    XA0022DK         
+*  IS FREE -- NOTHING READS IT AGAIN, AND EACH RETRY RELOADS   XA0022DK         
+*  IT.                                                         XA0022DK         
+         L     R1,RDEVSSID    SUBSYSTEM ID FROM THE RDEVBLOK   XA0022DK         
+         HSCH  0              HALT ACTIVE I/O                  XA0022DK         
+         BC    2,HALTCON      CC = 2, BURST OPERATION HALTED   XA0022DK         
+./ R 00651000          $ 00651100 100                                           
+*  TSCH FOR TIO. THE NEXT INSTRUCTION IS BCT, SO NEITHER THE   XA0022DK         
+*  CSW NOR THE CONDITION CODE IS EVER LOOKED AT -- THIS ONLY   XA0022DK         
+*  CONSUMES PENDING STATUS. THE IRB IS THEREFORE WRITE-ONLY    XA0022DK         
+*  AND A SHARED SCRATCH AREA IS CORRECT, NOT JUST CONVENIENT.  XA0022DK         
+*  I-75.                                                       XA0022DK         
+         L     R1,RDEVSSID    SUBSYSTEM ID FROM THE RDEVBLOK   XA0022DK         
+         TSCH  PSAXIRB        DRAIN IT; THE IRB IS DISCARDED   XA0022DK         
+./ I 00665000 $ 00665010 010                                                    
+*  WRITE-ONLY IRB FOR THE TSCH ABOVE. SIXTY-FOUR BYTES,        XA0022DK         
+*  FULLWORD ALIGNED -- TSCH TAKES A SPECIFICATION EXCEPTION    XA0022DK         
+*  OTHERWISE. NOTHING READS IT, SO NO PATH CAN BE HARMED BY    XA0022DK         
+*  ANOTHER WRITING IT.                                         XA0022DK         
+PSAXIRB  DS    16F            IRB, WRITTEN AND DISCARDED       XA0022DK         

@@ -48,6 +48,7 @@ XA18 = 'XA0018DK'
 XA19 = 'XA0019DK'
 XA20 = 'XA0020DK'
 XA21 = 'XA0021DK'
+XA22 = 'XA0022DK'
 
 
 def psa():
@@ -1860,6 +1861,73 @@ def dmkvsj():
     return d
 
 
+def dmkpsa():
+    """The last module on the M1 path, and the only one that is lowcore itself.
+
+    `USING DMKPSA,R0` and `PSA EQU DMKPSA`: the module *is* the prefix storage
+    area, addressed from absolute zero.  It declares REENTRANT, and unlike
+    `DMKIOT` and `DMKCNS` it has **no** `USING IOBLOK`, so `XAIOB`'s
+    IOBLOK-resident storage is not available and neither macro set fits.
+
+    What the two sites actually need turns out to be much less than either
+    macro provides.
+
+    **The `HIO` at 00646000 needs no storage at all.**  `HSCH` takes its
+    subchannel in R1 and writes nothing, so it is two instructions and is
+    reentrant by construction.  R1 is safe to clobber: `CALL DMKSCNRD` set it
+    before the loop, nothing between here and `EXTEXIT` reads it, and each
+    iteration reloads it from `RDEVSSID` anyway.
+
+    **The `TIO` at 00651000 has no CSW test and no condition-code test after
+    it** -- `BCT R15,HALTCON` is the next instruction.  Its whole purpose is to
+    consume pending status, so the IRB `TSCH` stores into is **write-only**:
+    nothing ever reads it.  That is what makes a shared scratch area correct
+    here rather than merely convenient, because two paths racing on it would
+    both be discarding what they wrote.  It is the one case in this conversion
+    where reentrancy costs nothing to satisfy.
+
+    `BC 2,*-4` at 00647000 spans the converted `HIO`, and `HALTCON` at 00645000
+    already labels the target, so it only needs the name it could have used
+    all along.  `R-26`.
+
+    No `COPY XABLOKS` is needed: there is no `SSCH` here, so `ORBCCWFM` never
+    comes into it.
+    """
+    d = Deck(XA22)
+    nxt = lambda q: next_seq(SRC + '/DMKPSA.ASSEMBLE', q)
+
+    d.replace('00646000', '00647000', first='00646100', inc=100,
+              limit=nxt('00647000'), lines=Deck.comment(
+        "HSCH FOR HIO. NO STORAGE AND NO CONDITION-CODE WORK: THE "
+        "BC 8+1,EXTEXIT BELOW MEANS THE SAME THING UNDER HSCH. R1 IS FREE "
+        "-- NOTHING READS IT AGAIN, AND EACH RETRY RELOADS IT.") + [
+        "         L     R1,RDEVSSID    SUBSYSTEM ID FROM THE RDEVBLOK",
+        "         HSCH  0              HALT ACTIVE I/O",
+        "         BC    2,HALTCON      CC = 2, BURST OPERATION HALTED",
+    ])
+
+    d.replace('00651000', first='00651100', inc=100, limit=nxt('00651000'),
+              lines=Deck.comment(
+        "TSCH FOR TIO. THE NEXT INSTRUCTION IS BCT, SO NEITHER THE CSW NOR "
+        "THE CONDITION CODE IS EVER LOOKED AT -- THIS ONLY CONSUMES PENDING "
+        "STATUS. THE IRB IS THEREFORE WRITE-ONLY AND A SHARED SCRATCH AREA "
+        "IS CORRECT, NOT JUST CONVENIENT. I-75.") + [
+        "         L     R1,RDEVSSID    SUBSYSTEM ID FROM THE RDEVBLOK",
+        "         TSCH  PSAXIRB        DRAIN IT; THE IRB IS DISCARDED",
+    ])
+
+    # After DMKPSANX and before the LTORG: data, so nothing falls into it.
+    d.insert('00665000', first='00665010', inc=10, limit=nxt('00665000'),
+             lines=Deck.comment(
+        "WRITE-ONLY IRB FOR THE TSCH ABOVE. SIXTY-FOUR BYTES, FULLWORD "
+        "ALIGNED -- TSCH TAKES A SPECIFICATION EXCEPTION OTHERWISE. "
+        "NOTHING READS IT, SO NO PATH CAN BE HARMED BY ANOTHER WRITING "
+        "IT.") + [
+        "PSAXIRB  DS    16F            IRB, WRITTEN AND DISCARDED",
+    ])
+    return d
+
+
 def dmkcns():
     """The console driver: the last must-work module on the M1 path.
 
@@ -2090,6 +2158,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
         [(XA10, 'CHANNEL CHECK: NO LCL ANALYSIS, TERMINATE INSTEAD')])
 
+    psam = dmkpsa()
+    psam.write(os.path.join(HERE, 'DMKPSA.%s' % XA22))
+    aux(os.path.join(HERE, 'DMKPSA.AUXLCL'),
+        [(XA22, 'HSCH AND TSCH IN LOWCORE, WITH A WRITE-ONLY IRB')])
+
     cns = dmkcns()
     cns.write(os.path.join(HERE, 'DMKCNS.%s' % XA21))
     aux(os.path.join(HERE, 'DMKCNS.AUXLCL'),
@@ -2142,7 +2215,8 @@ def main():
                  'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL',
                  'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL',
                  'DMKFRE.%s' % XA20, 'DMKFRE.AUXLCL',
-                 'DMKCNS.%s' % XA21, 'DMKCNS.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKCNS.%s' % XA21, 'DMKCNS.AUXLCL',
+                 'DMKPSA.%s' % XA22, 'DMKPSA.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
