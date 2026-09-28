@@ -1,4 +1,4 @@
-./ I 00044000 $ 00044100 010                                                    
+./ I 00050300 $ 00050310 010                                                    
 *  ESA/390 OPERATION REQUEST BLOCK AND INTERRUPTION RESPONSE   XA0003DK         
 *  BLOCK, ONE PER OUTSTANDING OPERATION. DMKIOS IS REENTRANT   XA0003DK         
 *  AND NEVER DISABLES -- IT HAS NO STNSM, STOSM OR SSM         XA0003DK         
@@ -6,6 +6,9 @@
 *  WITH ORBLOK AND IRBLOK IN XABLOKS. THE IRB IS SIXTY-FOUR    XA0003DK         
 *  BYTES BECAUSE TSCH ALWAYS STORES ALL SIXTY-FOUR, EVEN       XA0003DK         
 *  THOUGH M1 READS ONLY THE SCSW.                              XA0003DK         
+*  DS 0D: SSCH AND TSCH BOTH TAKE A SPECIFICATION              XA0003DK         
+*  EXCEPTION ON A MISALIGNED OPERAND.                          XA0003DK         
+         DS    0D             DOUBLEWORD ALIGNED               XA0003DK         
 IOBORB   DS    0XL32          ORB -- SEE ORBLOK IN XABLOKS     XA0003DK         
 IOBOPARM DS    1F             INTERRUPTION PARAMETER           XA0003DK         
 IOBOFL4  DS    1X             KEY AND SUSPEND CONTROL          XA0003DK         

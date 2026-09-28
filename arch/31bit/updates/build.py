@@ -206,7 +206,15 @@ def ioblok():
     in that EQU stays exact.
     """
     d = Deck(XA3)
-    d.insert('00044000', first='00044100', inc=10, limit='00045000',
+    # Anchored at the END of the block, immediately before `IOBSIZE EQU
+    # (*-IOBLOK)/8`, and NOT after IOBCSW where it first went.  An insert in
+    # the middle shifts every field below it -- IOBIOER, IOBSPEC, IOBFLAG and
+    # the rest -- by 112 bytes, so every module that reads an IOBLOK, not just
+    # those that allocate one, would need reassembling to stay correct.  At the
+    # end, only IOBSIZE changes, which narrows the blast radius from "reads an
+    # IOBLOK" to "allocates one".  Both still require a full nucleus rebuild;
+    # the difference is what a missed module does.  I-76.
+    d.insert('00050300', first='00050310', inc=10, limit='00051000',
              lines=Deck.comment(
         "ESA/390 OPERATION REQUEST BLOCK AND INTERRUPTION RESPONSE BLOCK, "
         "ONE PER OUTSTANDING OPERATION. DMKIOS IS REENTRANT AND NEVER "
@@ -214,6 +222,9 @@ def ioblok():
         "CANNOT BE A SHARED WORK AREA. MAPPED WITH ORBLOK AND IRBLOK IN "
         "XABLOKS. THE IRB IS SIXTY-FOUR BYTES BECAUSE TSCH ALWAYS STORES "
         "ALL SIXTY-FOUR, EVEN THOUGH M1 READS ONLY THE SCSW.") + [
+        "*  DS 0D: SSCH AND TSCH BOTH TAKE A SPECIFICATION",
+        "*  EXCEPTION ON A MISALIGNED OPERAND.",
+        "         DS    0D             DOUBLEWORD ALIGNED",
         "IOBORB   DS    0XL32          ORB -- SEE ORBLOK IN XABLOKS",
         "IOBOPARM DS    1F             INTERRUPTION PARAMETER",
         "IOBOFL4  DS    1X             KEY AND SUSPEND CONTROL",
