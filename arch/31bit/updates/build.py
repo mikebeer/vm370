@@ -2169,10 +2169,14 @@ def main():
     aux(os.path.join(HERE, 'DMKDMP.AUXLCL'),
         [(XA16, 'CHANNEL SUBSYSTEM VIA XAIO, AND THE INTTIO SITES')])
 
+    # DMKSAV IS DELIBERATELY NOT CONVERTED.  I-83: the card-deck build IPL
+    # runs DMKSAV under DMKLD00E on a bare S/370 machine, so ESA/390 opcodes
+    # there take an operation exception before the nucleus is ever written.
+    # The nucleus DMKSAV writes is IPLed from disk, and THAT path never runs
+    # either module.  The deck is kept for the day the build itself moves to
+    # ESA/390; it is simply not applied.
     sav = dmksav()
     sav.write(os.path.join(HERE, 'DMKSAV.%s' % XA17))
-    aux(os.path.join(HERE, 'DMKSAV.AUXLCL'),
-        [(XA17, 'CHANNEL SUBSYSTEM VIA XAIO')])
 
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
@@ -2232,7 +2236,7 @@ def main():
                  'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL',
                  'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL',
                  'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL',
-                 'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL',
+                 'DMKSAV.%s' % XA17,          # AUXLCL deliberately absent, I-83
                  'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL',
                  'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL',
                  'DMKFRE.%s' % XA20, 'DMKFRE.AUXLCL',

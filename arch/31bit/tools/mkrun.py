@@ -28,7 +28,8 @@ Each spec is one of:
     read:MEMBER:FILETYPE  stage and read a plain member, assemble nothing
     mac:LIBNAME           VMFMAC that library, restaging its EXEC member list
     asm:MODULE            VMFASM a module already on disk
-    cmd:<text>[:<secs>]   run one CMS command, default 10 seconds
+    cmd:<text>[:<secs>]   run one CMS command BEFORE the assemblies
+    post:<text>[:<secs>]  run one CMS command AFTER them
     herc:<text>[:<secs>]  run one Hercules command, default 8 seconds
 
 `--punch <file>` attaches the card punch ahead of the IPL; see below for why
@@ -176,6 +177,7 @@ def main():
     asm = []
     mac = []
     cmd = []
+    post = []
     for spec in specs:
         parts = spec.split(':')
         if parts[0] == 'mac':
@@ -202,6 +204,17 @@ def main():
             text = rest[0]
             secs = int(rest[1]) if len(rest) > 1 and rest[1].isdigit() else 8
             cmd.append((text, secs, False))
+            continue
+        if parts[0] == 'post':
+            # `cmd:` runs before the VMFASM block, which is right for setting an
+            # assembly up and wrong for consuming its output: a VMFLOAD issued
+            # as a `cmd:` punches the PREVIOUS assembly's TEXT.  Reverting
+            # DMKSAV needed an erase, an assembly and a VMFLOAD in that order,
+            # which no ordering of `cmd:` can express.  I-84.
+            rest = spec.split(':', 2)[1:]
+            text = rest[0]
+            secs = int(rest[1]) if len(rest) > 1 and rest[1].isdigit() else 10
+            post.append((text, secs))
             continue
         if parts[0] == 'cmd':
             # split(':', 2) so the command keeps any colon of its own and an
@@ -253,6 +266,8 @@ def main():
         rc.append('/vmfmac %s %s\npause 90\n' % (lib.lower(), lib.lower()))
     for mod in asm:
         rc.append('/vmfasm %s dmklcl\npause 75\n' % mod.lower())
+    for text, secs in post:
+        rc.append('/%s\npause %d\n' % (text, secs))
     if '--bare' in sys.argv:
         rc.append('exit\n')          # no CP to shut down
     else:
