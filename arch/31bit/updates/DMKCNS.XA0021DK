@@ -1,0 +1,28 @@
+./ R 00393000          $ 00393100 100                                           
+*  HSCH FOR HDV. THE BC 8/2/1 MASKS BELOW ARE UNCHANGED:       XA0021DK         
+*  CNSEXIT ON CC0, RETRY ON CC2, CNSICC3 ON CC3, ALL TO        XA0021DK         
+*  LABELS.                                                     XA0021DK         
+         XABHIO               .......SCREEEECCCCHHHH.......    XA0021DK         
+./ R 00567000          $ 00567100 100                                           
+*  TSCH FOR TIO, CONDITION CODES NORMALISED. CC0 STILL MEANS   XA0021DK         
+*  NOTHING PENDING AND BRANCHES TO EBCOMPT BEFORE ANY CSW IS   XA0021DK         
+*  READ; THE TM CSW+4,ATTN BELOW IS ONLY REACHED ON CC1,       XA0021DK         
+*  WHERE XABTIO HAS BUILT THE CSW.                             XA0021DK         
+         XABTIO               CLEAR PENDING STATUS, IF ANY     XA0021DK         
+./ R 01624147          $ 01624148 001                                           
+*  SSCH. BC 13 BELOW IS UNTOUCHED.                             XA0021DK         
+         XABSIO               ATTEMPT TO START THE I/O         XA0021DK         
+./ R 01624196 01624203 $ 01624197 001                                           
+*  HSCH AND CSCH. THIS CLRIO IS THE ONLY ONE IN THE NUCLEUS.   XA0021DK         
+*  CSCH SETS CC0 -- CLEARED -- OR CC3 -- NOT VALID, NOT        XA0021DK         
+*  ENABLED OR NOT THERE -- AND NOTHING ELSE, WHICH IS EXACTLY  XA0021DK         
+*  THE PAIR CNSTSIO1 TESTS WITH BCR 8,R2 AND BC 1,CNSICC3.     XA0021DK         
+         XABHIO               CLEAR UCW                        XA0021DK         
+         XABCIO               CLEAR CC=3 CONDITION             XA0021DK         
+./ I 01724000 $ 01724010 010                                                    
+*  XAIOB WORK AREAS AND SHIMS, BEFORE THE LTORG AND AFTER THE  XA0021DK         
+*  DC CONSTANTS, SO NOTHING FALLS INTO IT AND THE CALLERS'     XA0021DK         
+*  OWN USING DMKCNS,R12,R13 IS THE ONE IN FORCE. I-70.         XA0021DK         
+         XAIOBWRK             XAIOB SHIMS                      XA0021DK         
+./ I 01971000 $ 01971010 010                                                    
+         COPY  XABLOKS        FOR ORBCCWFM                     XA0021DK         

@@ -47,6 +47,7 @@ XA17 = 'XA0017DK'
 XA18 = 'XA0018DK'
 XA19 = 'XA0019DK'
 XA20 = 'XA0020DK'
+XA21 = 'XA0021DK'
 
 
 def psa():
@@ -1859,6 +1860,83 @@ def dmkvsj():
     return d
 
 
+def dmkcns():
+    """The console driver: the last must-work module on the M1 path.
+
+    `DMKQCNWT` -> `DMKCNSIC` -> `DMKIOS` -> interrupt -> `DMKCNSIN` is M1's
+    target, so these five sites have to be right rather than merely assemble.
+    They are also the only place in the nucleus that issues `CLRIO`.
+
+    It uses `XAIOB` for the same reason `DMKIOT` does -- `USING RDEVBLOK,R8`
+    and `USING IOBLOK,R10` from the prologue, and every caller takes its device
+    from `CALL DMKSCNRD`, which returns R8's own address.
+
+    **The base registers needed checking and the answer was not obvious.**  The
+    module drops R13 twice and establishes `USING DMKCNSIN,R12` and
+    `USING DMKCNSEN,R12`, which looks like three addressability domains with
+    the five sites split across two of them -- and one `XAIOBWRK` can only be
+    assembled against one base (`I-70`).  It is not: each of those entry points
+    reloads R12 and R13 from `CNSBASE` within two instructions and
+    re-establishes `USING DMKCNS,R12,R13`, so the alternative `USING` covers
+    only its own prologue and every site sees the same base.  The same shape as
+    `DMKCPI`'s `DMKCPIEM`.
+
+    Placement is before the `LTORG` at 01735000, after the `DC` constants at
+    01709000-01724000, so nothing falls into it and it sits between the sites
+    and the module's end rather than past it -- `USING DMKCNS,R12,R13` gives
+    8 KB and the module already fits inside that, but the five call sites and
+    the work area add roughly 280 bytes to it.  If that tips it over, CE says
+    `IFO209` and the fix is to move the block, not to rethink it (`I-56`).
+    """
+    d = Deck(XA21)
+    nxt = lambda q: next_seq(SRC + '/DMKCNS.ASSEMBLE', q)
+
+    d.replace('00393000', first='00393100', inc=100, limit=nxt('00393000'),
+              lines=Deck.comment(
+        "HSCH FOR HDV. THE BC 8/2/1 MASKS BELOW ARE UNCHANGED: CNSEXIT ON "
+        "CC0, RETRY ON CC2, CNSICC3 ON CC3, ALL TO LABELS.") + [
+        "         XABHIO               .......SCREEEECCCCHHHH.......",
+    ])
+
+    d.replace('00567000', first='00567100', inc=100, limit=nxt('00567000'),
+              lines=Deck.comment(
+        "TSCH FOR TIO, CONDITION CODES NORMALISED. CC0 STILL MEANS NOTHING "
+        "PENDING AND BRANCHES TO EBCOMPT BEFORE ANY CSW IS READ; THE "
+        "TM CSW+4,ATTN BELOW IS ONLY REACHED ON CC1, WHERE XABTIO HAS "
+        "BUILT THE CSW.") + [
+        "         XABTIO               CLEAR PENDING STATUS, IF ANY",
+    ])
+
+    # Records here are spaced by seven, so number by one.
+    d.replace('01624147', first='01624148', inc=1, limit=nxt('01624147'),
+              lines=Deck.comment(
+        "SSCH. BC 13 BELOW IS UNTOUCHED.") + [
+        "         XABSIO               ATTEMPT TO START THE I/O",
+    ])
+
+    d.replace('01624196', '01624203', first='01624197', inc=1,
+              limit=nxt('01624203'), lines=Deck.comment(
+        "HSCH AND CSCH. THIS CLRIO IS THE ONLY ONE IN THE NUCLEUS. CSCH "
+        "SETS CC0 -- CLEARED -- OR CC3 -- NOT VALID, NOT ENABLED OR NOT "
+        "THERE -- AND NOTHING ELSE, WHICH IS EXACTLY THE PAIR CNSTSIO1 "
+        "TESTS WITH BCR 8,R2 AND BC 1,CNSICC3.") + [
+        "         XABHIO               CLEAR UCW",
+        "         XABCIO               CLEAR CC=3 CONDITION",
+    ])
+
+    d.insert('01724000', first='01724010', inc=10, limit=nxt('01724000'),
+             lines=Deck.comment(
+        "XAIOB WORK AREAS AND SHIMS, BEFORE THE LTORG AND AFTER THE DC "
+        "CONSTANTS, SO NOTHING FALLS INTO IT AND THE CALLERS' OWN "
+        "USING DMKCNS,R12,R13 IS THE ONE IN FORCE. I-70.") + [
+        "         XAIOBWRK             XAIOB SHIMS",
+    ])
+
+    d.insert('01971000', first='01971010', inc=10, limit=nxt('01971000'),
+             lines=["         COPY  XABLOKS        FOR ORBCCWFM"])
+    return d
+
+
 def dmkfre():
     """Three CR2 loads that meant "disable channel zero while we are extending".
 
@@ -2012,6 +2090,11 @@ def main():
     aux(os.path.join(HERE, 'DMKCCH.AUXLCL'),
         [(XA10, 'CHANNEL CHECK: NO LCL ANALYSIS, TERMINATE INSTEAD')])
 
+    cns = dmkcns()
+    cns.write(os.path.join(HERE, 'DMKCNS.%s' % XA21))
+    aux(os.path.join(HERE, 'DMKCNS.AUXLCL'),
+        [(XA21, 'CONSOLE I/O VIA XAIOB, INCLUDING THE ONLY CLRIO')])
+
     e = dmkfre()
     e.write(os.path.join(HERE, 'DMKFRE.%s' % XA20))
     aux(os.path.join(HERE, 'DMKFRE.AUXLCL'),
@@ -2058,7 +2141,8 @@ def main():
                  'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL',
                  'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL',
                  'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL',
-                 'DMKFRE.%s' % XA20, 'DMKFRE.AUXLCL', 'DMKLCL.EXEC'):
+                 'DMKFRE.%s' % XA20, 'DMKFRE.AUXLCL',
+                 'DMKCNS.%s' % XA21, 'DMKCNS.AUXLCL', 'DMKLCL.EXEC'):
         bad = verify(os.path.join(HERE, name))
         print('%-16s %3d cards  %s'
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
