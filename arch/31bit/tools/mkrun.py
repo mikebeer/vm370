@@ -287,7 +287,7 @@ if __name__ == '__main__':
 
 
 def archmode(conf, mode):
-    """Set ARCHMODE and the two settings that must move with it.
+    """Set ARCHMODE and the three settings that must move with it.
 
     Flipping ARCHMODE alone leaves CE's config self-contradictory, and Mike
     caught it: `CPUMODEL 4381` is a S/370 4381, a machine that does not exist
@@ -301,12 +301,20 @@ def archmode(conf, mode):
     was XAIODEV = 0000, I-88), which is exactly why they were worth fixing
     separately rather than in the middle of a diagnosis.  S/370 runs keep
     CE's shipped values so the control stays a control.  I-89.
+
+    MAINSIZE moves too, and it cannot be the same number in both.  S/370 is
+    24-bit: 16 MB is the architectural ceiling, so the build machine stays at
+    CE's shipped 16.  ESA/390 is 31-bit and the whole point of the project, so
+    it gets 256 -- which is also a live test of CP's own storage sizing, since
+    `DMKCPI957I Storage size = 16384 K` is DETECTED at IPL rather than
+    generated.  CP will very likely still stop at 16 MB until the storage-key
+    and page-table work is done; what matters now is that it does not break.
     """
     import re
     want = {'S/370':   [('ARCHMODE', 'S/370'),   ('CPUMODEL', '4381'),
-                        ('ECPSVM', 'YES')],
+                        ('ECPSVM', 'YES'),       ('MAINSIZE', '16')],
             'ESA/390': [('ARCHMODE', 'ESA/390'), ('CPUMODEL', '3090'),
-                        ('ECPSVM', 'NO')]}[mode]
+                        ('ECPSVM', 'NO'),        ('MAINSIZE', '256')]}[mode]
     text = open(conf).read()
     for key, val in want:
         text = re.sub(r'(?m)^%s\s+\S+.*$' % key, '%-15s %s' % (key, val), text)

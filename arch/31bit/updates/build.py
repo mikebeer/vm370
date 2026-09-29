@@ -1304,11 +1304,34 @@ def dmkckp():
         d.replace(seq, first=first or str(int(seq) + inc), inc=inc,
                   limit=nxt(seq), lines=lines)
 
-    # --- 00208000: the IPL device address DMKVMI now leaves in SYSIPLDV.
+    # --- 00208000: the IPL device, taken from where the IPL actually left it.
+    #
+    # The first attempt read SYSIPLDV, on the grounds that DMKVMI (XA0011DK)
+    # and DMKCPI (00484000) both put the IPL device address there.  True --
+    # and useless here, because DMKCKPT runs AT IPL, before DMKCPI has run at
+    # all, so SYSIPLDV is still zero.  XAIOFIND was handed device 0000,
+    # scanned all 256 subchannels, found nothing and returned cc3; the machine
+    # then spun in the hundred-iteration retry loop above.  Reading XAIO's own
+    # work area out of storage is what showed it: XAIODEV = 0000.  I-88.
+    #
+    # What the IPL does leave is the subsystem-identification word at X'B8',
+    # dumped as 00010056 on the real machine -- and in S/370 the device
+    # address at X'BA', dumped as 06A1.  So the bootstrap needs no lookup at
+    # all: it already holds the answer XAIOFIND exists to compute.  Seeding
+    # the cache rather than calling it also removes up to 256 STSCHs from the
+    # IPL path.
+    #
+    # R0 and R1 are both free here: R0 is the only output the next statement
+    # wants, and 00212000 clears R1 four statements later.
     one('00208000', Deck.comment(
-        "SYSIPLDV IS WHERE DMKVMI PUTS IT NOW -- XA0011DK -- AND WHERE DMKCPI "
-        "PUTS IT AT 00484000. I-47.") + [
-        "         LH    R0,SYSIPLDV         GET SYS IPL ADDRESS",
+        "DMKCKPT RUNS AT IPL, BEFORE DMKCPI EXISTS, SO SYSIPLDV IS STILL "
+        "ZERO AT THIS POINT -- THAT READ ASKED XAIOFIND FOR DEVICE 0000 AND "
+        "GOT CC3. THE IPL LEAVES THE SUBSYSTEM ID AT X'B8'. I-88.") + [
+        "         L     R1,IOSSID      SSID LEFT BY THE IPL",
+        "         ST    R1,XAIOSSID    SEED THE LOOKUP -- NO SCAN",
+        "         STSCH XAIOSCHB       PMCW HAS THE DEVICE NUMBER",
+        "         LH    R0,XAIOSCHB+6  WHICH IS WHAT SYSRES MEANS",
+        "         STH   R0,XAIODEV     SO THE CACHE HITS FIRST TIME",
     ])
 
     # --- 00269000 and 00319000/01498000: the interruption information.

@@ -1,7 +1,13 @@
 ./ R 00208000          $ 208100 100                                             
-*  SYSIPLDV IS WHERE DMKVMI PUTS IT NOW -- XA0011DK -- AND     XA0015DK         
-*  WHERE DMKCPI PUTS IT AT 00484000. I-47.                     XA0015DK         
-         LH    R0,SYSIPLDV         GET SYS IPL ADDRESS         XA0015DK         
+*  DMKCKPT RUNS AT IPL, BEFORE DMKCPI EXISTS, SO SYSIPLDV IS   XA0015DK         
+*  STILL ZERO AT THIS POINT -- THAT READ ASKED XAIOFIND FOR    XA0015DK         
+*  DEVICE 0000 AND GOT CC3. THE IPL LEAVES THE SUBSYSTEM ID    XA0015DK         
+*  AT X'B8'. I-88.                                             XA0015DK         
+         L     R1,IOSSID      SSID LEFT BY THE IPL             XA0015DK         
+         ST    R1,XAIOSSID    SEED THE LOOKUP -- NO SCAN       XA0015DK         
+         STSCH XAIOSCHB       PMCW HAS THE DEVICE NUMBER       XA0015DK         
+         LH    R0,XAIOSCHB+6  WHICH IS WHAT SYSRES MEANS       XA0015DK         
+         STH   R0,XAIODEV     SO THE CACHE HITS FIRST TIME     XA0015DK         
 ./ R 00269000          $ 269100 100                                             
 *  X'B8' WAS FOUR BYTES OF KEY, FLAGS AND DEVICE ADDRESS. IT   XA0015DK         
 *  IS NOW THE SUBSYSTEM ID WORD FOLLOWED BY THE INTERRUPTION   XA0015DK         
