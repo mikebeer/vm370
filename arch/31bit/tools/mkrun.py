@@ -284,3 +284,31 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
+
+def archmode(conf, mode):
+    """Set ARCHMODE and the two settings that must move with it.
+
+    Flipping ARCHMODE alone leaves CE's config self-contradictory, and Mike
+    caught it: `CPUMODEL 4381` is a S/370 4381, a machine that does not exist
+    in ESA/390, so STIDP would report a S/370 processor to an ESA/390 CP; and
+    `ECPSVM YES` declares the ECPS:VM assists, whose E6xx opcodes are
+    GENx370x -- S/370 only -- so in ESA/390 the declaration is at best a
+    no-op and at worst a confounder, because CP detects the assists by taking
+    a program check and recovering.
+
+    Neither caused the cc=3 that was under investigation when he asked (that
+    was XAIODEV = 0000, I-88), which is exactly why they were worth fixing
+    separately rather than in the middle of a diagnosis.  S/370 runs keep
+    CE's shipped values so the control stays a control.  I-89.
+    """
+    import re
+    want = {'S/370':   [('ARCHMODE', 'S/370'),   ('CPUMODEL', '4381'),
+                        ('ECPSVM', 'YES')],
+            'ESA/390': [('ARCHMODE', 'ESA/390'), ('CPUMODEL', '3090'),
+                        ('ECPSVM', 'NO')]}[mode]
+    text = open(conf).read()
+    for key, val in want:
+        text = re.sub(r'(?m)^%s\s+\S+.*$' % key, '%-15s %s' % (key, val), text)
+    open(conf, 'w').write(text)
+    return mode
