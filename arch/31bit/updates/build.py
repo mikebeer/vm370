@@ -1750,6 +1750,30 @@ def dmksav():
     def one(seq, lines, inc=100):
         blk(seq, None, lines, inc=inc)
 
+    # --- 00145000: clear the cached architecture BEFORE any I/O.
+    #
+    # DMKSAV is the one module whose RUNTIME STATE ends up in the nucleus it
+    # writes.  The build runs it on a real S/370, so XAIOPROB caches X'01' in
+    # XAIOMODE -- and then DMKSAVNC writes the nucleus to disk INCLUDING its
+    # own data area, baking that answer in.  The ESA/390 IPL then trusts it
+    # and issues SIO.  The trace showed exactly that:
+    #
+    #     CLI XAIOMODE,X'00'   -> already non-zero, probe skipped
+    #     CLI XAIOMODE,X'01'   -> says S/370
+    #     SIO 0(1)             -> on an ESA/390 machine
+    #
+    # One MVI fixes it: reset the cache at entry so the probe always runs
+    # fresh.  It goes AFTER 00145000 rather than before, because STCAW is a
+    # branch target -- `BC 15,8(0,3)` reaches it from DMKSAVRS -- and anything
+    # placed ahead of the label is simply skipped on that path.  I-100.
+    d.insert('00145000', first='00145100', inc=100, limit=nxt('00145000'),
+             lines=Deck.comment(
+        "DMKSAVNC WRITES THIS MODULE'S OWN STORAGE INTO THE NUCLEUS, SO A "
+        "CACHED PROBE RESULT WOULD PERSIST FROM THE S/370 BUILD INTO THE "
+        "ESA/390 IPL. CLEAR IT AND LET XAIOPROB ASK AGAIN. I-100.") + [
+        "         MVI   XAIOMODE,X'00' RE-PROBE, DO NOT INHERIT",
+    ])
+
     # --- 00149100 and 00150000.  The label is literally SIO.
     d.replace('00149100', '00150000', first='00149200', inc=100,
               limit=nxt('00150000'), lines=Deck.comment(
@@ -1757,6 +1781,45 @@ def dmksav():
         "BEEN TRUE IN THIS MODULE AND STILL ASSEMBLES. R-26: *-4 NAMES IT.") + [
         "SIO      XASIO R10",
         "         BC    7,SIO",
+    ])
+
+    # --- 00151000 to 00156000: the first of the two enabled waits.
+    #
+    # An enabled wait for an I/O interrupt is the ONE place DMKSAV does not
+    # poll, and three separate things break it under ESA/390, not one:
+    #
+    #   * XWAIT is a BC-mode PSW (see the constants below -- but that is only
+    #     the first of the three).
+    #   * Interrupt delivery is gated by CR6, the I/O-interruption subclass
+    #     mask.  DMKSAV instead builds a channel mask from the device address
+    #     and sets CR2 (00418300-00418600, @VA11715) -- the S/370 EC-mode
+    #     channel-mask register, which in ESA/390 is not that register at all.
+    #     The tC trace shows CR6 = 00000000, so the interrupt would never
+    #     arrive and a corrected XWAIT would have waited for ever.
+    #   * `CH 10,IOOPSW+2` tests the device address the BC-mode hardware
+    #     leaves in the I/O old PSW's interruption-code field at X'3A'.  EC
+    #     mode puts it at X'BA' and ESA/390 does not supply one at all -- an
+    #     I/O interruption gives a subsystem ID at X'B8' and an IRB via TSCH.
+    #
+    # So the interrupt-driven shape needs four coupled changes to work.
+    # Polling needs none: XATIO already handles both architectures, and its
+    # shim rebuilds a CSW at the architected location from the IRB, so the
+    # `CLC CSW+4(2)` that follows each wait keeps working untouched.  It is
+    # also what the rest of DMKSAV already does -- the wait is the odd one
+    # out, not the pattern.
+    #
+    # XATIO's condition codes are S/370 TIO's: cc0 available, cc1 CSW stored,
+    # cc2 busy, cc3 not operational.  Status arrives as cc1, so loop on
+    # everything else -- mask 8+2+1 = 11.  I-102.
+    d.replace('00151000', '00156000', first='00151100', inc=100,
+              limit=nxt('00156000'), lines=Deck.comment(
+        "AN ENABLED WAIT FOR AN I/O INTERRUPT NEEDS A CR6 SUBCLASS MASK AND A "
+        "DEVICE ADDRESS IN THE I/O OLD PSW, AND ESA/390 HAS NEITHER. POLL, "
+        "WHICH IS WHAT THE REST OF THIS MODULE DOES. I-102.") + [
+        "WAITX    DS    0H",
+        "         XATIO R10            POLL FOR COMPLETION",
+        "         BC    11,WAITX       ANY CC BUT 1: NO STATUS YET",
+        "IOINT    DS    0H             CC1: THE CSW IS BUILT",
     ])
 
     # --- 00163000 to 00166000.
@@ -1778,6 +1841,84 @@ def dmksav():
         "SAVWT2   XATIO R10            TEST FOR COMPLETION",
         "         BC    7,SAVWT2       TRY AGAIN",
     ])
+
+    # --- 00236000 to 00334000, then 00630000: the PSWs.
+    #
+    # DMKSAV states the problem in its own source.  Its IPL data is
+    #
+    #     IPLDATA  DC  X'000C000000000800'  EXTENDED PSW FOR IPL
+    #
+    # -- bit 12 on, EC mode, and IBM's comment says so.  That is the PSW
+    # DMKSAV WRITES, and it is why CP runs in EC mode at all (I-82).  Every
+    # PSW DMKSAV *itself* loads is BC mode:
+    #
+    #     XWAIT    X'7E06'      enabled wait for an I/O interrupt
+    #     IONP     X'00040000'  I/O new
+    #     MCNP     X'00020000'  machine check new
+    #     WSC10    X'01060000'  wait code 010
+    #     WSC11    X'00020000'  wait code 011
+    #     DISAWT0  X'00020000'  wait code 012
+    #     EXTINT   X'00040000'  external new, restarts at DMKSAVNC
+    #     LBIOPN   X'00040000'  I/O new for the second wait
+    #
+    # The module builds an EC-mode system with BC-mode code.  On a S/370 that
+    # is legal; in ESA/390 bit 12 must be 1 and LPSW raises a SPECIFICATION
+    # EXCEPTION without it -- reported with ILC 0, because the exception is
+    # recognised while loading the PSW rather than while decoding.  That is
+    # the 0006/ILC=0 the tC trace caught at 00071032.
+    #
+    # DISAWT0 is the one to notice.  Wait code 012 is `NUCLEUS LOAD ON
+    # 'LABEL'` -- SUCCESS, and the gate every run in this project tests for.
+    # Left alone, a fully working conversion would have program-checked at
+    # the finishing line and read as the I/O still being broken.
+    #
+    # Seven of the eight are one nibble: OR in X'08'.  XWAIT is not, because
+    # X'7E' sets PSW bits 2-4, which are the BC-mode channel masks 2-4 and
+    # MUST BE ZERO in EC mode -- so bit 12 alone would trade one
+    # specification exception for another.  DMKCKP, converted by IBM at
+    # @V407429, already has the right constant for exactly this job:
+    #
+    #     IWAIT    DC  X'020E0000'      ENABLE
+    #
+    # byte 0 = X'02', the EC-mode I/O mask.  Use it.  I-102.
+    for seq, old, new, what in (
+            ('00236000', "X'7E06'",     "X'020E'",     'XWAIT'),
+            ('00239000', "X'00040000'", "X'000C0000'", 'IONP'),
+            ('00241000', "X'00020000'", "X'000A0000'", 'MCNP'),
+            ('00328000', "X'01060000'", "X'010E0000'", 'WSC10'),
+            ('00330000', "X'00020000'", "X'000A0000'", 'WSC11'),
+            ('00332000', "X'00020000'", "X'000A0000'", 'DISAWT0'),
+            ('00334000', "X'00040000'", "X'000C0000'", 'EXTINT'),
+    ):
+        # The label sits in columns 1-8 for the named ones and is blank for
+        # LBIOPN's and for the second word of a pair, so reproduce the card
+        # rather than patching it: an UPDATE replacement is a whole card.
+        lbl = '' if what == 'LBIOPN' else what
+        # '%08d', not str(): a sequence number is an EIGHT-COLUMN field and
+        # str(int('00236000') + 10) is '236010', which UPDATE would place at
+        # columns 73-78 and compare as a different, out-of-order key.
+        d.replace(seq, first='%08d' % (int(seq) + 10), inc=10, limit=nxt(seq),
+                  lines=["%-8s DC    %-14s EC MODE. I-102." % (lbl, new)])
+
+    # --- 00603000 to 00605000: the second enabled wait, same reasoning.
+    #
+    # R15 is live across this one -- `BR R15` at 00609000 returns on it -- and
+    # XATIO's STM/LM pair saves R14 through R1 without disturbing the
+    # condition code, so that return survives the poll.  I-102.
+    d.replace('00603000', '00605000', first='00603100', inc=100,
+              limit=nxt('00605000'), lines=Deck.comment(
+        "AS AT WAITX ABOVE. I-102.") + [
+        "WAITL    DS    0H",
+        "         XATIO R10            POLL FOR COMPLETION",
+        "         BC    11,WAITL       ANY CC BUT 1: NO STATUS YET",
+        "LBIOINT  DS    0H             CC1: THE CSW IS BUILT",
+    ])
+
+    # --- 00630000: LBIOPN, the I/O new PSW for the wait just removed.  Dead
+    #     now, and converted anyway: it is still MVC'd into IONPSW at 00599000
+    #     and would be a live trap the moment anything enabled I/O.  I-102.
+    d.replace('00630000', first='00630010', inc=10, limit=nxt('00630000'),
+              lines=["         DC    X'000C0000'    EC MODE. I-102."])
 
     # --- The work area, immediately before END.  XABLOKS must come after
     #     XAIOWORK and last of all, because it ends in DSECTs.

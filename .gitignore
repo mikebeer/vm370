@@ -2,3 +2,4 @@
 # one leaves bytecode next to the source.  Nothing generated belongs in here.
 __pycache__/
 *.pyc
+scratchpad/
