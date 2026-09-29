@@ -52,7 +52,7 @@ CKPST4   XASIO R2             READ R0                          XA0015DK
          BC    7,CKPST4       TAKE ERROR PATH                  XA0015DK         
 CKPWT4   XATIO R2             TEST FOR COMPLETION              XA0015DK         
          BC    7,CKPWT4       TRY AGAIN                        XA0015DK         
-./ I 00517500 $ 00517510 010                                                    
+./ I 00517600 $ 00517610 010                                                    
 *  BELOW OFFSET X'1000' ON PURPOSE: THE IPL RECORD READS ONLY  XA0015DK         
 *  THE FIRST 4096 BYTES OF DMKCKPT, AND XAIO IS WHAT DRIVES    XA0015DK         
 *  THE READ THAT FETCHES THE REST. ALSO OUTSIDE CLR1 AND       XA0015DK         

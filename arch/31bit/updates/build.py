@@ -1433,8 +1433,18 @@ def dmkckp():
     # constants block that runs to the LTORG at 00537000.  Nothing falls
     # through it -- every neighbour is a DC -- and it leaves XAIOWORK entirely
     # below X'1000' with room to spare.
-    d.insert('00517500', first='00517510', inc=10,
-             limit=nxt('00517500'),
+    # 00517600, NOT 00517500.  WAIT16 is an eight-byte PSW built from TWO
+    # four-byte DCs -- X'000A0000' at 00517500 and X'00000016' at 00517600 --
+    # and `./ I 00517500` inserts AFTER the first of them, landing XAIOWORK
+    # between the halves.  That splits the PSW, so `MVC IPLPSW(8),WAIT16` at
+    # 00234600 copied four bytes of WAIT16 and four bytes of work area into
+    # the restart PSW, and it displaced everything after it -- which is how
+    # the assembler noticed, complaining that `LPSW WAIT17` at 00349100 had
+    # lost its doubleword alignment.  It named the neighbour, not the victim.
+    # I-77 again: a sequence number is not a safe anchor until you have
+    # looked at what it is in the middle of.  I-97.
+    d.insert('00517600', first='00517610', inc=10,
+             limit=nxt('00517600'),
              lines=Deck.comment(
         "BELOW OFFSET X'1000' ON PURPOSE: THE IPL RECORD READS ONLY THE FIRST "
         "4096 BYTES OF DMKCKPT, AND XAIO IS WHAT DRIVES THE READ THAT FETCHES "
@@ -2212,14 +2222,21 @@ def main():
     aux(os.path.join(HERE, 'DMKDMP.AUXLCL'),
         [(XA16, 'CHANNEL SUBSYSTEM VIA XAIO, AND THE INTTIO SITES')])
 
-    # DMKSAV IS DELIBERATELY NOT CONVERTED.  I-83: the card-deck build IPL
-    # runs DMKSAV under DMKLD00E on a bare S/370 machine, so ESA/390 opcodes
-    # there take an operation exception before the nucleus is ever written.
-    # The nucleus DMKSAV writes is IPLed from disk, and THAT path never runs
-    # either module.  The deck is kept for the day the build itself moves to
-    # ESA/390; it is simply not applied.
+    # DMKSAV IS CONVERTED AGAIN, and the reasoning that reverted it was half
+    # wrong.  I-83 said neither DMKLD00E nor DMKSAV is on the disk-IPL path.
+    # The loader half is right and was tested; the DMKSAV half was inferred
+    # and is false -- DMKCKP 00354000 is `GOTO DMKSAVRS  START SYSTEM RE-IPL`,
+    # so the saved nucleus hands control to DMKSAV's restart entry.  DMKSAV
+    # therefore runs on BOTH paths: the build executes it on a S/370 machine
+    # (that is what writes SYSRES) and the disk IPL on an ESA/390 one.  I-96.
+    #
+    # Static opcodes cannot satisfy both, so XAIO now probes the architecture
+    # once and takes the native path either way.  That makes one object deck
+    # correct on both machines and is why this deck can come back.
     sav = dmksav()
     sav.write(os.path.join(HERE, 'DMKSAV.%s' % XA17))
+    aux(os.path.join(HERE, 'DMKSAV.AUXLCL'),
+        [(XA17, 'SUBCHANNEL I/O, ARCHITECTURE PROBED AT RUNTIME')])
 
     cch = dmkcch()
     cch.write(os.path.join(HERE, 'DMKCCH.%s' % XA10))
@@ -2279,7 +2296,7 @@ def main():
                  'DMKSYS.%s' % XA14, 'DMKSYS.AUXLCL',
                  'DMKCKP.%s' % XA15, 'DMKCKP.AUXLCL',
                  'DMKDMP.%s' % XA16, 'DMKDMP.AUXLCL',
-                 'DMKSAV.%s' % XA17,          # AUXLCL deliberately absent, I-83
+                 'DMKSAV.%s' % XA17, 'DMKSAV.AUXLCL',
                  'DMKVSJ.%s' % XA18, 'DMKVSJ.AUXLCL',
                  'DMKCFO.%s' % XA19, 'DMKCFO.AUXLCL',
                  'DMKFRE.%s' % XA20, 'DMKFRE.AUXLCL',
