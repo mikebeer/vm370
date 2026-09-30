@@ -362,3 +362,38 @@ def boot_failed(log):
     if 'LOGON AT' not in text:
         return 'no "LOGON AT" in the log -- MAINT never logged on'
     return None
+
+
+def arch_of(log):
+    """The architecture mode Hercules actually reported for a run.
+
+    Added 30 Sep after three diagnostics in a row were read as evidence while
+    running in the WRONG mode.  A driver resets ARCHMODE to S/370 when it
+    finishes, because the next build needs S/370; a diagnostic run afterwards
+    that forgets to set ESA/390 IPLs the converted nucleus on a S/370, where it
+    dies on its first converted instruction.  The symptom is not an error -- it
+    is `PSW=00000000 40000000` (CPU stopped, no PSW loaded) and an instruction
+    trace containing NOTHING, which reads exactly like "execution never reaches
+    this range" and was taken for that twice.
+
+    So the mode is read back from the log rather than assumed from the config,
+    for the same reason `boot_failed` reads the boot back: the only trustworthy
+    statement about a run is one the run itself made.  I-115.
+    """
+    import re
+    try:
+        text = open(log, errors='replace').read()
+    except OSError as e:
+        return 'log unreadable: %s' % e
+    m = re.findall(r'architecture mode ([A-Za-z0-9/]+)', text)
+    return m[-1] if m else None
+
+
+def wrong_arch(log, want):
+    """Reason string if `log` did not run in `want`, else None.  I-115."""
+    got = arch_of(log)
+    if got is None:
+        return 'log never reported an architecture mode'
+    if got != want:
+        return 'ran in %s, not %s -- any trace or PSW from it is void' % (got, want)
+    return None

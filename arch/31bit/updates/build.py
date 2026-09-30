@@ -58,6 +58,7 @@ XA28 = 'XA0028DK'
 XA29 = 'XA0029DK'
 XA30 = 'XA0030DK'
 XA31 = 'XA0031DK'
+XA32 = 'XA0032DK'
 
 
 def psa():
@@ -2643,6 +2644,66 @@ def ecps(module):
     return d
 
 
+
+def rdevice():
+    """I-116.  Make the generator emit the block the DSECT describes.
+
+    `RBLOKS.XA0002DK` added `RDEVSSID` and a reserved fullword after `RDEVIOBL`,
+    the DSECT's last field, so `RDEVSIZE EQU (*-RDEVBLOK)/8` went from 11
+    doublewords to 12.  But DMKRIO's blocks are not cut from the DSECT --
+    `RDEVICE.MACRO` emits them as a list of explicit `DC` statements and ends at
+    `DC F'0' RESERVED FOR IBM USE`, which IS `RDEVIOBL`.  So the array stayed at
+    88 bytes a block while every scanner started striding 96:
+
+        VSERNEXT LA    R1,RDEVSIZE*8(,R1)  POINT TO NEXT REAL DEVICE BLOCK
+
+    `DMKSCNVS` therefore walks 8 bytes further out per block, cannot find the
+    SYSRES volume label, and DMKCPI takes `ABEND 1 -- SYSRES DEVICE NOT FOUND OR
+    INCORRECT`, reported as `CPI001`.
+
+    **Measured, not argued.**  `tools/dumpscan.py` reads the printed abend dump
+    back into a byte image and reports:
+
+        ARIODV = 0149E8, ARIODC count = 949
+        OBSERVED stride = X'58' (11 doublewords)
+        CONFIRMED: 0149E8 + 949 x X'58' = 029020 = ARIOCU -- they abut exactly
+
+    949 blocks at 88 bytes land precisely on the first RCUBLOK, which settles the
+    stride beyond coincidence.  Over 949 blocks the 8-byte error accumulates to
+    7592 bytes, so the scan is not slightly off, it is off the end of the array.
+
+    **Why nothing caught it.**  Both halves are correct in isolation, they live in
+    different files, and neither mentions the other -- so all 201 modules
+    assemble with NO STATEMENTS FLAGGED and the only symptom is a scan reading
+    the wrong addresses.  The deck's own comment said *"RESERVED, KEEPS RDEVSIZE
+    EXACT"*: care was taken that `RDEVSIZE` stayed a whole number of doublewords,
+    and the question of whether anything BUILT blocks to a different length was
+    never asked.
+
+    **The rejected alternative.**  `ORG`-ing `RDEVSSID` onto `RDEVIOBL` -- unused
+    under AP=NO (I-50) -- would need no generator change at all and no length
+    change anywhere.  It is refused because it overloads a field a future AP
+    revival needs, and `dmksys()` deliberately keeps that door open: *"the
+    processor half survives untouched ... multiprocessing is reachable later"*.
+    Paying eight bytes a block (7592 bytes of nucleus) to keep the DSECT honest
+    is the cheaper of the two debts.
+    """
+    d = Deck(XA32)
+    src = SRC + '/RDEVICE.MACRO'
+    d.insert('00583000', first='00583010', inc=10,
+             limit=next_seq(src, '00583000'),
+             lines=Deck.comment(
+        "ESA/390 SUBSYSTEM IDENTIFICATION, MATCHING THE TWO FULLWORDS "
+        "RBLOKS.XA0002DK ADDED TO THE RDEVBLOK DSECT AFTER RDEVIOBL. WITHOUT "
+        "THESE THE DSECT SAYS 12 DOUBLEWORDS AND THIS MACRO EMITS 11, SO EVERY "
+        "LA R1,RDEVSIZE*8(,R1) SCAN WALKS OFF BY 8 BYTES A BLOCK -- 7592 BYTES "
+        "OVER 949 DEVICES -- AND DMKSCNVS CANNOT FIND THE SYSRES LABEL. I-116.") + [
+        "         DC    F'0' -         RDEVSSID, FILLED BY XAIOFIND",
+        "         DC    F'0' -         RESERVED, KEEPS RDEVSIZE EXACT",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -2771,10 +2832,13 @@ def main():
         # file does not name is invisible however well it was built.  The
         # first DMKIOS assembly failed on precisely this: IFO078 UNDEFINED
         # OP CODE for SSCH and TSCH, with every other new symbol resolved.
+        # RDEVICE joins the list for I-116: it is CP's own macro, and it has
+        # to be in DMKLCL for DMKRIO to assemble against the updated copy
+        # rather than the shipped one -- the same reason PSA is here.
         for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
                           ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
                           ('XAOPS', 'MACRO'), ('XAIO', 'MACRO'),
-                          ('XAIOB', 'MACRO')):
+                          ('XAIOB', 'MACRO'), ('RDEVICE', 'MACRO')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
@@ -2803,6 +2867,13 @@ def main():
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
                  'OK' if not bad else 'BAD ' + repr(bad[:3])))
         ok = ok and not bad
+    r = rdevice()
+    n = r.write(os.path.join(HERE, 'RDEVICE.%s' % XA32))
+    aux(os.path.join(HERE, 'RDEVICE.AUXLCL'),
+        [(XA32, 'RDEVSSID: MATCH THE RDEVBLOK DSECT THAT XA0002DK GREW')])
+    print('%-8s %-9s %3d cards  %s' % ('RDEVICE', XA32, n,
+          'OK' if not verify(os.path.join(HERE, 'RDEVICE.%s' % XA32)) else 'BAD'))
+
     # I-114.  Written after the per-module sections above, so the two modules
     # that already have an AUXLCL get BOTH decks listed rather than having the
     # ECPS deck silently replace the one that is already there.  An AUXLCL lists
