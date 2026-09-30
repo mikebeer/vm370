@@ -37,3 +37,5 @@ CCHRESET TM    S370ECSW+3,COMPSYS IS CHANNEL RESET?            XA0010DK
          MVC   S370ECSW-PSA(4,R2),IOERECSW ECSW TO USER        XA0010DK         
 ./ R 00801000          $ 00801100 100                                           
          L     R1,S370IOEL(R2)  POINTER TO LOGOUT AREA         XA0010DK         
+./ R 00902020          $ 00902021 001                                           
+         DC    X'000A',X'0000'     EC MODE. I-107.             XA0010DK         

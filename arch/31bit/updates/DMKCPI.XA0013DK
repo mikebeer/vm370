@@ -112,6 +112,18 @@ TSTGRF   XATIO R15            TEST FOR SENSE END               XA0013DK
 *  WHICH XF RESOLVES AS A FORWARD REFERENCE -- UNLIKE A        XA0013DK         
 *  LENGTH MODIFIER. I-51.                                      XA0013DK         
          XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0013DK         
+./ R 01898000          $ 01898010 010                                           
+XWAIT1   DC    X'000A000000000006' EC MODE. I-107.             XA0013DK         
+./ R 01899000          $ 01899010 010                                           
+XWAIT2   DC    X'000A000000000005' EC MODE. I-107.             XA0013DK         
+./ R 01900000          $ 01900010 010                                           
+XWAIT3   DC    X'000A00000000000D' EC MODE. I-107.             XA0013DK         
+./ R 01901500          $ 01901510 010                                           
+XWAIT9   DC    X'000A000000000009' EC MODE. I-107.             XA0013DK         
+./ R 01902000          $ 01902010 010                                           
+XWAIT4   DC    X'000A000000000015' EC MODE. I-107.             XA0013DK         
+./ R 01902100          $ 01902110 010                                           
+XWAITCSS DC    X'000A000000000016' EC MODE. I-107.             XA0013DK         
 ./ R 01928000 01929000 $ 01928100 100                                           
 *  CR2 HELD X'FFFFFFFF' AS THE S/370 CHANNEL MASK. ON ESA/390  XA0013DK         
 *  CR2 IS THE DISPATCHABLE-UNIT-CONTROL-TABLE ORIGIN AND MUST  XA0013DK         

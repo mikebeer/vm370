@@ -770,6 +770,13 @@ def dmkcch():
          "         MVC   S370ECSW-PSA(4,R2),IOERECSW ECSW TO USER"),
         ('00801000', '00801100', 100, '00802000',
          "         L     R1,S370IOEL(R2)  POINTER TO LOGOUT AREA"),
+        # WAITCCH's PSW: bit 12 clear, so ESA/390 answers a channel-check
+        # wait with a specification exception instead of waiting.  The wait
+        # code, X'00000002', is the second half at 00902030 and is unchanged.
+        # Same class as I-102, found by sweeping rather than by reading.
+        # I-107.
+        ('00902020', '00902021', 1, '00902030',
+         "         DC    X'000A',X'0000'     EC MODE. I-107."),
     ):
         d.replace(seq, first=first, inc=inc, limit=limit,
                   lines=list(text) if isinstance(text, tuple) else [text])
@@ -1196,6 +1203,38 @@ def dmkcpi():
         "AS A FORWARD REFERENCE -- UNLIKE A LENGTH MODIFIER. I-51.") + [
         "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
     ])
+
+    # --- 01898000 to 01902100: the six disabled-wait PSWs.
+    #
+    # `I-102` converted DMKSAV's PSW constants to EC mode and stopped there.
+    # The same class is present here and was missed, because DMKSAV was the
+    # only module whose PSWs the IPL had reached: every one of DMKCPI's
+    # disabled-wait PSWs is `X'0002...'`, bit 12 clear, which ESA/390 refuses
+    # with a specification exception.
+    #
+    # These are CP's error exits -- CAN'T GET TO CONSOLES, REAL MACHINE TOO
+    # SMALL FOR VM/370, FAILED TO CONNECT CHANNELS -- so leaving them BC mode
+    # does not merely risk a fault later: it means **every initialisation
+    # failure reports as a specification exception instead of its own wait
+    # code**, which is the difference between a diagnosis and a puzzle.
+    # Converting them costs six cards and makes CP able to say what is wrong.
+    #
+    # `CHANWT` at 01986000 is already `X'020A...'` and is left alone.  IBM
+    # converted some of this module's PSWs and not others, exactly the mixed
+    # state DMKCKP was in -- which is why a sweep beats reading.  I-107.
+    # The label is part of the card and an UPDATE replacement is a whole card,
+    # so each one is reproduced: dropping XWAIT1 and friends would leave every
+    # `LPSW XWAIT1` in the module unresolved.
+    for seq, lbl, code in (('01898000', 'XWAIT1',   '06'),
+                           ('01899000', 'XWAIT2',   '05'),
+                           ('01900000', 'XWAIT3',   '0D'),
+                           ('01901500', 'XWAIT9',   '09'),
+                           ('01902000', 'XWAIT4',   '15'),
+                           ('01902100', 'XWAITCSS', '16')):
+        d.replace(seq, first='%08d' % (int(seq) + 10), inc=10,
+                  limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', seq),
+                  lines=["%-8s DC    X'000A0000000000%s' EC MODE. I-107."
+                         % (lbl, code)])
 
     # --- CR2 and CR6.  CR2 is one word, CR3-CR13 are the eleven that follow, so
     #     the replacement splits that DC to give CR6 a value of its own.
