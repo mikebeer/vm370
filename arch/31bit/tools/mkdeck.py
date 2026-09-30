@@ -113,7 +113,28 @@ class Deck:
                 % (last, limit))
         self._claimed.append((int(first), last))
 
+    @staticmethod
+    def _seq8(first):
+        """A sequence number is an EIGHT-COLUMN field, so it is zero-padded.
+
+        Generators compute the first new number arithmetically, and
+        `str(int('01045000') + 100)` is `'1045100'` -- seven digits.  UPDATE
+        reads columns 73-80 as the key, so a short number is a DIFFERENT key
+        from the one intended and sorts elsewhere, which silently corrupts
+        the ordering seen by any LATER update level.  It does not show up in
+        this assembly, because the records replaced are still the right ones:
+        54 of 173 control cards carried a short number and every affected
+        module assembled with NO STATEMENTS FLAGGED.  That is exactly why it
+        has to be caught here rather than by reading a deck.  R-22, I-103.
+        """
+        s = str(first)
+        if not s.isdigit() or len(s) > 8:
+            raise ValueError('sequence number must be up to 8 digits: %r'
+                             % (first,))
+        return s.zfill(8)
+
     def replace(self, frm, to=None, first=None, inc=100, lines=(), limit=None):
+        first = self._seq8(first)
         self._anchor(frm)
         self._seqcheck(first, inc, len(lines), limit)
         rng = '%s %s' % (frm, to) if to else '%s%s' % (frm, ' ' * 9)
@@ -122,6 +143,7 @@ class Deck:
             self.source(l)
 
     def insert(self, after, first=None, inc=100, lines=(), limit=None):
+        first = self._seq8(first)
         self._anchor(after)
         self._seqcheck(first, inc, len(lines), limit)
         self.control('./ I %s $ %s %03d' % (after, first, inc))

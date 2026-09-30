@@ -1,4 +1,4 @@
-./ R 00208000          $ 208100 100                                             
+./ R 00208000          $ 00208100 100                                           
 *  DMKCKPT RUNS AT IPL, BEFORE DMKCPI EXISTS, SO SYSIPLDV IS   XA0015DK         
 *  STILL ZERO AT THIS POINT -- THAT READ ASKED XAIOFIND FOR    XA0015DK         
 *  DEVICE 0000 AND GOT CC3. THE IPL LEAVES THE SUBSYSTEM ID    XA0015DK         
@@ -8,7 +8,7 @@
          STSCH XAIOSCHB       PMCW HAS THE DEVICE NUMBER       XA0015DK         
          LH    R0,XAIOSCHB+6  WHICH IS WHAT SYSRES MEANS       XA0015DK         
          STH   R0,XAIODEV     SO THE CACHE HITS FIRST TIME     XA0015DK         
-./ R 00269000          $ 269100 100                                             
+./ R 00269000          $ 00269100 100                                           
 *  X'B8' WAS FOUR BYTES OF KEY, FLAGS AND DEVICE ADDRESS. IT   XA0015DK         
 *  IS NOW THE SUBSYSTEM ID WORD FOLLOWED BY THE INTERRUPTION   XA0015DK         
 *  PARAMETER -- EIGHT BYTES -- SO SAVE AND RESTORE BOTH,       XA0015DK         
@@ -35,7 +35,7 @@ CKPWT1   XATIO R1                  Loop for i/o completion     XA0015DK
          BNZ   TIOSYS         CLEAR DEVICE AGAIN               XA0015DK         
 CKPWT2   XATIO R2             TEST                             XA0015DK         
          BC    6,CKPWT2       LOOP IF BUSY OR STATUS STORED    XA0015DK         
-./ R 00319000          $ 319100 100                                             
+./ R 00319000          $ 00319100 100                                           
 SAVESTAT MVC   SAVEDEV(8),IOSSID SAVE INTERRUPT INFORMATION    XA0015DK         
 ./ R 00323000 00327000 $ 00323100 100                                           
 CKPCL3   XATIO R2             CLEAR IT                         XA0015DK         
@@ -64,21 +64,21 @@ CKPWT4   XATIO R2             TEST FOR COMPLETION              XA0015DK
 *  REGISTER IS A CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O  XA0015DK         
 *  SUBCLASS MASK AND ALREADY HAS ALL EIGHT. I-73.              XA0015DK         
          DS    0H             THE LCTL IS GONE                 XA0015DK         
-./ R 00684000          $ 684100 100                                             
+./ R 00684000          $ 00684100 100                                           
 CKPST5   XASIO R1             SLAM IT TO THE MSC               XA0015DK         
-./ R 00685000          $ 685100 100                                             
+./ R 00685000          $ 00685100 100                                           
          BC    2,CKPST5       BUSY, KEEP TRYING...             XA0015DK         
-./ R 00690000          $ 690100 100                                             
+./ R 00690000          $ 00690100 100                                           
 CKPWT5   XATIO R1             CHECK OUT STATUS                 XA0015DK         
-./ R 00691000          $ 691100 100                                             
+./ R 00691000          $ 00691100 100                                           
          BC    2,CKPWT5       BUSY, KEEP TRYING.               XA0015DK         
-./ R 00713000          $ 713100 100                                             
+./ R 00713000          $ 00713100 100                                           
          XAHIO R1             HALT IO                          XA0015DK         
-./ R 00726000          $ 726100 100                                             
+./ R 00726000          $ 00726100 100                                           
          XAHIO R1             HALT IO                          XA0015DK         
-./ R 00733000          $ 733100 100                                             
+./ R 00733000          $ 00733100 100                                           
 NONGRAF  XATIO R1             CLEAR OUTSTANDING STATUS         XA0015DK         
-./ R 00742000          $ 742100 100                                             
+./ R 00742000          $ 00742100 100                                           
 SNSIO    XASIO R1             START I/O SENSE OPERATION        XA0015DK         
 ./ R 00772000 00774000 $ 00772100 100                                           
 *  THE INTERRUPTING DEVICE ADDRESS COMES FROM THE              XA0015DK         
@@ -87,11 +87,11 @@ SNSIO    XASIO R1             START I/O SENSE OPERATION        XA0015DK
          LH    R3,IOINTPRM+2  GET THE INTERRUPTING DEV ADDR    XA0015DK         
 CKPST7   XASIO R3             ISSUE SENSE TO IT                XA0015DK         
          BC    2,CKPST7       BETTER NOT BE BUSY               XA0015DK         
-./ R 01488000          $ 1488100 100                                            
+./ R 01488000          $ 01488100 100                                           
          XASIO R2             START IO                         XA0015DK         
-./ R 01495500          $ 1495510 010                                            
+./ R 01495500          $ 01495510 010                                           
          CH    R2,IOINTPRM+2       RIGHT DEVICE ?              XA0015DK         
-./ R 01498000          $ 1498100 100                                            
+./ R 01498000          $ 01498100 100                                           
          MVC   SAVEDEV(8),IOSSID SAVE INTERRUPT INFORMATION    XA0015DK         
 ./ R 01503000 01507000 $ 01503100 100                                           
 CKPCL9   XATIO R2                  CLEAR IT                    XA0015DK         
@@ -106,7 +106,7 @@ CKPSTA   XASIO R2             READ R0                          XA0015DK
          BC    7,CKPSTA       TAKE ERROR PATH                  XA0015DK         
 CKPWTA   XATIO R2             TEST FOR COMPLETION              XA0015DK         
          BC    7,CKPWTA       TRY AGAIN                        XA0015DK         
-./ R 01647000          $ 1647100 100                                            
+./ R 01647000          $ 01647100 100                                           
 *  EIGHT BYTES NOW: SUBSYSTEM ID AND INTERRUPTION PARAMETER.   XA0015DK         
 *  THIS SITS INSIDE CLR1, WHICH 00541000 ZEROES WITH XC        XA0015DK         
 *  CLR1(CLR1SIZE), SO THE REGION GROWS BY FOUR BYTES -- FROM   XA0015DK         
