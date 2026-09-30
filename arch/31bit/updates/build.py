@@ -49,6 +49,7 @@ XA19 = 'XA0019DK'
 XA20 = 'XA0020DK'
 XA21 = 'XA0021DK'
 XA22 = 'XA0022DK'
+XA23 = 'XA0023DK'
 
 
 def psa():
@@ -1006,6 +1007,46 @@ def dmkcpi():
         "         LA    R2,1(0,R2)     BUMP THE SUBCHANNEL NUMBER",
         "         BCT   R3,CPIDISC     PROBE THE WHOLE RANGE",
         "         DROP  R4                                        ",
+    ])
+
+    # --- 00593000 and 00594000: the storage-sizing probe.
+    #
+    # CP measures main storage by pointing the program-new PSW at CPIPINT and
+    # walking SSK upward until it takes an ADDRESSING exception; R5 at the
+    # exception is the size, stored into DMKSYSRM.  SSK is one of the twelve
+    # System/370 instructions 370-XA withdrew -- SA22-7201-08 Appendix F gives
+    # it `-` against `B` for SSKE -- so under ESA/390 the FIRST SSK takes an
+    # OPERATION exception instead, lands on CPIPINT, which is the loop's own
+    # designed exit, and stores R5 = 0.  CP then believes it has no real
+    # storage, marks all 4096 pages offline, and FRELOOP runs away over the
+    # nucleus.  Nothing reports anything, because the exception IS the exit.
+    # I-104.
+    #
+    # SSKE is the 4 KB counterpart and takes the same two registers, so the
+    # instruction is a straight swap and ONE card is the whole change.
+    #
+    # The 2048 step at 00594000 is deliberately left alone.  ESA/390 has one
+    # key per 4 KB block where S/370 had one per 2 KB, so stepping by a page
+    # looked tidier -- and `LA R5,4096(,R5)` does not assemble: a
+    # base-displacement offset is twelve bits, so X'1000' earns
+    # `IFO208 DISPLACEMENT GREATER THAN X'FFF'`.  2048 is the largest step
+    # this addressing mode allows, which is presumably why IBM wrote it.
+    # Stepping 2048 against 4 KB keys sets each key twice -- redundant rather
+    # than wrong, exactly as `23-STORAGE-KEYS.md` found for DMKPTR -- and the
+    # `LTR`/`BNZ` wrap test at 16 MB is unaffected, because milestone A runs
+    # AMODE 24 so R5 still wraps there.
+    #
+    # The probe itself is kept rather than replaced by a store of DMKSYSRV.
+    # Reading the sysgen constant would be simpler and would be wrong the
+    # moment MAINSIZE is smaller than RMSIZE -- which is exactly the case
+    # this loop exists to detect.
+    d.replace('00593000', first='00593100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '00593000'),
+              lines=Deck.comment(
+        "SSK DOES NOT EXIST IN ESA/390, SO THE FIRST ONE TOOK AN OPERATION "
+        "EXCEPTION INTO THIS LOOP'S OWN EXIT AND SIZED STORAGE AT ZERO. "
+        "SSKE IS THE 4 KB COUNTERPART AND TAKES THE SAME REGISTERS. I-104.") + [
+        "KEYLOOP  SSKE  R2,R5          AND SET STORAGE KEYS",
     ])
 
     # --- CR6, four sites.  On ESA/390 CR6 is the I/O-interruption subclass
@@ -2076,6 +2117,88 @@ def dmkvsj():
     return d
 
 
+def dmkopr():
+    """The operator console writer -- and therefore CP's only voice.
+
+    `DMKOPR` is `DMKOPRWT`, the routine every other module calls to put a line
+    on the operator's console.  Three channel sites, all in one routine:
+
+        00142000  TIO 0(R3)   CLEAR ANY OUTSTANDING STATUS
+        00149000  SIO 0(R3)   ISSUE SIO
+        00153000  TIO 0(R3)   WAIT FOR DEVICE END STATUS
+
+    This is the module to convert next for a reason beyond its size.  Every
+    bootstrap failure so far has been diagnosed by instruction trace, because
+    `I-94` left CP unable to report anything: the error paths in `DMKCKP` and
+    `DMKCPI` call `DMKOPRWT`, and `DMKOPRWT` could not drive the device.  A
+    working console turns the next wall from a PSW and a storage dump into a
+    message with a number on it.
+
+    The condition-code contract is the reason `XATIO` drops in unchanged.
+    The code reads `TIO`'s S/370 codes directly -- `BO SETCC3` for cc3 not
+    operational, `BC 4+2,TESTLOOP` for cc1 or cc2 -- and then reads the CSW
+    with `TM CSW+4,UC`.  `XATIO` presents exactly those four codes and its
+    shim rebuilds the CSW at the architected location from the IRB, so both
+    survive.  `SIO`'s condition code is never tested here at all.
+
+    `USING DMKOPRWT,R15` is a **single** base, so the module has 4 KB of
+    addressability and the work area has to fit inside it -- the same
+    constraint that `I-56` hit in `DMKDMP` and that `dmksav` notes.  If it
+    does not fit the assembler says so, which is the cheap failure.
+
+    Placement sharpens `I-77`.  That issue said to anchor before the `PSA`
+    macro, and copying that rule here put the work area at `COPY EQU`
+    (00277000) and earned **81** `IFO209 ADDRESSABILITY ERROR`s.  The tail of
+    this module is
+
+        00274000  LTORG
+        00275000  EJECT
+        00276000  COPY RBLOKS      <- RCHBLOK DSECT, and it never returns
+        00277000  COPY EQU
+        00278000  COPY DEVTYPES
+        00279000  PSA
+        00280000  END DMKOPR
+
+    `COPY RBLOKS` opens a DSECT and does not close it, so everything after it
+    -- `COPY EQU`, `COPY DEVTYPES`, the `PSA` macro and anything inserted
+    among them -- is already inside a dummy section.  The real rule is
+    therefore **anchor before the first COPY that opens a DSECT**, not before
+    the `PSA` macro; in `DMKSAV` those happened to be the same statement,
+    which is why the narrower rule survived.  The anchor here is the `EJECT`
+    at 00275000, the last statement still in the CSECT.  I-105.
+
+    The two `XC`s in this module -- `XC CSW,CSW` and `XC MSGBUF(160),MSGBUF`
+    -- are both bounded and neither reaches the work area, so `I-55` does not
+    apply.
+    """
+    d = Deck(XA23)
+    nxt = lambda s: next_seq(SRC + '/DMKOPR.ASSEMBLE', s)
+
+    d.replace('00142000', first='00142100', inc=100, limit=nxt('00142000'),
+              lines=Deck.comment(
+        "THE CALLER READS TIO'S OWN CONDITION CODES -- BO FOR CC3 AND "
+        "BC 4+2 FOR CC1 OR CC2 -- AND THEN THE CSW. XATIO PRESENTS BOTH. "
+        "I-105.") + [
+        "         XATIO R3             CLEAR ANY OUTSTANDING STATUS",
+    ])
+
+    d.replace('00149000', first='00149100', inc=100, limit=nxt('00149000'),
+              lines=["         XASIO R3             ISSUE THE CHANNEL PROGRAM"])
+
+    d.replace('00153000', first='00153100', inc=100, limit=nxt('00153000'),
+              lines=["         XATIO R3             WAIT FOR DEVICE END STATUS"])
+
+    d.insert('00275000', first='00275100', inc=100, limit=nxt('00275000'),
+             lines=Deck.comment(
+        "BEFORE COPY RBLOKS, WHICH OPENS RCHBLOK DSECT AND NEVER RETURNS TO "
+        "THE CSECT. ANCHORING AT COPY EQU PUT THIS INSIDE THAT DSECT AND "
+        "EARNED 81 IFO209 ADDRESSABILITY ERRORS. I-105, SHARPENING I-77.") + [
+        "         XAIOWORK             XAIO WORK AREAS AND LOOKUP",
+        "         COPY  XABLOKS        FOR ORBCCWFM, THE CCW FORMAT",
+    ])
+    return d
+
+
 def dmkpsa():
     """The last module on the M1 path, and the only one that is lowcore itself.
 
@@ -2388,6 +2511,11 @@ def main():
     psam.write(os.path.join(HERE, 'DMKPSA.%s' % XA22))
     aux(os.path.join(HERE, 'DMKPSA.AUXLCL'),
         [(XA22, 'HSCH AND TSCH IN LOWCORE, WITH A WRITE-ONLY IRB')])
+
+    opr = dmkopr()
+    opr.write(os.path.join(HERE, 'DMKOPR.%s' % XA23))
+    aux(os.path.join(HERE, 'DMKOPR.AUXLCL'),
+        [(XA23, 'OPERATOR CONSOLE I/O: THE MODULE THAT PRINTS THE MESSAGES')])
 
     cns = dmkcns()
     cns.write(os.path.join(HERE, 'DMKCNS.%s' % XA21))

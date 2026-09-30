@@ -35,6 +35,12 @@ CPIDISCN DS    0H             NEXT SUBCHANNEL                  XA0013DK
          LA    R2,1(0,R2)     BUMP THE SUBCHANNEL NUMBER       XA0013DK         
          BCT   R3,CPIDISC     PROBE THE WHOLE RANGE            XA0013DK         
          DROP  R4                                              XA0013DK         
+./ R 00593000          $ 00593100 100                                           
+*  SSK DOES NOT EXIST IN ESA/390, SO THE FIRST ONE TOOK AN     XA0013DK         
+*  OPERATION EXCEPTION INTO THIS LOOP'S OWN EXIT AND SIZED     XA0013DK         
+*  STORAGE AT ZERO. SSKE IS THE 4 KB COUNTERPART AND TAKES     XA0013DK         
+*  THE SAME REGISTERS. I-104.                                  XA0013DK         
+KEYLOOP  SSKE  R2,R5          AND SET STORAGE KEYS             XA0013DK         
 ./ R 00615000          $ 00615100 100                                           
 *  WAS LCTL C6,C6,ZEROES -- NO CP ASSIST UNTIL IPL COMPLETE.   XA0013DK         
 *  ZERO IS NOW NO I/O INTERRUPTIONS AT ALL.                    XA0013DK         

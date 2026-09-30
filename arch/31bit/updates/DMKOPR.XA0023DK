@@ -1,0 +1,16 @@
+./ R 00142000          $ 00142100 100                                           
+*  THE CALLER READS TIO'S OWN CONDITION CODES -- BO FOR CC3    XA0023DK         
+*  AND BC 4+2 FOR CC1 OR CC2 -- AND THEN THE CSW. XATIO        XA0023DK         
+*  PRESENTS BOTH. I-105.                                       XA0023DK         
+         XATIO R3             CLEAR ANY OUTSTANDING STATUS     XA0023DK         
+./ R 00149000          $ 00149100 100                                           
+         XASIO R3             ISSUE THE CHANNEL PROGRAM        XA0023DK         
+./ R 00153000          $ 00153100 100                                           
+         XATIO R3             WAIT FOR DEVICE END STATUS       XA0023DK         
+./ I 00275000 $ 00275100 100                                                    
+*  BEFORE COPY RBLOKS, WHICH OPENS RCHBLOK DSECT AND NEVER     XA0023DK         
+*  RETURNS TO THE CSECT. ANCHORING AT COPY EQU PUT THIS        XA0023DK         
+*  INSIDE THAT DSECT AND EARNED 81 IFO209 ADDRESSABILITY       XA0023DK         
+*  ERRORS. I-105, SHARPENING I-77.                             XA0023DK         
+         XAIOWORK             XAIO WORK AREAS AND LOOKUP       XA0023DK         
+         COPY  XABLOKS        FOR ORBCCWFM, THE CCW FORMAT     XA0023DK         
