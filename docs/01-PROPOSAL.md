@@ -352,6 +352,39 @@ work eventually, and it has surfaced defects B would have hidden until M2. But
 the worklist's estimate has been quoted since as though B were still in force,
 and it is not.
 
+**M1 now requires part of B, and `LRA` is the reason — recorded 30 September
+from `I-118`.** M1's premise is *"DAT off, no paging"*, and that premise still
+holds: the PSW has DAT disabled throughout initialisation. It does not help.
+**`LRA` translates explicitly, whatever the PSW says**, so CP's 174 `TRANS`
+sites consult the segment and page tables during initialisation regardless of
+whether DAT is enabled. CP builds those tables for itself, in System/370 format,
+and loads `CR1` with a System/370 segment-table designation — after which the
+first `LRA` raises a **translation-specification exception**, interruption code
+`X'12'`, which is what `PRG018` spells: 018 decimal is X'12'.
+
+Measured from CP's own dump: `CR1 = 05FFC840`, and storage at `X'FFC840'` holds
+
+    F00561D0  F00562A8  F0056380  F0056458  ...
+
+CP's segment table, with the high nibble `F` as `SEGPLEN` — a page-table length
+of 16 pages for a 64 KB segment. Under ESA/390 those bits are part of the
+page-table origin, the length lives in bits 28–31, and **bit 0 is unassigned and
+must be zero**; it is 1 in every entry.
+
+`06-LEDGER.md`'s test 8 predicted this from the other direction. It found `LRA`'s
+*operand* truncated in 24-bit mode and used that to move AMODE 31 into M2. The
+same property of the same instruction now pulls the **segment-table format** into
+M1. So the boundary is:
+
+| | Was | Now |
+|---|---|---|
+| **M1** | architecture only | architecture **plus** a valid ESA/390 STD and STE format for the tables CP builds for itself |
+| **M2** | all of the DAT work | the rest of it: PTE widening, the 70 shift sites, AMODE 31, `DMKBLDRT`'s ABI |
+
+**No site count changes — only the sequencing.** The STE work was always in the
+358 format-sensitive references; what moved is *when* it has to be done, and it
+turns out it cannot be deferred behind a console message.
+
 **M2 — DAT on, ESA/390 tables, still no guests, and no shared segments.**
 `CORE`, `DMKPTR`, `DMKPGS`, `DMKBLD`, `TRANS`. **This no longer waits on
 you.** It previously did, on §3a; per 05-CP67-PRIOR-ART.md there is no
