@@ -3,6 +3,15 @@
 *  CHANNEL MASK ON ESA/390; CR6 CARRIES THE I/O SUBCLASS MASK  XA0016DK         
 *  AND IS ALREADY ALL EIGHT SUBCLASSES. I-73.                  XA0016DK         
          DS    0H             THE LCTL IS GONE. I-73.          XA0016DK         
+./ R 00412000          $ 00412100 100                                           
+*  WAS ISK -- THE KEYS OF REAL PAGES 0-3, READ 2 KB AT A TIME  XA0016DK         
+*  INTO SAVKEY(8). UNDER 4 KB KEYS EACH PAIR NOW REPEATS,      XA0016DK         
+*  WHICH IS WHAT THE HARDWARE MEANS. I-109.                    XA0016DK         
+NXTKEY   ISKE  R9,R3          GET KEYS OF INITIAL 4 PAGES      XA0016DK         
+./ R 00500000          $ 00500100 100                                           
+         ISKE  R0,R3          GET STORAGE KEY -- I-109         XA0016DK         
+./ R 00505000          $ 00505100 100                                           
+         ISKE  R0,R3          GET STORAGE KEY -- I-109         XA0016DK         
 ./ R 00710300          $ 00710400 100                                           
          XASIO R15            START IO                         XA0016DK         
 ./ R 00722000          $ 00722100 100                                           
@@ -56,6 +65,8 @@ DOMONSIO XASIO R1             START THE DEVICE                 XA0016DK
 ./ R 01016000 01017000 $ 01016100 100                                           
 DOTIO    XATIO R1             CLEAR THE STATUS                 XA0016DK         
          BC    2,DOTIO        BUSY, KEEP TRYING                XA0016DK         
+./ R 01054000          $ 01054100 100                                           
+         ISKE  R3,R4          GET STORAGE KEY -- I-109         XA0016DK         
 ./ R 01129000          $ 01129100 100                                           
          XATIO R15            IS THE PATH FREE ?               XA0016DK         
 ./ R 01144000 01145000 $ 01144100 100                                           

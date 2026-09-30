@@ -1663,6 +1663,53 @@ def dmkdmp():
         "         DS    0H             THE LCTL IS GONE. I-73.",
     ])
 
+    # --- I-109.  Four ISK sites, and they are in the abend handler, which is
+    #     why they are on the critical path at all.  DMKDMP is the instrument:
+    #     on 30 September CP reported PRG018 and then died taking the dump,
+    #     `DMKDMP905W SYSTEM DUMP FAILURE; PROGRAM CHECK`, at 52084 where
+    #     `0934` sits -- ISK R3,R4, one of the twelve instructions 370-XA
+    #     withdrew.  So the cause of PRG018 is unknowable until these are gone.
+    #
+    #     ISKE is a drop-in for all four, and that is checked rather than
+    #     assumed.  SA22-7201-08: ISKE inserts "the seven-bit storage key in
+    #     bit positions 24-30 of general register R1, and bit 31 is set to
+    #     zero.  The contents of bit positions 0-23 of the register remain
+    #     unchanged" -- the same result format ISK produces, so every
+    #     following `STC` is unaffected.  (Not to be confused with IVSK on the
+    #     facing page, which returns only ACC and F in bits 24-28.)  The
+    #     operand differs only in granularity: in 24-bit mode ISKE takes
+    #     "bits 8-19 of general register R2" and ignores bits 20-31, where ISK
+    #     reads a 2 KB block, so an address anywhere in a page answers for the
+    #     page.
+    #
+    #     Every one of these four loops walks storage in 2 KB steps and stores
+    #     one key byte per step.  Under ISKE both halves of a page return that
+    #     page's key, so each pair of slots holds the same value -- which is
+    #     the truth under 4 KB keys, and CE already runs with them on
+    #     (`CPCREG0 DC X'81800CC0'`).  Redundant, not wrong: exactly I-104's
+    #     finding about DMKCPI's SSK.  So the steps, the loop counts and the
+    #     SAVKEY layout are all left alone, and each site is ONE card.
+    #     Widening the steps would change the dump's own key table, which is a
+    #     format change masquerading as an architecture fix.
+    #
+    #     Knowing deviation: Hercules marks ISKE GENx370x390x900 and so accepts
+    #     it in S/370 mode, but a real S/370 would not -- ISKE arrived with
+    #     370-XA.  These cards are therefore unconditional, with no architecture
+    #     probe, and the converted nucleus is an ESA/390 artifact that happens
+    #     to also run under Hercules's S/370.  That is the standing
+    #     Hercules-is-permissive risk pointing the other way for once.
+
+    one('00412000', Deck.comment(
+        "WAS ISK -- THE KEYS OF REAL PAGES 0-3, READ 2 KB AT A TIME INTO "
+        "SAVKEY(8). UNDER 4 KB KEYS EACH PAIR NOW REPEATS, WHICH IS WHAT THE "
+        "HARDWARE MEANS. I-109.") + [
+        "NXTKEY   ISKE  R9,R3          GET KEYS OF INITIAL 4 PAGES",
+    ])
+
+    one('00500000', ["         ISKE  R0,R3          GET STORAGE KEY -- I-109"])
+
+    one('00505000', ["         ISKE  R0,R3          GET STORAGE KEY -- I-109"])
+
     one('00710300', ["         XASIO R15            START IO"])
 
     one('00722000', Deck.comment(
@@ -1738,6 +1785,13 @@ def dmkdmp():
         "DOTIO    XATIO R1             CLEAR THE STATUS",
         "         BC    2,DOTIO        BUSY, KEEP TRYING",
     ])
+
+    # The dump PRINTER's key, shown once per 2 KB boundary.  Under 4 KB keys
+    # the two lines of a page now show the same key, which is true.  The
+    # `N R2,=F'2047'` boundary test above is deliberately left alone: making it
+    # 4095 would halve the number of key lines in the printed dump, and that is
+    # a change to the dump's format, not to its correctness.  I-109.
+    one('01054000', ["         ISKE  R3,R4          GET STORAGE KEY -- I-109"])
 
     # 01130000's BC 8+4+2,*+8 is a FORWARD branch over the following BAL, and
     # neither it nor the BAL changes length, so it is correct as it stands.
