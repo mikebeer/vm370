@@ -1,0 +1,5 @@
+./ R 00172000          $ 00172010 010                                           
+*  ECPS:VM ASSISTS DO NOT EXIST ON ESA/390. EACH SITE BECOMES  XA0030DK         
+*  THE SAME SIX-BYTE NO-OP CP'S OWN CLEARCPA WRITES AT RUN     XA0030DK         
+*  TIME, SO THE SOFTWARE PATH BELOW IT RUNS. I-114.            XA0030DK         
+         DC    X'0700',X'47000000'  WAS E613 SHADOW TBL        XA0030DK         

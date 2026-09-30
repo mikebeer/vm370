@@ -85,18 +85,31 @@ UPDATES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # full IPL to exactly that.  Sending `cold` afterwards is harmless when CP did
 # start (it reaches OPERATOR as an unknown command) and answers the prompt when
 # it did not, so the rc is now self-healing after an interrupted run.  I-64.
+# The margins below were widened on 30 Sep after a run lost 25 minutes to a
+# race this block cannot see.  CE auto-logs OPERATOR, AUTOLOG1, CPWATCH,
+# CMSBATCH and WAKEUP at IPL, and each one writes to the OPERATOR console.  A
+# `CP DISC` issued while that storm is still running is SWALLOWED -- no error --
+# so the machine is still OPERATOR when `LOGON MAINT` arrives, LOGON is invalid
+# when already logged on, and CMS never comes up.  Every later command then
+# returns `?CP: READCARD`, which is the symptom this file's own docstring warns
+# about.  On a quiet machine `AUTOLOG1 DONE - LOGGING OFF` lands ~18 s before
+# `cold`; on a busy one it lands after `logon`.  Same script, different load.
+#
+# Timing cannot be made sufficient, only likely, because an rc has no way to
+# wait for a prompt -- so `boot_failed()` below is the real fix and these
+# numbers only make it rare.  I-112.
 BOOT = """panrate 1000
 pause 3
 ipl 6A1
-pause 40
+pause 70
 /
-pause 12
+pause 15
 /cold
 pause 30
 /cp disc
-pause 15
+pause 35
 /logon maint cpcms
-pause 32
+pause 45
 /
 pause 18
 /cp purge rdr all
@@ -320,3 +333,32 @@ def archmode(conf, mode):
         text = re.sub(r'(?m)^%s\s+\S+.*$' % key, '%-15s %s' % (key, val), text)
     open(conf, 'w').write(text)
     return mode
+
+
+def boot_failed(log):
+    """Did the machine reach CMS?  Read the log and say so, loudly.
+
+    An rc cannot branch, so a boot race cannot be prevented -- but it can be
+    DETECTED, and detection is what was missing.  A swallowed `CP DISC` leaves
+    the machine at the OPERATOR console in CP mode, and from there every command
+    the run issues comes back `?CP: <verb>`: 48 card reads, a VMFMAC and an
+    `asmdmk` of 186 modules, all failing identically, in a log that scrolls
+    convincingly for 25 minutes and contains nothing.  Three separate times in
+    one day this project has been handed a plausible log from a run that did
+    nothing -- a stale nucleus, a fall-through `.rc`, and this -- so the check
+    belongs in the driver rather than in whoever is reading.
+
+    Returns a reason string, or None if the boot looks good.  I-112.
+    """
+    try:
+        text = open(log, errors='replace').read()
+    except OSError as e:
+        return 'log unreadable: %s' % e
+    if '?CP: LOGON' in text:
+        return ('LOGON was refused -- CP DISC was swallowed by the auto-logon '
+                'storm and the machine is still OPERATOR, so CMS never started')
+    if '?CP: READCARD' in text:
+        return 'READCARD reached CP, not CMS -- the machine is not in CMS'
+    if 'LOGON AT' not in text:
+        return 'no "LOGON AT" in the log -- MAINT never logged on'
+    return None

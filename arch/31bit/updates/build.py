@@ -50,6 +50,14 @@ XA20 = 'XA0020DK'
 XA21 = 'XA0021DK'
 XA22 = 'XA0022DK'
 XA23 = 'XA0023DK'
+XA24 = 'XA0024DK'
+XA25 = 'XA0025DK'
+XA26 = 'XA0026DK'
+XA27 = 'XA0027DK'
+XA28 = 'XA0028DK'
+XA29 = 'XA0029DK'
+XA30 = 'XA0030DK'
+XA31 = 'XA0031DK'
 
 
 def psa():
@@ -1054,6 +1062,32 @@ def dmkcpi():
         "EXCEPTION INTO THIS LOOP'S OWN EXIT AND SIZED STORAGE AT ZERO. "
         "SSKE IS THE 4 KB COUNTERPART AND TAKES THE SAME REGISTERS. I-104.") + [
         "KEYLOOP  SSKE  R2,R5          AND SET STORAGE KEYS",
+    ])
+
+    # --- I-114.  DMKCPI's own assist probe, at 00613000.  It gets a BRANCH
+    #     rather than the six-byte no-op the other twenty sites get, and the
+    #     difference matters: no-opping it would fall through to
+    #     `OI CPSTAT2,CPASTAVL+CPASTON`, declaring the assists AVAILABLE and ON
+    #     on a machine that has none, and skipping `CLEARCPA` entirely.
+    #     `B CPIPINT2` is the path CP takes when the probe program-checks, so
+    #     this is the same destination reached without the exception.
+    #
+    #     Padded back to six bytes so nothing downstream shifts.  DMKCPI carries
+    #     51 self-relative branches (the second-highest count in CP) and R-26 is
+    #     the standing rule; keeping the length identical means it cannot apply.
+    #
+    #     This is also what makes the ORDERING defect disappear rather than move:
+    #     `SCNRU` in DMKSCN faulted before this probe ever ran, so arriving at
+    #     CPIPINT2 sooner would not have been enough -- which is why the other
+    #     twenty sites are converted statically instead.
+    d.replace('00613000', first='00613100', inc=100,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '00613000'),
+              lines=Deck.comment(
+        "WAS DC X'E612',S(0(R3),0) -- STORE CP ASSIST LEVEL, THE PROBE. ON "
+        "ESA/390 THERE ARE NO ASSISTS, SO TAKE THE NO-ASSIST PATH DIRECTLY "
+        "INSTEAD OF PROVOKING AN OPERATION EXCEPTION TO FIND OUT. I-114.") + [
+        "         B     CPIPINT2       NO ECPS:VM ON ESA/390",
+        "         BCR   0,0            PAD TO THE SIX BYTES E612 HELD",
     ])
 
     # --- CR6, four sites.  On ESA/390 CR6 is the I/O-interruption subclass
@@ -2509,6 +2543,106 @@ def dmkcfo():
     return d
 
 
+
+# --------------------------------------------------------------------- I-114
+# CP's twenty-one ECPS:VM assist sites, statically no-opped.
+#
+# `pgmtrace` found the wall in one run and even named it: two operation
+# exceptions in the whole IPL, both ECPS:VM assists.
+#
+#     PSW=000C3000 0003F52E INST=E60E100003B0 SCNRU  ecpsvm_locate_rblock
+#     PSW=000C1000 0006A1CE INST=E61230000000 STEVL  ecpsvm_store_level
+#
+# The second is DMKCPI's own probe at 00613000, which is DELIBERATE: it arms
+# `PRNPSW+4` at `CPIPINT2` first, and `CPIPINT2` walks `CPATABLE` replacing
+# every assist instruction with `MVC 0(6,R6),=X'0700,47000000'` -- six bytes of
+# no-op -- so that the software path following each assist runs instead.  That
+# recovery works, and it worked here on the first try.
+#
+# The FIRST exception is the defect, and it is an ORDERING defect: `SCNRU` sits
+# at DMKSCNRU's entry (X'3F528') and DMKCPI calls it, looking up device 00C
+# (GR1 = 0000000C), BEFORE it has probed.  GR5 = 0 dates it -- the storage
+# sizing had not run yet.  On real hardware the order is irrelevant, because CE
+# runs ECPSVM YES and the assists simply work; under ESA/390 they do not exist,
+# and CP executes one before asking whether they are there.
+#
+# Two counts worth keeping straight, because both were got wrong first:
+#
+#   * 21 SOURCE SITES, not 24.  `DC X'E610'` with no operand appears in DMKGRT,
+#     DMKRGA and DMKRGF and is the card-reader DEVICE TYPE constant -- data, and
+#     its own comment says so.  An assist is `DC X'E6nn',S(a,b)`: six bytes,
+#     opcode plus two S-type constants, which is what the trace disassembled.
+#     Grepping a byte pattern without the operand test over-counts by three.
+#   * 30 INSTRUCTIONS in the nucleus, not 21.  DMKCCW generates its assists from
+#     macros -- `X'E608'` expands to DMKCCWB1..B8 and `X'E609'` to L1..L5 -- so
+#     five source lines become sixteen instructions.  `CPATABLE` is the
+#     authority, and it has exactly 30 entries.  08-MACRO-UNDERCOUNT again.
+#
+# CPATABLE covers all 30, so CP's runtime recovery is COMPLETE and only its
+# timing is wrong.  That invites a one-module fix -- no-op DMKSCN's two sites and
+# let CLEARCPA handle the other 28 -- and that is refused on purpose: it is the
+# "fix the instance, miss the class" pattern this register already records three
+# times, and it would leave 28 illegal instructions in the nucleus that merely
+# happen not to be reached on this path.
+#
+# So every site is no-opped at ASSEMBLY time with the same six bytes CP writes at
+# RUN time.  Labels are reproduced -- DMKDSP0, DMKDSP1, DMKDSP2, DMKVATZP,
+# DMKVATZS, DMKCCW0, DMKCCW1, DMKCCWGN and the macros' `&ENTRYPT` are entry
+# points, and I-107 is the reminder that a replacement card that drops its label
+# leaves every reference unresolved.  Length is unchanged at six bytes, so no
+# self-relative branch can span a site and shift -- R-26 does not apply.
+#
+# DMKCPI is the one exception and gets a BRANCH, not a no-op: no-opping its probe
+# would fall through to `OI CPSTAT2,CPASTAVL+CPASTON`, declaring the assists
+# available and ON and skipping CLEARCPA entirely.  `B CPIPINT2` takes the
+# correct path, padded to six bytes so nothing shifts.
+#
+# DMKAPI's E612 is deliberately NOT converted: with AP=NO (I-50) it is not in
+# CPLOAD's list.  If AP is ever re-enabled it needs the same treatment.
+ECPS = {
+    'DMKSCN': (XA24, [('00160000', '', 'E60E', 'SCNRU'),
+                      ('00321000', '', 'E606', 'SCNVU')]),
+    'DMKDSP': (XA25, [('00328000', 'DMKDSP0', 'E60D', 'DISPATCH 0'),
+                      ('01572000', 'DMKDSP1', 'E607', 'DISPATCH 1'),
+                      ('01635000', 'DMKDSP2', 'E611', 'DISPATCH 2')]),
+    'DMKFRE': (XA26, [('00281500', '', 'E614', 'FREE'),
+                      ('01099500', '', 'E615', 'FRET')]),
+    'DMKPTR': (XA27, [('01772000', '', 'E603', 'UNLOCK PG'),
+                      ('01851000', '', 'E602', 'LOCK PG')]),
+    'DMKUNT': (XA28, [('00109400', '', 'E610', 'UNTRANSLATE'),
+                      ('00220050', '', 'E605', 'UNTRANS FRE')]),
+    'DMKVAT': (XA29, [('00391000', 'DMKVATZP', 'E60B', 'INVAL PAGE'),
+                      ('00408700', 'DMKVATZS', 'E60A', 'INVAL SEG')]),
+    'DMKVMA': (XA30, [('00172000', '', 'E613', 'SHADOW TBL')]),
+    'DMKCCW': (XA31, [('00239000', '&ENTRYPT', 'E608', 'TRANBRNG'),
+                      ('00259000', '&ENTRYPT', 'E609', 'TRANLOCK'),
+                      ('00561000', 'DMKCCW0', 'E604', 'CCWTRANS'),
+                      ('00630000', 'DMKCCW1', 'E60C', 'CCWTRANS1'),
+                      ('00909000', 'DMKCCWGN', 'E60F', 'CCWGEN')]),
+}
+
+
+def ecps(module):
+    """One deck of six-byte no-ops for `module`'s ECPS:VM assist sites."""
+    ident, sites = ECPS[module]
+    d = Deck(ident)
+    src = SRC + '/%s.ASSEMBLE' % module
+    first = True
+    for seq, label, op, what in sites:
+        lines = []
+        if first:
+            lines = Deck.comment(
+                "ECPS:VM ASSISTS DO NOT EXIST ON ESA/390. EACH SITE BECOMES THE "
+                "SAME SIX-BYTE NO-OP CP'S OWN CLEARCPA WRITES AT RUN TIME, SO "
+                "THE SOFTWARE PATH BELOW IT RUNS. I-114.")
+            first = False
+        lines.append('%-8s DC    X\'0700\',X\'47000000\'  WAS %s %s'
+                     % (label, op, what))
+        d.replace(seq, first=str(int(seq) + 10).zfill(8), inc=10,
+                  limit=next_seq(src, seq), lines=lines)
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -2669,6 +2803,24 @@ def main():
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
                  'OK' if not bad else 'BAD ' + repr(bad[:3])))
         ok = ok and not bad
+    # I-114.  Written after the per-module sections above, so the two modules
+    # that already have an AUXLCL get BOTH decks listed rather than having the
+    # ECPS deck silently replace the one that is already there.  An AUXLCL lists
+    # decks newest first.
+    ECPSDESC = 'ECPS:VM ASSISTS NO-OPPED: ESA/390 HAS NONE'
+    PRIOR = {'DMKDSP': [(XA6, 'GUEST LOWCORE: G370TIO FOR THE S/370 '
+                              'INTERRUPT CODE')],
+             'DMKFRE': [(XA20, 'NO CHANNEL MASK: CR2 IS THE DUCT ORIGIN ON '
+                               'ESA/390')]}
+    for m in sorted(ECPS):
+        dk = ecps(m)
+        path = os.path.join(HERE, '%s.%s' % (m, dk.ident))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(dk.ident, ECPSDESC)] + PRIOR.get(m, []))
+        print('%-8s %-9s %3d cards  %s'
+              % (m, dk.ident, n, 'OK' if not verify(path) else 'BAD'))
+
     print('\n%d cards in the PSA deck' % n)
     return 0 if ok else 1
 

@@ -1,0 +1,13 @@
+./ R 00239000          $ 00239010 010                                           
+*  ECPS:VM ASSISTS DO NOT EXIST ON ESA/390. EACH SITE BECOMES  XA0031DK         
+*  THE SAME SIX-BYTE NO-OP CP'S OWN CLEARCPA WRITES AT RUN     XA0031DK         
+*  TIME, SO THE SOFTWARE PATH BELOW IT RUNS. I-114.            XA0031DK         
+&ENTRYPT DC    X'0700',X'47000000'  WAS E608 TRANBRNG          XA0031DK         
+./ R 00259000          $ 00259010 010                                           
+&ENTRYPT DC    X'0700',X'47000000'  WAS E609 TRANLOCK          XA0031DK         
+./ R 00561000          $ 00561010 010                                           
+DMKCCW0  DC    X'0700',X'47000000'  WAS E604 CCWTRANS          XA0031DK         
+./ R 00630000          $ 00630010 010                                           
+DMKCCW1  DC    X'0700',X'47000000'  WAS E60C CCWTRANS1         XA0031DK         
+./ R 00909000          $ 00909010 010                                           
+DMKCCWGN DC    X'0700',X'47000000'  WAS E60F CCWGEN            XA0031DK         

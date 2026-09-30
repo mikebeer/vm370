@@ -1,0 +1,7 @@
+./ R 01772000          $ 01772010 010                                           
+*  ECPS:VM ASSISTS DO NOT EXIST ON ESA/390. EACH SITE BECOMES  XA0027DK         
+*  THE SAME SIX-BYTE NO-OP CP'S OWN CLEARCPA WRITES AT RUN     XA0027DK         
+*  TIME, SO THE SOFTWARE PATH BELOW IT RUNS. I-114.            XA0027DK         
+         DC    X'0700',X'47000000'  WAS E603 UNLOCK PG         XA0027DK         
+./ R 01851000          $ 01851010 010                                           
+         DC    X'0700',X'47000000'  WAS E602 LOCK PG           XA0027DK         
