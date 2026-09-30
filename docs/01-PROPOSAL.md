@@ -313,13 +313,71 @@ correctly.
 paging, no guests, no DASD beyond IPL. Test 5 with real CP code, isolating
 PSW format, lowcore, control registers and the console path. The stand-alone
 utilities are out of scope, which removes 71 of the 166 I/O instructions and
-224 of the CAW/CSW references. Pass: a CP initialisation message.
+224 of the CAW/CSW references.
+
+**Pass: `DMKCPI966I Initialization complete`** — amended 30 September, because
+the criterion as first written was *"a CP initialisation message"* and that
+turned out to be satisfiable by the **failure** path. On 30 September a
+converted CP printed
+
+    DMKDMP908I SYSTEM FAILURE; CODE PRG018 PROCESSOR 00
+
+which is CP writing to the console in ESA/390 mode through a converted console
+writer, and is a real result — but it is an abend message, not initialisation.
+The console *path* is proven; the milestone is not. `07-M1-WORKLIST.md` and
+`WHAT-31BIT-NEEDS.md` both used the stricter target all along, and this is the
+plan catching up with them rather than a change of scope. **General lesson:
+a pass criterion phrased as "it produces output" is satisfied by a crash.**
+
+**M1 is being run by strategy A, not the strategy B this plan implies —
+recorded 30 September, after the fact.** `07-M1-WORKLIST.md` measured both and
+chose B: load the nucleus with `loadcore` and `restart` into `DMKCPINT`,
+skipping the IPL read. We are instead IPLing a written nucleus from real DASD,
+as CE does. The difference is not small, and nobody recorded taking it:
+
+| | modules | S/370 I/O | DAT refs |
+|---|---|---|---|
+| B — `loadcore`, as planned | 9 | 43 | **12** |
+| A — IPL from DASD, as run | 12 | 79 | **82** |
+
+`DMKCKP`, `DMKSAV` and `DMKBLD` are the three modules B exists to defer, and
+they carry 70 of those 82 DAT references. That is why `DMKSAV`'s BC-mode PSWs
+(`I-102`), `I-107`, `I-108` and `DMKDMP`'s `ISK` sites (`I-109`) have been on
+the critical path at all: **none of them is in M1's planned population.** The
+clause "no DASD beyond IPL" above is also no longer true of what runs — the
+converted CP reads volume labels from sixteen packs.
+
+A is not judged the wrong choice: it is the path CE actually uses, so it has to
+work eventually, and it has surfaced defects B would have hidden until M2. But
+the worklist's estimate has been quoted since as though B were still in force,
+and it is not.
 
 **M2 — DAT on, ESA/390 tables, still no guests, and no shared segments.**
 `CORE`, `DMKPTR`, `DMKPGS`, `DMKBLD`, `TRANS`. **This no longer waits on
 you.** It previously did, on §3a; per 05-CP67-PRIOR-ART.md there is no
 decision left to make, and shared segments move to M3 because CP does not
 need them to run with DAT on — CMS needs them, being IPL'd by name.
+
+**Two amendments to M2, both dated after this section was written:**
+
+- **AMODE 31 is inside M2**, not later. Ledger test 8 found that `LRA`
+  truncates its *question* to 24 bits: in AMODE 24, `LRA 2,0(0,6)` with
+  R6 = `01005000` answers cc=0 with `00005000`, correctly describing segment 0
+  page 5 instead of segment 16 page 5. The result is not truncated; the operand
+  address is. So CP's 174 `TRANS` sites cannot ask about an above-the-line
+  virtual address while CP runs AMODE 24, **and the failure is silent** — a
+  plausible real address from the wrong page. The `TRANS`-bearing modules must
+  be AMODE 31 before paging above the line means anything.
+- **`DMKBLDRT`'s interface is designed before M2 starts, not during it.** Mike
+  ruled on 30 September that virtual 31-bit addressing is mandatory
+  (`WHAT-31BIT-NEEDS.md`), which promotes this from "largest undesigned item"
+  to first design decision. It packs two addresses into one fullword as
+  4 zero + 8 segment + 4 page bits each — 256 × 16 × 4 KB = **exactly 16 MB, by
+  construction**, the one place the limit is welded into the definition of a
+  virtual machine. ESA/390 needs 19 bits per address, so two do not fit, and it
+  is reached by SVC, so this is an ABI change across 24 callers
+  (`DMKBLDRT` 8, `DMKBLDRL` 5, `DMKBLDVM` 8, `DMKBLDEC` 3). No replacement
+  format is proposed anywhere yet.
 
 **M3 — one S/370-mode guest logs on and runs CMS.** `DMKVAT` plus `DMKPRV`,
 now also the frame-level shared-segment rework in `DMKATS` and the `NAMESYS`
@@ -330,6 +388,54 @@ reset, instead of walking and invalidating, on a path taken every time a guest
 loads CR0 or a page is stolen.
 
 **M4 — two guests, isolated.** Your `VK-AC-08` already requires this.
+
+**M5 — real storage above 16 MB.** Added 30 September on Mike's decision, and
+the reason it is worth writing down rather than leaving implicit is that it was
+*missing*: `WHAT-31BIT-NEEDS.md` separates "31-bit" into three independent
+things — **A** ESA/390 architecture, **B** 31-bit virtual storage, **C** real
+storage above the line — and M0–M4 covered A (M1) and B (M2, M3) while never
+naming C. Deferring it is correct; having no milestone for it made a deliberate
+deferral look like an oversight.
+
+Three gates, and they lift **together or not at all**, because each one alone
+makes the others pointless (`17-CARRY-FORWARD-64.md`):
+
+| Gate | Blocks | Size |
+|---|---|---|
+| `ISK`/`SSK`/`RRB` mask the operand to 24 bits | managing keys above the line | **67 sites, 17 modules** |
+| Format-0 CCWs, including IDAWs | I/O to storage above the line | **240 CCWs, 23 nucleus modules** |
+| 24-bit fields in `CORTABLE` and friends | addressing the frames at all | **no count exists** |
+
+Why it is genuinely separable, not just postponed: all three key instructions
+take a *real* operand address (`GR_L(r2) & 0x00FFF800`), so the 24-bit ceiling
+is on **real** storage only — `23-STORAGE-KEYS.md` establishes that *"CMS could
+run with a full 31-bit virtual address space on a 16 MB host, with `ISK`/`SSK`
+untouched and CP paging as it does today."* Guest channel programs need no
+change either, because `DMKCCW` translates them into real addresses below the
+line rather than passing them through.
+
+Two conveniences worth remembering when M5 is picked up. `ISKE`, `SSKE`, `RRBE`
+and `IVSK` are all `GENx370x390x900`, so **M5's key work can be written and
+tested on CE exactly as it runs today, in S/370 mode** — it does not wait on
+M1. And CE already runs with 4 KB keys (`CPCREG0 DC X'81800CC0'`) while
+`DMKPTR` still issues paired 2 KB operations, so collapsing those pairs is
+redundancy removal rather than a behaviour change.
+
+Two warnings. `DMKPTR` holds a third of the 67 sites and is the page manager —
+*"the opposite of a low-risk starting point"* — so the standing order within the
+family is the 44 sites outside `DMKPTR` first, `DMKPTR` last and alone. And
+`RRB`→`RRBE` is the worst of the three: the operand moves from
+base-displacement into a register, so each of `DMKPTR`'s 13 sites needs an
+address materialised first, and therefore **a spare register in CP's tightest
+code**.
+
+**M5 is not wholly in the future.** Two of the 67 sites are already on M1's
+critical path, because they run during initialisation and abend handling:
+`I-104`'s `SSK` in `DMKCPI` (storage sizing, fixed) and `I-109`'s four `ISK`s
+in `DMKDMP` (the dump, in progress). That is the point `I-104` made and it
+generalises to every deferred axis: **ask which single site runs earliest, not
+how large the axis is.** A 67-site axis with two sites on the boot path is not
+a deferrable axis; it is a two-site job plus a deferrable axis.
 
 Against your framework: the six tests are the hardware half of `EX-AC-02`
 and `VK-AC-07`; §3 and §4 are input to the "channel/I/O formats" line item.
