@@ -79,7 +79,7 @@ FORCE16  LA    R5,256         BUILD 256 PAGE TABLE ENTRIES     XA0034DK
          AL    R0,F7          PLUS 7 TO ALIGN PAGPFRA TO 64    XA0034DK         
 ./ R 00343600          $ 00343610 010                                           
 *  ROUND THE BLOCK SO THAT PAGPFRA, NOT THE HEADER, LANDS ON   XA0034DK         
-*  64. THE DMKFREE ADDRESS GOES IN PAGFREE BELOW, BECAUSE THE  XA0034DK         
+*  64. THE DMKFREE ADDRESS GOES IN PAGORIG BELOW, BECAUSE THE  XA0034DK         
 *  GAP IS NO LONGER THE CONSTANT 16 THAT DMKBLDRL SUBTRACTS.   XA0034DK         
 *  I-130.                                                      XA0034DK         
          LR    R7,R1          DMKFREE ADDRESS                  XA0034DK         
@@ -88,7 +88,7 @@ FORCE16  LA    R5,256         BUILD 256 PAGE TABLE ENTRIES     XA0034DK
          S     R7,=A(PAGPFRA-PAGSTMP) BACK TO HEADER           XA0034DK         
 ./ R 00346100          $ 00346200 100                                           
          XC    PAGACT(PAGPFRA-PAGACT),PAGACT CLEAR HDR         XA0034DK         
-         ST    R1,PAGFREE     EXACT DMKFREE ADDRESS, FOR FRET  XA0034DK         
+         ST    R1,PAGORIG     EXACT DMKFREE ADDRESS, FOR FRET  XA0034DK         
 ./ R 00346600 00347100 $ 00346610 010                                           
 *  INVALIDATE ALL 256 ENTRIES. THE OLD FORM WAS MVC            XA0034DK         
 *  PAGCORE,F8+2 THEN MVC PAGCORE+2(15*2),PAGCORE -- A          XA0034DK         
@@ -237,11 +237,11 @@ RELRLOOP L     R7,SEGPTO      LOAD PAGE TABLE ADDRESS          XA0034DK
 ./ R 00632100          $ 00632200 100                                           
          N     R1,=A(SEGPTOM) THE PAGE TABLE ADDRESS           XA0034DK         
 ./ R 00632600 00633100 $ 00632700 100                                           
-*  PAGFREE HOLDS WHAT DMKFREE RETURNED, SO THE RELEASE IS      XA0034DK         
+*  PAGORIG HOLDS WHAT DMKFREE RETURNED, SO THE RELEASE IS      XA0034DK         
 *  EXACT RATHER THAN DERIVED. THIS RETIRES N                   XA0034DK         
 *  R1,=A(X'FFFFFE'), WHICH TRUNCATED A PAGE TABLE ADDRESS TO   XA0034DK         
 *  24 BITS WHILE ITS COMMENT CLAIMED TO CLEAR A FLAG. I-122.   XA0034DK         
-         S     R1,=A(PAGPFRA-PAGFREE) BACK UP TO PAGFREE       XA0034DK         
+         S     R1,=A(PAGPFRA-PAGORIG) BACK UP TO PAGORIG       XA0034DK         
          L     R1,0(,R1)      THE DMKFREE ADDRESS, EXACTLY     XA0034DK         
 ./ R 00634100          $ 00634200 100                                           
          SRL   R0,3           OBTAIN NUMBER OF DOUBLEWORDS     XA0034DK         

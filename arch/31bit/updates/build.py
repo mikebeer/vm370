@@ -2911,7 +2911,7 @@ def dmkbld():
     ])
     one('00343600', Deck.comment(
         "ROUND THE BLOCK SO THAT PAGPFRA, NOT THE HEADER, LANDS ON 64. THE "
-        "DMKFREE ADDRESS GOES IN PAGFREE BELOW, BECAUSE THE GAP IS NO LONGER "
+        "DMKFREE ADDRESS GOES IN PAGORIG BELOW, BECAUSE THE GAP IS NO LONGER "
         "THE CONSTANT 16 THAT DMKBLDRL SUBTRACTS. I-130.") + [
         "         LR    R7,R1          DMKFREE ADDRESS",
         "         AL    R7,=A(PAGPFRA-PAGSTMP+63) ROUND UP",
@@ -2919,11 +2919,11 @@ def dmkbld():
         "         S     R7,=A(PAGPFRA-PAGSTMP) BACK TO HEADER",
     ])
     # XC PAGACT(12) cleared through PAGSWP.  The header is longer now, and the
-    # literal 12 becomes a computed length so it stays right.  PAGFREE is stored
+    # literal 12 becomes a computed length so it stays right.  PAGORIG is stored
     # after the clear, not before.
     one('00346100', [
         "         XC    PAGACT(PAGPFRA-PAGACT),PAGACT CLEAR HDR",
-        "         ST    R1,PAGFREE     EXACT DMKFREE ADDRESS, FOR FRET",
+        "         ST    R1,PAGORIG     EXACT DMKFREE ADDRESS, FOR FRET",
     ])
     # 256 fullword entries of X'00000400'.  MVC propagation cannot do it: 255
     # entries is 1020 bytes and MVC's limit is 256.
@@ -3033,7 +3033,7 @@ def dmkbld():
         "         N     R8,=A(SEGPTOM) CLEAR OUT PAGE NUMBER",
     ])
     # S R9,F4 reaches PAGSWP by assuming it sits four bytes below the page
-    # table.  PAGFREE moved PAGPFRA, so the literal becomes the difference the
+    # table.  PAGORIG moved PAGPFRA, so the literal becomes the difference the
     # assembler computes.  Both sites are silent: neither names a DAT field.
     one('00440000', [
         "         S     R9,=A(PAGPFRA-PAGSWP) TABLE SO THAT THE SWAP",
@@ -3110,18 +3110,18 @@ def dmkbld():
     one('00631100', [
         "         ST    R4,SEGPTO      CLEAR STE ENTRY",
     ])
-    # The FRET.  PAGFREE holds the exact DMKFREE address, so the arithmetic that
+    # The FRET.  PAGORIG holds the exact DMKFREE address, so the arithmetic that
     # assumed a constant 16 -- and the mask that truncated to 24 bits while
     # claiming to clear a flag -- both go.  I-122, I-130.
     one('00632100', [
         "         N     R1,=A(SEGPTOM) THE PAGE TABLE ADDRESS",
     ])
     one('00632600', Deck.comment(
-        "PAGFREE HOLDS WHAT DMKFREE RETURNED, SO THE RELEASE IS EXACT RATHER "
+        "PAGORIG HOLDS WHAT DMKFREE RETURNED, SO THE RELEASE IS EXACT RATHER "
         "THAN DERIVED. THIS RETIRES N R1,=A(X'FFFFFE'), WHICH TRUNCATED A PAGE "
         "TABLE ADDRESS TO 24 BITS WHILE ITS COMMENT CLAIMED TO CLEAR A FLAG. "
         "I-122.") + [
-        "         S     R1,=A(PAGPFRA-PAGFREE) BACK UP TO PAGFREE",
+        "         S     R1,=A(PAGPFRA-PAGORIG) BACK UP TO PAGORIG",
         "         L     R1,0(,R1)      THE DMKFREE ADDRESS, EXACTLY",
     ], to='00633100')
     one('00634100', [
@@ -3341,7 +3341,7 @@ def corecopy():
         "RENAMED FROM PAGCORE WITH NO ALIAS BECAUSE 13 LH AND 5 STH SITES WOULD "
         "OTHERWISE ASSEMBLE CLEAN AND READ THE WRONG TWO BYTES. I-121.") +
         Deck.comment(
-        "PAGFREE HOLDS THE DMKFREE ADDRESS OF THIS BLOCK. IT EXISTS BECAUSE THE "
+        "PAGORIG HOLDS THE DMKFREE ADDRESS OF THIS BLOCK. IT IS NOT CALLED PAGFREE BECAUSE DMKPTR HAS HAD A LABEL OF THAT NAME SINCE 1979 -- PAGFREE EQU * ENTRY FROM WITHIN DMKPTRAN -- AND CORE.COPY IS COPIED BY 42 MODULES. TOOLS/SYMCHK.PY CHECKS THIS NOW. IT EXISTS BECAUSE THE "
         "PAGE TABLE MUST NOW BE 64-BYTE ALIGNED, SO DMKBLDRT ROUNDS THE BLOCK UP "
         "AND THE GAP BETWEEN WHAT DMKFREE RETURNED AND THE HEADER IS NO LONGER "
         "THE CONSTANT 16 THAT DMKBLDRL SUBTRACTS. STORING THE ADDRESS IS EXACT "
@@ -3352,7 +3352,7 @@ def corecopy():
         "DOUBLEWORD-ALIGNED OPERAND, SO PAGSTMP MUST STAY AT OFFSET 0. THE "
         "RESERVED FULLWORD KEEPS PAGPFRA ON A DOUBLEWORD AND PAGBMP AN EXACT "
         "MULTIPLE OF 8.") + [
-        "PAGFREE  DS    1F             DMKFREE ADDRESS OF THIS BLOCK",
+        "PAGORIG  DS    1F             DMKFREE ADDRESS OF THE BLOCK",
         "         DS    1F             RESERVED -- KEEPS ALIGNMENT",
         "PAGPFRA  DS    1F             PAGE FRAME REAL ADDR, BITS 1-19",
     ])

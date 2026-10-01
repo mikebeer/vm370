@@ -98,6 +98,16 @@ RENAMED = {'SEGPAGE': 'SEGPTO', 'SEGPLEN': 'SEGPTL', 'SEGINV': 'SEGINVAL',
 # discard that, and these are the hardest sites to find by reading.
 REDEFINED = {'PAGTSWP', 'PAGBMP'}
 SIZE_DIAGS = {'IFO224', 'IFO208'}
+# Symbols the conversion INTRODUCES.  A diagnostic about one of these is ours by
+# definition, and the first version of this tool filed
+# `IFO196 PAGFREE HAS BEEN PREVIOUSLY DEFINED` under "NOT about this conversion"
+# -- which is how a symbol collision with a 1979 label in DMKPTR cost a build.
+# Renaming a field cannot be a judgement call about whose diagnostic it is.
+INTRODUCED = {'SEGPTO', 'SEGPTL', 'SEGINVAL', 'PAGPFRA', 'PAGINV', 'PAGORIG',
+              'PAGFREE',  # the name that collided -- kept so an OLD log reads right
+              'PAGSWPE', 'SEGSTOM', 'SEGSTLM', 'SEGPTOM', 'SEGPTLF',
+              'PAGPFRM', 'PAGINVW', 'BLDRPTE'}
+DEFINED_TWICE = re.compile(r'^(\S+) HAS BEEN PREVIOUSLY DEFINED$')
 # Symbols deliberately kept, whose MEANING moved anyway.  No diagnostic exists
 # for these and none can.
 KEPT_BUT_MOVED = {'SEGENQ': 'position: bit 25 is now the lowest PTO bit',
@@ -161,6 +171,11 @@ def symbols(f):
     named = [s for s in f.undef if s in RENAMED]
     if named:
         return named
+    # A symbol this conversion introduced, reported as already defined: ours.
+    for _, msg in f.diags:
+        m = DEFINED_TWICE.match(msg)
+        if m and m.group(1) in INTRODUCED:
+            return [m.group(1)]
     hit = [s for s in RENAMED if re.search(r'\b%s\b' % s, f.text)]
     if hit:
         return hit
@@ -266,7 +281,18 @@ def main():
     for s in allsites:
         in_mod[s.mod].append(s)
 
-    matched, copied, literal, missed = [], [], [], []
+    # A symbol collision is its own outcome.  Filed under MISSED it reads as a
+    # hole in `dattab.py`, which does not look for collisions and should not --
+    # that is `symchk.py`'s job, and it checks before the build rather than
+    # after.  Filed under "not this conversion" it hides, which is what happened.
+    matched, copied, literal, missed, collided = [], [], [], [], []
+    for f in list(ours):
+        for code, msg in f.diags:
+            m = DEFINED_TWICE.match(msg)
+            if code == 'IFO196' and m and m.group(1) in INTRODUCED:
+                collided.append((f, m.group(1)))
+                ours.remove(f)
+                break
     for f in ours:
         norm = re.sub(r'\s+', ' ', f.text.strip())
         if (f.mod, norm) in sweep_text:
@@ -297,6 +323,8 @@ def main():
         print('  sweep attributes them to -- the same site, not a discrepancy')
     print('MISSED    %4d  flagged but NOT predicted -- the sweep has a hole'
           % len(missed))
+    print('COLLIDED  %4d  a symbol THIS conversion introduced, already defined'
+          % len(collided))
     print('SILENT    %4d  predicted but NOT flagged -- no diagnostic exists'
           % len(silent))
     print()
