@@ -44,6 +44,16 @@ run(){ local eng=${2:-$HERC3}
        test "$(pgrep -c hercules)" = "0" || {
          echo "### run($1): a Hercules is ALREADY running -- refusing to start a second"
          pgrep -a hercules | head -3; return 1; }
+       # Keep the previous log.  The name is fixed per verb, so every `full`
+       # used to overwrite the last one -- and a build log is not a transcript,
+       # it is the MEASUREMENT: asmerr.py and deckchk.py both read it, and the
+       # 190-diagnostic log that established the 176/176/0 reconciliation was
+       # destroyed by the next run that depended on it.  I-131.
+       if test -f "$C/$1.log"; then
+         mkdir -p "$C/logs"
+         mv "$C/$1.log" \
+            "$C/logs/$1-$(date -r "$C/$1.log" +%Y%m%d-%H%M%S).log"
+       fi
        ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
        sleep 8; w; }
 
