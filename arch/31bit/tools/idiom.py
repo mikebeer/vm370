@@ -66,6 +66,17 @@ CLASSES = [
           'the length was byte 0 and is now the low seven bits of byte 3'),
     Class('strip', re.compile(r'^\s+LA\s+R?(\d+),0\(,?R?\1\)'), 'any', 'M2',
           'strips the high byte, where nothing lives in AMODE 31'),
+    # Added after DMKCFH: block.py's shift pattern knew SRL and SLL but not
+    # SRDL/SLDL, which is how CP splits a virtual address into a segment number
+    # and an offset -- `SRDL R14,16  GET SEGMENT NUMBER`, 20 for a 1 MB segment.
+    # Seven sites in six modules, two of them (DMKCDB, DMKCDM) with no DAT-field
+    # reference at all, so this class alone adds two modules to the conversion.
+    # 'any' not 'dat': the signal for an address split is a VMSEG nearby -- you
+    # load the segment-table designation and then split the address -- and
+    # DATF deliberately excludes VMSEG, which is a VMBLOK field, not a DAT one.
+    Class('addr-split', re.compile(r'^\s+(SRDL|SLDL)\s+R?\d+,(4|8|16|20)\b'),
+          'any', 'M1',
+          'splits a virtual address: 16 bits of segment becomes 20, 4 of page 8'),
     Class('pack3', re.compile(r"^\s+(ICM|STCM|CLM)\s+R?\d+,B'0111'"), 'any', 'M5',
           'a three-byte address field -- 24 bits by construction'),
 ]

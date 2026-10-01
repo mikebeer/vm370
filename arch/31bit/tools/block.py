@@ -62,7 +62,7 @@ MARKS = [
     # so the opcode is the reliable signal and the value is not.
     ('mask', re.compile(r"^\s+(N|NR|O|OR|X|XR|NI|OI|XI)\s+\S+,"),
      'a mask or flag update -- every one over a DAT field moves'),
-    ('shift', re.compile(r'^\s+S[RL]L\s+R?\d+,(4|8|16|20|24)\b'),
+    ('shift', re.compile(r'^\s+(S[RL]L|SRDL|SLDL)\s+R?\d+,(4|8|16|20|24)\b'),
      'a segment/page stride -- R01-SHIFT-SITES has the table'),
     ('step16', re.compile(r'^\s+LA\s+R?\d+,16\(,?R?\d*\)'),
      'a PTE value stepping by one page; ESA/390 steps by 4096'),
@@ -135,8 +135,13 @@ def main():
         return 2
 
     lines = source(mod)
-    idx = {seq: i for i, (seq, _) in enumerate(lines) if seq}
-    sites = sorted(idx[s] for s in want if s in idx)
+    # The log right-justifies the sequence in eight columns, so it comes back
+    # without leading zeros -- `339000` where the source holds `00339000`.
+    # Keying on the string found nothing for three modules and reported it as
+    # "0 sites ... every change is one the assembler already named", which is a
+    # clean-looking lie.  deckchk.py was unaffected because it compared ints.
+    idx = {int(seq): i for i, (seq, _) in enumerate(lines) if seq.isdigit()}
+    sites = sorted(idx[int(s)] for s in want if s.isdigit() and int(s) in idx)
     spans = blocks(lines, sites)
 
     # Merge overlapping blocks: two flagged sites in one block is one read.
