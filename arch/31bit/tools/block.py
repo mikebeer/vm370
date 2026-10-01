@@ -114,11 +114,24 @@ def main():
     mod = args[args.index('--mod') + 1]
     only_marked = '--marked' in args
 
+    # Sites come from the assembler when a log has them and from the sweep when
+    # it does not.  Without this the tool is unusable exactly when it is most
+    # wanted -- before a build, while writing the deck -- and `asmerr.py` showed
+    # the two lists agree on all 176 sites with no holes, so the sweep is a sound
+    # stand-in.  `--sweep` forces it; a log with nothing in it falls back.
     import asmerr
-    flags, _ = asmerr.harvest(log)
-    want = {f.seq for f in flags if f.mod == mod and asmerr.symbols(f) and f.seq}
+    import dattab
+    want, origin = set(), 'the assembler'
+    if '--sweep' not in args:
+        flags, _ = asmerr.harvest(log)
+        want = {f.seq for f in flags
+                if f.mod == mod and asmerr.symbols(f) and f.seq}
     if not want:
-        print('### no flagged site for %s in %s' % (mod, os.path.basename(log)))
+        want = {s.seq for s in dattab.scan(dattab.SRC)
+                if s.mod == mod and s.verdict != 'ok' and s.seq}
+        origin = "dattab.py's sweep (the log has no diagnostics for %s)" % mod
+    if not want:
+        print('### no site for %s in either the log or the sweep' % mod)
         return 2
 
     lines = source(mod)
@@ -140,8 +153,8 @@ def main():
         merged.append(cur)
 
     marks = collections.Counter()
-    print('%s: %d flagged site(s) in %d basic block(s)'
-          % (mod, len(sites), len(merged)))
+    print('%s: %d site(s) from %s, in %d basic block(s)'
+          % (mod, len(sites), origin, len(merged)))
     print()
     for a, b, hits in merged:
         body = []
@@ -171,7 +184,8 @@ def main():
         why = next(w for nm, _, w in MARKS if nm == name)
         print('  %-8s %3d  %s' % (name, n, why))
     print()
-    print('>> is a site the assembler flagged.  Everything else in these blocks')
+    print('>> is a site from %s.' % origin)
+    print('Everything else in these blocks')
     print('is a line no diagnostic reaches, marked or not -- the marks are a')
     print('record of what has already been missed, not a theory of what can be.')
     return 0
