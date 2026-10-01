@@ -64,6 +64,19 @@ CLASSES = [
           'the STD used as an address: STL is bits 25-31 and must be masked'),
     Class('vmseg-len', re.compile(r'^\s+(IC|STC|CLI|TM)\s+R?\d*,?VMSEG\b'), None, 'M1',
           'the length was byte 0 and is now the low seven bits of byte 3'),
+    # `AL Rn,VMSEG` adds the whole designation -- STL included -- to an index.
+    # 13 sites in 5 modules, and DMKPRV is in no other list.  The vmseg-load
+    # pattern wanted `L`, so these went unseen until DMKCFG was read; two of them
+    # are in DMKVMA, which had already been declared converted at zero uncovered.
+    Class('vmseg-add', re.compile(r'^\s+(A|AL)\s+R?\d+,VMSEG\b'), None, 'M1',
+          'adds the STD to an index, STL and all'),
+    # `SRL Rn,28` is how CP extracts SEGPLEN from bits 0-3.  PTL is bits 28-31,
+    # so the shift becomes a mask and the count arithmetic changes with it.
+    Class('seglen-shift', re.compile(r'^\s+SRL\s+R?\d+,28\b'), 'dat', 'M1',
+          'extracts SEGPLEN from bits 0-3; PTL is bits 28-31 and needs a mask'),
+    # `16*2` is PAGTSWP written out as digits -- 16 entries of 2 bytes.
+    Class('pagtswp-lit', re.compile(r'16\*2|16\+16\*2'), 'dat', 'M1',
+          'PAGTSWP spelled as digits: 16 entries of 2 bytes, now 256 of 4'),
     Class('strip', re.compile(r'^\s+LA\s+R?(\d+),0\(,?R?\1\)'), 'any', 'M2',
           'strips the high byte, where nothing lives in AMODE 31'),
     # Added after DMKCFH: block.py's shift pattern knew SRL and SLL but not

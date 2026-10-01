@@ -1,5 +1,14 @@
 ./ R 00133000          $ 00133100 100                                           
          USING PAGPFRA,R6                                      XA0036DK         
+./ R 00195000          $ 00195100 100                                           
+*  THE MASK GOES ON VMSEG, NOT ON THE SUM. AN INDEX OF         XA0036DK         
+*  SEGNUM*4 REACHES BIT 25 FOR 16 SEGMENTS, WHICH IS WHERE     XA0036DK         
+*  STL BEGINS, SO MASKING AFTER THE ADD WOULD CLEAR PART OF    XA0036DK         
+*  THE INDEX. R4 IS FREE HERE -- IT IS ZEROED THREE CARDS      XA0036DK         
+*  BELOW.                                                      XA0036DK         
+         L     R4,VMSEG       THE SEGMENT TABLE DESIGNATION    XA0036DK         
+         N     R4,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R8,R4          OBTAIN PROPER STE ADDR           XA0036DK         
 ./ R 00196000          $ 00196100 100                                           
          TM    SEGPTO+3,SEGINVAL SEGMENT INVALID               XA0036DK         
 ./ R 00199000          $ 00199100 100                                           
@@ -43,6 +52,10 @@ FNDSEG   SLL   R14,8          MAKE ROOM FOR PAGE NUMBER        XA0036DK
          SRL   R2,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
 ./ R 00278000          $ 00278100 100                                           
          OI    PAGPFRA+2,PAGINV FLAG PTE AS INVALID            XA0036DK         
+./ R 00337000          $ 00337100 100                                           
+         L     R5,VMSEG            THE DESIGNATION             XA0036DK         
+         N     R5,=A(SEGSTOM)      WITHOUT THE LENGTH          XA0036DK         
+         ALR   R8,R5               GET ADDR OF SEGTABLE ENTRY  XA0036DK         
 ./ R 00338000          $ 00338100 100                                           
          L     R5,SEGPTO           GET ADDR OF PAGE TABLE      XA0036DK         
 ./ R 00340000          $ 00340100 100                                           

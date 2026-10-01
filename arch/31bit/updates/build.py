@@ -3303,6 +3303,19 @@ DATMODS = {
     # one load, in opposite directions, four lines apart.
     'DMKVMA': [
         ('00133000', ["         USING PAGPFRA,R6"]),
+        # Two sites I missed on the first pass, found later by idiom.py's
+        # vmseg-add class.  `AL R8,VMSEG` adds the whole designation, STL and
+        # all, to an index -- the same defect as `L Rn,VMSEG` with a different
+        # opcode, and I had both blocks open and converted the cards after them.
+        ('00195000', Deck.comment(
+            "THE MASK GOES ON VMSEG, NOT ON THE SUM. AN INDEX OF SEGNUM*4 "
+            "REACHES BIT 25 FOR 16 SEGMENTS, WHICH IS WHERE STL BEGINS, SO "
+            "MASKING AFTER THE ADD WOULD CLEAR PART OF THE INDEX. R4 IS FREE "
+            "HERE -- IT IS ZEROED THREE CARDS BELOW.") + [
+            "         L     R4,VMSEG       THE SEGMENT TABLE DESIGNATION",
+            "         N     R4,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R8,R4          OBTAIN PROPER STE ADDR",
+        ]),
         ('00196000', [
             "         TM    SEGPTO+3,SEGINVAL SEGMENT INVALID",
         ]),
@@ -3362,6 +3375,11 @@ DATMODS = {
         ]),
         ('00278000', [
             "         OI    PAGPFRA+2,PAGINV FLAG PTE AS INVALID",
+        ]),
+        ('00337000', [
+            "         L     R5,VMSEG            THE DESIGNATION",
+            "         N     R5,=A(SEGSTOM)      WITHOUT THE LENGTH",
+            "         ALR   R8,R5               GET ADDR OF SEGTABLE ENTRY",
         ]),
         ('00338000', [
             "         L     R5,SEGPTO           GET ADDR OF PAGE TABLE",
