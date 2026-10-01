@@ -8,6 +8,18 @@ not that the count was stale but that it was never a count.  So this exists to
 make the figure a measurement, cheap enough that quoting one is never easier
 than taking one.  I-141.
 
+**Reconciled against `s370only.py`**, which was already in this tree and which
+counts the same instructions by a different method: it reads Hercules's own
+opcode table and keeps every mnemonic marked `GENx370x___x___`, rather than a
+hand-written list.  With the deck subtraction disabled the two agree on
+**199 against 200**, and the single difference was `STIDC` -- absent from the
+list here until this check, now added.  Every other opcode matches exactly:
+TIO 71, SIO 48, ISK 38, SSK 16, RRB 13, HIO 5, HDV 4, TCH 3, CLRIO 1, and the
+same four standalone utilities outside the nucleus.  Two tools written
+independently, agreeing site for site on nine opcodes, is the strongest evidence
+either of them is right.  The relationship is therefore: `s370only.py` counts
+what CP ISSUES, this counts what is LEFT.
+
 The method:
 
   * sweep every module for the opcodes 370-XA removed -- SIO SIOF TIO CLRIO
@@ -67,7 +79,7 @@ SRC = '/home/claude/vmce/source/cp'
 UPDATES = os.path.join(HERE, '..', 'updates')
 LOADLIST = '/home/claude/vmce/maintenance/files/194/CPLOAD.EXEC'
 
-CHANNEL = ('SIO', 'SIOF', 'TIO', 'CLRIO', 'HIO', 'HDV', 'TCH')
+CHANNEL = ('SIO', 'SIOF', 'TIO', 'CLRIO', 'HIO', 'HDV', 'TCH', 'STIDC')
 KEYS = ('ISK', 'SSK', 'RRB')
 PRIV = re.compile(r'^.{9}(%s)\s' % '|'.join(CHANNEL + KEYS))
 CTL = re.compile(r'^\./ ([RDI])\s+(\d{8})(?:\s+(\d{8}))?')

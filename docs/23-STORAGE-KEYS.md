@@ -145,6 +145,79 @@ configuration**, so collapsing the pairs should be behaviour-preserving rather
 than behaviour-changing. And `HRC004DK` is worth reading before writing
 anything: it is six decks of IBM-era work on exactly this question.
 
+## The 4 KB claim, verified rather than inferred
+
+The section above infers from `CPCREG0 DC X'81800CC0'` that CE already runs with
+4 KB keys. That inference is **correct**, and it is worth showing why, because
+the bit's name in Hercules — `CR0_STORKEY_4K`, commented *"Storkey exception
+control"* — reads as though it might mean the opposite.
+
+Base `PSA.MACRO` has `X'80800CC0'`; CE's own `PSA.HRC004DK` changes it to
+`X'81800CC0'`. The single bit added is `0x01000000`, which `esa390.h` defines as
+`CR0_STORKEY_4K`. Hercules tests it in exactly three places, and the three are
+`insert_storage_key`, `reset_reference_bit` and `set_storage_key` — `ISK`, `RRB`
+and `SSK`, the **2 KB** instructions, not the extended ones:
+
+    if (!(regs->CR( 0 ) & CR0_STORKEY_4K))
+        program_interrupt( regs, PGM_SPECIAL_OPERATION_EXCEPTION );
+
+So on a machine whose keys cover 4 KB blocks, the bit is what *permits* `ISK`,
+`SSK` and `RRB` at all, and they then address the 4 KB key with the 2 KB
+sub-address ignored. That is the S/370 architecture's own rule for models with
+the 4 KB-key feature, and it means **CE's paired operations already both reach
+the same key today**. Redundant, exactly as stated, and not merely because
+Hercules happens to keep one key array.
+
+## The consequence: both halves of the conversion are behaviour-preserving
+
+This settles a question that looked like a design decision and is not one. The
+two directions are not symmetric, and neither needs a deviation.
+
+**Reading** — `DMKPTR` 00539000 and 01012000 pack two keys into one register,
+because `ISK` only loads bits 24-31, and test them with a two-byte mask:
+
+    ISK   R1,R14         STORAGE KEY FOR 1ST HALF OF PAGE
+    LA    R14,2048(R14)  INCREMENT TO 2ND HALF PAGE
+    SLL   R1,8           SAVE KEY
+    ISK   R1,R14         INSERT 2ND KEY
+    N     R1,=A(X'0202') CLEAR ALL BUT CHANGE BITS
+
+Both `ISK`s already return the same key. So one `ISKE`, **replicated into both
+bytes**, leaves the mask, the branch and every downstream store untouched and
+produces the identical register value. Not a conservative approximation — the
+same answer.
+
+**Writing** — `DMKPTR` 00643000 writes two *independent* guest keys, which the
+guest set itself through simulated `SSK`:
+
+    L     R3,SWPFLAG     GET USER'S KEYS IN LOW ORDER
+    N     R3,=A(X'F8F8') CLEAR REF/CHANGE BITS
+    SSK   R3,R8          SET KEY FOR 2'ND HALF PAGE
+    SRL   R3,8           JUSTIFY KEY FOR 1'ST HALF PAGE
+    SSK   R3,R6          SET KEY FOR 1'ST HALF PAGE
+
+Replication is meaningless here — there is nothing to replicate *from*. But
+since both `SSK`s already address one key, **the second one wins today**, and
+the second one carries `SWPKEY1`. So a single `SSKE` from `SWPKEY1` is not a
+choice between the two guest keys: it is what the hardware already holds.
+
+`SWPKEY1` and `SWPKEY2` stay as independent guest state either way, because
+`DMKPRV` answers a guest `ISK` out of `SWPTABLE` rather than from hardware. The
+guest keeps seeing its two distinct keys. Only real protection enforcement is
+coarse, and it is already coarse.
+
+**So the earlier framing of this as "a small piece of reasoning about which
+half's key was authoritative" overstates it.** The question is answered by the
+machine CE already runs on: reading replicates, writing takes `SWPKEY1`, and
+both reproduce current behaviour exactly. What remains is per-site care about
+*register pressure and control flow*, which is real work, and not a semantic
+decision at each pair.
+
+This also raises the value of step 2 below from a sanity check to the thing that
+makes the whole family provable: if `ISK` and `ISKE` agree on CE as this
+predicts, all 67 sites can be converted and tested in S/370 mode, before
+anything else moves.
+
 ## Order of work
 
 1. Read `HRC004DK`'s six decks.
