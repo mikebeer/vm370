@@ -8,7 +8,7 @@
 *  16.                                                         XA0036DK         
          SLL   R2,24          ADDR +1 PAGE OF LAST PAGE        XA0036DK         
 ./ R 00302000          $ 00302100 100                                           
-         L     R3,VMSEG       GET ADDRESS OF SEGTABLE          XA0036DK         
+PURCONT  L     R3,VMSEG       GET ADDRESS OF SEGTABLE          XA0036DK         
          N     R3,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
 ./ R 00303000          $ 00303100 100                                           
 *                             (LA R3,0(,R3) REPLACED ABOVE)    XA0036DK         
@@ -243,7 +243,10 @@ B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK
 *  IN THE LOW NIBBLE OF BYTE 3. TEMPR6 AND TEMPR7 ARE UNUSED   XA0036DK         
 *  IN THIS MODULE, AND NEITHER L NOR LM SETS THE CONDITION     XA0036DK         
 *  CODE, SO THE RESTORE CAN FOLLOW THE COMPARE.                XA0036DK         
-CKSEG    EQU   *              HERE TO TEST FOR END OF SEGMENT  XA0036DK         
+*  CKSEG EQU * IS NOT REPEATED: IT IS RECORD 01216000,         XA0036DK         
+*  WHICH THIS DECK DOES NOT REPLACE, SO IT ALREADY             XA0036DK         
+*  LABELS THE CARD BELOW. EMITTING IT AGAIN GAVE IFO196        XA0036DK         
+*  HAS BEEN PREVIOUSLY DEFINED. I-143.                         XA0036DK         
          ST    R14,TEMPR7     SAVE THE WORK REGISTER           XA0036DK         
          IC    R14,3(,R3)     THE STE FLAG BYTE                XA0036DK         
          N     R14,=A(SEGPTLF) PTL                             XA0036DK         

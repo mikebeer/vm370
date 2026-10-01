@@ -28,7 +28,13 @@
          SRL   R2,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
 ./ R 57400000          $ 57400100 100                                           
          MVC   PAGPFRA,=A(PAGINVW) INVALIDATE PAGE TABLE       XA0036DK         
-./ R 62000000          $ 62000100 100                                           
+./ R 62000000 62100000 $ 62000100 100                                           
+*  THE RECORD REPLACED HERE CARRIED AN X IN COLUMN 72 AND      XA0036DK         
+*  62100000 WAS ITS CONTINUATION CARD. REPLACING ONLY THE      XA0036DK         
+*  FIRST LEFT THE CONTINUATION A STANDALONE STATEMENT, AND     XA0036DK         
+*  THE ASSEMBLER READ ITS OPERAND FIELD AS AN OPCODE: IFO054   XA0036DK         
+*  INVALID OPERATION CODE. BOTH RECORDS GO, AND THE            XA0036DK         
+*  REPLACEMENT NEEDS NO CONTINUATION. I-143.                   XA0036DK         
          LA    R8,L'PAGPFRA(,R8) ADDRESS THE NEXT ENTRY        XA0036DK         
 ./ R 76900000          $ 76900100 100                                           
          N     R14,=A(SEGPTOM) LEAVE PGT ADDRESS ONLY          XA0036DK         

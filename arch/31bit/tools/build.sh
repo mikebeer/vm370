@@ -65,7 +65,16 @@ run(){ local eng=${2:-$HERC3}
        ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
        sleep 8; w; }
 
-mk(){ python3 $T/mkrun.py "$C" "$@" >/dev/null || { echo "### mkrun failed"; return 1; }; }
+mk(){ # Four invariants on every ./ R, checked before 50 minutes are spent on a
+      # build that would report them as assembler diagnostics instead: a
+      # replacement must carry forward any label it covers, must not define one
+      # that survives on an unreplaced record, must take continuation cards with
+      # it, and must only name symbols the module can actually see.  All twelve
+      # diagnostics of the 1 October build were one of these four.  I-143.
+      python3 $T/replchk.py >/dev/null 2>&1 || {
+        echo "### replchk: the decks break an invariant -- see below"
+        python3 $T/replchk.py; return 1; }
+      python3 $T/mkrun.py "$C" "$@" >/dev/null || { echo "### mkrun failed"; return 1; }; }
 arch(){ py "import mkrun; mkrun.archmode('$C/vm370ce.conf','$1')"; }
 
 chk(){ local r; r=$(py "import mkrun; print(mkrun.boot_failed('$C/$1.log') or '')")

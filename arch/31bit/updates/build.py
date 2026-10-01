@@ -63,6 +63,7 @@ XA33 = 'XA0033DK'
 XA34 = 'XA0034DK'
 XA35 = 'XA0035DK'
 XA36 = 'XA0036DK'
+XA37 = 'XA0037DK'
 
 
 def psa():
@@ -3324,7 +3325,12 @@ DATMODS = {
         ('57400000', [
             "         MVC   PAGPFRA,=A(PAGINVW) INVALIDATE PAGE TABLE",
         ]),
-        ('62000000', [
+        ('62000000', '62100000', Deck.comment(
+            "THE RECORD REPLACED HERE CARRIED AN X IN COLUMN 72 AND 62100000 "
+            "WAS ITS CONTINUATION CARD. REPLACING ONLY THE FIRST LEFT THE "
+            "CONTINUATION A STANDALONE STATEMENT, AND THE ASSEMBLER READ ITS "
+            "OPERAND FIELD AS AN OPCODE: IFO054 INVALID OPERATION CODE. BOTH "
+            "RECORDS GO, AND THE REPLACEMENT NEEDS NO CONTINUATION. I-143.") + [
             "         LA    R8,L'PAGPFRA(,R8) ADDRESS THE NEXT ENTRY",
         ]),
         ('76900000', [
@@ -3625,7 +3631,7 @@ DATMODS = {
             "         SLL   R2,24          ADDR +1 PAGE OF LAST PAGE",
         ]),
         ('00302000', [
-            "         L     R3,VMSEG       GET ADDRESS OF SEGTABLE",
+            "PURCONT  L     R3,VMSEG       GET ADDRESS OF SEGTABLE",
             "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
         ]),
         ('00303000', [
@@ -3876,7 +3882,10 @@ DATMODS = {
             "SIXTEENS IN THE LOW NIBBLE OF BYTE 3. TEMPR6 AND TEMPR7 ARE UNUSED "
             "IN THIS MODULE, AND NEITHER L NOR LM SETS THE CONDITION CODE, SO "
             "THE RESTORE CAN FOLLOW THE COMPARE.") + [
-            "CKSEG    EQU   *              HERE TO TEST FOR END OF SEGMENT",
+            "*  CKSEG EQU * IS NOT REPEATED: IT IS RECORD 01216000,",
+            "*  WHICH THIS DECK DOES NOT REPLACE, SO IT ALREADY",
+            "*  LABELS THE CARD BELOW. EMITTING IT AGAIN GAVE IFO196",
+            "*  HAS BEEN PREVIOUSLY DEFINED. I-143.",
             "         ST    R14,TEMPR7     SAVE THE WORK REGISTER",
             "         IC    R14,3(,R3)     THE STE FLAG BYTE",
             "         N     R14,=A(SEGPTLF) PTL",
@@ -4545,6 +4554,53 @@ def dmkcpidat():
     return d
 
 
+def equcopy():
+    """The nine ESA/390 architecture constants, in the member every module sees.
+
+    They lived in `CORE.COPY` first, beside the structures they describe, which
+    read like the right call and was wrong: `CORE.COPY` is copied by 42 modules
+    and `EQU.COPY` by 179 of 192.  `DMKCDB`, `DMKCDM` and `DMKDRD` name
+    `SEGINVAL` and `SEGSTOM` and copy `EQU` but not `CORE`, so they failed with
+    `IFO188 UNDEFINED SYMBOL` -- **seven of the twelve diagnostics in the
+    1 October build, from one placement decision**.  `I-143`.
+
+    The distinction that was missed is between a FIELD and a CONSTANT.  A field
+    belongs to its structure: `SEGPTO` and `PAGPFRA` stay in `CORE.COPY`, and so
+    do `PAGTSWP`, `PAGBMP` and `PAGSWPE`, because they are computed FROM those
+    fields (`SWPCODE-SWPFLAG+1`) and cannot be stated without them.  A mask over
+    an architected word is not part of any structure -- `X'7FFFF000'` is the
+    ESA/390 STD, whoever is looking at it -- so it belongs where everyone can
+    see it.  Nine EQUs, one definition each, still one place to be wrong.
+
+    Of the 13 modules that do not copy `EQU`, only `DMKSYS` has a deck at all,
+    and its deck names none of the nine; checked before the move rather than
+    after.
+    """
+    d = Deck(XA37)
+    d.insert('00168000', first='00168100', inc=10,
+             limit=next_seq(SRC + '/EQU.COPY', '00168000'),
+             lines=Deck.comment(
+        "ESA/390 DAT CONSTANTS. S/370 PACKS LENGTHS AND FLAGS INTO THE HIGH "
+        "BYTE OF A POINTER, WHICH 24-BIT ADDRESS FORMATION IGNORES, SO A PACKED "
+        "WORD IS USABLE AS AN ADDRESS WITH NOTHING TO STRIP. ESA/390 MOVES THEM "
+        "TO THE LOW BITS -- STL 25-31, STE FLAGS 26-31, PTE FLAGS 21-22 -- "
+        "WHICH ADDRESS FORMATION NEVER IGNORES. SO EVERY PACKED POINTER NEEDS "
+        "AN EXPLICIT MASK WHERE IT NEEDED NONE, AND AMODE 24 DOES NOT HELP. "
+        "I-128. THESE ARE CONSTANTS OVER ARCHITECTED WORDS, NOT FIELDS OF ANY "
+        "STRUCTURE, SO THEY LIVE HERE AND NOT IN CORE COPY -- I-143.") + [
+        "SEGINVAL EQU   X'20'          STE SEGMENT INVALID -- BIT 26",
+        "PAGINV   EQU   X'04'          PTE PAGE INVALID -- BIT 21",
+        "PAGINVW  EQU   (PAGINV*256)   PTE INVALID, AS A FULLWORD",
+        "SEGSTOM  EQU   X'7FFFF000'    STD SEG TABLE ORIGIN 1-19",
+        "SEGSTLM  EQU   X'0000007F'    STD SEG TABLE LENGTH 25-31",
+        "SEGPTOM  EQU   X'7FFFFFC0'    STE PAGE TABLE ORIGIN 1-25",
+        "SEGPTLF  EQU   X'0F'          STE PTL, FULL, AT SEGPTO+3",
+        "SEGFLGM  EQU   X'0000003F'    STE I, C AND PTL -- NOT PTO",
+        "PAGPFRM  EQU   X'7FFFF000'    PTE PAGE FRAME ADDR 1-19",
+    ])
+    return d
+
+
 def corecopy():
     """STE-DESIGN step 1: the DAT table DSECTs, with every changed name CHANGED.
 
@@ -4636,9 +4692,10 @@ def corecopy():
         "THE ARCHITECTED SEGMENT-INVALID BIT IS 26, NOT 31. X'01' WAS INSIDE "
         "WHAT IS NOW PTL. RENAMED FROM SEGINV: 14 OF ITS 31 SITES REACH IT BY "
         "DISPLACEMENT OR BY ARITHMETIC ON THE VALUE AND NEVER NAME SEGPAGE, SO "
-        "RENAMING THE CONTAINER ALONE WOULD HAVE MISSED THEM.") + [
-        "SEGINVAL EQU   X'20'          SEGMENT INVALID -- BIT 26",
-    ])
+        "RENAMING THE CONTAINER ALONE WOULD HAVE MISSED THEM. THE DEFINITION "
+        "ITSELF IS IN EQU COPY, NOT HERE: DMKCDB, DMKCDM AND DMKDRD NAME "
+        "SEGINVAL AND DO NOT COPY CORE, WHICH COST SEVEN OF THE TWELVE "
+        "DIAGNOSTICS IN THE 1 OCTOBER BUILD. I-143."))
 
     one('00114300', Deck.comment(
         "SEGMIG IS GONE. IT WAS X'10', WHICH IS THE ESA/390 COMMON-SEGMENT BIT, "
@@ -4684,9 +4741,8 @@ def corecopy():
 
     one('00142000', Deck.comment(
         "PAGE INVALID IS BIT 21, SO X'04' IN BYTE 2. RENAMED FROM PAGINVAL: TWO "
-        "OF ITS SITES REACH IT AS 1(R1) AND NEVER NAME THE FIELD.") + [
-        "PAGINV   EQU   X'04'          PAGE INVALID -- BIT 21",
-    ])
+        "OF ITS SITES REACH IT AS 1(R1) AND NEVER NAME THE FIELD. DEFINED IN "
+        "EQU COPY WITH THE OTHER ARCHITECTURE CONSTANTS -- SEE I-143."))
 
     one('00143000', Deck.comment(
         "PAGREF KEEPS ITS NAME AND ITS VALUE AND MOVES TO PAGPFRA+3, WHICH IS "
@@ -4731,16 +4787,10 @@ def corecopy():
         "MOVES THEM TO THE LOW BITS -- STL 25-31, STE FLAGS 26-31, PTE FLAGS "
         "21-22 -- WHICH ADDRESS FORMATION NEVER IGNORES. SO EVERY PACKED "
         "POINTER NEEDS AN EXPLICIT MASK WHERE IT NEEDED NONE, AND AMODE 24 DOES "
-        "NOT HELP. I-128. ONE DEFINITION EACH, HERE, BESIDE THE FORMAT THEY "
-        "DESCRIBE, SO THERE IS ONE PLACE TO BE WRONG RATHER THAN NINETY.") + [
-        "SEGSTOM  EQU   X'7FFFF000'    STD SEG TABLE ORIGIN 1-19",
-        "SEGSTLM  EQU   X'0000007F'    STD SEG TABLE LENGTH 25-31",
-        "SEGPTOM  EQU   X'7FFFFFC0'    STE PAGE TABLE ORIGIN 1-25",
-        "SEGPTLF  EQU   X'0F'          STE PTL, FULL, AT SEGPTO+3",
-        "SEGFLGM  EQU   X'0000003F'    STE I, C AND PTL -- NOT PTO",
-        "PAGPFRM  EQU   X'7FFFF000'    PTE PAGE FRAME ADDR 1-19",
-        "PAGINVW  EQU   (PAGINV*256)   PTE INVALID, A FULLWORD",
-    ])
+        "NOT HELP. I-128. THE MASKS THEMSELVES ARE IN EQU COPY, WHICH 179 OF "
+        "THE 192 MODULES COPY, BECAUSE THEY ARE ARCHITECTURE CONSTANTS AND NOT "
+        "FIELDS OF THIS STRUCTURE -- PUTTING THEM HERE MADE THEM INVISIBLE TO "
+        "EVERY MODULE THAT DOES NOT COPY CORE. I-143."))
     return d
 
 
@@ -4934,6 +4984,13 @@ def main():
         [(XA34, 'BUILD ESA/390 SEGMENT AND PAGE TABLES, AND ALIGN THEM')])
     print('%-8s %-9s %3d cards  %s' % ('DMKBLD', XA34, n,
           'OK' if not verify(os.path.join(HERE, 'DMKBLD.%s' % XA34)) else 'BAD'))
+
+    eq = equcopy()
+    n = eq.write(os.path.join(HERE, 'EQU.%s' % XA37))
+    aux(os.path.join(HERE, 'EQU.AUXLCL'),
+        [(XA37, 'ESA/390 DAT CONSTANTS: STD, STE AND PTE MASKS AND FLAGS')])
+    print('%-8s %-9s %3d cards  %s' % ('EQU', XA37, n,
+          'OK' if not verify(os.path.join(HERE, 'EQU.%s' % XA37)) else 'BAD'))
 
     cc = corecopy()
     n = cc.write(os.path.join(HERE, 'CORE.%s' % XA33))
