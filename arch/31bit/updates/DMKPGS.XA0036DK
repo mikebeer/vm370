@@ -189,11 +189,18 @@ B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK
          N     R14,F255       (WITHOUT SEGMENT NO.)            XA0036DK         
 ./ R 01034200          $ 01034210 010                                           
 *  STCM B'1000' PUT R4'S BYTE 0 INTO THE STE'S BYTE 0, WHICH   XA0036DK         
-*  HELD THE LENGTH. PTL IS THE LOW NIBBLE OF BYTE 3, SO THE    XA0036DK         
-*  ENTRY IS REBUILT.                                           XA0036DK         
+*  HELD THE LENGTH, SO IT COPIED THE OTHER PAGE TABLE'S        XA0036DK         
+*  LENGTH -- WHATEVER IT WAS. PTL IS THE LOW NIBBLE OF BYTE 3  XA0036DK         
+*  NOW. THE FIRST VERSION OF THIS CARD OR'D IN SEGPTLF, A      XA0036DK         
+*  FULL TABLE, WHICH IS TRUE OF EVERY TABLE DMKBLDRT BUILDS    XA0036DK         
+*  AND IS STILL AN ASSUMPTION THE ORIGINAL DID NOT MAKE. R4'S  XA0036DK         
+*  OWN PTL IS TAKEN INSTEAD, VIA TEMPR7 -- UNUSED IN THIS      XA0036DK         
+*  MODULE -- BECAUSE R4 IS NEEDED WHOLE BY THE NEXT CARD.      XA0036DK         
+         ST    R4,TEMPR7      THE OTHER PAGE TABLE'S ENTRY     XA0036DK         
          L     R15,SEGPTO     THE CURRENT ENTRY                XA0036DK         
          N     R15,=A(X'FFFFFFFF'-SEGPTLF) WITHOUT PTL         XA0036DK         
-         O     R15,=A(SEGPTLF) RESET PAGTABLE LENGTH           XA0036DK         
+         NC    TEMPR7,=A(SEGPTLF) ITS PTL                      XA0036DK         
+         O     R15,TEMPR7     RESET PAGTABLE LENGTH            XA0036DK         
          ST    R15,SEGPTO     ...                              XA0036DK         
 ./ R 01034400          $ 01034500 100                                           
          N     R4,=A(SEGPTOM) STRIP OFF LENGTH                 XA0036DK         

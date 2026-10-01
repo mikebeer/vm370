@@ -54,6 +54,14 @@ run(){ local eng=${2:-$HERC3}
          mv "$C/$1.log" \
             "$C/logs/$1-$(date -r "$C/$1.log" +%Y%m%d-%H%M%S).log"
        fi
+       # `mk` copied every deck into io/rNN.txt.  A deck regenerated between
+       # then and now is NOT in this build, and the log will not say so -- it
+       # reports `readcard dmkpgs xa0036dk a` either way, and the diagnostics
+       # belong to the old cards while every deck-reading tool reports on the
+       # new ones.  Third door onto the same stale-artifact failure as I-131
+       # and I-138; refuse rather than measure the wrong thing.  I-140.
+       python3 "$T/iochk.py" "$C" || {
+         echo "### run($1): re-run 'mk' (or restage those files) first"; return 1; }
        ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
        sleep 8; w; }
 

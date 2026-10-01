@@ -3824,10 +3824,17 @@ DATMODS = {
         ('01010000', ["         N     R14,F255       (WITHOUT SEGMENT NO.)"]),
         ('01034200', Deck.comment(
             "STCM B'1000' PUT R4'S BYTE 0 INTO THE STE'S BYTE 0, WHICH HELD THE "
-            "LENGTH. PTL IS THE LOW NIBBLE OF BYTE 3, SO THE ENTRY IS REBUILT.") + [
+            "LENGTH, SO IT COPIED THE OTHER PAGE TABLE'S LENGTH -- WHATEVER IT "
+            "WAS. PTL IS THE LOW NIBBLE OF BYTE 3 NOW. THE FIRST VERSION OF THIS "
+            "CARD OR'D IN SEGPTLF, A FULL TABLE, WHICH IS TRUE OF EVERY TABLE "
+            "DMKBLDRT BUILDS AND IS STILL AN ASSUMPTION THE ORIGINAL DID NOT "
+            "MAKE. R4'S OWN PTL IS TAKEN INSTEAD, VIA TEMPR7 -- UNUSED IN THIS "
+            "MODULE -- BECAUSE R4 IS NEEDED WHOLE BY THE NEXT CARD.") + [
+            "         ST    R4,TEMPR7      THE OTHER PAGE TABLE'S ENTRY",
             "         L     R15,SEGPTO     THE CURRENT ENTRY",
             "         N     R15,=A(X'FFFFFFFF'-SEGPTLF) WITHOUT PTL",
-            "         O     R15,=A(SEGPTLF) RESET PAGTABLE LENGTH",
+            "         NC    TEMPR7,=A(SEGPTLF) ITS PTL",
+            "         O     R15,TEMPR7     RESET PAGTABLE LENGTH",
             "         ST    R15,SEGPTO     ...",
         ]),
         ('01034400', ["         N     R4,=A(SEGPTOM) STRIP OFF LENGTH"]),

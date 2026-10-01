@@ -167,20 +167,31 @@ retracted and corrected).
 | **I-27** | "g4ugm verifies CE against IBM" | Claimed that diffing `g4ugm/vm370.source` against CE proved CE's CP source is IBM's Release 6 source unmodified. The diff was right; the conclusion was not. g4ugm carries CE's own `HRC` update markers and references CE-only `HDK*` modules, so it is the same resolved tree — two copies of one tree agreeing proves nothing about IBM. The check that would have caught it is one `grep` for the other tree's change ids. Corrected in [15-UPDATE-LEVELS.md](15-UPDATE-LEVELS.md); the real baseline is CE's own `maintenance/files/394`. | closed |
 | **I-24** | `CODE70` identified as ESA/390's `ARCHTECT` row | `CODE70` is 2 KB pages. **`CODEB0`** is the ESA/390 row — 4 KB pages, 1 MB segments, fullword PTEs, 2,048 segments. | closed |
 | **I-25** | `CPCREG0` classified as a constant | It is a live CR0 save area: `STCTL C0,C0,CPCREG0  SAVE IN REAL 0 FOR CP`. Would have been treated as a fixed bit pattern across 38 reference sites. | closed |
+| **I-140** | A deck regenerated mid-build is absent from that build, and the log reports it as read either way | `mkrun.py` copies every deck into a card-reader file when the run is *prepared*, not when Hercules reads it, so the ~40 minutes of staging a `full` build spends is a window in which the decks on disk and the cards in the build can diverge. Found by walking into it: a `DMKPGS` card was corrected while the build was at 17 of 102 staged files, and the fix would simply not have been in the result. Nothing says so -- the log prints `readcard dmkpgs xa0036dk a` whichever cards it read, the module assembles, the diagnostics belong to the **old** cards, and every tool that reads a deck (`deckchk.py`, `symchk.py`, `auxcheck`) reports on the version that was **not** built. That last part is what makes it dangerous rather than merely annoying: the measurement and the artefact disagree while both look healthy. Recoverable here because staging is alphabetical and `DMKPGS` was 29th: the one reader file was rewritten in place through `mkrun.card()`, so the column-72 discipline held, 266 cards to 273. Fixed with `iochk.py`, which re-derives every staged file from its deck and compares; `run()` now calls it and refuses to start on any disagreement. **Third door onto the same failure** after `I-131` (a build log overwritten by the build that depended on it) and `I-138` (an AUXLCL entry overwritten by a later generator). The pattern is a stale artefact that reads as current, and the fix is always the same: derive rather than trust. | fixed |
+| **I-141** | "Group 1 has 10 cards left" was never a count -- it is 95, and the error was writing down three modules as a total | `IPL-WALLS.md` recorded group 1's remainder as *"DMKCPI `SIO` at 00485480, DMKPSA x4 `ISK`, DMKSAV x5 `SIO`/`TIO`"* -- ten or eleven sites, specific enough to be believed, and carried forward through several sessions as the number. A sweep of every `SIO SIOF TIO CLRIO HIO HDV TCH ISK SSK RRB` in the tree, minus every range the 52 decks already replace, minus comment lines, keeping only modules named in CP's own `CPLOAD EXEC`, gives **95 sites in nucleus modules** and 33 more in standalone utilities. The tell that it was never a count is that **DMKPSA has five `ISK`s, not four**: a figure taken by reading would not be off by one in a list of five. The split is the useful part. **62 storage-key sites** across 14 modules, `DMKPTR` holding 23, where S/370's 2 KB key becomes ESA/390's 4 KB key; and **33 synchronous `SIO`/`TIO` polling sites** in `DMKLD00E` (19), `DMKVMI` (7), `DMKSAV` (5), `DMKCPI` and `DMKENT` -- code that predates having an I/O supervisor to call. **That second group cannot ride with the deferred multi-channel work**: `DMKLD00E` is the standalone loader that loads the nucleus, it runs before CP exists, and `SIO` is an operation exception in ESA/390. So the IPL path contains 33 instructions that were being treated as someone else's problem. Fixed by `privchk.py`, which makes the figure a measurement cheap enough that quoting one is never easier than taking one; the nucleus test is CP's own load list rather than my judgement about which modules are standalone. | fixed |
+| **I-142** | The pairs in `I-141`'s key sites are not deletions, and the tool said they were on no evidence | Written into `privchk.py` an hour after `I-141`: *"those do not get converted, they get DELETED, and the first of the pair widens"*. It sounded right -- one 4 KB key replaces two 2 KB keys -- and it is wrong, which reading `DMKPTR` 01012000 shows immediately. CP keeps a key **per 2 KB half of its own accord**: `SWPTABLE` has `SWPKEY1` and `SWPKEY2`, because a guest on a real S/370 sees 2 KB keys and CP has to show it that. So the page-replacement scan packs both hardware keys into one register -- `ISK R15,R6` / `SLL R15,8` / `LA R14,2048(,R6)` / `ISK R15,R14` -- precisely because `ISK` only loads bits 24-31, and the result feeds a **two-byte** mask, `LA R14,SWPREF2*256+SWPREF2`, and two stores. Delete the second `ISK` and R15 holds one key in the wrong half against a mask that matches nothing, and the `SWPKEY` stores go wrong silently -- the worst available outcome, since page replacement would keep running on garbage reference bits. The conversion is to read the one 4 KB key **once and replicate it into both halves**, which leaves every downstream mask, flag test and store untouched and makes the deviation explicit rather than hidden: both halves of a page now always report identical reference and change bits, which is what a 4 KB-key machine does. That is `R-12` seen from CP's side instead of the guest's. **The lesson is the second one in two hours**: a claim that is cheap to check and sounds right is exactly the kind that gets written down unchecked, and both of today's came from inheriting a sentence rather than measuring. | fixed |
 
 ## Counts
 
 | Status | Count |
 |---|---|
-| fixed | 68 |
+| fixed | 78 |
 | documented | 11 |
-| closed | 11 |
-| open | 9 |
+| closed | 23 |
+| open | 13 |
 | **z390 only** | 2 |
-| fix known | 3 |
+| fix known | 9 |
 | worked around | 1 |
+| fixed by `I-104` | 1 |
 
-**Six of the seventeen closed entries are retracted claims of my own** — I-21,
-I-22, I-23, I-24, I-25. Four were wrong in the project's favour, one (I-23) against it, and one
-(I-27) was wrong in the flattering direction — which is the one to watch. That ratio is itself worth watching: a review
-that only ever finds good news is not reviewing.
+**Six of the twenty-three closed entries are retracted claims of my own** —
+I-21, I-22, I-23, I-24, I-25 and I-27. Four were wrong in the project's favour,
+I-23 was wrong against it, and I-27 was wrong in the flattering direction, which
+is the one to watch. That ratio is itself worth watching: a review that only ever
+finds good news is not reviewing.
+
+The counts above are generated from the table by `tools/tally.py`, not
+maintained. They had drifted to `fixed 68, closed 11, open 9, fix known 3` —
+wrong by 24 entries — which is the same failure as every stale-artifact entry in
+the table: a figure that reads as current because it is written down. `tally.py
+--check` fails if the file needs rewriting.
