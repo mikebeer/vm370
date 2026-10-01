@@ -1,0 +1,256 @@
+./ R 00215000          $ 00215100 100                                           
+         IC    R4,VMSEG+3     STL IS BITS 25-31 NOW, NOT 0-7   XA0034DK         
+         N     R4,=A(SEGSTLM) WITHOUT THE S BIT                XA0034DK         
+./ R 00222300          $ 00222310 010                                           
+         IC    R1,VMSEG+3     STL IS BITS 25-31 NOW, NOT 0-7   XA0034DK         
+         N     R1,=A(SEGSTLM) WITHOUT THE S BIT                XA0034DK         
+./ R 00222700          $ 00222800 100                                           
+         SLL   R1,4+8         SEGMENTS, THEN PAGES PER SEG     XA0034DK         
+./ R 00241000          $ 00241100 100                                           
+*  4088 BYTES OF SLACK, NOT 56: AN ESA/390 SEGMENT TABLE MUST  XA0034DK         
+*  BE ON A 4096-BYTE BOUNDARY BECAUSE THE STD'S ORIGIN IS      XA0034DK         
+*  BITS 1-19 WITH TWELVE ZEROS APPENDED. DMKBLDRL'S F15        XA0034DK         
+*  BECOMES F519 TO MATCH, AND THE TWO MUST BE CHANGED          XA0034DK         
+*  TOGETHER OR FRET RETURNS THE WRONG LENGTH.                  XA0034DK         
+         AL    R0,=F'511'     PLUS 511 FOR 4096-ALIGNMENT      XA0034DK         
+./ R 00243000          $ 00243100 100                                           
+         LA    R6,4095(,R1)   ROUND UP -- 4095 IS THE MOST     XA0034DK         
+*                             AN LA CAN ENCODE                 XA0034DK         
+./ R 00244000          $ 00244100 100                                           
+         N     R6,=A(SEGSTOM)      (IN R6)                     XA0034DK         
+./ R 00246090          $ 00246091 001                                           
+         N     R8,=A(SEGSTOM) STL IS IN THE LOW BITS, SO LA    XA0034DK         
+*                             NO LONGER STRIPS IT              XA0034DK         
+./ R 00246230          $ 00246240 010                                           
+         TM    SEGPTO+3,SEGENQ+SEGINVAL AVAILABLE?             XA0034DK         
+./ R 00246270          $ 00246271 001                                           
+         L     R0,SEGPTO      THE WHOLE ENTRY                  XA0034DK         
+         N     R0,=A(SEGPTOM) (ONLY IF POINTER = 0)            XA0034DK         
+./ R 00246370          $ 00246380 010                                           
+         A     R1,=A(X'100000') NEXT VIRTUAL SEGMENT           XA0034DK         
+./ R 00254000          $ 00254100 100                                           
+         N     R8,=A(SEGSTOM) WITHOUT THE LENGTH               XA0034DK         
+./ R 00264000          $ 00264100 100                                           
+*  STL IS BITS 25-31, SO BYTE 3, NOT BYTE 0. THE VALUE IS      XA0034DK         
+*  UNCHANGED: ESA/390 COUNTS THE SEGMENT TABLE IN 64-BYTE      XA0034DK         
+*  UNITS MINUS ONE, EXACTLY AS S/370 DID, AND ONLY THE         XA0034DK         
+*  MEANING OF A UNIT MOVES -- 1 MB TO 16 MB. SAFE IN BYTE 3    XA0034DK         
+*  BECAUSE THE TABLE IS 4096-ALIGNED, SO BITS 20-31 OF THE     XA0034DK         
+*  STORED ADDRESS ARE ZERO AND THE S BIT STAYS CLEAR. I-129.   XA0034DK         
+         STC   R15,VMSEG+3    AND STORE IN THE STL FIELD.      XA0034DK         
+./ R 00287000          $ 00287100 100                                           
+ALLNG    LA    R15,SEGINVAL   INVALID STE INDICATOR            XA0034DK         
+./ R 00297000          $ 00297100 100                                           
+         L     R6,VMSEG       GET SEGTABLE ORIGIN              XA0034DK         
+         N     R6,=A(SEGSTOM) NO LENGTH -- LA CANNOT           XA0034DK         
+*                             STRIP IT FROM THE LOW BITS       XA0034DK         
+./ R 00299000          $ 00299100 100                                           
+         SRL   R3,8           DROP THE PAGE NUMBER             XA0034DK         
+./ R 00305400          $ 00305410 010                                           
+         LA    R4,256         LOAD R4 WITH CONSTANT 256        XA0034DK         
+./ R 00308000          $ 00308100 100                                           
+BLDRPAGE LA    R4,256         LOAD THE CONSTANT 256            XA0034DK         
+./ R 00309100          $ 00309110 010                                           
+         L     R15,SEGPTO     IS THERE A PAGTABLE PTR          XA0034DK         
+         N     R15,=A(SEGPTOM) ...                             XA0034DK         
+./ R 00309305          $ 00309315 010                                           
+         TM    SEGPTO+3,SEGINVAL IF NOT, MAKE SURE IT'S        XA0034DK         
+./ R 00309700          $ 00309710 010                                           
+         TM    SEGPTO+3,SEGENQ IS SEGMENT ENQUEUED?            XA0034DK         
+./ R 00321000          $ 00321100 100                                           
+         TM    SEGPTO+3,SEGPTLF 256 PAGES IN SEG ALREADY?      XA0034DK         
+./ R 00323000          $ 00323100 100                                           
+         BO    SKIPBLD        YES - THEN NO NEED TO BUILD      XA0034DK         
+./ R 00325000          $ 00325100 100                                           
+FORCE16  LA    R5,256         BUILD 256 PAGE TABLE ENTRIES     XA0034DK         
+./ R 00327000          $ 00327100 100                                           
+         N     R2,=A(SEGSTOM) STRIP LENGTH -- LOW BITS         XA0034DK         
+./ R 00332000          $ 00332100 100                                           
+         SLL   R1,24          MOVE BEG SEG NUM TO FRET.        XA0034DK         
+./ R 00333000          $ 00333100 100                                           
+         SLL   R2,8           ENDING SEGMENT NUMBER            XA0034DK         
+./ R 00342200          $ 00342210 010                                           
+*  SEVEN MORE DOUBLEWORDS SO PAGPFRA CAN BE ROUNDED TO A       XA0034DK         
+*  64-BYTE BOUNDARY. AN ESA/390 PAGE TABLE ORIGIN IS BITS      XA0034DK         
+*  1-25 WITH SIX ZEROS APPENDED; DMKFREE PROMISES DOUBLEWORDS  XA0034DK         
+*  AND NOTHING MORE, AND AN S/370 PAGE TABLE NEEDED ONLY       XA0034DK         
+*  EIGHT, WHICH IS WHY THERE WAS NO ROUNDING HERE BEFORE.      XA0034DK         
+         SRL   R0,3           OBTAIN NUMBER OF DOUBLEWORDS     XA0034DK         
+         AL    R0,F7          PLUS 7 TO ALIGN PAGPFRA TO 64    XA0034DK         
+./ R 00343600          $ 00343610 010                                           
+*  ROUND THE BLOCK SO THAT PAGPFRA, NOT THE HEADER, LANDS ON   XA0034DK         
+*  64. THE DMKFREE ADDRESS GOES IN PAGFREE BELOW, BECAUSE THE  XA0034DK         
+*  GAP IS NO LONGER THE CONSTANT 16 THAT DMKBLDRL SUBTRACTS.   XA0034DK         
+*  I-130.                                                      XA0034DK         
+         LR    R7,R1          DMKFREE ADDRESS                  XA0034DK         
+         AL    R7,=A(PAGPFRA-PAGSTMP+63) ROUND UP              XA0034DK         
+         N     R7,=A(SEGPTOM) TO A 64-BYTE BOUNDARY            XA0034DK         
+         S     R7,=A(PAGPFRA-PAGSTMP) BACK TO HEADER           XA0034DK         
+./ R 00346100          $ 00346200 100                                           
+         XC    PAGACT(PAGPFRA-PAGACT),PAGACT CLEAR HDR         XA0034DK         
+         ST    R1,PAGFREE     EXACT DMKFREE ADDRESS, FOR FRET  XA0034DK         
+./ R 00346600 00347100 $ 00346610 010                                           
+*  INVALIDATE ALL 256 ENTRIES. THE OLD FORM WAS MVC            XA0034DK         
+*  PAGCORE,F8+2 THEN MVC PAGCORE+2(15*2),PAGCORE -- A          XA0034DK         
+*  ONE-BYTE-OVERLAP PROPAGATE. 255 FULLWORD ENTRIES IS 1020    XA0034DK         
+*  BYTES AND MVC STOPS AT 256, SO IT BECOMES A LOOP. PAGINVW   XA0034DK         
+*  IS DERIVED FROM PAGINV, SO IF THE INVALID BIT EVER MOVES    XA0034DK         
+*  AGAIN THE FULLWORD FORM FOLLOWS IT.                         XA0034DK         
+         LA    R0,256         ENTRIES IN A FULL PAGE TABLE     XA0034DK         
+         LA    R2,PAGPFRA     FIRST ENTRY                      XA0034DK         
+         L     R15,=A(PAGINVW) AN INVALID PTE                  XA0034DK         
+BLDRPTE  ST    R15,0(,R2)     INVALIDATE ONE ENTRY             XA0034DK         
+         LA    R2,4(,R2)      NEXT ENTRY                       XA0034DK         
+         BCT   R0,BLDRPTE     ALL OF THEM                      XA0034DK         
+./ R 00348100          $ 00348200 100                                           
+         LA    R2,PAGPFRA     LOAD ADR OF PTE                  XA0034DK         
+./ R 00348600 00350600 $ 00348700 100                                           
+*  BUILD THE WHOLE ENTRY IN A REGISTER AND STORE IT ONCE.      XA0034DK         
+*  BYTE 3 OF AN ESA/390 STE HOLDS PTO BITS 24-25 AS WELL AS    XA0034DK         
+*  I, C AND PTL, SO A STC INTO IT WOULD DESTROY PART OF THE    XA0034DK         
+*  PAGE TABLE ADDRESS. THE ADDRESS NEEDS NO SHIFTING: PTO IS   XA0034DK         
+*  BITS 1-25 WITH SIX ZEROS APPENDED, SO A 64-BYTE-ALIGNED     XA0034DK         
+*  ADDRESS IS ALREADY IN PLACE.                                XA0034DK         
+         LR    R15,R4         NUMBER OF PAGES LESS ONE         XA0034DK         
+         SRL   R15,4          PTL COUNTS 16 ENTRIES AT A TIME  XA0034DK         
+         OR    R15,R2         PAGE TABLE ORIGIN, 64-ALIGNED    XA0034DK         
+         O     R15,=A(SEGINVAL) NO PAGES IN CORE YET           XA0034DK         
+         ST    R15,SEGPTO     ONE STORE, NO READ-MODIFY-WRITE  XA0034DK         
+./ R 00351600          $ 00351700 100                                           
+         LA    R8,PAGPFRA+256*L'PAGPFRA SWAP TABLE             XA0034DK         
+./ R 00372000          $ 00372100 100                                           
+SKIPBLD  LA    R6,SEGPTO+4    POINT TO NXT STE                 XA0034DK         
+./ R 00373000          $ 00373100 100                                           
+         S     R5,=F'256'     SUBTRACT 256 FROM NO. PAGES      XA0034DK         
+./ R 00396100          $ 00396200 100                                           
+         USING PAGPFRA,R8                                      XA0034DK         
+./ R 00400000          $ 00400100 100                                           
+*  R4 IS THE PTE VALUE, NOT A PAGE NUMBER. AN ESA/390 PTE      XA0034DK         
+*  MASKED WITH PAGPFRM IS THE PAGE'S REAL ADDRESS, SO IT       XA0034DK         
+*  STEPS BY 4096 WHERE THE S/370 HALFWORD STEPPED BY 16. 4096  XA0034DK         
+*  WILL NOT FIT AN LA DISPLACEMENT.                            XA0034DK         
+         L     R4,=F'4096'    PAGE 1'S REAL ADDRESS            XA0034DK         
+./ R 00404000          $ 00404010 010                                           
+         L     R7,VMSEG       GET SEGMENT TABLE ADDRESS        XA0034DK         
+         N     R7,=A(SEGSTOM) WITHOUT THE LENGTH               XA0034DK         
+./ R 00404100          $ 00404200 100                                           
+         NI    SEGPTO+3,255-SEGINVAL CLEAR INVALID BIT         XA0034DK         
+./ R 00405000          $ 00405100 100                                           
+         L     R8,SEGPTO      LOAD ADDRESS OF PAGE TABLE       XA0034DK         
+./ R 00406000          $ 00406100 100                                           
+         N     R8,=A(SEGPTOM) CLEAR OUT NUMBER OF PAGES        XA0034DK         
+./ R 00407100          $ 00407200 100                                           
+         LA    R9,PAGPFRA+256*L'PAGPFRA+8 1ST SWAPTABLE        XA0034DK         
+./ R 00411000 00412000 $ 00411100 100                                           
+*  PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS UNITS OF 16      XA0034DK         
+*  ENTRIES; SEGPLEN WAS THE HIGH NIBBLE OF BYTE 0 AND COUNTED  XA0034DK         
+*  PAGES. SO THE VALUE IS (PTL+1)*16-1 WHERE IT USED TO BE A   XA0034DK         
+*  SHIFT.                                                      XA0034DK         
+         IC    R5,SEGPTO+3    NO. PAGES IN THIS SEG            XA0034DK         
+         N     R5,=A(SEGPTLF) KEEP ONLY PTL                    XA0034DK         
+         LA    R5,1(,R5)      UNITS OF 16 ENTRIES              XA0034DK         
+         SLL   R5,4           PAGES IN THIS SEGMENT            XA0034DK         
+         BCTR  R5,0           LESS ONE, AS BEFORE              XA0034DK         
+./ R 00414100          $ 00414200 100                                           
+         LA    R8,PAGPFRA+L'PAGPFRA SKIP PAGE 0'S ENTRY        XA0034DK         
+./ R 00423200          $ 00423300 100                                           
+         ST    R4,PAGPFRA     STORE REAL PAGE ADDRESS          XA0034DK         
+./ R 00428100          $ 00428200 100                                           
+         LA    R8,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY      XA0034DK         
+./ R 00431000          $ 00431100 100                                           
+         AL    R4,=F'4096'    INCREMENT THE PAGE ADDRESS       XA0034DK         
+./ R 00433100          $ 00433200 100                                           
+         NI    SEGPTO+3,255-SEGINVAL CLEAR INVALID BIT         XA0034DK         
+./ R 00434000 00435000 $ 00434100 100                                           
+*  PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS UNITS OF 16      XA0034DK         
+*  ENTRIES; SEGPLEN WAS THE HIGH NIBBLE OF BYTE 0 AND COUNTED  XA0034DK         
+*  PAGES. SO THE VALUE IS (PTL+1)*16-1 WHERE IT USED TO BE A   XA0034DK         
+*  SHIFT.                                                      XA0034DK         
+         IC    R5,SEGPTO+3    NO. PAGES IN THIS SEG            XA0034DK         
+         N     R5,=A(SEGPTLF) KEEP ONLY PTL                    XA0034DK         
+         LA    R5,1(,R5)      UNITS OF 16 ENTRIES              XA0034DK         
+         SLL   R5,4           PAGES IN THIS SEGMENT            XA0034DK         
+         BCTR  R5,0           LESS ONE, AS BEFORE              XA0034DK         
+./ R 00437000          $ 00437100 100                                           
+         L     R8,SEGPTO      ADDRESS OF THIS PAGE TABLE       XA0034DK         
+./ R 00438000          $ 00438100 100                                           
+         N     R8,=A(SEGPTOM) CLEAR OUT PAGE NUMBER            XA0034DK         
+./ R 00440000          $ 00440100 100                                           
+         S     R9,=A(PAGPFRA-PAGSWP) TABLE SO THAT THE SWAP    XA0034DK         
+./ R 00447000          $ 00447100 100                                           
+         L     R8,SEGPTO      LOAD ADDRESS OF PAGE 0           XA0034DK         
+./ R 00448000          $ 00448100 100                                           
+         N     R8,=A(SEGPTOM) CLEAR THE FLAG BITS              XA0034DK         
+./ R 00450000          $ 00450100 100                                           
+         S     R9,=A(PAGPFRA-PAGSWP) PAGE 0.                   XA0034DK         
+./ R 00454100          $ 00454110 010                                           
+*  SRL R1,8 SERVED TWO PURPOSES AT ONCE: A CORTABLE INDEX OF   XA0034DK         
+*  16 BYTES A PAGE, AND THE S/370 PTE, WHICH IS PAGENO*16.     XA0034DK         
+*  BOTH ARE ADDRESS/256. AN ESA/390 PTE IS THE ADDRESS         XA0034DK         
+*  ITSELF, SO THE TWO USES SEPARATE AND THE ADDRESS IS         XA0034DK         
+*  RELOADED HERE. R0 IS SCRATCH -- THE NEXT CARD LOADS IT.     XA0034DK         
+         L     R0,=A(DMKSLC-4096)  PAGE 0'S REAL ADDRESS       XA0034DK         
+         ST    R0,PAGPFRA     STORE ADDRESS OF REAL PAGE 0     XA0034DK         
+./ R 00598100          $ 00598200 100                                           
+         N     R6,=A(SEGSTOM) STRIP LENGTH -- LOW BITS NOW     XA0034DK         
+./ R 00601000          $ 00601100 100                                           
+         LA    R4,SEGINVAL    LOAD UNUSED SEGMENT INDICATOR    XA0034DK         
+./ R 00605300          $ 00605400 100                                           
+         SRL   R8,24          GET STARTING STE NUMBER          XA0034DK         
+./ R 00607100          $ 00607200 100                                           
+         N     R15,=A(X'FF0000') PAGE WITHIN SEG. = 0?         XA0034DK         
+./ R 00610600          $ 00610700 100                                           
+         SRL   R9,8           ENDING SEG. NUMBER TO LOW R9     XA0034DK         
+./ R 00611100          $ 00611200 100                                           
+         N     R9,F15         CLEAR ALL BUT SEGMENT NUMBER     XA0034DK         
+./ R 00618000          $ 00618100 100                                           
+RELRLOOP L     R7,SEGPTO      LOAD PAGE TABLE ADDRESS          XA0034DK         
+./ R 00619100          $ 00619110 010                                           
+         N     R7,=A(SEGPTOM) CLEAR THE FLAG BITS              XA0034DK         
+./ R 00619300          $ 00619310 010                                           
+         L     R15,SEGPTO     IS THERE A PAGETABLE PTR         XA0034DK         
+         N     R15,=A(SEGPTOM) ...                             XA0034DK         
+./ R 00619505          $ 00619515 010                                           
+         TM    SEGPTO+3,SEGINVAL IF NOT, MAKE SURE IT'S        XA0034DK         
+./ R 00621000 00622000 $ 00621100 100                                           
+*  PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS UNITS OF 16      XA0034DK         
+*  ENTRIES; SEGPLEN WAS THE HIGH NIBBLE OF BYTE 0 AND COUNTED  XA0034DK         
+*  PAGES. SO THE VALUE IS (PTL+1)*16-1 WHERE IT USED TO BE A   XA0034DK         
+*  SHIFT.                                                      XA0034DK         
+         IC    R2,SEGPTO+3    PAGE TABLE LENGTH                XA0034DK         
+         N     R2,=A(SEGPTLF) KEEP ONLY PTL                    XA0034DK         
+         LA    R2,1(,R2)      UNITS OF 16 ENTRIES              XA0034DK         
+         SLL   R2,4           PAGES IN THIS SEGMENT            XA0034DK         
+         BCTR  R2,0           LESS ONE, AS BEFORE              XA0034DK         
+./ R 00624100          $ 00624200 100                                           
+         USING PAGPFRA,R7                                      XA0034DK         
+./ R 00625100          $ 00625200 100                                           
+         L     R0,PAGPFRA     PTE                              XA0034DK         
+./ R 00625600          $ 00625700 100                                           
+         N     R0,=A(PAGPFRM) CHECK FOR REAL PAGE ALLOCATED    XA0034DK         
+./ R 00627600          $ 00627700 100                                           
+         LA    R7,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY      XA0034DK         
+./ R 00630600          $ 00630700 100                                           
+         L     R1,SEGPTO      GET PAGETABLE POINTER            XA0034DK         
+./ R 00631100          $ 00631200 100                                           
+         ST    R4,SEGPTO      CLEAR STE ENTRY                  XA0034DK         
+./ R 00632100          $ 00632200 100                                           
+         N     R1,=A(SEGPTOM) THE PAGE TABLE ADDRESS           XA0034DK         
+./ R 00632600 00633100 $ 00632700 100                                           
+*  PAGFREE HOLDS WHAT DMKFREE RETURNED, SO THE RELEASE IS      XA0034DK         
+*  EXACT RATHER THAN DERIVED. THIS RETIRES N                   XA0034DK         
+*  R1,=A(X'FFFFFE'), WHICH TRUNCATED A PAGE TABLE ADDRESS TO   XA0034DK         
+*  24 BITS WHILE ITS COMMENT CLAIMED TO CLEAR A FLAG. I-122.   XA0034DK         
+         S     R1,=A(PAGPFRA-PAGFREE) BACK UP TO PAGFREE       XA0034DK         
+         L     R1,0(,R1)      THE DMKFREE ADDRESS, EXACTLY     XA0034DK         
+./ R 00634100          $ 00634200 100                                           
+         SRL   R0,3           OBTAIN NUMBER OF DOUBLEWORDS     XA0034DK         
+         AL    R0,F7          AND THE ALIGNMENT SLACK          XA0034DK         
+./ R 00643000          $ 00643100 100                                           
+RELRNEXT LA    R6,SEGPTO+4    POINT TO NEXT STE                XA0034DK         
+./ R 00649000          $ 00649100 100                                           
+         N     R1,=A(SEGSTOM) STRIP THE LENGTH,                XA0034DK         
+./ R 00651000          $ 00651100 100                                           
+         N     R0,=A(SEGSTLM) NO. OF SEGMENT TABLES (LESS 1)   XA0034DK         
+./ R 00653000          $ 00653100 100                                           
+         AL    R0,=F'519'     PLUS 8, PLUS 511 FOR ALIGNMENT   XA0034DK         

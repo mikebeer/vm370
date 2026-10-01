@@ -60,6 +60,7 @@ XA30 = 'XA0030DK'
 XA31 = 'XA0031DK'
 XA32 = 'XA0032DK'
 XA33 = 'XA0033DK'
+XA34 = 'XA0034DK'
 
 
 def psa():
@@ -2706,6 +2707,441 @@ def rdevice():
 
 
 
+def dmkbld():
+    """DMKBLDRT and DMKBLDRL: build and release ESA/390 tables, aligned.
+
+    This is the module the conversion exists for.  `DMKBLDRT` writes the segment
+    and page tables CP gives itself at IPL, and `TRANS`'s `LRA` reads them --
+    which is `wall 11`, `PRG018`, a translation-specification exception against a
+    System/370 table.  `DMKBLDRL` is its inverse and has to stay in step, which
+    is most of why this deck is one deck and not two.
+
+    `asmerr.py` says the assembler flags **37** statements here.  This deck has
+    more cards than that for three reasons, and each is a class the assembler
+    cannot see (`I-124`):
+
+      * the **alignment** arithmetic -- `AL R0,F7` and the rounding it pays for
+      * the **packed-pointer masks** -- `L Rn,VMSEG` followed by `LA Rn,0(,Rn)`,
+        which stripped the length when it lived in the ignored high byte and
+        strips nothing now that STL is bits 25-31 (`I-128`)
+      * the **ABI split** -- `SRL R8,20`, `SLL R1,4+4` and five more literals
+        that divide a page number into a segment and a page
+
+    The ABI itself does not change, and the source says why.  Sequence 00523000:
+
+        *        GPR 1 = BEGINING AND ENDING ADDRESS TO RELEASE
+        *        BYTE 0-1 = FIRST ADDRESS TO RELEASE
+        *             FIRST 4 BITS = 0, NEXT 8 BITS = SEGMENT, NEXT 4 = PAGE
+
+    Twelve bits of page number, split 8+4 for 64 KB segments and 4+8 for 1 MB
+    ones.  **The field keeps its width and its meaning; only the split moves.**
+    `SLL R1,4+4  SEGMENT COUNT * 16` is written as a sum because the two shifts
+    mean different things -- units to segments, then segments to pages -- so only
+    the second becomes 8.  Written as `SLL R1,8` it would have been impossible to
+    convert by reading, and `R01-SHIFT-SITES.md`'s "4 -> 8" rule would have
+    changed the wrong half.
+    """
+    d = Deck(XA34)
+    src = SRC + '/DMKBLD.ASSEMBLE'
+
+    def one(seq, lines, to=None):
+        """Replace a record, choosing the largest increment that fits.
+
+        Hand-picking the increment is how the sequence guard gets tripped: the
+        room between two records varies (10 here, 100 there, 5 at 00246090) and
+        a block that grows by one card outgrows it silently in the generator and
+        loudly, in the wrong place, in UPDATE.  `_seqcheck` catches it, but
+        catching it four times in one deck is a sign the caller should not be
+        choosing.  So: ask for the biggest step that leaves room.
+        """
+        limit = next_seq(src, to or seq)
+        base = int(seq)
+        for inc in (100, 10, 1):
+            last = base + inc * len(lines)
+            if limit is None or last < int(limit):
+                d.replace(seq, to, first=str(base + inc).zfill(8), inc=inc,
+                          limit=limit, lines=lines)
+                return
+        raise ValueError('no room after %s for %d cards before %s -- the lines '
+                         'must go somewhere else' % (seq, len(lines), limit))
+
+    # ---------------------------------------------------------- DMKBLDRT
+    # The segment-table length, read from the STD.  S/370 keeps it in bits 0-7,
+    # ESA/390 in bits 25-31, so the byte moves from 0 to 3.  Both sites clear the
+    # register first (SR R4,R4 / SR R1,R1), so IC alone leaves it clean.
+    one('00215000', [
+        "         IC    R4,VMSEG+3     STL IS BITS 25-31 NOW, NOT 0-7",
+        "         N     R4,=A(SEGSTLM) WITHOUT THE S BIT",
+    ])
+    one('00222300', [
+        "         IC    R1,VMSEG+3     STL IS BITS 25-31 NOW, NOT 0-7",
+        "         N     R1,=A(SEGSTLM) WITHOUT THE S BIT",
+    ])
+    # Units -> segments -> pages.  Only the second shift changes: a segment holds
+    # 256 pages, not 16.  See the docstring.
+    one('00222700', [
+        "         SLL   R1,4+8         SEGMENTS, THEN PAGES PER SEG",
+    ])
+
+    # The alignment.  The idiom is already here for 64 bytes; ESA/390 wants the
+    # segment table on a 4096-byte boundary, so the slack goes from 7 doublewords
+    # to 511 and the rounding mask from X'FFFFC0' to the architected STO mask.
+    # 4095 is the largest displacement LA can encode, and the requirement happens
+    # to be exactly that.
+    one('00241000', Deck.comment(
+        "4088 BYTES OF SLACK, NOT 56: AN ESA/390 SEGMENT TABLE MUST BE ON A "
+        "4096-BYTE BOUNDARY BECAUSE THE STD'S ORIGIN IS BITS 1-19 WITH TWELVE "
+        "ZEROS APPENDED. DMKBLDRL'S F15 BECOMES F519 TO MATCH, AND THE TWO MUST "
+        "BE CHANGED TOGETHER OR FRET RETURNS THE WRONG LENGTH.") + [
+        "         AL    R0,=F'511'     PLUS 511 FOR 4096-ALIGNMENT",
+    ])
+    one('00243000', [
+        "         LA    R6,4095(,R1)   ROUND UP -- 4095 IS THE MOST",
+        "*                             AN LA CAN ENCODE",
+    ])
+    one('00244000', [
+        "         N     R6,=A(SEGSTOM)      (IN R6)",
+    ])
+
+    # The quiesce loop.  L Rn,VMSEG / LA Rn,0(,Rn) stripped the length when it
+    # lived in the ignored high byte.  It strips nothing now.  I-128.
+    one('00246090', [
+        "         N     R8,=A(SEGSTOM) STL IS IN THE LOW BITS, SO LA",
+        "*                             NO LONGER STRIPS IT",
+    ])
+    one('00246230', [
+        "         TM    SEGPTO+3,SEGENQ+SEGINVAL AVAILABLE?",
+    ])
+    # ICM of bytes 1-2 tested the S/370 page-table origin.  The ESA/390 origin is
+    # bits 1-25, so the test is the masked word.
+    one('00246270', [
+        "         L     R0,SEGPTO      THE WHOLE ENTRY",
+        "         N     R0,=A(SEGPTOM) (ONLY IF POINTER = 0)",
+    ])
+    # A segment is 1 MB now, not 64 KB.  The LA 4(,R8) two lines below is an STE
+    # stride and stays 4 -- adjacent lines, opposite answers.  I-124.
+    one('00246370', [
+        "         A     R1,=A(X'100000') NEXT VIRTUAL SEGMENT",
+    ])
+    one('00254000', [
+        "         N     R8,=A(SEGSTOM) WITHOUT THE LENGTH",
+    ])
+
+    # The STD's length.  The VALUE is unchanged -- ESA/390's STL counts 64-byte
+    # units minus one, which is what CP already writes -- but the byte moves from
+    # 0 to 3.  Saying the value was unchanged and concluding the instruction was
+    # cost a retraction: I-129.
+    one('00264000', Deck.comment(
+        "STL IS BITS 25-31, SO BYTE 3, NOT BYTE 0. THE VALUE IS UNCHANGED: "
+        "ESA/390 COUNTS THE SEGMENT TABLE IN 64-BYTE UNITS MINUS ONE, EXACTLY AS "
+        "S/370 DID, AND ONLY THE MEANING OF A UNIT MOVES -- 1 MB TO 16 MB. SAFE "
+        "IN BYTE 3 BECAUSE THE TABLE IS 4096-ALIGNED, SO BITS 20-31 OF THE "
+        "STORED ADDRESS ARE ZERO AND THE S BIT STAYS CLEAR. I-129.") + [
+        "         STC   R15,VMSEG+3    AND STORE IN THE STL FIELD.",
+    ])
+
+    # An invalid STE is bit 26 now, not bit 31.
+    one('00287000', [
+        "ALLNG    LA    R15,SEGINVAL   INVALID STE INDICATOR",
+    ])
+
+    # The index into the segment table.  L R6,VMSEG carries STL in the low bits,
+    # and the LA 0(R3,R6) below cannot strip it.
+    one('00297000', [
+        "         L     R6,VMSEG       GET SEGTABLE ORIGIN",
+        "         N     R6,=A(SEGSTOM) NO LENGTH -- LA CANNOT",
+        "*                             STRIP IT FROM THE LOW BITS",
+    ])
+    # Page number to segment number: 256 pages per segment, not 16.
+    one('00299000', [
+        "         SRL   R3,8           DROP THE PAGE NUMBER",
+    ])
+
+    # ---------------------------------------------------- BLDRPAGE, per segment
+    one('00305400', [
+        "         LA    R4,256         LOAD R4 WITH CONSTANT 256",
+    ])
+    one('00308000', [
+        "BLDRPAGE LA    R4,256         LOAD THE CONSTANT 256",
+    ])
+    one('00309100', [
+        "         L     R15,SEGPTO     IS THERE A PAGTABLE PTR",
+        "         N     R15,=A(SEGPTOM) ...",
+    ])
+    one('00309305', [
+        "         TM    SEGPTO+3,SEGINVAL IF NOT, MAKE SURE IT'S",
+    ])
+    one('00309700', [
+        "         TM    SEGPTO+3,SEGENQ IS SEGMENT ENQUEUED?",
+    ])
+    # A full page table is PTL 15 in the low nibble of byte 3, where S/370 had
+    # X'F0' in byte 0.  TM tests bits, so the branch becomes BO.
+    one('00321000', [
+        "         TM    SEGPTO+3,SEGPTLF 256 PAGES IN SEG ALREADY?",
+    ])
+    one('00323000', [
+        "         BO    SKIPBLD        YES - THEN NO NEED TO BUILD",
+    ])
+    one('00325000', [
+        "FORCE16  LA    R5,256         BUILD 256 PAGE TABLE ENTRIES",
+    ])
+    one('00327000', [
+        "         N     R2,=A(SEGSTOM) STRIP LENGTH -- LOW BITS",
+    ])
+    # The ABI split, produced here and consumed in DMKBLDRL.  See the docstring.
+    one('00332000', [
+        "         SLL   R1,24          MOVE BEG SEG NUM TO FRET.",
+    ])
+    one('00333000', [
+        "         SLL   R2,8           ENDING SEGMENT NUMBER",
+    ])
+
+    # The allocation.  PAGBMP is 3112 bytes now, 389 doublewords exactly, and the
+    # page table inside it must start on a 64-byte boundary -- which DMKFREE does
+    # not promise, so the block is over-allocated by 7 doublewords and rounded.
+    one('00342200', Deck.comment(
+        "SEVEN MORE DOUBLEWORDS SO PAGPFRA CAN BE ROUNDED TO A 64-BYTE "
+        "BOUNDARY. AN ESA/390 PAGE TABLE ORIGIN IS BITS 1-25 WITH SIX ZEROS "
+        "APPENDED; DMKFREE PROMISES DOUBLEWORDS AND NOTHING MORE, AND AN S/370 "
+        "PAGE TABLE NEEDED ONLY EIGHT, WHICH IS WHY THERE WAS NO ROUNDING HERE "
+        "BEFORE.") + [
+        "         SRL   R0,3           OBTAIN NUMBER OF DOUBLEWORDS",
+        "         AL    R0,F7          PLUS 7 TO ALIGN PAGPFRA TO 64",
+    ])
+    one('00343600', Deck.comment(
+        "ROUND THE BLOCK SO THAT PAGPFRA, NOT THE HEADER, LANDS ON 64. THE "
+        "DMKFREE ADDRESS GOES IN PAGFREE BELOW, BECAUSE THE GAP IS NO LONGER "
+        "THE CONSTANT 16 THAT DMKBLDRL SUBTRACTS. I-130.") + [
+        "         LR    R7,R1          DMKFREE ADDRESS",
+        "         AL    R7,=A(PAGPFRA-PAGSTMP+63) ROUND UP",
+        "         N     R7,=A(SEGPTOM) TO A 64-BYTE BOUNDARY",
+        "         S     R7,=A(PAGPFRA-PAGSTMP) BACK TO HEADER",
+    ])
+    # XC PAGACT(12) cleared through PAGSWP.  The header is longer now, and the
+    # literal 12 becomes a computed length so it stays right.  PAGFREE is stored
+    # after the clear, not before.
+    one('00346100', [
+        "         XC    PAGACT(PAGPFRA-PAGACT),PAGACT CLEAR HDR",
+        "         ST    R1,PAGFREE     EXACT DMKFREE ADDRESS, FOR FRET",
+    ])
+    # 256 fullword entries of X'00000400'.  MVC propagation cannot do it: 255
+    # entries is 1020 bytes and MVC's limit is 256.
+    one('00346600', Deck.comment(
+        "INVALIDATE ALL 256 ENTRIES. THE OLD FORM WAS MVC PAGCORE,F8+2 THEN MVC "
+        "PAGCORE+2(15*2),PAGCORE -- A ONE-BYTE-OVERLAP PROPAGATE. 255 FULLWORD "
+        "ENTRIES IS 1020 BYTES AND MVC STOPS AT 256, SO IT BECOMES A LOOP. "
+        "PAGINVW IS DERIVED FROM PAGINV, SO IF THE INVALID BIT EVER MOVES AGAIN "
+        "THE FULLWORD FORM FOLLOWS IT.") + [
+        "         LA    R0,256         ENTRIES IN A FULL PAGE TABLE",
+        "         LA    R2,PAGPFRA     FIRST ENTRY",
+        "         L     R15,=A(PAGINVW) AN INVALID PTE",
+        "BLDRPTE  ST    R15,0(,R2)     INVALIDATE ONE ENTRY",
+        "         LA    R2,4(,R2)      NEXT ENTRY",
+        "         BCT   R0,BLDRPTE     ALL OF THEM",
+    ], to='00347100')
+    one('00348100', [
+        "         LA    R2,PAGPFRA     LOAD ADR OF PTE",
+    ])
+    # The STE, built in a register and stored once.  Byte 3 holds two PTO bits as
+    # well as I, C and PTL, so STC into it would destroy part of the address.
+    one('00348600', Deck.comment(
+        "BUILD THE WHOLE ENTRY IN A REGISTER AND STORE IT ONCE. BYTE 3 OF AN "
+        "ESA/390 STE HOLDS PTO BITS 24-25 AS WELL AS I, C AND PTL, SO A STC "
+        "INTO IT WOULD DESTROY PART OF THE PAGE TABLE ADDRESS. THE ADDRESS "
+        "NEEDS NO SHIFTING: PTO IS BITS 1-25 WITH SIX ZEROS APPENDED, SO A "
+        "64-BYTE-ALIGNED ADDRESS IS ALREADY IN PLACE.") + [
+        "         LR    R15,R4         NUMBER OF PAGES LESS ONE",
+        "         SRL   R15,4          PTL COUNTS 16 ENTRIES AT A TIME",
+        "         OR    R15,R2         PAGE TABLE ORIGIN, 64-ALIGNED",
+        "         O     R15,=A(SEGINVAL) NO PAGES IN CORE YET",
+        "         ST    R15,SEGPTO     ONE STORE, NO READ-MODIFY-WRITE",
+    ], to='00350600')
+    one('00351600', [
+        "         LA    R8,PAGPFRA+256*L'PAGPFRA SWAP TABLE",
+    ])
+    one('00372000', [
+        "SKIPBLD  LA    R6,SEGPTO+4    POINT TO NXT STE",
+    ])
+    # F16 here is PAGES PER SEGMENT, not the header size it means at 00632600.
+    # Same spelling, same module, opposite conversions.  I-130.
+    one('00373000', [
+        "         S     R5,=F'256'     SUBTRACT 256 FROM NO. PAGES",
+    ])
+
+    # ------------------------------------------------- the VIRT=REAL builder
+    one('00396100', ["         USING PAGPFRA,R8"])
+    # R4 carries the PTE value.  In S/370 that is pageno<<4, which is what the
+    # halfword PTE holds; in ESA/390 the fullword PTE masked with PAGPFRM IS the
+    # page's real address, so R4 steps by 4096.  4096 does not fit an LA
+    # displacement -- 4095 is the most -- so both sites become AL/L on a literal.
+    one('00400000', Deck.comment(
+        "R4 IS THE PTE VALUE, NOT A PAGE NUMBER. AN ESA/390 PTE MASKED WITH "
+        "PAGPFRM IS THE PAGE'S REAL ADDRESS, SO IT STEPS BY 4096 WHERE THE "
+        "S/370 HALFWORD STEPPED BY 16. 4096 WILL NOT FIT AN LA DISPLACEMENT.") + [
+        "         L     R4,=F'4096'    PAGE 1'S REAL ADDRESS",
+    ])
+    one('00404000', [
+        "         L     R7,VMSEG       GET SEGMENT TABLE ADDRESS",
+        "         N     R7,=A(SEGSTOM) WITHOUT THE LENGTH",
+    ])
+    one('00404100', [
+        "         NI    SEGPTO+3,255-SEGINVAL CLEAR INVALID BIT",
+    ])
+    one('00405000', [
+        "         L     R8,SEGPTO      LOAD ADDRESS OF PAGE TABLE",
+    ])
+    one('00406000', [
+        "         N     R8,=A(SEGPTOM) CLEAR OUT NUMBER OF PAGES",
+    ])
+    one('00407100', [
+        "         LA    R9,PAGPFRA+256*L'PAGPFRA+8 1ST SWAPTABLE",
+    ])
+    # PTL is the low nibble of byte 3 and counts units of 16 entries, where
+    # SEGPLEN was the high nibble of byte 0 and counted pages.
+    PTL = lambda r, what: Deck.comment(
+        "PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS UNITS OF 16 ENTRIES; "
+        "SEGPLEN WAS THE HIGH NIBBLE OF BYTE 0 AND COUNTED PAGES. SO THE "
+        "VALUE IS (PTL+1)*16-1 WHERE IT USED TO BE A SHIFT.") + [
+        "         IC    R%s,SEGPTO+3    %s" % (r, what),
+        "         N     R%s,=A(SEGPTLF) KEEP ONLY PTL" % r,
+        "         LA    R%s,1(,R%s)      UNITS OF 16 ENTRIES" % (r, r),
+        "         SLL   R%s,4           PAGES IN THIS SEGMENT" % r,
+        "         BCTR  R%s,0           LESS ONE, AS BEFORE" % r,
+    ]
+    one('00411000', PTL('5', 'NO. PAGES IN THIS SEG'), to='00412000')
+    one('00414100', [
+        "         LA    R8,PAGPFRA+L'PAGPFRA SKIP PAGE 0'S ENTRY",
+    ])
+    one('00423200', [
+        "         ST    R4,PAGPFRA     STORE REAL PAGE ADDRESS",
+    ])
+    one('00428100', [
+        "         LA    R8,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY",
+    ])
+    one('00431000', [
+        "         AL    R4,=F'4096'    INCREMENT THE PAGE ADDRESS",
+    ])
+    one('00433100', [
+        "         NI    SEGPTO+3,255-SEGINVAL CLEAR INVALID BIT",
+    ])
+    one('00434000', PTL('5', 'NO. PAGES IN THIS SEG'), to='00435000')
+    one('00437000', [
+        "         L     R8,SEGPTO      ADDRESS OF THIS PAGE TABLE",
+    ])
+    one('00438000', [
+        "         N     R8,=A(SEGPTOM) CLEAR OUT PAGE NUMBER",
+    ])
+    # S R9,F4 reaches PAGSWP by assuming it sits four bytes below the page
+    # table.  PAGFREE moved PAGPFRA, so the literal becomes the difference the
+    # assembler computes.  Both sites are silent: neither names a DAT field.
+    one('00440000', [
+        "         S     R9,=A(PAGPFRA-PAGSWP) TABLE SO THAT THE SWAP",
+    ])
+    one('00447000', [
+        "         L     R8,SEGPTO      LOAD ADDRESS OF PAGE 0",
+    ])
+    one('00448000', [
+        "         N     R8,=A(SEGPTOM) CLEAR THE FLAG BITS",
+    ])
+    one('00450000', [
+        "         S     R9,=A(PAGPFRA-PAGSWP) PAGE 0.",
+    ])
+    # SRL R1,8 produced a value used TWICE -- as a CORTABLE index of 16 bytes a
+    # page AND as the S/370 PTE, both being address>>8.  The ESA/390 PTE wants
+    # the address itself, so the two uses separate.
+    one('00454100', Deck.comment(
+        "SRL R1,8 SERVED TWO PURPOSES AT ONCE: A CORTABLE INDEX OF 16 BYTES A "
+        "PAGE, AND THE S/370 PTE, WHICH IS PAGENO*16. BOTH ARE ADDRESS/256. AN "
+        "ESA/390 PTE IS THE ADDRESS ITSELF, SO THE TWO USES SEPARATE AND THE "
+        "ADDRESS IS RELOADED HERE. R0 IS SCRATCH -- THE NEXT CARD LOADS IT.") + [
+        "         L     R0,=A(DMKSLC-4096)  PAGE 0'S REAL ADDRESS",
+        "         ST    R0,PAGPFRA     STORE ADDRESS OF REAL PAGE 0",
+    ])
+
+    # ---------------------------------------------------------- DMKBLDRL
+    one('00598100', [
+        "         N     R6,=A(SEGSTOM) STRIP LENGTH -- LOW BITS NOW",
+    ])
+    one('00601000', [
+        "         LA    R4,SEGINVAL    LOAD UNUSED SEGMENT INDICATOR",
+    ])
+    # The ABI split: twelve bits of page number, 8+4 for 64 KB segments and 4+8
+    # for 1 MB ones.  Four literals, none of them naming a field.
+    one('00605300', [
+        "         SRL   R8,24          GET STARTING STE NUMBER",
+    ])
+    one('00607100', [
+        "         N     R15,=A(X'FF0000') PAGE WITHIN SEG. = 0?",
+    ])
+    one('00610600', [
+        "         SRL   R9,8           ENDING SEG. NUMBER TO LOW R9",
+    ])
+    one('00611100', [
+        "         N     R9,F15         CLEAR ALL BUT SEGMENT NUMBER",
+    ])
+    one('00618000', [
+        "RELRLOOP L     R7,SEGPTO      LOAD PAGE TABLE ADDRESS",
+    ])
+    one('00619100', [
+        "         N     R7,=A(SEGPTOM) CLEAR THE FLAG BITS",
+    ])
+    one('00619300', [
+        "         L     R15,SEGPTO     IS THERE A PAGETABLE PTR",
+        "         N     R15,=A(SEGPTOM) ...",
+    ])
+    one('00619505', [
+        "         TM    SEGPTO+3,SEGINVAL IF NOT, MAKE SURE IT'S",
+    ])
+    one('00621000', PTL('2', 'PAGE TABLE LENGTH'), to='00622000')
+    one('00624100', ["         USING PAGPFRA,R7"])
+    one('00625100', [
+        "         L     R0,PAGPFRA     PTE",
+    ])
+    one('00625600', [
+        "         N     R0,=A(PAGPFRM) CHECK FOR REAL PAGE ALLOCATED",
+    ])
+    one('00627600', [
+        "         LA    R7,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY",
+    ])
+    one('00630600', [
+        "         L     R1,SEGPTO      GET PAGETABLE POINTER",
+    ])
+    one('00631100', [
+        "         ST    R4,SEGPTO      CLEAR STE ENTRY",
+    ])
+    # The FRET.  PAGFREE holds the exact DMKFREE address, so the arithmetic that
+    # assumed a constant 16 -- and the mask that truncated to 24 bits while
+    # claiming to clear a flag -- both go.  I-122, I-130.
+    one('00632100', [
+        "         N     R1,=A(SEGPTOM) THE PAGE TABLE ADDRESS",
+    ])
+    one('00632600', Deck.comment(
+        "PAGFREE HOLDS WHAT DMKFREE RETURNED, SO THE RELEASE IS EXACT RATHER "
+        "THAN DERIVED. THIS RETIRES N R1,=A(X'FFFFFE'), WHICH TRUNCATED A PAGE "
+        "TABLE ADDRESS TO 24 BITS WHILE ITS COMMENT CLAIMED TO CLEAR A FLAG. "
+        "I-122.") + [
+        "         S     R1,=A(PAGPFRA-PAGFREE) BACK UP TO PAGFREE",
+        "         L     R1,0(,R1)      THE DMKFREE ADDRESS, EXACTLY",
+    ], to='00633100')
+    one('00634100', [
+        "         SRL   R0,3           OBTAIN NUMBER OF DOUBLEWORDS",
+        "         AL    R0,F7          AND THE ALIGNMENT SLACK",
+    ])
+    one('00643000', [
+        "RELRNEXT LA    R6,SEGPTO+4    POINT TO NEXT STE",
+    ])
+    one('00649000', [
+        "         N     R1,=A(SEGSTOM) STRIP THE LENGTH,",
+    ])
+    one('00651000', [
+        "         N     R0,=A(SEGSTLM) NO. OF SEGMENT TABLES (LESS 1)",
+    ])
+    one('00653000', [
+        "         AL    R0,=F'519'     PLUS 8, PLUS 511 FOR ALIGNMENT",
+    ])
+    return d
+
+
 def corecopy():
     """STE-DESIGN step 1: the DAT table DSECTs, with every changed name CHANGED.
 
@@ -2823,7 +3259,21 @@ def corecopy():
         "ESA/390 PAGE TABLE ENTRY -- A FULLWORD, NOT A HALFWORD. PFRA IS BITS "
         "1-19, I IS BIT 21, P IS BIT 22, AND BITS 0, 20 AND 23 MUST BE ZERO. "
         "RENAMED FROM PAGCORE WITH NO ALIAS BECAUSE 13 LH AND 5 STH SITES WOULD "
-        "OTHERWISE ASSEMBLE CLEAN AND READ THE WRONG TWO BYTES. I-121.") + [
+        "OTHERWISE ASSEMBLE CLEAN AND READ THE WRONG TWO BYTES. I-121.") +
+        Deck.comment(
+        "PAGFREE HOLDS THE DMKFREE ADDRESS OF THIS BLOCK. IT EXISTS BECAUSE THE "
+        "PAGE TABLE MUST NOW BE 64-BYTE ALIGNED, SO DMKBLDRT ROUNDS THE BLOCK UP "
+        "AND THE GAP BETWEEN WHAT DMKFREE RETURNED AND THE HEADER IS NO LONGER "
+        "THE CONSTANT 16 THAT DMKBLDRL SUBTRACTS. STORING THE ADDRESS IS EXACT "
+        "WHERE ARITHMETIC WOULD BE DERIVED, AND IT RETIRES "
+        "N R1,=A(X'FFFFFE'), WHICH TRUNCATES A PAGE TABLE ADDRESS TO 24 BITS "
+        "WHILE CLAIMING TO CLEAR A FLAG. I-122, I-130.") + Deck.comment(
+        "IT CANNOT GO FIRST: STCK PAGSTMP STORES EIGHT BYTES AND NEEDS A "
+        "DOUBLEWORD-ALIGNED OPERAND, SO PAGSTMP MUST STAY AT OFFSET 0. THE "
+        "RESERVED FULLWORD KEEPS PAGPFRA ON A DOUBLEWORD AND PAGBMP AN EXACT "
+        "MULTIPLE OF 8.") + [
+        "PAGFREE  DS    1F             DMKFREE ADDRESS OF THIS BLOCK",
+        "         DS    1F             RESERVED -- KEEPS ALIGNMENT",
         "PAGPFRA  DS    1F             PAGE FRAME REAL ADDR, BITS 1-19",
     ])
 
@@ -2847,21 +3297,45 @@ def corecopy():
               limit=next_seq(src, '00143400'),
               lines=Deck.comment(
         "A 1 MB SEGMENT HAS 256 PAGES, NOT 16, AND EACH ENTRY IS NOW A FULLWORD, "
-        "SO A FULL PAGE TABLE IS 16+256*4 = 1040 BYTES INSTEAD OF 16+16*2 = 48. "
+        "SO A FULL PAGE TABLE IS 24+256*4 = 1048 BYTES INSTEAD OF 16+16*2 = 48. "
         "DERIVED, SO EVERY USER GETS THE NEW VALUE -- AND ANY MVC USING IT AS A "
         "LENGTH NOW EXCEEDS 256 BYTES AND FAILS LOUDLY BY ITSELF.") + [
         "PAGTSWP  EQU   (PAGPFRA-PAGSTMP+256*L'PAGPFRA) LENGTH OF A",
         "*                            FULL 256 ENTRY PAGE TABLE",
     ])
 
-    one('00143500', Deck.comment(
+    d.replace('00143500', '00143700', first='00143510', inc=10,
+              limit=next_seq(src, '00143700'),
+              lines=Deck.comment(
         "THE SWAP TABLE IS ONE ENTRY PER PAGE TOO, SO IT GROWS 16 TO 256 WITH "
         "THE PAGE TABLE. SWPTABLE IS CP-PRIVATE, SO ONLY THE COUNT CHANGES. THE "
         "ENTRY SIZE BECOMES ITS OWN EQU BECAUSE THE ONE-LINE FORM IS 63 COLUMNS "
         "AND A CARD HOLDS 61 -- THE GENERATOR REFUSED IT RATHER THAN TRUNCATING "
-        "IT INTO THE IDENTIFIER FIELD, WHICH IS WHAT R-04 IS FOR.") + [
+        "IT INTO THE IDENTIFIER FIELD, WHICH IS WHAT R-04 IS FOR.") + Deck.comment(
+        "THE SWAP TABLE HEADER IS 8 BYTES, NOT 12: SWPFLAG2 IS ORG'D OVER "
+        "SWPPAG'S SLOT. READING THE FIELD LIST WITHOUT THE ORG GAVE 12 AND MADE "
+        "PAGBMP 3108 INSTEAD OF 3112 -- NOT A MULTIPLE OF 8, WHICH THE "
+        "TRUNCATING SRL R0,3 WOULD HAVE UNDER-ALLOCATED. I-127.") + [
         "PAGSWPE  EQU   (SWPCODE-SWPFLAG+1) ONE SWAP ENTRY",
         "PAGBMP   EQU   (PAGTSWP+(SWPFLAG-SWPVM)+256*PAGSWPE+8)",
+        "*                            LENGTH OF A CONTIGUOUS PAGE AND",
+        "*                            SWAP TABLE",
+    ] + Deck.comment(
+        "THE MASKS BELOW EXIST BECAUSE OF THE ONE STRUCTURAL DIFFERENCE THAT "
+        "GOVERNS THIS WHOLE CONVERSION. S/370 PACKS LENGTHS AND FLAGS INTO THE "
+        "HIGH BYTE OF A POINTER, WHICH 24-BIT ADDRESS FORMATION IGNORES, SO A "
+        "PACKED WORD IS USABLE AS AN ADDRESS WITH NOTHING TO STRIP. ESA/390 "
+        "MOVES THEM TO THE LOW BITS -- STL 25-31, STE FLAGS 26-31, PTE FLAGS "
+        "21-22 -- WHICH ADDRESS FORMATION NEVER IGNORES. SO EVERY PACKED "
+        "POINTER NEEDS AN EXPLICIT MASK WHERE IT NEEDED NONE, AND AMODE 24 DOES "
+        "NOT HELP. I-128. ONE DEFINITION EACH, HERE, BESIDE THE FORMAT THEY "
+        "DESCRIBE, SO THERE IS ONE PLACE TO BE WRONG RATHER THAN NINETY.") + [
+        "SEGSTOM  EQU   X'7FFFF000'    STD SEG TABLE ORIGIN 1-19",
+        "SEGSTLM  EQU   X'0000007F'    STD SEG TABLE LENGTH 25-31",
+        "SEGPTOM  EQU   X'7FFFFFC0'    STE PAGE TABLE ORIGIN 1-25",
+        "SEGPTLF  EQU   X'0F'          STE PTL, FULL, AT SEGPTO+3",
+        "PAGPFRM  EQU   X'7FFFF000'    PTE PAGE FRAME ADDR 1-19",
+        "PAGINVW  EQU   (PAGINV*256)   PTE INVALID, A FULLWORD",
     ])
     return d
 
@@ -3030,6 +3504,13 @@ def main():
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
                  'OK' if not bad else 'BAD ' + repr(bad[:3])))
         ok = ok and not bad
+    bld = dmkbld()
+    n = bld.write(os.path.join(HERE, 'DMKBLD.%s' % XA34))
+    aux(os.path.join(HERE, 'DMKBLD.AUXLCL'),
+        [(XA34, 'BUILD ESA/390 SEGMENT AND PAGE TABLES, AND ALIGN THEM')])
+    print('%-8s %-9s %3d cards  %s' % ('DMKBLD', XA34, n,
+          'OK' if not verify(os.path.join(HERE, 'DMKBLD.%s' % XA34)) else 'BAD'))
+
     cc = corecopy()
     n = cc.write(os.path.join(HERE, 'CORE.%s' % XA33))
     aux(os.path.join(HERE, 'CORE.AUXLCL'),
