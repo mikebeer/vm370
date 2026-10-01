@@ -58,6 +58,13 @@ CLASSES = [
           'the page-table header offset; PAGFREE moves it from 16 to 24'),
     Class('F4-swap', re.compile(r'^\s+(S|SL|A|AL)\s+R?\d+,F4\b'), 'dat', 'M1',
           'PAGSWP sits four bytes below the page table'),
+    # `F8` means THREE different things near DAT code, and the comments do not
+    # reliably distinguish them: five sites reach PAGSHR from PAGCORE (a gap of 8
+    # today and 16 after PAGORIG), two reach the SWPTABLE header from SWPFLAG
+    # (8, unchanged), and one bumps a swap entry (8, unchanged).  DMKPGS 00425000
+    # says `POINT TO PAGE HEADER` and means PAGSHR.
+    Class('F8-shrptr', re.compile(r'^\s+(S|SL|A|AL)\s+R?\d+,F8\b'), 'dat', 'M1',
+          'PAGSHR from PAGCORE, or a swap header -- 8 either way today'),
     Class('F2-stride', re.compile(r'^\s+(A|AL|S|SL)\s+R?\d+,F2\b'), 'dat', 'M1',
           'a halfword PTE stride; a fullword steps by 4'),
     Class('vmseg-load', re.compile(r'^\s+L\s+R?\d+,VMSEG\b'), None, 'M1',

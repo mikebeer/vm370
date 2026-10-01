@@ -3296,6 +3296,299 @@ DATMODS = {
         ]),
     ],
 
+    # Page and segment table services -- the largest module in the conversion,
+    # 31 flagged sites and 31 idiom candidates.  Two of its idioms exist nowhere
+    # else: a double shift that splits the designation into length and address
+    # (00477000-00479000), and a one-byte compare that tests for the end of a
+    # page table because `page<<4` and `(pages-1)<<4` happen to be the same
+    # encoding (01217000).  Neither survives.
+    'DMKPGS': [
+        ('00278400', ["         USING PAGPFRA,R9"]),
+        ('00288000', [
+            "         IC    R2,VMSEG+3     NUMBER OF SEGMENT TABLES",
+            "         N     R2,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('00290000', Deck.comment(
+            "A 64-BYTE SEGMENT TABLE UNIT COVERED 1 MB AND NOW COVERS 16.") + [
+            "         SLL   R2,24          ADDR +1 PAGE OF LAST PAGE",
+        ]),
+        ('00302000', [
+            "         L     R3,VMSEG       GET ADDRESS OF SEGTABLE",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00303000', [
+            "*                             (LA R3,0(,R3) REPLACED ABOVE)",
+        ]),
+        ('00307000', [
+            "         IC    R4,VMSEG+3     NUMBER OF 16 MEG SEGMENTS",
+            "         N     R4,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('00317000', Deck.comment(
+            "CLI COMPARED THE WHOLE BYTE AGAINST X'01'. BYTE 3 HOLDS TWO PTO "
+            "BITS, C AND PTL AS WELL, SO IT MUST BE A BIT TEST -- AND THE "
+            "BRANCH SENSE TURNS OVER WITH IT.") + [
+            "         TM    SEGPTO+3,SEGINVAL UNDEFINED SEGMENT?",
+        ]),
+        ('00318000', ["         BZ    B1             NO"]),
+        ('00319000', [
+            "         L     R15,SEGPTO     VALID PNTR?",
+            "         N     R15,=A(SEGPTOM) ...",
+        ]),
+        ('00392000', [
+            "         IC    R3,VMSEG+3     NUMBER OF SEGMENT TABLES",
+            "         N     R3,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('00415000', [
+            "         L     R3,VMSEG       GET ADDRESS OF SEGTABLE",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00417000', [
+            "         SRL   R5,20          LEAVE ONLY SEGMENT NUMBER",
+        ]),
+        ('00421000', '00423000', [
+            "         L     R10,SEGPTO     ANY PTE POINTER?",
+            "         N     R10,=A(SEGPTOM) ...",
+            "         BZ    PROCNEXT       NO, SKIP",
+        ]),
+        ('00425000', Deck.comment(
+            "F8 REACHED PAGSHR FROM PAGCORE -- A GAP OF 8 THEN AND 16 NOW. THE "
+            "COMMENT SAYS PAGE HEADER AND MEANS THE SHRTABLE POINTER.") + [
+            "         SL    R10,=A(PAGPFRA-PAGSHR) POINT TO PAGSHR",
+        ]),
+        ('00477000', '00479000', Deck.comment(
+            "SLDL R2,8 SHIFTED THE R2:R3 PAIR SO VMSEG'S BYTE 0 -- THE LENGTH -- "
+            "LANDED IN R2, THEN SRL R3,8 PUT THE ADDRESS BACK. ONE DOUBLE SHIFT "
+            "EXTRACTING BOTH HALVES, WHICH WORKS ONLY BECAUSE THE LENGTH IS THE "
+            "HIGH BYTE. IT BECOMES TWO MASKS.") + [
+            "         L     R3,VMSEG       THE DESIGNATION",
+            "         LR    R2,R3          FOR THE LENGTH",
+            "         N     R2,=A(SEGSTLM) NUMBER OF SEGMENTS",
+            "         N     R3,=A(SEGSTOM) AND THE ADDRESS",
+        ]),
+        ('00484000', '00486000', [
+            "         L     R9,SEGPTO      ANY PTE POINTER?",
+            "         N     R9,=A(SEGPTOM) ...",
+            "         BZ    NEXTADDR+6     NO, SKIP",
+        ]),
+        ('00488000', [
+            "         SL    R9,=A(PAGPFRA-PAGSHR) TO SHRTABLE PTR",
+        ]),
+        ('00493100', [
+            "         IC    R2,VMSEG+3     GET NUMBER OF SEGMENTS",
+            "         N     R2,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('00493300', ["         SLL   R2,24          NOW MAKE IT AN ADDRESS"]),
+        ('00517100', [
+            "         L     R15,VMSEG      SEGMENT TABLE ORIGIN",
+            "         N     R15,=A(SEGSTOM) CLEAR LENGTH BITS",
+        ]),
+        ('00517200', [
+            "*                             (LA R15,0(,R15) REPLACED ABOVE)",
+        ]),
+        ('00529600', [
+            "         NI    SEGPTO+3-SEGPTO(R3),X'FF'-SEGINVAL",
+        ]),
+        ('00570000', [
+            "         L     R5,VMSEG       THE DESIGNATION",
+            "         N     R5,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R9,R5          ADDR SEGTABLE ENTRY",
+        ]),
+        ('00572000', ["         L     R5,SEGPTO      LOAD ADDRESS OF PTO"]),
+        ('00574000', ["         N     R5,=A(SEGPTOM) CLEAR PTE COUNT"]),
+        ('00592000', [
+            "         SL    R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00616000', [
+            "         SL    R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00643400', [
+            "         AL    R1,=A(PAGPFRA-PAGSTMP) GET ADDRESS OF PTO",
+        ]),
+        ('00643600', [
+            "         L     R15,0(R9)      THE CURRENT ENTRY",
+            "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
+            "         OR    R15,R1         WITH THE NEW ORIGIN",
+            "         ST    R15,0(R9)      UPDATE STE",
+        ]),
+        ('00645500', ["         N     R1,=A(SEGPTOM) CLEAR PTE COUNT"]),
+        ('00645590', [
+            "         SL    R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00645650', ["         N     R1,=A(SEGPTOM) CLEAR PTE COUNT"]),
+        ('00645660', [
+            "         L     R14,VMSEG      ADDR START OF SEGTABLE",
+            "         N     R14,=A(SEGSTOM) CLEAR SEGTABLE SIZE",
+        ]),
+        ('00645670', [
+            "*                             (LA R14,0(,R14) REPLACED ABOVE)",
+        ]),
+        ('00645700', [
+            "         SLL   R1,20          FORM VIRTUAL STARTING ADDRESS",
+        ]),
+        ('00645760', ["         N     R1,=A(SEGPTOM) CLEAR PTE COUNT"]),
+        ('00653500', [
+            "         L     R15,SEGPTO-SEGTABLE(R9) THE CURRENT ENTRY",
+            "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
+            "         OR    R15,R1         WITH THE NEW ORIGIN",
+            "         ST    R15,SEGPTO-SEGTABLE(R9) HOOK STE - PTO",
+        ]),
+        ('00655000', ["         N     R5,=A(SEGPTOM) CLEAR COUNT"]),
+        ('00656000', [
+            "         SL    R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00658100', [
+            "         SL    R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00658160', ["         N     R1,=A(SEGPTOM) CLEAR PTE COUNT"]),
+        ('00658170', [
+            "         L     R14,VMSEG      STARTING ADDR SEGTABLE",
+            "         N     R14,=A(SEGSTOM) CLEAR SEGTABLE SIZE",
+        ]),
+        ('00658180', [
+            "*                             (LA R14,0(,R14) REPLACED ABOVE)",
+        ]),
+        ('00658210', [
+            "         SLL   R1,20          FORM VIRTUAL STARTING ADDRESS",
+        ]),
+        ('00680000', ["         N     R9,=A(SEGPTOM) CLEAR COUNT FIELD"]),
+        ('00681000', ["         TM    3(R9),SEGINVAL VALID STE?"]),
+        ('00714000', ["         LA    R7,SEGINVAL    INVALID FLAG"]),
+        ('00756000', ["         TM    3(R9),SEGINVAL SEGMENT VALID?"]),
+        ('00758000', [
+            "         NI    3(R9),255-SEGINVAL NO, VALIDATE IT",
+        ]),
+        ('00774000', [
+            "         L     R2,VMSEG       ADDRESS OF 1ST STE",
+            "         N     R2,=A(SEGSTOM) CLEAR COUNT FIELD",
+        ]),
+        ('00775000', [
+            "*                             (LA R2,0(,R2) REPLACED ABOVE)",
+        ]),
+        ('00777000', Deck.comment(
+            "R1 IS AN STE DISPLACEMENT, SEGNUM TIMES 4. TIMES 2**14 GAVE SEGNUM "
+            "TIMES 64 KB; A SEGMENT IS 1 MB NOW, SO TIMES 2**18.") + [
+            "         SLL   R1,18          ADDRESS OF 1ST PAGE IN SEGMENT",
+        ]),
+        ('00779000', '00781000', Deck.comment(
+            "BYTE 0 HELD (PTE COUNT * 16) - 16, SO ADDING 16 AND DIVIDING BY 16 "
+            "GAVE THE COUNT. PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS "
+            "SIXTEENS, SO IT IS A MASK AND A SHIFT.") + [
+            "         IC    R7,3(,R9)      THE STE FLAG BYTE",
+            "         N     R7,=A(SEGPTLF) PTL",
+            "         LA    R7,1(,R7)      UNITS OF 16 ENTRIES",
+            "         SLL   R7,4           PTE COUNT",
+        ]),
+        ('00934000', [
+            "         IC    R2,VMSEG+3     NUMBER OF SEGMENT TABLES",
+            "         N     R2,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('00936000', ["         SLL   R2,24          ADDR +1 PAGE OF LAST"]),
+        ('00941000', ["         USING PAGPFRA,R9"]),
+        ('00947000', [
+            "         L     R3,VMSEG       GET SEGMENT TABLE ORIGIN",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00949000', ["         SRL   R14,20         ISOLATE SEGMENT NUMBER"]),
+        ('00954000', [
+            "         L     R4,SEGPTO      VALID PNTR?",
+            "         N     R4,=A(SEGPTOM) ...",
+            "         BNZ   B2             YES",
+        ]),
+        ('00956000', ["         TM    SEGPTO+3,SEGINVAL INVALID STE?"]),
+        ('00957000', ["         BO    NEXTSEG        YES, NOTHING TO RELEASE"]),
+        ('00958000', [
+            "B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID",
+        ]),
+        ('00979000', ["         L     R10,0(R3)      GET PAGETABLE ORIGIN"]),
+        ('00980000', ["         N     R10,=A(SEGPTOM) STRIP LENGTH"]),
+        ('00981000', [
+            "         S     R10,=A(PAGPFRA-PAGSHR) TO SHRTABLE PTR",
+        ]),
+        ('01004000', ["         TM    SEGPTO+3,SEGINVAL VALID STE?"]),
+        ('01007000', [
+            "         L     R15,SEGPTO     GET PTO",
+            "         N     R15,=A(SEGPTOM) WITHOUT THE FLAGS",
+        ]),
+        ('01010000', ["         N     R14,F255       (WITHOUT SEGMENT NO.)"]),
+        ('01034200', Deck.comment(
+            "STCM B'1000' PUT R4'S BYTE 0 INTO THE STE'S BYTE 0, WHICH HELD THE "
+            "LENGTH. PTL IS THE LOW NIBBLE OF BYTE 3, SO THE ENTRY IS REBUILT.") + [
+            "         L     R15,SEGPTO     THE CURRENT ENTRY",
+            "         N     R15,=A(X'FFFFFFFF'-SEGPTLF) WITHOUT PTL",
+            "         O     R15,=A(SEGPTLF) RESET PAGTABLE LENGTH",
+            "         ST    R15,SEGPTO     ...",
+        ]),
+        ('01034400', ["         N     R4,=A(SEGPTOM) STRIP OFF LENGTH"]),
+        ('01045200', [
+            "         L     R15,SEGPTO     THE CURRENT ENTRY",
+            "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
+            "         OR    R15,R4         WITH THE OTHER PAGTABLE",
+            "         ST    R15,SEGPTO     STORE ADDR OTHER PAGTABLE",
+        ]),
+        ('01047000', [
+            "         SL    R5,=A(PAGPFRA-PAGSTMP)",
+        ]),
+        ('01049000', Deck.comment(
+            "X'00FF0000' KEPT THE 64 KB SEGMENT NUMBER, BITS 8-15. A 1 MB "
+            "SEGMENT NUMBER IS BITS 8-11.") + [
+            "         N     R1,=X'00F00000' RESET R1 TO SEGMENT START",
+        ]),
+        ('01053000', ["         LA    R3,SEGPTO+4    POINT TO NEXT STE"]),
+        ('01116000', ["         L     R2,PAGPFRA     PTE"]),
+        ('01117100', Deck.comment(
+            "AN ESA/390 PTE IS THE FRAME'S REAL ADDRESS, SO THE SHIFT GOES.") + [
+            "*                             (SLL R2,8 REMOVED)",
+        ]),
+        ('01117600', ["         N     R2,=A(PAGPFRM) CLEAR UNWANTED BITS"]),
+        ('01164000', ["         MVC   PAGPFRA,=A(PAGINVW) INVALIDATE PTE"]),
+        ('01179000', ["         N     R10,=A(SEGPTOM) LEAVE ONLY THE ADDRESS"]),
+        ('01180000', [
+            "         SL    R10,=A(PAGPFRA-PAGSHR) TO SHRTABLE PTR",
+        ]),
+        ('01201000', [
+            "         NI    PAGPFRA+3,255-PAGREF RESET REF FLAG",
+        ]),
+        ('01217000', Deck.comment(
+            "CLM R1,B'0010',SEGPAGE COMPARED BYTE 2 OF A VIRTUAL ADDRESS -- "
+            "PAGE-WITHIN-SEGMENT TIMES 16 -- AGAINST BYTE 0 OF THE STE, WHICH "
+            "WAS (PAGES-1) TIMES 16. THE SAME ENCODING BY ACCIDENT, SO ONE BYTE "
+            "COMPARE TESTED FOR THE END OF THE PAGE TABLE. NOTHING LINES UP IN "
+            "ESA/390: THE PAGE FIELD IS EIGHT BITS AT 12-19 AND PTL COUNTS "
+            "SIXTEENS IN THE LOW NIBBLE OF BYTE 3. TEMPR6 AND TEMPR7 ARE UNUSED "
+            "IN THIS MODULE, AND NEITHER L NOR LM SETS THE CONDITION CODE, SO "
+            "THE RESTORE CAN FOLLOW THE COMPARE.") + [
+            "CKSEG    EQU   *              HERE TO TEST FOR END OF SEGMENT",
+            "         ST    R14,TEMPR7     SAVE THE WORK REGISTER",
+            "         IC    R14,3(,R3)     THE STE FLAG BYTE",
+            "         N     R14,=A(SEGPTLF) PTL",
+            "         LA    R14,1(,R14)    UNITS OF 16 ENTRIES",
+            "         SLL   R14,4+12       THE SEGMENT'S LENGTH IN BYTES",
+            "         ST    R14,TEMPR6     ...",
+            "         LR    R14,R1         THE CURRENT VIRTUAL ADDRESS",
+            "         N     R14,=A(X'000FF000') PAGE WITHIN SEGMENT",
+            "         C     R14,TEMPR6     TEST FOR LAST PAGE",
+            "         L     R14,TEMPR7     RESTORE",
+        ], ),
+        ('01220000', [
+            "         LA    R9,L'PAGPFRA(,R9) POINT TO NEXT PTE",
+        ]),
+        ('01226000', [
+            "         L     R14,SEGPTO-SEGPTO(,R3) GET PAGE TABLE",
+        ]),
+        ('01228000', [
+            "         SL    R14,=A(PAGPFRA-PAGSHR) POINT TO PAGSHR",
+        ]),
+        ('01236000', ["         LA    R14,SEGINVAL   INVALID FLAG"]),
+        ('01237000', ["         L     R1,SEGPTO-SEGPTO(,R3) GET STE"]),
+        ('01238000', [
+            "         ST    R14,SEGPTO-SEGPTO(,R3) INVALID STE",
+        ]),
+        ('01283000', ["CLCNTINV DC    A(SEGPTOM)     CLEAR COUNT AND INV"]),
+        ('01285000', [
+            "CLINVBIT DC    A(X'FFFFFFFF'-SEGINVAL) CLEAR INVALID BIT",
+        ]),
+    ],
+
     # Attaching and detaching shared segments: 23 flagged sites and 24 idiom
     # candidates, of which reading rejects four.  00805000-00808000 is the clean
     # example of candidate-versus-verdict -- `LR R7,R2 / N R7,XPAGNUM /
