@@ -1,0 +1,9 @@
+./ R 00767000          $ 00767100 100                                           
+         L     R3,VMSEG       OBTAIN STO                       XA0036DK         
+         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 00768000          $ 00768100 100                                           
+         SRDL  R14,20         GET SEGMENT NUMBER               XA0036DK         
+./ R 00771000          $ 00771100 100                                           
+         TM    3(R3),SEGINVAL IS THE STE INVALID?              XA0036DK         
+./ R 00776000          $ 00776100 100                                           
+         TM    3(R3),SEGINVAL DID PTR CLEAR UP PAGE            XA0036DK         

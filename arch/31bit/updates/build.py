@@ -3188,6 +3188,18 @@ DATMODS = {
         ('00339000', [
             "         TM    3(R2),SEGINVAL VALID SEGMENT",
         ]),
+        ('00344000', [
+            "         L     R2,0(,R2)      ADDRESS OF PAGTABLE",
+            "         N     R2,=A(SEGPTOM) WITHOUT THE FLAGS",
+        ]),
+        ('00345000', Deck.comment(
+            "AFTER SRDL 20 THE PAGE-WITHIN-SEGMENT FIELD IS R1 BITS 0-7, NOT "
+            "0-3, SO IT RIGHT-JUSTIFIES WITH 24 RATHER THAN 28.") + [
+            "         SRL   R1,24          SHIFT PAGE TO LOWORDER OF R1",
+        ]),
+        ('00347000', [
+            "         LA    R2,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R2)",
+        ]),
     ],
 
     # The swap-table address computed from the page table, half symbolically:
@@ -3232,6 +3244,21 @@ DATMODS = {
     # only clue is that the two flags no longer share a byte.
     'DMKRPA': [
         ('00122000', ["         USING PAGPFRA,R9"]),
+        ('00157000', Deck.comment(
+            "THE PAGE-WITHIN-SEGMENT FIELD IS EIGHT BITS AT 12-19 NOW, AND A PTE "
+            "STRIDE IS 4, SO THE MASK WIDENS AND THE SHIFT THAT MADE PAGE*2 "
+            "MAKES PAGE*4. THE LATER SLL 2 THAT MADE PAGE*8 BECOMES SLL 1.") + [
+            "         N     R1,=A(X'FF000') CLEAR SEG AND DISPLACEMENT",
+        ]),
+        ('00158000', [
+            "         SRL   R1,10          AND GET PAGE NUMBER TIMES 4",
+        ]),
+        ('00160000', [
+            "         S     R2,=A(PAGPFRA-PAGSWP) TO SWPTABLE POINTER",
+        ]),
+        ('00162000', [
+            "         SLL   R1,1           GET PAGE NUMBER TIMES 8",
+        ]),
         ('00174000', Deck.comment(
             "PAGINVAL AND PAGREF SHARED BYTE 1. NOW I IS BIT 21, IN BYTE 2, AND "
             "PAGREF IS IN BYTE 3, WHERE THE HARDWARE IGNORES IT. SO ONE OI "
@@ -3263,6 +3290,12 @@ DATMODS = {
     # nothing reports it.  DMKPTR 00721000 states the relationship outright:
     # `S R7,ACORETBL  GET PAGE ADDRESS/256`.
     'DMKCPP': [
+        ('50900000', [
+            "         N     R4,=A(SEGPTOM) LEAVE PGT ADDRESS ONLY",
+        ]),
+        ('51000000', [
+            "         SL    R4,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER",
+        ]),
         ('51700000', Deck.comment(
             "SHRPAGE IS AN STE IN ALL BUT NAME -- SHRTABLE.COPY SAYS SO IN A "
             "COMMENT AND NO SYMBOL JOINS THEM -- SO ITS LENGTH FIELD MOVES WITH "
@@ -3293,6 +3326,285 @@ DATMODS = {
         ]),
         ('62000000', [
             "         LA    R8,L'PAGPFRA(,R8) ADDRESS THE NEXT ENTRY",
+        ]),
+        ('76900000', [
+            "         N     R14,=A(SEGPTOM) LEAVE PGT ADDRESS ONLY",
+        ]),
+        ('77000000', [
+            "         SL    R14,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER",
+        ]),
+    ],
+
+    # Four modules with NO flagged site: everything in them is reached by
+    # displacement or by a literal, so the rename cannot see them and they are
+    # here only because idiom.py found them.
+    #
+    # DMKCDB and DMKCDM hold the worst case in the tree:
+    #     TM    3(R3),1        IS THE STE INVALID?
+    # byte 3 by displacement AND the invalid bit as a bare 1.  No symbol, so the
+    # rename is blind; no DAT field on the line, so dattab is blind; the only
+    # trace is a VMSEG five cards above.
+    'DMKCDB': [
+        ('01053500', [
+            "         L     R3,VMSEG       OBTAIN STO",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('01054000', ["         SRDL  R14,20         GET SEGMENT NUMBER"]),
+        ('01056300', ["         TM    3(R3),SEGINVAL IS THE STE INVALID?"]),
+        ('01057300', ["         TM    3(R3),SEGINVAL DID PTR CLEAR UP PAGE"]),
+    ],
+    'DMKCDM': [
+        ('00767000', [
+            "         L     R3,VMSEG       OBTAIN STO",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00768000', ["         SRDL  R14,20         GET SEGMENT NUMBER"]),
+        ('00771000', ["         TM    3(R3),SEGINVAL IS THE STE INVALID?"]),
+        ('00776000', ["         TM    3(R3),SEGINVAL DID PTR CLEAR UP PAGE"]),
+    ],
+    # CP's own system address space, reached through ASYSVM's VMBLOK.  The mask
+    # that extracted the segment number is byte 2 of the address -- bits 16-23,
+    # which is a 64 KB segment number times 256.
+    'DMKDRD': [
+        ('01090000', [
+            "         L     R10,VMSEG-VMBLOK(,R10)   SYSTEM ADDR SPACE",
+            "         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('01093000', [
+            "         L     R8,=A(X'00F00000') ...TO GET THE SEGMENT NO.",
+        ]),
+        ('01096000', [
+            "         SRL   R8,18(0)       CONVERT TO SEGTABLE INDEX",
+        ]),
+    ],
+    # DMKDSP 02417000 is deliberately NOT here: its `L R1,VMSEG` feeds
+    # `ST R1,RUNCR1`, so the hardware wants the whole designation, length and
+    # all.  idiom.py marks it; reading rejects it.
+    'DMKUSO': [
+        ('00518110', [
+            "         L     R1,VMSEG       GET STO",
+            "         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00518560', [
+            "         L     R1,VMSEG       RELOAD STO",
+            "         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+    ],
+    'DMKCPU': [
+        ('00365000', [
+            "         N     R7,=A(SEGPTOM) LEAVE PTO ADDRESS ONLY",
+        ]),
+        ('00366000', [
+            "         SL    R7,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER",
+        ]),
+    ],
+    'DMKPRV': [
+        ('00918000', [
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R7,R6          ADD STO, GET STE",
+        ]),
+        ('00920000', [
+            "*                             (LA R7,0(0,R7) REPLACED BELOW)",
+        ]),
+        ('00921000', ["      N    R7,=A(SEGPTOM)      TURN OFF INVALID BIT"]),
+        ('00922000', [
+            "         S     R7,=A(PAGPFRA-PAGSWP) BACK UP...",
+        ]),
+    ],
+    # Only the unshare loop.  CHEKPTE, LOADPTE, PTEINCR and the whole ARCHTECT
+    # table describe the GUEST's tables, indexed by the GUEST's CR0 -- CP has
+    # been able to read fullword page-table entries since 1972, because S/370
+    # had that format too, and PINVBIT DC X'04' is already the ESA/390 bit
+    # position.  That is milestone B's mechanism, not M1's, and it is left alone.
+    'DMKVAT': [
+        ('00232180', [
+            "         IC    R4,VMSEG+3     GET SIZE OF SEGMENT TABLE",
+            "         N     R4,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('00232240', [
+            "         L     R5,VMSEG       GET SEGMENT TABLE",
+            "         N     R5,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00232300', [
+            "         L     R6,0(R5)       IS SEG INVALID OR MIGRATED",
+            "         N     R6,=A(SEGPTOM) ...",
+            "         BZ    SKPCHG         NO SEGMENT - LOOK AT NEXT",
+        ]),
+        ('00232360', [
+            "         SL    R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00232520', ["         SLL   R1,20          FORM VIRTUAL ADDRESS"]),
+        ('01044100', ["SEGSIZE  DC    X'00100000'"]),
+        ('01044200', [
+            "CLRBITS  DC    A(SEGPTOM)     MASK TO CLEAR FLAG BITS - STE",
+        ]),
+    ],
+
+    # The paging manager.  32 flagged sites, and it holds the THIRD distinct way
+    # of reading VMSEG's length -- `SRL R6,24` after `ICM R6,B'1111',VMSEG`,
+    # after DMKPGS's `SLDL` pair and everyone else's `IC Rn,VMSEG` -- plus the
+    # header offset written as a NEGATIVE literal, `L R5,=F'-16'`, which no scan
+    # for `F16` could ever have found.
+    #
+    # Its ACORETBL sites go BOTH ways and only two of four change:
+    #   00638000  S R6,ACORETBL / SLL R6,8   CORTABLE entry -> real address: ok
+    #   00825100  SRL R7,8 / AL R7,ACORETBL  real address -> entry:          ok
+    #   00721000  S R7,ACORETBL / STH / SLL  the /256 value is STORED as the PTE
+    #   01975000  LH / N / LR / A            and used as an index
+    'DMKPTR': [
+        ('00260000', ["         USING PAGPFRA,R9"]),
+        ('00338000', [
+            "         LA    R5,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R7)",
+        ]),
+        ('00343000', ["         L     R7,PAGPFRA     GET PAGE TABLE ENTRY"]),
+        ('00721000', '00723000', Deck.comment(
+            "THE /256 VALUE WAS STORED AS THE PTE AND THEN SHIFTED TO MAKE THE "
+            "REAL ADDRESS. AN ESA/390 PTE IS THAT ADDRESS, SO THE SHIFT MOVES "
+            "AHEAD OF THE STORE.") + [
+            "         S     R7,ACORETBL     GET PAGE ADDRESS/256",
+            "         SLL   R7,8           GET PAGE ADDRESS",
+            "         ST    R7,PAGPFRA     UPDATE PAGE TABLE",
+        ]),
+        ('00746000', [
+            "         L     R5,0(,R7)      TEST FOR VALID PTR",
+            "         N     R5,=A(SEGPTOM) ...",
+        ]),
+        ('00748000', [
+            "         NI    3(R7),255-SEGINVAL CLEAR INVALID FLAG",
+        ]),
+        ('00750000', ["         N     R5,=A(SEGPTOM) CLEAR COUNT FIELD"]),
+        ('00751000', [
+            "         S     R5,=A(PAGPFRA-PAGSTMP) BACK-UP TO HEADER",
+        ]),
+        ('00771000', [
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         CR    R7,R6          FOR SEGMENT 0?",
+        ]),
+        ('00827150', ["         MVC   PAGPFRA,INVLPTE INVALIDATE PTE"]),
+        ('00827550', [
+            "INVLPTE  DC    A(PAGINVW)     INVALID PTE CONSTANT",
+        ]),
+        ('01130000', ["         TM    2(R1),PAGINV   TRY TO CATCH CULPRIT"]),
+        ('01134000', '01135000', Deck.comment(
+            "MVI 0(R1),0 CLEARED BYTE 0 AND THE NI KEPT TWO FLAGS THAT SHARED "
+            "BYTE 1. PAGINV IS IN BYTE 2 AND PAGREF IN BYTE 3, SO PAGREF IS "
+            "SAVED FIRST AND THE FRAME ADDRESS IS CLEARED AS THREE BYTES.") + [
+            "         NI    3(R1),PAGREF   RETAINING THIS FLAG",
+            "         XC    0(3,R1),0(R1)  SET PTE ADDRESS -> 0,",
+            "         NI    2(R1),PAGINV   RETAINING THIS ONE",
+        ]),
+        ('01350130', [
+            "         SLL   R0,2           MULTIPLY BY 4 FOR PTE SIZE",
+        ]),
+        ('01350175', [
+            "         SL    R1,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER",
+        ]),
+        ('01362000', [
+            "         OI    PAGPFRA+3,PAGREF NON-RESIDENT PAGE TOUCHED",
+        ]),
+        ('01402000', [
+            "         L     R3,VMSEG       OWNER'S STO",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('01403000', [
+            "         L     R2,0(R3)       THE STE",
+            "         N     R2,=A(SEGPTOM) PTE FOR PAGE 0?",
+            "         CR    R9,R2          ...",
+        ]),
+        ('01434000', [
+            "         OI    PAGPFRA+2,PAGINV FLAG PAGE INVALID",
+        ]),
+        ('01677000', ["         USING PAGPFRA,R2     ADDRESSABILITY"]),
+        ('01679000', ["         TM    PAGPFRA+2,PAGINV    CATCH CULPRIT"]),
+        ('01683000', '01684000', [
+            "         NI    PAGPFRA+3,PAGREF RETAINING THIS FLAG",
+            "         XC    PAGPFRA(3),PAGPFRA CLEAR PTE ADDRESS",
+            "         NI    PAGPFRA+2,PAGINV RETAINING THIS ONE",
+        ]),
+        ('01719000', [
+            "         TM    PAGPFRA+2,PAGINV    IT MUST BE INVALID",
+        ]),
+        ('01888000', ["         USING SEGPTO,R3"]),
+        ('01891000', ["         USING PAGPFRA,R9"]),
+        ('01918000', Deck.comment(
+            "THE THIRD DISTINCT WAY OF READING VMSEG'S LENGTH IN THIS TREE: "
+            "SRL 24 AFTER AN ICM OF THE WHOLE WORD. IT IS A MASK NOW.") + [
+            "         N     R6,=A(SEGSTLM) GET SEG LGTH / 16",
+        ]),
+        ('01921000', [
+            "         L     R3,VMSEG       GET SEG ADDR",
+            "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('01930000', [
+            "         TM    SEGPTO+3,SEGINVAL SEGMENT TABLE ENTRY VALID?",
+        ]),
+        ('01933000', '01934000', [
+            "         IC    R8,SEGPTO+3    PAGE TABLE LENGTH",
+            "         N     R8,=A(SEGPTLF) RIGHT JUSTIFY",
+        ]),
+        ('01935000', [
+            "         AR    R8,R4          ORIGIN 1",
+            "         SLL   R8,4           UNITS OF 16 ENTRIES",
+        ]),
+        ('01936000', [
+            "         L     R9,SEGPTO      PAGE TABLE POINTER",
+            "         N     R9,=A(SEGPTOM) ...",
+        ]),
+        ('01937000', Deck.comment(
+            "THE HEADER OFFSET AS A NEGATIVE LITERAL. NO SCAN FOR F16 COULD "
+            "FIND IT; IT TURNED UP ONLY BY READING THE BLOCK.") + [
+            "         L     R5,=A(-(PAGPFRA-PAGSTMP)) BACK-UP TO HEADER",
+        ]),
+        ('01965000', ["         TM    PAGPFRA+2,PAGINV PAGE INVALID?"]),
+        ('01967000', ["         TM    PAGPFRA+3,PAGREF USED WHILE IN-Q?"]),
+        ('01969000', [
+            "         NI    PAGPFRA+3,255-PAGREF YES, RESET FLAG",
+        ]),
+        ('01975000', ["         L     R7,PAGPFRA     REAL PAGE ADDRESS"]),
+        ('01976000', ["         N     R7,=A(PAGPFRM) CLEAR ALL BUT ADDRESS"]),
+        ('01977000', [
+            "         LR    R1,R7          SAVE",
+            "         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('01986000', Deck.comment(
+            "R1 ALREADY HOLDS THE REAL PAGE ADDRESS.") + [
+            "*                             (SLL R1,8 REMOVED)",
+        ]),
+        ('02002400', [
+            "         SLL   R15,2          MULTIPLY BY 4 FOR PTE SIZE",
+        ]),
+        ('02002700', [
+            "         SL    R2,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER",
+        ]),
+        ('02007000', [
+            "         OI    PAGPFRA+2,PAGINV INVALIDATE PAGE TABLE ENTRY",
+        ]),
+        ('02034000', [
+            "         LA    R9,PAGPFRA+L'PAGPFRA NEXT PTE",
+        ]),
+        ('02037000', [
+            "         OI    SEGPTO+3,SEGINVAL INVALIDATE STE",
+        ]),
+        ('02041000', ["         LA    R3,SEGPTO+4    POINT TO NEXT STE"]),
+        ('02054000', [
+            "         L     R9,SEGPTO      LOAD PAGE TBL POINTER",
+            "         N     R9,=A(SEGPTOM) ...",
+        ]),
+        ('02055000', [
+            "         L     R5,=A(-(PAGPFRA-PAGSTMP)) BACK UP TO HEADER",
+        ]),
+        ('02069170', [
+            "PAGEISK  TM    PAGPFRA+2,PAGINV    PAGE INVALID",
+        ]),
+        ('02069190', '02069200', [
+            "         L     R2,PAGPFRA     LOAD PTE",
+            "*                             (SLL R2,8 REMOVED)",
+        ]),
+        ('02069210', ["         N     R2,=A(PAGPFRM) CLEAR DISPLACEMENT"]),
+        ('02069280', [
+            "INVAL    LA    R9,PAGPFRA+L'PAGPFRA POINT TO NEXT PTE",
         ]),
     ],
 
@@ -3810,6 +4122,15 @@ DATMODS = {
         ('00882000', [
             "         SL    R7,=A(PAGPFRA-PAGSTMP) BACK-UP TO HEADER",
         ]),
+        ('00894000', [
+            "         L     R1,VMSEG       LOAD ADDRESS OF SEGTABLE",
+            "         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00896000', Deck.comment(
+            "F1 WAS BEING USED AS SEGINV -- THE INVALID BIT AS A BARE 1, WITH NO "
+            "SYMBOL. THE SIXTH SITE OF THAT SHAPE.") + [
+            "         O     R2,=A(SEGINVAL) ASSURE SEGINV FLAG",
+        ]),
         ('00907000', [
             "         LR    R1,R10         PTO",
             "         N     R1,=A(SEGPTOM) WITHOUT THE FLAGS",
@@ -3930,6 +4251,10 @@ DATMODS = {
             "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
             "         OR    R15,R1         WITH THE AP PAGTABLE",
             "         ST    R15,SEGPTO     ADJUST TO ATTACHED PGT",
+        ]),
+        ('01141000', [
+            "         L     R10,VMSEG      ADDRESS OF SEGMENT TABLE",
+            "         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH",
         ]),
         ('01151000', [
             "         SRL   R1,8           LEAVE ONLY SEGMENT NUMBER",

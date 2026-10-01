@@ -1,0 +1,134 @@
+./ R 00260000          $ 00260100 100                                           
+         USING PAGPFRA,R9                                      XA0036DK         
+./ R 00338000          $ 00338100 100                                           
+         LA    R5,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R7)         XA0036DK         
+./ R 00343000          $ 00343100 100                                           
+         L     R7,PAGPFRA     GET PAGE TABLE ENTRY             XA0036DK         
+./ R 00721000 00723000 $ 00721100 100                                           
+*  THE /256 VALUE WAS STORED AS THE PTE AND THEN SHIFTED TO    XA0036DK         
+*  MAKE THE REAL ADDRESS. AN ESA/390 PTE IS THAT ADDRESS, SO   XA0036DK         
+*  THE SHIFT MOVES AHEAD OF THE STORE.                         XA0036DK         
+         S     R7,ACORETBL     GET PAGE ADDRESS/256            XA0036DK         
+         SLL   R7,8           GET PAGE ADDRESS                 XA0036DK         
+         ST    R7,PAGPFRA     UPDATE PAGE TABLE                XA0036DK         
+./ R 00746000          $ 00746100 100                                           
+         L     R5,0(,R7)      TEST FOR VALID PTR               XA0036DK         
+         N     R5,=A(SEGPTOM) ...                              XA0036DK         
+./ R 00748000          $ 00748100 100                                           
+         NI    3(R7),255-SEGINVAL CLEAR INVALID FLAG           XA0036DK         
+./ R 00750000          $ 00750100 100                                           
+         N     R5,=A(SEGPTOM) CLEAR COUNT FIELD                XA0036DK         
+./ R 00751000          $ 00751100 100                                           
+         S     R5,=A(PAGPFRA-PAGSTMP) BACK-UP TO HEADER        XA0036DK         
+./ R 00771000          $ 00771100 100                                           
+         L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         CR    R7,R6          FOR SEGMENT 0?                   XA0036DK         
+./ R 00827150          $ 00827160 010                                           
+         MVC   PAGPFRA,INVLPTE INVALIDATE PTE                  XA0036DK         
+./ R 00827550          $ 00827560 010                                           
+INVLPTE  DC    A(PAGINVW)     INVALID PTE CONSTANT             XA0036DK         
+./ R 01130000          $ 01130100 100                                           
+         TM    2(R1),PAGINV   TRY TO CATCH CULPRIT             XA0036DK         
+./ R 01134000 01135000 $ 01134100 100                                           
+*  MVI 0(R1),0 CLEARED BYTE 0 AND THE NI KEPT TWO FLAGS THAT   XA0036DK         
+*  SHARED BYTE 1. PAGINV IS IN BYTE 2 AND PAGREF IN BYTE 3,    XA0036DK         
+*  SO PAGREF IS SAVED FIRST AND THE FRAME ADDRESS IS CLEARED   XA0036DK         
+*  AS THREE BYTES.                                             XA0036DK         
+         NI    3(R1),PAGREF   RETAINING THIS FLAG              XA0036DK         
+         XC    0(3,R1),0(R1)  SET PTE ADDRESS -> 0,            XA0036DK         
+         NI    2(R1),PAGINV   RETAINING THIS ONE               XA0036DK         
+./ R 01350130          $ 01350140 010                                           
+         SLL   R0,2           MULTIPLY BY 4 FOR PTE SIZE       XA0036DK         
+./ R 01350175          $ 01350185 010                                           
+         SL    R1,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER        XA0036DK         
+./ R 01362000          $ 01362100 100                                           
+         OI    PAGPFRA+3,PAGREF NON-RESIDENT PAGE TOUCHED      XA0036DK         
+./ R 01402000          $ 01402100 100                                           
+         L     R3,VMSEG       OWNER'S STO                      XA0036DK         
+         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 01403000          $ 01403100 100                                           
+         L     R2,0(R3)       THE STE                          XA0036DK         
+         N     R2,=A(SEGPTOM) PTE FOR PAGE 0?                  XA0036DK         
+         CR    R9,R2          ...                              XA0036DK         
+./ R 01434000          $ 01434100 100                                           
+         OI    PAGPFRA+2,PAGINV FLAG PAGE INVALID              XA0036DK         
+./ R 01677000          $ 01677100 100                                           
+         USING PAGPFRA,R2     ADDRESSABILITY                   XA0036DK         
+./ R 01679000          $ 01679100 100                                           
+         TM    PAGPFRA+2,PAGINV    CATCH CULPRIT               XA0036DK         
+./ R 01683000 01684000 $ 01683100 100                                           
+         NI    PAGPFRA+3,PAGREF RETAINING THIS FLAG            XA0036DK         
+         XC    PAGPFRA(3),PAGPFRA CLEAR PTE ADDRESS            XA0036DK         
+         NI    PAGPFRA+2,PAGINV RETAINING THIS ONE             XA0036DK         
+./ R 01719000          $ 01719100 100                                           
+         TM    PAGPFRA+2,PAGINV    IT MUST BE INVALID          XA0036DK         
+./ R 01888000          $ 01888100 100                                           
+         USING SEGPTO,R3                                       XA0036DK         
+./ R 01891000          $ 01891100 100                                           
+         USING PAGPFRA,R9                                      XA0036DK         
+./ R 01918000          $ 01918100 100                                           
+*  THE THIRD DISTINCT WAY OF READING VMSEG'S LENGTH IN THIS    XA0036DK         
+*  TREE: SRL 24 AFTER AN ICM OF THE WHOLE WORD. IT IS A MASK   XA0036DK         
+*  NOW.                                                        XA0036DK         
+         N     R6,=A(SEGSTLM) GET SEG LGTH / 16                XA0036DK         
+./ R 01921000          $ 01921100 100                                           
+         L     R3,VMSEG       GET SEG ADDR                     XA0036DK         
+         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 01930000          $ 01930100 100                                           
+         TM    SEGPTO+3,SEGINVAL SEGMENT TABLE ENTRY VALID?    XA0036DK         
+./ R 01933000 01934000 $ 01933100 100                                           
+         IC    R8,SEGPTO+3    PAGE TABLE LENGTH                XA0036DK         
+         N     R8,=A(SEGPTLF) RIGHT JUSTIFY                    XA0036DK         
+./ R 01935000          $ 01935100 100                                           
+         AR    R8,R4          ORIGIN 1                         XA0036DK         
+         SLL   R8,4           UNITS OF 16 ENTRIES              XA0036DK         
+./ R 01936000          $ 01936100 100                                           
+         L     R9,SEGPTO      PAGE TABLE POINTER               XA0036DK         
+         N     R9,=A(SEGPTOM) ...                              XA0036DK         
+./ R 01937000          $ 01937100 100                                           
+*  THE HEADER OFFSET AS A NEGATIVE LITERAL. NO SCAN FOR F16    XA0036DK         
+*  COULD FIND IT; IT TURNED UP ONLY BY READING THE BLOCK.      XA0036DK         
+         L     R5,=A(-(PAGPFRA-PAGSTMP)) BACK-UP TO HEADER     XA0036DK         
+./ R 01965000          $ 01965100 100                                           
+         TM    PAGPFRA+2,PAGINV PAGE INVALID?                  XA0036DK         
+./ R 01967000          $ 01967100 100                                           
+         TM    PAGPFRA+3,PAGREF USED WHILE IN-Q?               XA0036DK         
+./ R 01969000          $ 01969100 100                                           
+         NI    PAGPFRA+3,255-PAGREF YES, RESET FLAG            XA0036DK         
+./ R 01975000          $ 01975100 100                                           
+         L     R7,PAGPFRA     REAL PAGE ADDRESS                XA0036DK         
+./ R 01976000          $ 01976100 100                                           
+         N     R7,=A(PAGPFRM) CLEAR ALL BUT ADDRESS            XA0036DK         
+./ R 01977000          $ 01977100 100                                           
+         LR    R1,R7          SAVE                             XA0036DK         
+         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 01986000          $ 01986100 100                                           
+*  R1 ALREADY HOLDS THE REAL PAGE ADDRESS.                     XA0036DK         
+*                             (SLL R1,8 REMOVED)               XA0036DK         
+./ R 02002400          $ 02002410 010                                           
+         SLL   R15,2          MULTIPLY BY 4 FOR PTE SIZE       XA0036DK         
+./ R 02002700          $ 02002710 010                                           
+         SL    R2,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER        XA0036DK         
+./ R 02007000          $ 02007100 100                                           
+         OI    PAGPFRA+2,PAGINV INVALIDATE PAGE TABLE ENTRY    XA0036DK         
+./ R 02034000          $ 02034100 100                                           
+         LA    R9,PAGPFRA+L'PAGPFRA NEXT PTE                   XA0036DK         
+./ R 02037000          $ 02037100 100                                           
+         OI    SEGPTO+3,SEGINVAL INVALIDATE STE                XA0036DK         
+./ R 02041000          $ 02041100 100                                           
+         LA    R3,SEGPTO+4    POINT TO NEXT STE                XA0036DK         
+./ R 02054000          $ 02054100 100                                           
+         L     R9,SEGPTO      LOAD PAGE TBL POINTER            XA0036DK         
+         N     R9,=A(SEGPTOM) ...                              XA0036DK         
+./ R 02055000          $ 02055100 100                                           
+         L     R5,=A(-(PAGPFRA-PAGSTMP)) BACK UP TO HEADER     XA0036DK         
+./ R 02069170          $ 02069171 001                                           
+PAGEISK  TM    PAGPFRA+2,PAGINV    PAGE INVALID                XA0036DK         
+./ R 02069190 02069200 $ 02069191 001                                           
+         L     R2,PAGPFRA     LOAD PTE                         XA0036DK         
+*                             (SLL R2,8 REMOVED)               XA0036DK         
+./ R 02069210          $ 02069211 001                                           
+         N     R2,=A(PAGPFRM) CLEAR DISPLACEMENT               XA0036DK         
+./ R 02069280          $ 02069281 001                                           
+INVAL    LA    R9,PAGPFRA+L'PAGPFRA POINT TO NEXT PTE          XA0036DK         

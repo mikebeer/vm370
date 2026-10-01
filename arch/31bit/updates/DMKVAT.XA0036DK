@@ -1,0 +1,18 @@
+./ R 00232180          $ 00232181 001                                           
+         IC    R4,VMSEG+3     GET SIZE OF SEGMENT TABLE        XA0036DK         
+         N     R4,=A(SEGSTLM) WITHOUT THE S BIT                XA0036DK         
+./ R 00232240          $ 00232241 001                                           
+         L     R5,VMSEG       GET SEGMENT TABLE                XA0036DK         
+         N     R5,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 00232300          $ 00232301 001                                           
+         L     R6,0(R5)       IS SEG INVALID OR MIGRATED       XA0036DK         
+         N     R6,=A(SEGPTOM) ...                              XA0036DK         
+         BZ    SKPCHG         NO SEGMENT - LOOK AT NEXT        XA0036DK         
+./ R 00232360          $ 00232361 001                                           
+         SL    R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00232520          $ 00232521 001                                           
+         SLL   R1,20          FORM VIRTUAL ADDRESS             XA0036DK         
+./ R 01044100          $ 01044110 010                                           
+SEGSIZE  DC    X'00100000'                                     XA0036DK         
+./ R 01044200          $ 01044300 100                                           
+CLRBITS  DC    A(SEGPTOM)     MASK TO CLEAR FLAG BITS - STE    XA0036DK         

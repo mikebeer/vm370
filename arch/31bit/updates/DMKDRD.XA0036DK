@@ -1,0 +1,7 @@
+./ R 01090000          $ 01090100 100                                           
+         L     R10,VMSEG-VMBLOK(,R10)   SYSTEM ADDR SPACE      XA0036DK         
+         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH              XA0036DK         
+./ R 01093000          $ 01093100 100                                           
+         L     R8,=A(X'00F00000') ...TO GET THE SEGMENT NO.    XA0036DK         
+./ R 01096000          $ 01096100 100                                           
+         SRL   R8,18(0)       CONVERT TO SEGTABLE INDEX        XA0036DK         

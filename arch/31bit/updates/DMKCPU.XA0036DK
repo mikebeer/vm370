@@ -1,0 +1,4 @@
+./ R 00365000          $ 00365100 100                                           
+         N     R7,=A(SEGPTOM) LEAVE PTO ADDRESS ONLY           XA0036DK         
+./ R 00366000          $ 00366100 100                                           
+         SL    R7,=A(PAGPFRA-PAGSTMP) BACK UP TO HEADER        XA0036DK         

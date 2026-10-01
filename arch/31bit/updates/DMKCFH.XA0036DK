@@ -5,3 +5,13 @@
          SRDL  R0,20          SEGMENT TO LOW ORDER OF R0,      XA0036DK         
 ./ R 00339000          $ 00339100 100                                           
          TM    3(R2),SEGINVAL VALID SEGMENT                    XA0036DK         
+./ R 00344000          $ 00344100 100                                           
+         L     R2,0(,R2)      ADDRESS OF PAGTABLE              XA0036DK         
+         N     R2,=A(SEGPTOM) WITHOUT THE FLAGS                XA0036DK         
+./ R 00345000          $ 00345100 100                                           
+*  AFTER SRDL 20 THE PAGE-WITHIN-SEGMENT FIELD IS R1 BITS      XA0036DK         
+*  0-7, NOT 0-3, SO IT RIGHT-JUSTIFIES WITH 24 RATHER THAN     XA0036DK         
+*  28.                                                         XA0036DK         
+         SRL   R1,24          SHIFT PAGE TO LOWORDER OF R1     XA0036DK         
+./ R 00347000          $ 00347100 100                                           
+         LA    R2,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R2)         XA0036DK         

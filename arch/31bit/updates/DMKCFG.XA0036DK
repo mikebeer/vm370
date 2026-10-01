@@ -38,6 +38,13 @@
          N     R7,=A(SEGPTOM) WITHOUT THE LENGTH               XA0036DK         
 ./ R 00882000          $ 00882100 100                                           
          SL    R7,=A(PAGPFRA-PAGSTMP) BACK-UP TO HEADER        XA0036DK         
+./ R 00894000          $ 00894100 100                                           
+         L     R1,VMSEG       LOAD ADDRESS OF SEGTABLE         XA0036DK         
+         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 00896000          $ 00896100 100                                           
+*  F1 WAS BEING USED AS SEGINV -- THE INVALID BIT AS A BARE    XA0036DK         
+*  1, WITH NO SYMBOL. THE SIXTH SITE OF THAT SHAPE.            XA0036DK         
+         O     R2,=A(SEGINVAL) ASSURE SEGINV FLAG              XA0036DK         
 ./ R 00907000          $ 00907100 100                                           
          LR    R1,R10         PTO                              XA0036DK         
          N     R1,=A(SEGPTOM) WITHOUT THE FLAGS                XA0036DK         
@@ -136,6 +143,9 @@
          N     R15,=A(SEGFLGM) KEEP I, C AND PTL               XA0036DK         
          OR    R15,R1         WITH THE AP PAGTABLE             XA0036DK         
          ST    R15,SEGPTO     ADJUST TO ATTACHED PGT           XA0036DK         
+./ R 01141000          $ 01141100 100                                           
+         L     R10,VMSEG      ADDRESS OF SEGMENT TABLE         XA0036DK         
+         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH              XA0036DK         
 ./ R 01151000          $ 01151100 100                                           
          SRL   R1,8           LEAVE ONLY SEGMENT NUMBER        XA0036DK         
 ./ R 01154200          $ 01154300 100                                           

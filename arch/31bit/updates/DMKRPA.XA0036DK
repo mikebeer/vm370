@@ -1,5 +1,17 @@
 ./ R 00122000          $ 00122100 100                                           
          USING PAGPFRA,R9                                      XA0036DK         
+./ R 00157000          $ 00157100 100                                           
+*  THE PAGE-WITHIN-SEGMENT FIELD IS EIGHT BITS AT 12-19 NOW,   XA0036DK         
+*  AND A PTE STRIDE IS 4, SO THE MASK WIDENS AND THE SHIFT     XA0036DK         
+*  THAT MADE PAGE*2 MAKES PAGE*4. THE LATER SLL 2 THAT MADE    XA0036DK         
+*  PAGE*8 BECOMES SLL 1.                                       XA0036DK         
+         N     R1,=A(X'FF000') CLEAR SEG AND DISPLACEMENT      XA0036DK         
+./ R 00158000          $ 00158100 100                                           
+         SRL   R1,10          AND GET PAGE NUMBER TIMES 4      XA0036DK         
+./ R 00160000          $ 00160100 100                                           
+         S     R2,=A(PAGPFRA-PAGSWP) TO SWPTABLE POINTER       XA0036DK         
+./ R 00162000          $ 00162100 100                                           
+         SLL   R1,1           GET PAGE NUMBER TIMES 8          XA0036DK         
 ./ R 00174000          $ 00174100 100                                           
 *  PAGINVAL AND PAGREF SHARED BYTE 1. NOW I IS BIT 21, IN      XA0036DK         
 *  BYTE 2, AND PAGREF IS IN BYTE 3, WHERE THE HARDWARE         XA0036DK         
