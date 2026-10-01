@@ -59,6 +59,7 @@ XA29 = 'XA0029DK'
 XA30 = 'XA0030DK'
 XA31 = 'XA0031DK'
 XA32 = 'XA0032DK'
+XA33 = 'XA0033DK'
 
 
 def psa():
@@ -2704,6 +2705,167 @@ def rdevice():
     return d
 
 
+
+def corecopy():
+    """STE-DESIGN step 1: the DAT table DSECTs, with every changed name CHANGED.
+
+    The renames are the design, not cosmetics.  `STE-DESIGN.md` originally said
+    this step changed nothing's behaviour -- *"nothing executes differently yet;
+    this makes the symbols mean the right thing"* -- and `tools/dattab.py` showed
+    that to be wrong.  CP reaches the page-table entry with **13 `LH` and 5
+    `STH`** instructions, and `LH` on a fullword field is legal assembler: change
+    the DSECT alone and eighteen sites read the wrong two bytes and **assemble
+    clean**.  That is `I-116`'s shape with 238 lines to hide in instead of one.
+
+    So every symbol whose meaning moves is RENAMED WITH NO ALIAS, and the
+    assembler becomes the checklist: an unconverted site fails with
+    `IFO188 UNDEFINED SYMBOL` instead of quietly working on the wrong bytes.
+    This is `19-M1-STEP2`'s reasoning reused -- `INTTIO` was renamed to `IOSCHNO`
+    with no alias precisely because *"an alias would have let all 21 references
+    keep assembling and silently compare the wrong thing."*
+
+    Renaming the containers alone would not have been enough.  Seventeen sites
+    reach the flags by explicit displacement and never name the field:
+
+        TM    1(R1),PAGINVAL TRY TO CATCH CULPRIT              DMKPTR
+        TM    3(R2),SEGINV   SEGMENT OK?                       DMKCFG
+        N     R10,=AL4(X'FFFFFFFF'-SEGINV) CLEAR INVALID FLAG  DMKCFG
+
+    The last two do arithmetic on the flag VALUE in a register, so only renaming
+    the flag itself reaches them.
+
+    What is renamed, and what deliberately is not:
+
+      `SEGPAGE`  -> `SEGPTO`    the architected name, and its byte meanings move
+      `SEGPLEN`  -> `SEGPTL`    bits 0-3 -> 28-31; the VALUE is unchanged, 15 for
+                                a full table, because ESA/390's PTL counts in
+                                units of 16 entries and S/370's counted pages
+      `SEGINV`   -> `SEGINVAL`  X'01' (bit 31, inside PTL) -> X'20' (bit 26)
+      `PAGCORE`  -> `PAGPFRA`   halfword -> FULLWORD, the architected name
+      `PAGINVAL` -> `PAGINV`    X'08' at +1 -> X'04' at +2 (bit 21)
+
+      `SEGENQ`   kept.  Its one live site names `SEGPTO`, so the rename reaches
+                 it, and its bit position need not move: it is read only when the
+                 pointer is zero -- that is, only with `I` set -- and with `I` set
+                 the hardware does not interpret bit 25.
+      `PAGREF`   kept, for the same reason: all four sites name `PAGPFRA` or
+                 `PAGINV`.  Its value stays X'01' and it moves to `PAGPFRA+3`,
+                 where it is SAFE: **bits 24-31 of an ESA/390 PTE are ignored by
+                 the hardware**, so CP's private flag needs no new home.
+      `PAGTSWP`, `PAGBMP`  kept.  They are derived EQUs, so changing 16 to 256
+                 propagates correctly to every user -- and any `MVC` using them
+                 as a length now exceeds 256 bytes and fails loudly by itself.
+
+    `SEGMIG` is DELETED rather than converted.  It is `X'10'`, which is the
+    ESA/390 **C (common segment)** bit, and `WHAT-31BIT-NEEDS.md` lists that
+    collision as undesigned item 2.  Half of that item does not exist:
+    **`SEGMIG` is defined here and referenced nowhere else in the tree** -- not in
+    a module, not in a COPY, not in a MACRO.  Deleting it is the honest record of
+    that, and if something ever needs it the absence will say so.
+    """
+    d = Deck(XA33)
+    src = SRC + '/CORE.COPY'
+    def one(seq, lines, inc=10):
+        d.replace(seq, first=str(int(seq) + inc).zfill(8), inc=inc,
+                  limit=next_seq(src, seq), lines=lines)
+
+    one('00108000', Deck.comment(
+        "ESA/390 SEGMENT TABLE ENTRY. BIT 0 MUST BE ZERO OR EVERY TRANSLATION "
+        "TAKES A SPECIFICATION EXCEPTION -- WHICH IS WHAT PRG018 WAS. PTO IS "
+        "BITS 1-25 WITH SIX ZEROS APPENDED, SO PAGE TABLES ARE 64-BYTE ALIGNED. "
+        "I IS BIT 26, C IS BIT 27, PTL IS BITS 28-31. RENAMED FROM SEGPAGE WITH "
+        "NO ALIAS SO EVERY SITE MUST BE VISITED. I-121.") + [
+        "SEGPTO   DS    1F             PAGE TABLE ORIGIN, BITS 1-25",
+    ])
+
+    one('00111000', [
+        "         ORG   SEGPTO+3       THE FLAG BYTE IS BYTE 3 NOW",
+    ])
+
+    one('00112000', Deck.comment(
+        "BITS 24-27 ARE THE TWO LOW PTO BITS PLUS I AND C, SO PTL CANNOT LIVE "
+        "AT BITS 0-3 ANY MORE. THE VALUE IS UNCHANGED -- 15 FOR A FULL TABLE -- "
+        "BECAUSE ESA/390 COUNTS PTL IN UNITS OF 16 ENTRIES WHERE S/370 COUNTED "
+        "PAGES, AND 256/16-1 IS ALSO 15.") + [
+        "         DS    BL.4           BITS 24-27: PTO LOW, I, C",
+        "SEGPTL   DS    BL.4       S*1 BITS 28-31: PAGE TABLE LEN",
+    ])
+
+    one('00114100', ["* BITS DEFINED IN SEGPTO+3"])
+
+    one('00114200', Deck.comment(
+        "THE ARCHITECTED SEGMENT-INVALID BIT IS 26, NOT 31. X'01' WAS INSIDE "
+        "WHAT IS NOW PTL. RENAMED FROM SEGINV: 14 OF ITS 31 SITES REACH IT BY "
+        "DISPLACEMENT OR BY ARITHMETIC ON THE VALUE AND NEVER NAME SEGPAGE, SO "
+        "RENAMING THE CONTAINER ALONE WOULD HAVE MISSED THEM.") + [
+        "SEGINVAL EQU   X'20'          SEGMENT INVALID -- BIT 26",
+    ])
+
+    one('00114300', Deck.comment(
+        "SEGMIG IS GONE. IT WAS X'10', WHICH IS THE ESA/390 COMMON-SEGMENT BIT, "
+        "AND WHAT-31BIT-NEEDS LISTS THAT COLLISION AS UNDESIGNED ITEM 2. IT IS "
+        "NOT A COLLISION: SEGMIG WAS DEFINED HERE AND REFERENCED NOWHERE ELSE "
+        "IN THE TREE. DELETED RATHER THAN MOVED, SO THAT IF ANYTHING EVER WANTS "
+        "IT THE ABSENCE SAYS SO.") + [
+        "*                             (SEGMIG DELETED -- SEE ABOVE)",
+    ])
+
+    one('00114400', Deck.comment(
+        "SEGENQ KEEPS BIT 25, WHICH IS THE LOWEST PTO BIT. THAT IS SAFE AND NOT "
+        "AN OVERSIGHT: IT IS READ ONLY WHEN THE POINTER IS ZERO, SO ONLY WITH I "
+        "SET, AND WITH I SET THE HARDWARE DOES NOT INTERPRET PTO AT ALL. PROVED "
+        "BY EXECUTION: X'00000070' IS SEGMENT-INVALID, X'00000050' IS A VALID "
+        "COMMON SEGMENT WITH PTO X'40'.") + [
+        "SEGENQ   EQU   X'40'          ENQUEUED -- ONLY WITH I SET",
+    ])
+
+    one('00139000', Deck.comment(
+        "ESA/390 PAGE TABLE ENTRY -- A FULLWORD, NOT A HALFWORD. PFRA IS BITS "
+        "1-19, I IS BIT 21, P IS BIT 22, AND BITS 0, 20 AND 23 MUST BE ZERO. "
+        "RENAMED FROM PAGCORE WITH NO ALIAS BECAUSE 13 LH AND 5 STH SITES WOULD "
+        "OTHERWISE ASSEMBLE CLEAN AND READ THE WRONG TWO BYTES. I-121.") + [
+        "PAGPFRA  DS    1F             PAGE FRAME REAL ADDR, BITS 1-19",
+    ])
+
+    one('00141000', ["*        BITS DEFINED IN PAGPFRA+2"])
+
+    one('00142000', Deck.comment(
+        "PAGE INVALID IS BIT 21, SO X'04' IN BYTE 2. RENAMED FROM PAGINVAL: TWO "
+        "OF ITS SITES REACH IT AS 1(R1) AND NEVER NAME THE FIELD.") + [
+        "PAGINV   EQU   X'04'          PAGE INVALID -- BIT 21",
+    ])
+
+    one('00143000', Deck.comment(
+        "PAGREF KEEPS ITS NAME AND ITS VALUE AND MOVES TO PAGPFRA+3, WHICH IS "
+        "SAFE: BITS 24-31 OF AN ESA/390 PTE ARE IGNORED BY THE HARDWARE, SO CP'S "
+        "PRIVATE FLAG NEEDS NO NEW HOME. ALL FOUR SITES NAME PAGPFRA OR PAGINV, "
+        "SO THEY ARE REACHED BY THOSE RENAMES.") + [
+        "PAGREF   EQU   X'01'          REFERENCED -- AT PAGPFRA+3",
+    ])
+
+    d.replace('00143300', '00143400', first='00143310', inc=10,
+              limit=next_seq(src, '00143400'),
+              lines=Deck.comment(
+        "A 1 MB SEGMENT HAS 256 PAGES, NOT 16, AND EACH ENTRY IS NOW A FULLWORD, "
+        "SO A FULL PAGE TABLE IS 16+256*4 = 1040 BYTES INSTEAD OF 16+16*2 = 48. "
+        "DERIVED, SO EVERY USER GETS THE NEW VALUE -- AND ANY MVC USING IT AS A "
+        "LENGTH NOW EXCEEDS 256 BYTES AND FAILS LOUDLY BY ITSELF.") + [
+        "PAGTSWP  EQU   (PAGPFRA-PAGSTMP+256*L'PAGPFRA) LENGTH OF A",
+        "*                            FULL 256 ENTRY PAGE TABLE",
+    ])
+
+    one('00143500', Deck.comment(
+        "THE SWAP TABLE IS ONE ENTRY PER PAGE TOO, SO IT GROWS 16 TO 256 WITH "
+        "THE PAGE TABLE. SWPTABLE IS CP-PRIVATE, SO ONLY THE COUNT CHANGES. THE "
+        "ENTRY SIZE BECOMES ITS OWN EQU BECAUSE THE ONE-LINE FORM IS 63 COLUMNS "
+        "AND A CARD HOLDS 61 -- THE GENERATOR REFUSED IT RATHER THAN TRUNCATING "
+        "IT INTO THE IDENTIFIER FIELD, WHICH IS WHAT R-04 IS FOR.") + [
+        "PAGSWPE  EQU   (SWPCODE-SWPFLAG+1) ONE SWAP ENTRY",
+        "PAGBMP   EQU   (PAGTSWP+(SWPFLAG-SWPVM)+256*PAGSWPE+8)",
+    ])
+    return d
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -2838,7 +3000,8 @@ def main():
         for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
                           ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
                           ('XAOPS', 'MACRO'), ('XAIO', 'MACRO'),
-                          ('XAIOB', 'MACRO'), ('RDEVICE', 'MACRO')):
+                          ('XAIOB', 'MACRO'), ('RDEVICE', 'MACRO'),
+                          ('CORE', 'COPY')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
@@ -2867,6 +3030,13 @@ def main():
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
                  'OK' if not bad else 'BAD ' + repr(bad[:3])))
         ok = ok and not bad
+    cc = corecopy()
+    n = cc.write(os.path.join(HERE, 'CORE.%s' % XA33))
+    aux(os.path.join(HERE, 'CORE.AUXLCL'),
+        [(XA33, 'ESA/390 DAT TABLES: STE AND PTE, RENAMED WITH NO ALIAS')])
+    print('%-8s %-9s %3d cards  %s' % ('CORE', XA33, n,
+          'OK' if not verify(os.path.join(HERE, 'CORE.%s' % XA33)) else 'BAD'))
+
     r = rdevice()
     n = r.write(os.path.join(HERE, 'RDEVICE.%s' % XA32))
     aux(os.path.join(HERE, 'RDEVICE.AUXLCL'),
