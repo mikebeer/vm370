@@ -66,12 +66,26 @@ def read(path):
 
 
 def expected(ce):
-    """Modules the assembly pass covers, from the newest COMPLETE earlier log."""
+    """Modules the assembly pass covers, from a log that actually FINISHED.
+
+    The first version took the largest `ASMBLING` count across every archived
+    log and reported **198**, from `f1-20261001-111951.log` -- a log that read
+    70 of 102 card files and never completed.  The trustworthy figure is 192,
+    from the build that finished.  A count derived from an incomplete artifact,
+    reported as fact three times running, by a tool written the same morning to
+    stop exactly that.  `I-147`.
+
+    A log counts as finished if it reached the shutdown its script asked for.
+    """
     best = (0, None)
-    for p in sorted(glob.glob(os.path.join(ce, 'logs', '*.log'))):
-        s, _, _, _ = read(p)
-        if len(s) > best[0]:
-            best = (len(s), os.path.basename(p))
+    for path in sorted(glob.glob(os.path.join(ce, 'logs', '*.log'))):
+        text = open(path, errors='replace').read().upper()
+        if 'CP SHUTDOWN' not in text and 'SYSTEM SHUTDOWN' not in text:
+            continue
+        started, _, _, _ = read(path)
+        started = set(started)
+        if len(started) > best[0]:
+            best = (len(started), os.path.basename(path))
     return best
 
 
@@ -91,16 +105,30 @@ def main():
     got_cards = sum(1 for l in open(log, errors='replace') if 'readcard' in l)
 
     started, clean, deck, bad = read(log)
+    # DISTINCT modules.  A module can appear twice -- VMFASM assembles some a
+    # second time -- and counting ASMBLING lines gave 192 for a run of 186, and
+    # 198 for another run of the same 186.  I reported 198 as the expected total
+    # three times, then 192 as the correction, and both were occurrences rather
+    # than modules.  I-147.
+    started = sorted(set(started))
     ok = sorted(clean & deck - set(bad))
     defect = sorted(bad)
     missing = sorted(set(started) - deck)
+    # Anything left over gets its OWN name rather than vanishing.  The first
+    # version's four categories summed to 185 of 186 and said nothing about the
+    # one left out -- DMKRIO, which emits only `IFO197 *** MNOTE ***` (I-34's
+    # 3375/3390 notes), so it is neither `NO STATEMENTS FLAGGED` nor defective.
+    # A category that silently absorbs a module is how a real failure hides.
+    mnote = sorted(set(started) - set(ok) - set(defect) - set(missing))
     exp, expsrc = expected(ce)
     notrun = max(0, exp - len(started)) if exp else None
 
     print('cards staged  %d / %d' % (got_cards, want_cards))
-    print('modules  OK %-4d  DEFECT %-4d  MISSING %-4d  NOT RUN %s'
-          % (len(ok), len(defect), len(missing),
+    print('modules  OK %-4d  DEFECT %-4d  MISSING %-4d  MNOTE-ONLY %-3d  NOT RUN %s'
+          % (len(ok), len(defect), len(missing), len(mnote),
              '%d' % notrun if notrun is not None else '?'))
+    assert len(ok) + len(defect) + len(missing) + len(mnote) == len(started), \
+        'the categories do not sum to the modules started'
     if exp:
         print('              (%d expected, from %s)' % (exp, expsrc))
     for m in defect:

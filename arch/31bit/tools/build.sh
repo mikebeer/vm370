@@ -180,12 +180,41 @@ quick)
   snap=$2; shift 2
   arch S/370
   restore "$snap" || exit 1
-  sp=""; for m in "$@"; do
+  # Every COPY MEMBER goes in, always, whatever modules were named.  A member
+  # is not a module -- it is assembled into the ones that copy it -- so naming
+  # modules alone stages their decks against the PREVIOUS version of CORE and
+  # EQU, and the result is a nucleus half-built from two different DSECTs.
+  # The members are cheap: six files against a hundred and four.  I-146.
+  sp=""
+  for f in $U/*.XA*DK; do b=$(basename $f); m=${b%%.*}
+    test -f /home/claude/vmce/source/cp/$m.ASSEMBLE && continue
+    sp="$sp read:$m:${b#*.} read:$m:AUXLCL"; done
+  for m in XABLOKS:COPY XAOPS:MACRO XAIO:MACRO XAIOB:MACRO; do
+    sp="$sp read:${m%%:*}:${m#*:}"; done
+  for m in "$@"; do
     dk=$(cd $U && ls $m.XA*DK 2>/dev/null | head -1)
     test -n "$dk" || { echo "### no deck for $m"; exit 1; }
     sp="$sp $m:${dk#*.}"; done
   mk q1 $sp || exit 1
   run q1 || exit 1; chk q1 S/370 || exit 1; asmchk q1 || exit 1
+  ;;
+spec)
+  # The minimal build: restore, stage ONLY the inputs that changed since the
+  # snapshot, and reassemble only the modules that need it.  `full` stages 104
+  # files and assembles 186 modules in about seventy minutes, and this container
+  # is reclaimed out from under a run that long -- three times on 1 October, with
+  # files surviving and processes not (`uptime` said 39 minutes while the day's
+  # work was five hours old).  So the fix is not to protect the long run, it is
+  # not to need one.  `quick` cannot express this because it requires every named
+  # module to HAVE a deck, and 38 of these need reassembly only because CORE's
+  # DSECT moved under them.  I-146.
+  w || exit 1
+  snap=$2; shift 2
+  arch S/370
+  ALLOW_STALE=yes restore "$snap" || exit 1
+  mk q1 "$@" || exit 1
+  run q1 || exit 1; chk q1 S/370 || exit 1; asmchk q1 || exit 1
+  echo "--- clean: $(grep -c 'NO STATEMENTS FLAGGED' $C/q1.log)"
   ;;
 write)
   w || exit 1
