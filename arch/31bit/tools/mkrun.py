@@ -257,12 +257,23 @@ def main():
                     f.write(card(line.rstrip('\n'), ' in ' + src))
             # devinit then START: the reader must be re-started after each
             # file is attached, per CE's own operating practice.
+            # 8 + 14 + 20 was 42 seconds of waiting per file to cover work the
+            # log shows completing in 0.01 seconds -- `Ready; T=0.01/0.01`,
+            # including the readcard of a 272-card deck.  Over 49 files that is
+            # 34 minutes of pause, and this container is reclaimed at every turn
+            # boundary (I-146), so the pauses were the reason a build could not
+            # finish inside one call.  Cut to a third.  This is only safe because
+            # `incomplete()` now counts `HAS BEEN READ` against the readcards
+            # issued: a pause that turns out too short fails loudly instead of
+            # applying a TRUNCATED update deck, which is far worse than a slow
+            # build.  The vmfasm pauses are NOT touched -- those cover real work
+            # and the 30-to-70 correction above is a scar.  I-148.
             rc.append('devinit 000c io/%s.txt ascii eof trunc\n'
-                      'pause 8\n'
+                      'pause 3\n'
                       '/cp start 00c\n'
-                      'pause 14\n'
+                      'pause 5\n'
                       '/readcard %s %s a\n'
-                      'pause 20\n' % (io, mod.lower(), ft.lower()))
+                      'pause 7\n' % (io, mod.lower(), ft.lower()))
             n += 1
 
     # CPACC is VMSETUP CP; VMFMAC and VMFASM both depend on it, so it comes
@@ -442,6 +453,16 @@ def incomplete(ce, run):
             got_asm += 1
         if 'CP SHUTDOWN' in line.upper() or 'SYSTEM SHUTDOWN' in line.upper():
             shut = True
+    # Every readcard must have produced a `RDR FILE nnnn HAS BEEN READ`.  With
+    # the pauses cut, this is what stands between a fast build and a silently
+    # truncated deck.
+    read_ok = sum(1 for line in open(lg, errors='replace')
+                  if 'HAS BEEN READ' in line)
+    if got_cards and read_ok < got_cards:
+        return ('%d readcard(s) were issued and only %d file(s) reported HAS '
+                'BEEN READ -- a card file was not fully read, so a deck may '
+                'have been applied truncated; raise the pauses'
+                % (got_cards, read_ok))
     if got_cards < want_cards:
         return ('the script asked for %d card files and the log shows %d -- the '
                 'run did not finish, so every check after this one would be '

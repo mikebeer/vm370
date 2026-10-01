@@ -216,6 +216,32 @@ spec)
   run q1 || exit 1; chk q1 S/370 || exit 1; asmchk q1 || exit 1
   echo "--- clean: $(grep -c 'NO STATEMENTS FLAGGED' $C/q1.log)"
   ;;
+reset)
+  # Restore the snapshot and nothing else, so a sliced build has one known
+  # baseline and the slices that follow do not rewind it.  I-148.
+  arch S/370
+  ALLOW_STALE=yes restore "${2:-SNAP-2}" || exit 1
+  ;;
+stage)
+  # One SLICE of staging, no restore, so progress accumulates on the disk.
+  # The container is reclaimed at every turn boundary (`I-146`), so nothing
+  # survives outside a single foreground call: ~10 minutes, less a 2-minute CMS
+  # boot, at ~28s per card file, is about 13 files.  Four slices plus an
+  # assembly run beats one 70-minute build that cannot finish.  I-148.
+  shift
+  arch S/370
+  mk s1 "$@" || exit 1
+  run s1 || exit 1; chk s1 S/370 || exit 1
+  echo "--- slice staged $# spec(s)"
+  ;;
+asmonly)
+  # The assembly pass over modules already on the disk, no restore, no staging.
+  shift
+  arch S/370
+  sp=""; for m in "$@"; do sp="$sp asm:$m"; done
+  mk a1 $sp || exit 1
+  run a1 || exit 1; chk a1 S/370 || exit 1; asmchk a1 || exit 1
+  ;;
 write)
   w || exit 1
   arch S/370
