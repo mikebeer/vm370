@@ -22,7 +22,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
-from mkdeck import Deck, aux, verify, next_seq    # noqa: E402
+from mkdeck import Deck, aux, auxcheck, verify, next_seq    # noqa: E402
 
 # The resolved tree the anchors are measured against.  R-23.
 SRC = '/home/claude/vmce/source/cp'
@@ -3296,6 +3296,132 @@ DATMODS = {
         ]),
     ],
 
+    # The module with the clearest statement in the tree of what a PTE is, and a
+    # hard-coded copy of PAGBMP.  `SLL R2,8  FORM REAL ADDRESS` says that a
+    # masked S/370 PTE times 256 IS the frame's real address, so the shift is
+    # REMOVED on that path while an SRL 8 is ADDED on the ACORETBL path -- from
+    # one load, in opposite directions, four lines apart.
+    'DMKVMA': [
+        ('00133000', ["         USING PAGPFRA,R6"]),
+        ('00196000', [
+            "         TM    SEGPTO+3,SEGINVAL SEGMENT INVALID",
+        ]),
+        ('00199000', Deck.comment(
+            "PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS 16 ENTRIES AT A TIME.") + [
+            "         IC    R4,SEGPTO+3    NO. OF PAGES IN THIS SEG",
+            "         N     R4,=A(SEGPTLF) KEEP ONLY PTL",
+            "         LA    R4,1(,R4)      UNITS OF 16 ENTRIES",
+            "         SLL   R4,4           PAGES IN THIS SEGMENT",
+        ]),
+        ('00202000', [
+            "         L     R6,SEGPTO      GET PTO ADDRESS",
+            "         N     R6,=A(SEGPTOM) WITHOUT THE FLAGS",
+        ]),
+        ('00204000', [
+            "PAGEISK  TM    PAGPFRA+2,PAGINV IS PAGE IN STORAGE?",
+        ]),
+        ('00206000', [
+            "         L     R2,PAGPFRA     PICK UP REAL PAGE ADDRESS",
+        ]),
+        ('00215000', [
+            "INVAL    LA    R6,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY",
+        ]),
+        # A page-table address matched against every STE byte by byte, because
+        # the S/370 PTO is bytes 1-3 and the flags are byte 0 and bit 31.  In
+        # ESA/390 the origin is bits 1-25 and the flags 26-31, so the comparison
+        # becomes one masked fullword compare.  TEMPR0 is a PSA fullword.
+        ('00239040', [
+            "         SLL   R15,2          ADJUSTED FOR 4 BYTE ENTRIES",
+        ]),
+        ('00239060', [
+            "         SRL   R15,2          BACK TO VIRTUAL PAGE NUMBER",
+        ]),
+        ('00239100', '00239150', Deck.comment(
+            "THE S/370 FORM COMPARED BYTES 1-2 WITH CLM, THEN BYTE 3 SEPARATELY "
+            "WITH THE INVALID BIT REMOVED, BECAUSE THE PTO WAS BYTES 1-3 AND THE "
+            "LENGTH WAS BYTE 0. AN ESA/390 PTO IS BITS 1-25 WITH THE FLAGS IN "
+            "26-31, SO ONE MASKED FULLWORD COMPARE DOES IT.") + [
+            "         MVC   TEMPR0,SEGTABLE THE WHOLE ENTRY",
+            "         NC    TEMPR0,CLCNTINV ONLY THE PAGE TABLE ORIGIN",
+            "         CL    R6,TEMPR0      FULL MATCH?",
+            "         BE    FNDSEG         YES",
+        ]),
+        ('00239200', [
+            "FNDSEG   SLL   R14,8          MAKE ROOM FOR PAGE NUMBER",
+        ]),
+        ('00239260', [
+            "         SL    R6,=A(PAGPFRA-PAGSHR) BACK-UP TO THE SHRTABLE",
+        ]),
+        # The CORTABLE index and the real address, from one load, diverging.
+        ('00272000', [
+            "         L     R2,PAGPFRA     LOAD PAGTABLE ENTRY",
+        ]),
+        ('00273000', [
+            "         N     R2,RESMASK     CLEAR UNWANTED BITS",
+            "         SRL   R2,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('00278000', [
+            "         OI    PAGPFRA+2,PAGINV FLAG PTE AS INVALID",
+        ]),
+        ('00338000', [
+            "         L     R5,SEGPTO           GET ADDR OF PAGE TABLE",
+        ]),
+        ('00340000', [
+            "         TM    SEGPTO+3,SEGINVAL   IS SEG INVALID FOR VM",
+        ]),
+        ('00342000', [
+            "         S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00349000', [
+            "         A     R5,=A(PAGPFRA-PAGSTMP) RESTORE PAGTABLE ORIGIN",
+        ]),
+        # STCM stored three bytes into 1-3, keeping byte 0's length.  The flags
+        # are in the low six bits now, so the entry is rebuilt instead.
+        ('00360000', Deck.comment(
+            "STCM R5,7,SEGPAGE+1 KEPT BYTE 0, WHICH HELD SEGPLEN. THE FLAGS ARE "
+            "BITS 26-31 NOW, SO THE ENTRY IS REBUILT: THE OLD FLAGS, OR'D WITH "
+            "THE NEW ORIGIN. R5 IS LEFT CLEAN BECAUSE THE NEXT CARD SUBTRACTS "
+            "THE HEADER OFFSET FROM IT.") + [
+            "         L     R0,SEGPTO           THE CURRENT ENTRY",
+            "         N     R0,=A(SEGFLGM)      KEEP I, C AND PTL",
+            "         OR    R0,R5               WITH THE NEW ORIGIN",
+            "         ST    R0,SEGPTO           STORE NEW PAGE TABLE",
+        ]),
+        ('00362000', [
+            "         S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO PAGE HEADER",
+        ]),
+        ('00451000', [
+            "         L     R7,PAGPFRA     LOAD PAGTABLE ENTRY",
+        ]),
+        ('00453000', [
+            "         LR    R2,R7          PTE TO R2",
+            "         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('00455000', Deck.comment(
+            "SLL R2,8  FORM REAL ADDRESS SAID IT OUTRIGHT: A MASKED S/370 PTE "
+            "TIMES 256 IS THE FRAME'S REAL ADDRESS. AN ESA/390 PTE ALREADY IS "
+            "THAT ADDRESS, SO THE SHIFT GOES -- WHILE THE CORTABLE PATH FROM THE "
+            "SAME LOAD GAINS ONE, FOUR LINES ABOVE.") + [
+            "*                             (SLL R2,8 REMOVED -- SEE ABOVE)",
+        ]),
+        ('00488000', [
+            "         MVC   PAGPFRA,=A(PAGINVW) INVALIDATE THE PTE",
+        ]),
+        # Two constants that are masks in disguise, and one that is a hard-coded
+        # PAGBMP.  SWLENGTH DC F'192' is I-116's shape for the sixth time: a
+        # value computed in CORE.COPY and written out as a literal here, with
+        # nothing joining them.  A(PAGBMP) cannot drift again.
+        ('00513000', [
+            "RESMASK  DC    A(PAGPFRM)     MASK FOR PAGE RESIDENT",
+        ]),
+        ('00514000', [
+            "CLCNTINV DC    A(SEGPTOM)     CLEAR COUNT & UNWANTED BITS",
+        ]),
+        ('00518000', [
+            "SWLENGTH DC    A(PAGBMP)      LENGTH OF SHARED PAGE &",
+        ]),
+    ],
+
     # Clearing a PTE's frame address while keeping its flags.  The halfword form
     # was MVI byte 0 / NI byte 1 keeping the low nibble / OI the invalid bit.
     # For a fullword the order has to change: PAGREF is saved FIRST, while byte 3
@@ -3569,9 +3695,9 @@ def corecopy():
         "THE SWAP TABLE HEADER IS 8 BYTES, NOT 12: SWPFLAG2 IS ORG'D OVER "
         "SWPPAG'S SLOT. READING THE FIELD LIST WITHOUT THE ORG GAVE 12 AND MADE "
         "PAGBMP 3108 INSTEAD OF 3112 -- NOT A MULTIPLE OF 8, WHICH THE "
-        "TRUNCATING SRL R0,3 WOULD HAVE UNDER-ALLOCATED. I-127.") + [
+        "TRUNCATING SRL R0,3 WOULD HAVE UNDER-ALLOCATED. I-127.") + Deck.comment("THE TRAILING 32 RATHER THAN 8 MAKES PAGBMP A MULTIPLE OF 64, NOT JUST OF 8. DMKVMA AND DMKATS PUT THE ATTACHED PROCESSOR'S PAGE TABLE AT PAGETABLE+PAGBMP, SO WITH 3112 THE SECOND TABLE WOULD NOT BE ON A 64-BYTE BOUNDARY AND AN ESA/390 PAGE TABLE ORIGIN MUST BE. 3136 IS 392 DOUBLEWORDS AND 49 TIMES 64. 24 BYTES A SEGMENT TO REMOVE THE PROBLEM RATHER THAN DOCUMENT IT.") + [
         "PAGSWPE  EQU   (SWPCODE-SWPFLAG+1) ONE SWAP ENTRY",
-        "PAGBMP   EQU   (PAGTSWP+(SWPFLAG-SWPVM)+256*PAGSWPE+8)",
+        "PAGBMP   EQU   (PAGTSWP+(SWPFLAG-SWPVM)+256*PAGSWPE+32)",
         "*                            LENGTH OF A CONTIGUOUS PAGE AND",
         "*                            SWAP TABLE",
     ] + Deck.comment(
@@ -3588,6 +3714,7 @@ def corecopy():
         "SEGSTLM  EQU   X'0000007F'    STD SEG TABLE LENGTH 25-31",
         "SEGPTOM  EQU   X'7FFFFFC0'    STE PAGE TABLE ORIGIN 1-25",
         "SEGPTLF  EQU   X'0F'          STE PTL, FULL, AT SEGPTO+3",
+        "SEGFLGM  EQU   X'0000003F'    STE I, C AND PTL -- NOT PTO",
         "PAGPFRM  EQU   X'7FFFF000'    PTE PAGE FRAME ADDR 1-19",
         "PAGINVW  EQU   (PAGINV*256)   PTE INVALID, A FULLWORD",
     ])
@@ -3817,7 +3944,20 @@ def main():
         print('%-8s %-9s %3d cards  %s'
               % (m, dk.ident, n, 'OK' if not verify(path) else 'BAD'))
 
-    print('\n%d cards in the PSA deck' % n)
+    # Every deck must be LISTED in its module's AUXLCL or VMFASM never applies
+    # it.  Asserted here rather than trusted, because two generators writing the
+    # same AUXLCL used to mean whichever ran last won.  I-138.
+    miss = auxcheck(HERE)
+    if miss:
+        print()
+        for base, why in miss:
+            print('### %s: %s' % (base, why))
+        ok = False
+    else:
+        print('\n%d decks, every one listed in its AUXLCL' % len(
+            [f for f in os.listdir(HERE) if '.XA' in f and f.endswith('DK')]))
+
+    print('%d cards in the PSA deck' % n)
     return 0 if ok else 1
 
 

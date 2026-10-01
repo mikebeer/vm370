@@ -28,6 +28,8 @@ Every card is exactly 80 bytes. The generator asserts that, asserts the source
 text fits in 63 columns, and asserts that generated sequence numbers stay below
 the next surviving anchor -- which is the failure mode R-22 describes.
 """
+import glob
+import os
 import sys
 
 ID_COL = 63          # zero-based: identifier occupies columns 64-71
@@ -190,13 +192,63 @@ def next_seq(source, anchor):
 
 
 def aux(path, entries):
-    """An AUX file lists update decks newest first: '<deck> V01 <description>'."""
+    """An AUX file lists update decks newest first: '<deck> V01 <description>'.
+
+    MERGES with what is already there rather than replacing it.  The AUXLCL is
+    what `VMFASM` reads, so a deck missing from it is a deck that is never
+    applied -- and the module then fails to assemble with every site it was
+    meant to fix.  Two generators writing the same module's AUXLCL used to mean
+    whichever ran last won: a DAT deck added to `DMKVMA` before the ECPS loop
+    was silently dropped from the file, and `deckchk.py` could not see it,
+    because that tool globs the deck FILES.  Cost would have been a 35-minute
+    build.  I-138.
+
+    Order is preserved -- newest first, with the new entries ahead of the old --
+    and a repeated deck identifier updates its description in place rather than
+    appearing twice.
+    """
+    old = []
+    if os.path.exists(path):
+        for line in open(path):
+            line = line.rstrip()
+            if not line:
+                continue
+            parts = line.split(None, 2)
+            if len(parts) == 3 and parts[1] == 'V01':
+                old.append((parts[0], parts[2].rstrip()))
+    seen, merged = set(), []
+    for deck, desc in list(entries) + old:
+        if deck in seen:
+            continue
+        seen.add(deck)
+        merged.append((deck, desc))
     with open(path, 'w') as f:
-        for deck, desc in entries:
+        for deck, desc in merged:
             line = '%-8s V01 %s' % (deck, desc)
             if len(line) > WIDTH:
                 raise ValueError('AUX line over 80 columns: ' + line)
             f.write(line.ljust(WIDTH) + '\n')
+
+
+def auxcheck(deckdir):
+    """Every generated deck must be LISTED in its module's AUXLCL.
+
+    The invariant that `aux()`'s merge is there to maintain, asserted separately
+    so that a future generator cannot break it quietly.  Returns a list of
+    (deck file, reason).
+    """
+    bad = []
+    for path in sorted(glob.glob(os.path.join(deckdir, '*.XA*DK'))):
+        base = os.path.basename(path)
+        member, ident = base.split('.', 1)
+        auxp = os.path.join(deckdir, '%s.AUXLCL' % member)
+        if not os.path.exists(auxp):
+            bad.append((base, 'no %s.AUXLCL at all' % member))
+            continue
+        if ident not in open(auxp).read():
+            bad.append((base, '%s.AUXLCL does not list it, so VMFASM will '
+                              'never apply it' % member))
+    return bad
 
 
 def verify(path):

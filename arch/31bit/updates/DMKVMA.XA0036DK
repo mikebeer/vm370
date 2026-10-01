@@ -1,0 +1,84 @@
+./ R 00133000          $ 00133100 100                                           
+         USING PAGPFRA,R6                                      XA0036DK         
+./ R 00196000          $ 00196100 100                                           
+         TM    SEGPTO+3,SEGINVAL SEGMENT INVALID               XA0036DK         
+./ R 00199000          $ 00199100 100                                           
+*  PTL IS THE LOW NIBBLE OF BYTE 3 AND COUNTS 16 ENTRIES AT A  XA0036DK         
+*  TIME.                                                       XA0036DK         
+         IC    R4,SEGPTO+3    NO. OF PAGES IN THIS SEG         XA0036DK         
+         N     R4,=A(SEGPTLF) KEEP ONLY PTL                    XA0036DK         
+         LA    R4,1(,R4)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R4,4           PAGES IN THIS SEGMENT            XA0036DK         
+./ R 00202000          $ 00202100 100                                           
+         L     R6,SEGPTO      GET PTO ADDRESS                  XA0036DK         
+         N     R6,=A(SEGPTOM) WITHOUT THE FLAGS                XA0036DK         
+./ R 00204000          $ 00204100 100                                           
+PAGEISK  TM    PAGPFRA+2,PAGINV IS PAGE IN STORAGE?            XA0036DK         
+./ R 00206000          $ 00206100 100                                           
+         L     R2,PAGPFRA     PICK UP REAL PAGE ADDRESS        XA0036DK         
+./ R 00215000          $ 00215100 100                                           
+INVAL    LA    R6,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY      XA0036DK         
+./ R 00239040          $ 00239041 001                                           
+         SLL   R15,2          ADJUSTED FOR 4 BYTE ENTRIES      XA0036DK         
+./ R 00239060          $ 00239061 001                                           
+         SRL   R15,2          BACK TO VIRTUAL PAGE NUMBER      XA0036DK         
+./ R 00239100 00239150 $ 00239101 001                                           
+*  THE S/370 FORM COMPARED BYTES 1-2 WITH CLM, THEN BYTE 3     XA0036DK         
+*  SEPARATELY WITH THE INVALID BIT REMOVED, BECAUSE THE PTO    XA0036DK         
+*  WAS BYTES 1-3 AND THE LENGTH WAS BYTE 0. AN ESA/390 PTO IS  XA0036DK         
+*  BITS 1-25 WITH THE FLAGS IN 26-31, SO ONE MASKED FULLWORD   XA0036DK         
+*  COMPARE DOES IT.                                            XA0036DK         
+         MVC   TEMPR0,SEGTABLE THE WHOLE ENTRY                 XA0036DK         
+         NC    TEMPR0,CLCNTINV ONLY THE PAGE TABLE ORIGIN      XA0036DK         
+         CL    R6,TEMPR0      FULL MATCH?                      XA0036DK         
+         BE    FNDSEG         YES                              XA0036DK         
+./ R 00239200          $ 00239201 001                                           
+FNDSEG   SLL   R14,8          MAKE ROOM FOR PAGE NUMBER        XA0036DK         
+./ R 00239260          $ 00239261 001                                           
+         SL    R6,=A(PAGPFRA-PAGSHR) BACK-UP TO THE SHRTABLE   XA0036DK         
+./ R 00272000          $ 00272100 100                                           
+         L     R2,PAGPFRA     LOAD PAGTABLE ENTRY              XA0036DK         
+./ R 00273000          $ 00273100 100                                           
+         N     R2,RESMASK     CLEAR UNWANTED BITS              XA0036DK         
+         SRL   R2,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 00278000          $ 00278100 100                                           
+         OI    PAGPFRA+2,PAGINV FLAG PTE AS INVALID            XA0036DK         
+./ R 00338000          $ 00338100 100                                           
+         L     R5,SEGPTO           GET ADDR OF PAGE TABLE      XA0036DK         
+./ R 00340000          $ 00340100 100                                           
+         TM    SEGPTO+3,SEGINVAL   IS SEG INVALID FOR VM       XA0036DK         
+./ R 00342000          $ 00342100 100                                           
+         S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00349000          $ 00349100 100                                           
+         A     R5,=A(PAGPFRA-PAGSTMP) RESTORE PAGTABLE ORIGIN  XA0036DK         
+./ R 00360000          $ 00360100 100                                           
+*  STCM R5,7,SEGPAGE+1 KEPT BYTE 0, WHICH HELD SEGPLEN. THE    XA0036DK         
+*  FLAGS ARE BITS 26-31 NOW, SO THE ENTRY IS REBUILT: THE OLD  XA0036DK         
+*  FLAGS, OR'D WITH THE NEW ORIGIN. R5 IS LEFT CLEAN BECAUSE   XA0036DK         
+*  THE NEXT CARD SUBTRACTS THE HEADER OFFSET FROM IT.          XA0036DK         
+         L     R0,SEGPTO           THE CURRENT ENTRY           XA0036DK         
+         N     R0,=A(SEGFLGM)      KEEP I, C AND PTL           XA0036DK         
+         OR    R0,R5               WITH THE NEW ORIGIN         XA0036DK         
+         ST    R0,SEGPTO           STORE NEW PAGE TABLE        XA0036DK         
+./ R 00362000          $ 00362100 100                                           
+         S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO PAGE HEADER    XA0036DK         
+./ R 00451000          $ 00451100 100                                           
+         L     R7,PAGPFRA     LOAD PAGTABLE ENTRY              XA0036DK         
+./ R 00453000          $ 00453100 100                                           
+         LR    R2,R7          PTE TO R2                        XA0036DK         
+         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 00455000          $ 00455100 100                                           
+*  SLL R2,8 FORM REAL ADDRESS SAID IT OUTRIGHT: A MASKED       XA0036DK         
+*  S/370 PTE TIMES 256 IS THE FRAME'S REAL ADDRESS. AN         XA0036DK         
+*  ESA/390 PTE ALREADY IS THAT ADDRESS, SO THE SHIFT GOES --   XA0036DK         
+*  WHILE THE CORTABLE PATH FROM THE SAME LOAD GAINS ONE, FOUR  XA0036DK         
+*  LINES ABOVE.                                                XA0036DK         
+*                             (SLL R2,8 REMOVED -- SEE ABOVE)  XA0036DK         
+./ R 00488000          $ 00488100 100                                           
+         MVC   PAGPFRA,=A(PAGINVW) INVALIDATE THE PTE          XA0036DK         
+./ R 00513000          $ 00513100 100                                           
+RESMASK  DC    A(PAGPFRM)     MASK FOR PAGE RESIDENT           XA0036DK         
+./ R 00514000          $ 00514100 100                                           
+CLCNTINV DC    A(SEGPTOM)     CLEAR COUNT & UNWANTED BITS      XA0036DK         
+./ R 00518000          $ 00518100 100                                           
+SWLENGTH DC    A(PAGBMP)      LENGTH OF SHARED PAGE &          XA0036DK         
