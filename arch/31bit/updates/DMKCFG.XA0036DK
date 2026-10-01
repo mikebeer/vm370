@@ -1,0 +1,166 @@
+./ R 00488000          $ 00488100 100                                           
+         L     R4,VMSEG-VMBLOK(,R4) CP SEGTABLE                XA0036DK         
+         N     R4,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 00490000          $ 00490100 100                                           
+         SRDL  R2,20          SEGMENT TO LOW ORDER OF GPR2,    XA0036DK         
+./ R 00497000          $ 00497100 100                                           
+         N     R4,=A(SEGPTOM) CLEAR UNWANTED BITS              XA0036DK         
+./ R 00498000          $ 00498100 100                                           
+*  R3 HOLDS THE ADDRESS BELOW THE SEGMENT. THE PAGE FIELD IS   XA0036DK         
+*  EIGHT BITS NOW, NOT FOUR, SO REACHING PAGE*8 TAKES 21       XA0036DK         
+*  RATHER THAN 25.                                             XA0036DK         
+         SRL   R3,21          SET PAGE NUMBER *8               XA0036DK         
+./ R 00499000          $ 00499100 100                                           
+         S     R4,=A(PAGPFRA-PAGSWP) TO SWPTABLE PTR           XA0036DK         
+./ R 00502000          $ 00502100 100                                           
+*  PAGCORE-PAGSWP WAS BEING USED AS THE CONSTANT 4 TO REACH    XA0036DK         
+*  SWPCYL FROM SWPFLAG -- A DAT SYMBOL STANDING IN FOR AN      XA0036DK         
+*  UNRELATED OFFSET. IT IS 4 TODAY AND 12 AFTER PAGORIG, SO    XA0036DK         
+*  IT WOULD HAVE READ THE WRONG FIELD. SWPCYL-SWPFLAG IS WHAT  XA0036DK         
+*  IT MEANT.                                                   XA0036DK         
+         L     R0,SWPCYL-SWPFLAG(R3,R4) DASD ADDRESS           XA0036DK         
+./ R 00770000          $ 00770100 100                                           
+         SRL   R2,20          SEGMENT NO. ONLY                 XA0036DK         
+./ R 00773000          $ 00773100 100                                           
+         L     R1,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R2,R1          STE POINTER                      XA0036DK         
+./ R 00774000          $ 00774100 100                                           
+         TM    3(R2),SEGINVAL SEGMENT OK?                      XA0036DK         
+./ R 00780000          $ 00780100 100                                           
+         N     R2,=A(SEGPTOM) CLEAR UNWANTED BITS              XA0036DK         
+./ R 00783000          $ 00783100 100                                           
+         N     R1,F255        PAGE NO. WITHIN SEGMENT          XA0036DK         
+./ R 00786000          $ 00786100 100                                           
+         LA    R2,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R2)         XA0036DK         
+./ R 00881000          $ 00881100 100                                           
+         LR    R7,R2          SAVE PTO                         XA0036DK         
+         N     R7,=A(SEGPTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 00882000          $ 00882100 100                                           
+         SL    R7,=A(PAGPFRA-PAGSTMP) BACK-UP TO HEADER        XA0036DK         
+./ R 00907000          $ 00907100 100                                           
+         LR    R1,R10         PTO                              XA0036DK         
+         N     R1,=A(SEGPTOM) WITHOUT THE FLAGS                XA0036DK         
+./ R 00908000          $ 00908100 100                                           
+         SL    R1,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00972000          $ 00972100 100                                           
+         L     R2,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R2,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R7,R2          ADDRESS OF SEGTABLE              XA0036DK         
+./ R 00974000          $ 00974100 100                                           
+         OI    3(R7),SEGINVAL MAKE SURE INVALID ON             XA0036DK         
+./ R 00975000          $ 00975100 100                                           
+*  ONLY THE INVALID BIT IS CLEARED HERE, NOT THE WHOLE FLAG    XA0036DK         
+*  FIELD: THE PTL IS STILL NEEDED AT 00979000 TO COUNT THE     XA0036DK         
+*  ENTRIES.                                                    XA0036DK         
+         N     R10,=A(X'FFFFFFFF'-SEGINVAL) VALIDATE           XA0036DK         
+./ R 00979000 00981000 $ 00979100 100                                           
+*  SRL R2,28 EXTRACTED SEGPLEN FROM BITS 0-3 AND THE NEXT      XA0036DK         
+*  CARD ADDED ONE. PTL IS BITS 28-31 AND COUNTS 16 ENTRIES AT  XA0036DK         
+*  A TIME, SO IT IS A MASK AND A SHIFT INSTEAD, AND THE PLUS   XA0036DK         
+*  ONE IS SUBSUMED.                                            XA0036DK         
+         N     R2,=A(SEGPTLF) NUMBER OF PAGTABLE ENTRIES       XA0036DK         
+         LA    R2,1(,R2)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R2,4           PAGES IN THIS SEGMENT            XA0036DK         
+./ R 00982000          $ 00982100 100                                           
+         N     R10,=A(SEGPTOM) WITHOUT THE FLAGS               XA0036DK         
+         SL    R10,=A(PAGPFRA-PAGSTMP) BACKUP TO HDR           XA0036DK         
+./ R 00985000          $ 00985100 100                                           
+         MVC   PAGTSWP(4,R10),ASYSVM RE-ASIGN                  XA0036DK         
+./ R 00986000          $ 00986100 100                                           
+         LA    R10,PAGTSWP+(SWPFLAG-SWPVM)(,R10)               XA0036DK         
+./ R 01009000          $ 01009100 100                                           
+         L     R0,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R0,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R7,R0          GET ADDR SEGTABLE ENTRY          XA0036DK         
+./ R 01014000          $ 01014100 100                                           
+         LA    R0,PAGPFRA     LOAD ADDRESS OF PTO              XA0036DK         
+./ R 01015000          $ 01015100 100                                           
+*  STCM R0,B'0111',1(R7) STORED THREE BYTES AND KEPT BYTE 0,   XA0036DK         
+*  WHICH HELD SEGPLEN. THE FLAGS ARE BITS 26-31 NOW, SO THE    XA0036DK         
+*  ENTRY IS REBUILT FROM THE OLD FLAGS AND THE NEW ORIGIN.     XA0036DK         
+         L     R15,0(R7)      THE CURRENT ENTRY                XA0036DK         
+         N     R15,=A(SEGFLGM) KEEP I, C AND PTL               XA0036DK         
+         OR    R15,R0         WITH THE NEW ORIGIN              XA0036DK         
+         ST    R15,0(R7)      STORE NEW PTO IN STE             XA0036DK         
+./ R 01016000          $ 01016100 100                                           
+         OI    3(R7),SEGINVAL FLAG STE AS INVALID              XA0036DK         
+./ R 01018000          $ 01018100 100                                           
+*  STCM R10,8,SHRPAGE PUT THE PAGE COUNT IN BYTE 0. SHRPAGE    XA0036DK         
+*  IS AN STE IN ALL BUT NAME, SO ITS LENGTH MOVES TO THE LOW   XA0036DK         
+*  NIBBLE OF BYTE 3 WITH THE STE'S.                            XA0036DK         
+         L     R15,SHRPAGE    THE ENTRY JUST STORED            XA0036DK         
+         O     R15,=A(SEGPTLF) FULL TABLE, 256 PAGES           XA0036DK         
+         ST    R15,SHRPAGE    NUMBER OF PAGES IN SEGMENT       XA0036DK         
+./ R 01020000          $ 01020100 100                                           
+         N     R10,=A(SEGPTOM) CLEAR COUNT AND INV BITS        XA0036DK         
+./ R 01021000          $ 01021100 100                                           
+         SL    R10,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER        XA0036DK         
+./ R 01024000 01025000 $ 01024100 100                                           
+*  THE ATTACHED-PROCESSOR SHARED-SEGMENT PATH IS DELIBERATELY  XA0036DK         
+*  NOT CONVERTED. PAGBMP IS 3136 BYTES AND MVC STOPS AT 256,   XA0036DK         
+*  SO THESE TWO COPIES NEED MVCL AND AN EVEN-ODD PAIR THIS     XA0036DK         
+*  ROUTINE HAS NOTHING SPARE FOR -- R0, R1, R5, R7, R10 AND    XA0036DK         
+*  R14 ARE ALL LIVE ACROSS THEM. THE PATH IS UNREACHABLE       XA0036DK         
+*  UNDER AP=NO, WHICH XA0014DK FORCES ON PURPOSE (I-50), SO    XA0036DK         
+*  IT ABENDS LOUDLY RATHER THAN BEING CONVERTED UNTESTABLY.    XA0036DK         
+*  I-139.                                                      XA0036DK         
+         ABEND 9              AP SHARED SEGS NOT CONVERTED     XA0036DK         
+./ R 01035000          $ 01035100 100                                           
+         LA    R0,PAGBMP+PAGPFRA         GET ADDR AP PTO       XA0036DK         
+./ R 01045000          $ 01045100 100                                           
+         N     R15,=A(SEGPTLF) OBTAIN PTE COUNT                XA0036DK         
+         LA    R15,1(,R15)    UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R15,4          PAGES IN THIS SEGMENT            XA0036DK         
+./ R 01046000          $ 01046100 100                                           
+*                             (BUMP FOR LOOP SUBSUMED ABOVE)   XA0036DK         
+./ R 01056000          $ 01056100 100                                           
+         N     R14,=A(SEGPTLF) OBTAIN NUMBER PTE'S             XA0036DK         
+         LA    R14,1(,R14)    UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R14,4          PAGES IN THIS SEGMENT            XA0036DK         
+./ R 01056500          $ 01056600 100                                           
+*  PAGBMP+PAGBMP IS 6272 AND AN LA DISPLACEMENT STOPS AT       XA0036DK         
+*  4095.                                                       XA0036DK         
+         L     R0,=A(PAGBMP+PAGBMP) AP table size              XA0036DK         
+./ R 01105000          $ 01105100 100                                           
+         L     R1,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R7,R1          LOAD ADDRESS OF STE              XA0036DK         
+./ R 01106000          $ 01106100 100                                           
+         USING SEGPTO,R7                                       XA0036DK         
+./ R 01107100          $ 01107200 100                                           
+         L     R1,SEGPTO      MAIN (IPL) PROC PAGTABLE         XA0036DK         
+         N     R1,=A(SEGPTOM) WITHOUT THE FLAGS                XA0036DK         
+./ R 01109000          $ 01109100 100                                           
+         L     R15,SEGPTO     THE CURRENT ENTRY                XA0036DK         
+         N     R15,=A(SEGFLGM) KEEP I, C AND PTL               XA0036DK         
+         OR    R15,R1         WITH THE AP PAGTABLE             XA0036DK         
+         ST    R15,SEGPTO     ADJUST TO ATTACHED PGT           XA0036DK         
+./ R 01151000          $ 01151100 100                                           
+         SRL   R1,8           LEAVE ONLY SEGMENT NUMBER        XA0036DK         
+./ R 01154200          $ 01154300 100                                           
+         N     R7,=A(SEGPTOM) CLEAR EXTENSION BITS             XA0036DK         
+./ R 01155000          $ 01155100 100                                           
+         SL    R7,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 01161000          $ 01161100 100                                           
+SEGSHR   LA    R1,L'SEGPTO(,R1) INDEX OF NEXT STE              XA0036DK         
+./ R 01414300          $ 01414310 010                                           
+         SRL   R1,20          GET SEGMENT NUMBER ONLY          XA0036DK         
+./ R 01414500          $ 01414510 010                                           
+         IC    R2,VMSEG+3     GET SEGMENT TABLE LENGTH         XA0036DK         
+         N     R2,=A(SEGSTLM) WITHOUT THE S BIT                XA0036DK         
+./ R 01415100          $ 01415110 010                                           
+         L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R1,R6          GET ADDRESS OF STE               XA0036DK         
+./ R 01415225 01415325 $ 01415235 010                                           
+*  THREE CARDS DID WHAT ONE MASKED LOAD DOES NOW: ICM BYTES    XA0036DK         
+*  1-2, THEN IC BYTE 3, THEN A MASK CLEARING THE INVALID BIT   XA0036DK         
+*  -- BECAUSE THE S/370 PTO WAS BYTES 1-3 WITH THE LENGTH IN   XA0036DK         
+*  BYTE 0. THE ESA/390 PTO IS BITS 1-25 WITH THE FLAGS IN      XA0036DK         
+*  26-31.                                                      XA0036DK         
+         L     R6,SEGPTO-SEGTABLE(R1) THE WHOLE ENTRY          XA0036DK         
+         N     R6,=A(SEGPTOM) ANY PTE POINTER?                 XA0036DK         
+         BZ    SETCC1         NO NAMED SEGMENT                 XA0036DK         
+./ R 01415350          $ 01415360 010                                           
+         SL    R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HDR            XA0036DK         

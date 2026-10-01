@@ -3296,6 +3296,226 @@ DATMODS = {
         ]),
     ],
 
+    # The densest module in the conversion: the shared-segment and attached-
+    # processor configuration.  Its AP path is DELIBERATELY NOT CONVERTED -- see
+    # the ABEND at 01024000 and I-139.
+    'DMKCFG': [
+        # `L R4,VMSEG-VMBLOK(,R4)` loads the designation itself, so masking the
+        # loaded value is right here; the sites that ADD it to an index must mask
+        # VMSEG first instead, because an index of segnum*4 reaches STL's bits.
+        ('00488000', [
+            "         L     R4,VMSEG-VMBLOK(,R4) CP SEGTABLE",
+            "         N     R4,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00490000', [
+            "         SRDL  R2,20          SEGMENT TO LOW ORDER OF GPR2,",
+        ]),
+        ('00497000', [
+            "         N     R4,=A(SEGPTOM) CLEAR UNWANTED BITS",
+        ]),
+        ('00498000', Deck.comment(
+            "R3 HOLDS THE ADDRESS BELOW THE SEGMENT. THE PAGE FIELD IS EIGHT "
+            "BITS NOW, NOT FOUR, SO REACHING PAGE*8 TAKES 21 RATHER THAN 25.") + [
+            "         SRL   R3,21          SET PAGE NUMBER *8",
+        ]),
+        ('00499000', [
+            "         S     R4,=A(PAGPFRA-PAGSWP) TO SWPTABLE PTR",
+        ]),
+        ('00502000', Deck.comment(
+            "PAGCORE-PAGSWP WAS BEING USED AS THE CONSTANT 4 TO REACH SWPCYL "
+            "FROM SWPFLAG -- A DAT SYMBOL STANDING IN FOR AN UNRELATED OFFSET. "
+            "IT IS 4 TODAY AND 12 AFTER PAGORIG, SO IT WOULD HAVE READ THE WRONG "
+            "FIELD. SWPCYL-SWPFLAG IS WHAT IT MEANT.") + [
+            "         L     R0,SWPCYL-SWPFLAG(R3,R4) DASD ADDRESS",
+        ]),
+        ('00770000', [
+            "         SRL   R2,20          SEGMENT NO. ONLY",
+        ]),
+        ('00773000', [
+            "         L     R1,VMSEG       THE DESIGNATION",
+            "         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R2,R1          STE POINTER",
+        ]),
+        ('00774000', [
+            "         TM    3(R2),SEGINVAL SEGMENT OK?",
+        ]),
+        ('00780000', [
+            "         N     R2,=A(SEGPTOM) CLEAR UNWANTED BITS",
+        ]),
+        ('00783000', [
+            "         N     R1,F255        PAGE NO. WITHIN SEGMENT",
+        ]),
+        ('00786000', [
+            "         LA    R2,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R2)",
+        ]),
+        # 00789000 `A R0,F2` and 00873000/00934000 `S Rn,F4` are counts and
+        # indexes, not DAT offsets.  idiom.py marks them; reading rejects them.
+        ('00881000', [
+            "         LR    R7,R2          SAVE PTO",
+            "         N     R7,=A(SEGPTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00882000', [
+            "         SL    R7,=A(PAGPFRA-PAGSTMP) BACK-UP TO HEADER",
+        ]),
+        ('00907000', [
+            "         LR    R1,R10         PTO",
+            "         N     R1,=A(SEGPTOM) WITHOUT THE FLAGS",
+        ]),
+        ('00908000', [
+            "         SL    R1,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00972000', [
+            "         L     R2,VMSEG       THE DESIGNATION",
+            "         N     R2,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R7,R2          ADDRESS OF SEGTABLE",
+        ]),
+        ('00974000', [
+            "         OI    3(R7),SEGINVAL MAKE SURE INVALID ON",
+        ]),
+        ('00975000', Deck.comment(
+            "ONLY THE INVALID BIT IS CLEARED HERE, NOT THE WHOLE FLAG FIELD: "
+            "THE PTL IS STILL NEEDED AT 00979000 TO COUNT THE ENTRIES.") + [
+            "         N     R10,=A(X'FFFFFFFF'-SEGINVAL) VALIDATE",
+        ]),
+        ('00979000', '00981000', Deck.comment(
+            "SRL R2,28 EXTRACTED SEGPLEN FROM BITS 0-3 AND THE NEXT CARD ADDED "
+            "ONE. PTL IS BITS 28-31 AND COUNTS 16 ENTRIES AT A TIME, SO IT IS A "
+            "MASK AND A SHIFT INSTEAD, AND THE PLUS ONE IS SUBSUMED.") + [
+            "         N     R2,=A(SEGPTLF) NUMBER OF PAGTABLE ENTRIES",
+            "         LA    R2,1(,R2)      UNITS OF 16 ENTRIES",
+            "         SLL   R2,4           PAGES IN THIS SEGMENT",
+        ]),
+        ('00982000', [
+            "         N     R10,=A(SEGPTOM) WITHOUT THE FLAGS",
+            "         SL    R10,=A(PAGPFRA-PAGSTMP) BACKUP TO HDR",
+        ]),
+        # 4(4,R10) and 8(,R10) are PAGACT and PAGSHR and survive: PAGORIG went
+        # in after PAGSWP, so the first twelve bytes of the header are unmoved.
+        # 16+16*2 is PAGTSWP spelled as digits and does not survive.
+        ('00985000', [
+            "         MVC   PAGTSWP(4,R10),ASYSVM RE-ASIGN",
+        ]),
+        ('00986000', [
+            "         LA    R10,PAGTSWP+(SWPFLAG-SWPVM)(,R10)",
+        ]),
+        ('01009000', [
+            "         L     R0,VMSEG       THE DESIGNATION",
+            "         N     R0,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R7,R0          GET ADDR SEGTABLE ENTRY",
+        ]),
+        ('01014000', [
+            "         LA    R0,PAGPFRA     LOAD ADDRESS OF PTO",
+        ]),
+        ('01015000', Deck.comment(
+            "STCM R0,B'0111',1(R7) STORED THREE BYTES AND KEPT BYTE 0, WHICH "
+            "HELD SEGPLEN. THE FLAGS ARE BITS 26-31 NOW, SO THE ENTRY IS "
+            "REBUILT FROM THE OLD FLAGS AND THE NEW ORIGIN.") + [
+            "         L     R15,0(R7)      THE CURRENT ENTRY",
+            "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
+            "         OR    R15,R0         WITH THE NEW ORIGIN",
+            "         ST    R15,0(R7)      STORE NEW PTO IN STE",
+        ]),
+        ('01016000', [
+            "         OI    3(R7),SEGINVAL FLAG STE AS INVALID",
+        ]),
+        ('01018000', Deck.comment(
+            "STCM R10,8,SHRPAGE PUT THE PAGE COUNT IN BYTE 0. SHRPAGE IS AN STE "
+            "IN ALL BUT NAME, SO ITS LENGTH MOVES TO THE LOW NIBBLE OF BYTE 3 "
+            "WITH THE STE'S.") + [
+            "         L     R15,SHRPAGE    THE ENTRY JUST STORED",
+            "         O     R15,=A(SEGPTLF) FULL TABLE, 256 PAGES",
+            "         ST    R15,SHRPAGE    NUMBER OF PAGES IN SEGMENT",
+        ]),
+        ('01020000', [
+            "         N     R10,=A(SEGPTOM) CLEAR COUNT AND INV BITS",
+        ]),
+        ('01021000', [
+            "         SL    R10,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('01024000', '01025000', Deck.comment(
+            "THE ATTACHED-PROCESSOR SHARED-SEGMENT PATH IS DELIBERATELY NOT "
+            "CONVERTED. PAGBMP IS 3136 BYTES AND MVC STOPS AT 256, SO THESE TWO "
+            "COPIES NEED MVCL AND AN EVEN-ODD PAIR THIS ROUTINE HAS NOTHING "
+            "SPARE FOR -- R0, R1, R5, R7, R10 AND R14 ARE ALL LIVE ACROSS THEM. "
+            "THE PATH IS UNREACHABLE UNDER AP=NO, WHICH XA0014DK FORCES ON "
+            "PURPOSE (I-50), SO IT ABENDS LOUDLY RATHER THAN BEING CONVERTED "
+            "UNTESTABLY. I-139.") + [
+            "         ABEND 9              AP SHARED SEGS NOT CONVERTED",
+        ]),
+        ('01035000', [
+            "         LA    R0,PAGBMP+PAGPFRA         GET ADDR AP PTO",
+        ]),
+        ('01045000', [
+            "         N     R15,=A(SEGPTLF) OBTAIN PTE COUNT",
+            "         LA    R15,1(,R15)    UNITS OF 16 ENTRIES",
+            "         SLL   R15,4          PAGES IN THIS SEGMENT",
+        ]),
+        ('01046000', [
+            "*                             (BUMP FOR LOOP SUBSUMED ABOVE)",
+        ]),
+        ('01056000', [
+            "         N     R14,=A(SEGPTLF) OBTAIN NUMBER PTE'S",
+            "         LA    R14,1(,R14)    UNITS OF 16 ENTRIES",
+            "         SLL   R14,4          PAGES IN THIS SEGMENT",
+        ]),
+        ('01056500', Deck.comment(
+            "PAGBMP+PAGBMP IS 6272 AND AN LA DISPLACEMENT STOPS AT 4095.") + [
+            "         L     R0,=A(PAGBMP+PAGBMP) AP table size",
+        ]),
+        ('01105000', [
+            "         L     R1,VMSEG       THE DESIGNATION",
+            "         N     R1,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R7,R1          LOAD ADDRESS OF STE",
+        ]),
+        ('01106000', ["         USING SEGPTO,R7"]),
+        ('01107100', [
+            "         L     R1,SEGPTO      MAIN (IPL) PROC PAGTABLE",
+            "         N     R1,=A(SEGPTOM) WITHOUT THE FLAGS",
+        ]),
+        ('01109000', [
+            "         L     R15,SEGPTO     THE CURRENT ENTRY",
+            "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
+            "         OR    R15,R1         WITH THE AP PAGTABLE",
+            "         ST    R15,SEGPTO     ADJUST TO ATTACHED PGT",
+        ]),
+        ('01151000', [
+            "         SRL   R1,8           LEAVE ONLY SEGMENT NUMBER",
+        ]),
+        ('01154200', [
+            "         N     R7,=A(SEGPTOM) CLEAR EXTENSION BITS",
+        ]),
+        ('01155000', [
+            "         SL    R7,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('01161000', [
+            "SEGSHR   LA    R1,L'SEGPTO(,R1) INDEX OF NEXT STE",
+        ]),
+        ('01414300', [
+            "         SRL   R1,20          GET SEGMENT NUMBER ONLY",
+        ]),
+        ('01414500', [
+            "         IC    R2,VMSEG+3     GET SEGMENT TABLE LENGTH",
+            "         N     R2,=A(SEGSTLM) WITHOUT THE S BIT",
+        ]),
+        ('01415100', [
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R1,R6          GET ADDRESS OF STE",
+        ]),
+        ('01415225', '01415325', Deck.comment(
+            "THREE CARDS DID WHAT ONE MASKED LOAD DOES NOW: ICM BYTES 1-2, THEN "
+            "IC BYTE 3, THEN A MASK CLEARING THE INVALID BIT -- BECAUSE THE "
+            "S/370 PTO WAS BYTES 1-3 WITH THE LENGTH IN BYTE 0. THE ESA/390 PTO "
+            "IS BITS 1-25 WITH THE FLAGS IN 26-31.") + [
+            "         L     R6,SEGPTO-SEGTABLE(R1) THE WHOLE ENTRY",
+            "         N     R6,=A(SEGPTOM) ANY PTE POINTER?",
+            "         BZ    SETCC1         NO NAMED SEGMENT",
+        ]),
+        ('01415350', [
+            "         SL    R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HDR",
+        ]),
+    ],
+
     # The module with the clearest statement in the tree of what a PTE is, and a
     # hard-coded copy of PAGBMP.  `SLL R2,8  FORM REAL ADDRESS` says that a
     # masked S/370 PTE times 256 IS the frame's real address, so the shift is
