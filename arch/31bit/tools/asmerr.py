@@ -51,8 +51,37 @@ VMFASM = re.compile(r'^EXEC VMFASM (\S+)', re.M)
 # A listing line echoed into the console log: update sequence, statement number,
 # then the source.  The sequence field is blank for a statement that came from
 # the base file rather than an update deck.
-STMT = re.compile(r'^\s{2}(\d{0,6})\s+(\d+)([+\-]?)\s{2,}(.*)$')
-DIAG = re.compile(r'^(IFO\d{3}) \*\*\* (.*?) \*\*\*')
+#   `  351600      511          LA    R8,PAGCORE+16*2 ...`   unlabelled
+#   `  372000      531 SKIPBLD  LA    R6,SEGPAGE+4 ...`      LABELLED
+# Exactly ONE space separates the statement number from the 72-column source
+# record, whose first eight columns are the label field.  Requiring two or more
+# spaces -- as the first version did -- silently skips every labelled statement,
+# which does not merely lose those sites: their diagnostics then attach to the
+# statement above, so `LA R8,PAGCORE+16*2` was reported as also naming SEGPAGE.
+# A parser that mis-groups is worse than one that drops, because the result
+# looks like data.
+#   `  351600      511          LA   ...`   6-digit sequence, TWO leading spaces
+#   ` 1014000     1260          LA   ...`   7-digit sequence, ONE leading space
+# The sequence field is right-justified in eight columns, so the number of
+# leading spaces varies with its width.  Anchoring on two of them dropped every
+# statement in every module whose source runs past sequence 999999 -- 87 of 255
+# diagnostics, and DMKPGS and DMKPTR almost entirely.
+STMT = re.compile(r'^ {0,8}(\d{0,8}) {1,10}(\d{1,6})([+\-]?) (.*)$')
+# Assembler XF prints a diagnostic as `IFOnnn <text>` with no delimiters, and an
+# MNOTE as `IFO197 *** MNOTE ***`.  The first version of this regex required the
+# asterisks, so against a log of real errors it matched **nothing** -- exactly
+# the failure dualdiff.py's own docstring warns about, repeated in a tool that
+# had been "tested" against a log whose only diagnostics were MNOTEs.  Hence
+# the statements-flagged cross-check in main(): the log states its own total, so
+# a parser that finds a different number says so instead of reporting zero.
+DIAG = re.compile(r'^(IFO\d{3}) (?:\*\*\* )?(.*?)(?: \*\*\*)?\s*$')
+UNDEF = re.compile(r'^(\S+) IS AN UNDEFINED SYMBOL$')
+# Diagnostics that are CONSEQUENCES of an undefined symbol on the same or an
+# earlier statement, not independent findings.  A `USING PAGCORE,R6` whose
+# symbol is gone also yields IFO217, and the matching `DROP R6` later yields
+# IFO195 with no symbol named at all.  Counting these as sites would inflate
+# the work; ignoring them silently would hide a real one.
+CASCADE = {'IFO217', 'IFO195'}
 FLAGGED = re.compile(r'NUMBER OF STATEMENTS FLAGGED IN THIS ASSEMBLY =\s*(\d+)')
 NOFLAG = re.compile(r'NO STATEMENTS FLAGGED IN THIS ASSEMBLY')
 
@@ -61,6 +90,14 @@ NOFLAG = re.compile(r'NO STATEMENTS FLAGGED IN THIS ASSEMBLY')
 # and must not be quietly counted as part of this conversion.
 RENAMED = {'SEGPAGE': 'SEGPTO', 'SEGPLEN': 'SEGPTL', 'SEGINV': 'SEGINVAL',
            'PAGCORE': 'PAGPFRA', 'PAGINVAL': 'PAGINV'}
+# Symbols CORE.XA0033DK keeps but REDEFINES.  No undefined-symbol diagnostic can
+# fire for these, yet they are not entirely silent after all: `PAGBMP` grows from
+# 196 to 3108, so `MVC PAGTABLE(PAGBMP),0(R10)` exceeds the 256-byte `MVC` length
+# and `LA R0,PAGBMP+PAGBMP` exceeds the 4095-byte displacement.  The assembler
+# reports those as IFO224 and IFO208.  Counting only undefined symbols would
+# discard that, and these are the hardest sites to find by reading.
+REDEFINED = {'PAGTSWP', 'PAGBMP'}
+SIZE_DIAGS = {'IFO224', 'IFO208'}
 # Symbols deliberately kept, whose MEANING moved anyway.  No diagnostic exists
 # for these and none can.
 KEPT_BUT_MOVED = {'SEGENQ': 'position: bit 25 is now the lowest PTO bit',
@@ -69,29 +106,41 @@ KEPT_BUT_MOVED = {'SEGENQ': 'position: bit 25 is now the lowest PTO bit',
                   'PAGBMP': 'arithmetic: derived from PAGTSWP',
                   'SHRPAGE': 'a separate declaration in SHRTABLE.COPY'}
 
-Flag = collections.namedtuple('Flag', 'mod seq stmt text diag msg')
+Flag = collections.namedtuple('Flag', 'mod seq stmt text diags undef')
 
 
 def harvest(path):
-    """Every flagged statement in the log, with the module it belongs to."""
-    mod, pending, flags, totals = None, None, [], {}
+    """Every flagged statement in the log, with the module it belongs to.
+
+    One STATEMENT is one entry, carrying every diagnostic the assembler issued
+    against it.  A line naming two renamed fields gets two `IFO188`s and is
+    still one site, which is the same rule `dattab.py` applies -- counting
+    diagnostics instead of statements would overstate the work by a third.
+    """
+    mod, cur, flags, totals = None, None, [], {}
     for line in open(path, errors='replace'):
         line = line.rstrip('\n')
         m = VMFASM.match(line)
         if m:
-            mod, pending = m.group(1), None
+            mod, cur = m.group(1), None
             continue
         m = DIAG.match(line)
-        if m and pending:
-            flags.append(Flag(mod, pending[0], pending[1], pending[2],
-                              m.group(1), m.group(2)))
-            pending = None
+        if m:
+            if cur is None:          # a diagnostic with no statement before it
+                continue
+            code, msg = m.group(1), m.group(2)
+            if isinstance(cur, Flag):
+                cur.diags.append((code, msg))
+            else:
+                cur = Flag(mod, cur[0], cur[1], cur[2], [(code, msg)], [])
+                flags.append(cur)
+            u = UNDEF.match(msg)
+            if u and code not in CASCADE:
+                cur.undef.append(u.group(1))
             continue
         m = STMT.match(line)
         if m:
-            # A continuation line ('+' in the flag column) belongs to the macro
-            # expansion of the statement above it, not to a new statement.
-            pending = (m.group(1), m.group(2), m.group(4).rstrip())
+            cur = (m.group(1), m.group(2), m.group(4).rstrip())
             continue
         m = FLAGGED.search(line)
         if m and mod:
@@ -101,9 +150,25 @@ def harvest(path):
     return flags, totals
 
 
-def symbols(text):
-    """Which renamed-away symbols a flagged statement names."""
-    return [s for s in RENAMED if re.search(r'\b%s\b' % s, text)]
+def symbols(f):
+    """Which renamed-away symbols this flagged statement is about.
+
+    The assembler NAMES the symbol, so there is no need to re-derive it from the
+    source text: `IFO188 PAGCORE IS AN UNDEFINED SYMBOL` is authoritative where
+    a regex over the source is a guess.  Falling back to the text covers a
+    diagnostic that is about the statement without naming a symbol.
+    """
+    named = [s for s in f.undef if s in RENAMED]
+    if named:
+        return named
+    hit = [s for s in RENAMED if re.search(r'\b%s\b' % s, f.text)]
+    if hit:
+        return hit
+    # A length or displacement error on a statement naming a redefined EQU is
+    # this conversion too, even though no symbol is undefined.
+    if any(c in SIZE_DIAGS for c, _ in f.diags):
+        return [s for s in REDEFINED if re.search(r'\b%s\b' % s, f.text)]
+    return []
 
 
 def main():
@@ -119,21 +184,60 @@ def main():
         print('### no assembly found in %s -- is the build still staging?' % log)
         return 2
 
+    # Reconcile against EVERY swept site, not only the ones needing semantic
+    # work.  The two lists answer different questions: the assembler reports
+    # every site that NAMES a renamed field, the sweep reports every site whose
+    # MEANING changes.  `L R6,SEGPAGE` is a fullword load of a field that stays a
+    # fullword -- verdict `ok` -- and still has to be edited, because the symbol
+    # is gone.  Comparing the assembler against the CHANGE/REVIEW subset alone
+    # reported 40 of those as holes in the sweep, which was an artefact of the
+    # join and not a finding.  So: match against all of them, and count the
+    # rename-only sites separately, because that number is the difference
+    # between a textual edit and a decision.
     import dattab
-    sweep = [s for s in dattab.scan(dattab.SRC) if s.verdict != 'ok']
+    allsites = dattab.scan(dattab.SRC)
+    sweep = [s for s in allsites if s.verdict != 'ok']
     sweep_text = collections.defaultdict(list)
-    for s in sweep:
+    for s in allsites:
         sweep_text[(s.mod, re.sub(r'\s+', ' ', s.text))].append(s)
 
     if only:
         flags = [f for f in flags if f.mod == only]
         sweep = [s for s in sweep if s.mod == only]
+        allsites = [s for s in allsites if s.mod == only]
 
-    ours = [f for f in flags if symbols(f.text)]
-    other = [f for f in flags if not symbols(f.text)]
+    ours = [f for f in flags if symbols(f)]
+    other = [f for f in flags if not symbols(f)]
 
     print('%s: %d modules assembled, %d statements flagged'
           % (os.path.basename(log), len(totals), sum(totals.values())))
+
+    # The log states its own total, so the parser can be held to it.  This check
+    # exists because the first version of DIAG matched only MNOTEs and reported
+    # 4 sites against a log that said 190 -- the report contradicted itself on
+    # its face and a reader happened to notice.  A guard is not a reader.
+    said, found = sum(totals.values()), len(flags)
+    per = collections.Counter(f.mod for f in flags)
+    off = {m: (t, per.get(m, 0)) for m, t in totals.items() if t != per.get(m, 0)}
+    if off:
+        print()
+        print('  ### the log says %d statements were flagged; this parser found %d.'
+              % (said, found))
+        print('  ### A diagnostic format the parser does not match looks exactly')
+        print('  ### like a clean build, so the disagreement is named per module:')
+        for m, (t, p) in sorted(off.items()):
+            d = t - p
+            note = ''
+            # Known and benign: a literal-pool entry carrying an undefined symbol
+            # is counted once per diagnostic but printed once per entry, so a
+            # module whose only shortfall equals its literal-pool diagnostics is
+            # explained rather than broken.
+            lits = [f for f in flags if f.mod == m and f.text.strip().startswith('=')]
+            if d == sum(len(f.diags) for f in lits) - len(lits) and lits:
+                note = ('   (explained: %d literal-pool entry/entries counted '
+                        'once per diagnostic)' % len(lits))
+            print('  ###   %-9s log %3d, parsed %3d, short %d%s' % (m, t, p, d, note))
+        print()
     print('  %d name a symbol CORE.XA0033DK renamed away (this conversion)'
           % len(ours))
     print('  %d do not -- unrelated diagnostics, read them separately' % len(other))
@@ -147,16 +251,31 @@ def main():
     # the opposite of the truth.  So: exact key first, text-only second, and the
     # text-only matches are reported as what they are.
     by_text = collections.defaultdict(list)
-    for s in sweep:
+    for s in allsites:
         by_text[re.sub(r'\s+', ' ', s.text)].append(s)
 
-    matched, copied, missed = [], [], []
+    # Third tier: a symbol used ONLY inside a literal is reported against the
+    # LITERAL POOL, not against the instruction that created it.  `DMKCFG` has
+    # `N R10,=AL4(X'FFFFFFFF'-SEGINV)` and the only diagnostic in the log reads
+    #     1946                =AL4(X'FFFFFFFF'-SEGINV)
+    # with a blank sequence number, because `LTORG` generated that statement.
+    # So the assembler reports a site it cannot give you a line number for, and
+    # the sweep reports a line the assembler never mentions.  Matching the
+    # literal text inside a swept instruction joins them.
+    in_mod = collections.defaultdict(list)
+    for s in allsites:
+        in_mod[s.mod].append(s)
+
+    matched, copied, literal, missed = [], [], [], []
     for f in ours:
         norm = re.sub(r'\s+', ' ', f.text.strip())
         if (f.mod, norm) in sweep_text:
             matched.append(f)
         elif norm in by_text:
             copied.append((f, by_text[norm][0]))
+        elif norm.startswith('=') and any(norm in re.sub(r'\s+', ' ', s.text)
+                                          for s in in_mod[f.mod]):
+            literal.append(f)
         else:
             missed.append(f)
 
@@ -166,7 +285,12 @@ def main():
               if (s.mod, re.sub(r'\s+', ' ', s.text)) not in flagged_keys
               and re.sub(r'\s+', ' ', s.text) not in flagged_text]
 
-    print('CONFIRMED %4d  flagged and predicted' % len(matched))
+    print('CONFIRMED %4d  flagged and predicted'
+          % (len(matched) + len(literal)))
+    if literal:
+        print('  of which %d reported against the LITERAL POOL, with a blank'
+              % len(literal))
+        print('  sequence number -- the assembler names no line to fix')
     if copied:
         print('  of which %d flagged under the module that COPYs the member the'
               % len(copied))
@@ -182,7 +306,7 @@ def main():
         for f in missed:
             print('  %-7s %-6s %-6s %s' % (f.mod, f.seq or '-', f.stmt,
                                            f.text[:56]))
-            print('          %s %s' % (f.diag, f.msg))
+            print('          %s' % '; '.join('%s %s' % d for d in f.diags))
         print()
 
     by_field = collections.Counter(s.field for s in silent)
@@ -221,12 +345,12 @@ def main():
         print('\nEvery diagnostic naming a renamed symbol:')
         for f in ours:
             print('  %-7s %-6s %-6s %-9s %s'
-                  % (f.mod, f.seq or '-', f.stmt, f.diag, f.text[:50]))
+                  % (f.mod, f.seq or '-', f.stmt, f.diags[0][0], f.text[:50]))
 
     if other:
         print('\nDiagnostics NOT about this conversion (%d):' % len(other))
-        seen = collections.Counter((f.diag, f.msg) for f in other)
-        for (d, msg), n in seen.most_common(10):
+        seen = collections.Counter(d for f in other for d in f.diags)
+        for (d, msg), n in seen.most_common(12):
             print('  %4d  %s %s' % (n, d, msg))
 
     return 1 if missed else 0
