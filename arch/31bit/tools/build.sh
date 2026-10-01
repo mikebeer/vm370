@@ -77,7 +77,15 @@ mk(){ # Four invariants on every ./ R, checked before 50 minutes are spent on a
       python3 $T/mkrun.py "$C" "$@" >/dev/null || { echo "### mkrun failed"; return 1; }; }
 arch(){ py "import mkrun; mkrun.archmode('$C/vm370ce.conf','$1')"; }
 
-chk(){ local r; r=$(py "import mkrun; print(mkrun.boot_failed('$C/$1.log') or '')")
+chk(){ local r
+       # FIRST, before anything else is read out of the log: did the run do what
+       # its own script asked?  w() waits for Hercules to DISAPPEAR and cannot
+       # tell "finished" from "killed", so a reaped run reaches here looking
+       # healthy -- 15 card files of 104, no assemblies, and therefore no
+       # diagnostics for asmchk to find.  A false pass, not lost time.  I-144.
+       r=$(py "import mkrun; print(mkrun.incomplete('$C','$1') or '')")
+       test -z "$r" || { echo "### $1 DID NOT COMPLETE: $r"; return 1; }
+       r=$(py "import mkrun; print(mkrun.boot_failed('$C/$1.log') or '')")
        test -z "$r" || { echo "### BOOT FAILED in $1: $r"; return 1; }
        r=$(py "import mkrun; print(mkrun.wrong_arch('$C/$1.log','$2') or '')")
        test -z "$r" || { echo "### $1: $r"; return 1; }

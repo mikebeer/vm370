@@ -397,3 +397,60 @@ def wrong_arch(log, want):
     if got != want:
         return 'ran in %s, not %s -- any trace or PSW from it is void' % (got, want)
     return None
+
+
+def incomplete(ce, run):
+    """Did the run do everything its own script asked for?  I-144.
+
+    `w()` waits for Hercules to DISAPPEAR and returns success when it does, so it
+    cannot tell "finished" from "killed".  On 1 October the process group was
+    reaped 13 minutes into a `full` build, 15 card files of 104 read and no
+    module assembled.  Had the driver survived that kill it would have gone on to
+    `chk` and `asmchk`, found no diagnostics -- because there were no assemblies
+    to produce any -- and printed a clean verdict on a build that did 14% of its
+    work.  A FALSE PASS on the verification build for the whole DAT conversion,
+    which is a worse outcome than any of the six earlier checks-that-cannot-fail,
+    because those only cost time.
+
+    Neither existing check looks at completeness: `boot_failed` reads the boot and
+    `asmchk` reads diagnostic severity.  So compare the log against the SCRIPT
+    rather than against an expectation -- the script is what the run was asked to
+    do, and it is written by the same `mk` that wrote the log's inputs, so no
+    number has to be remembered anywhere.
+
+    Returns None if the run accounted for itself, or a sentence saying what is
+    missing.
+    """
+    import os
+    rc = os.path.join(ce, 'hercules.rc')
+    lg = os.path.join(ce, '%s.log' % run)
+    if not os.path.exists(rc) or not os.path.exists(lg):
+        return 'no %s.log or hercules.rc to compare' % run
+    want_cards = want_asm = 0
+    for line in open(rc, errors='replace'):
+        t = line.strip()
+        if t.startswith('/readcard'):
+            want_cards += 1
+        elif t.startswith('/asmdmk'):
+            want_asm += 1
+    got_cards = got_asm = 0
+    shut = False
+    for line in open(lg, errors='replace'):
+        if 'readcard' in line:
+            got_cards += 1
+        if 'asmdmk' in line:
+            got_asm += 1
+        if 'CP SHUTDOWN' in line.upper() or 'SYSTEM SHUTDOWN' in line.upper():
+            shut = True
+    if got_cards < want_cards:
+        return ('the script asked for %d card files and the log shows %d -- the '
+                'run did not finish, so every check after this one would be '
+                'measuring a fraction of the work' % (want_cards, got_cards))
+    if got_asm < want_asm:
+        return ('the script asked for %d assembly pass(es) and the log shows %d'
+                % (want_asm, got_asm))
+    if want_asm and not shut:
+        return ('every card was read and every assembly ran, but the log has no '
+                'shutdown -- Hercules did not exit on its own, so the run may '
+                'have been cut short after the last thing checked here')
+    return None
