@@ -71,13 +71,49 @@ import re, sys
 t = open(sys.argv[1], errors='replace').read()
 if 'NOT FOUND' in t:
     print('### a COPY or MACRO was NOT FOUND -- I-101'); sys.exit(1)
-# asmdmk prints *** ERROR ASMBLING *** for ANY flagged statement, MNOTE 4
-# included: CE's own DMKRIO declares 3375 and 3390 devices VM/370 R6 does not
-# know and emits four severity-4 MNOTEs. The test is whether the deck exists.
-bad = [m for m in re.findall(r'\*\*\* ERROR ASMBLING (\S+) \*\*\*', t)
-       if ('%s TEXT CREATED' % m) not in t and ('%s TXTLCL CREATED' % m) not in t]
-print('--- flagged but output created: benign' if not bad else '### MISSING: %s' % bad)
-sys.exit(1 if bad else 0)
+
+# This check had TWO defects that cancelled into a plausible-looking result, and
+# the cancellation is why it survived.  I-137.
+#
+#   1. It knew `TEXT CREATED` and `TXTLCL CREATED` but not `TXTHRC CREATED`, so
+#      a module whose highest update level is HRC -- most of them, since only
+#      the modules this project patches get an LCL deck -- was reported MISSING
+#      even when its deck was built.  Five false positives.
+#   2. It treated "flagged but output created" as benign.  That is right for an
+#      MNOTE 4 (I-34's four 3375/3390 warnings) and CATASTROPHIC for
+#      `IFO188 UNDEFINED SYMBOL`: assembler XF emits the instruction with the
+#      symbol resolved as ZERO, so `L R3,SEGPAGE` becomes `L R3,0`, the TEXT
+#      deck exists, and VMFLOAD will build a nucleus out of it.  Eleven false
+#      negatives, DMKPTR with 35 flagged statements among them.
+#
+# So severity is the test, not the existence of output.  An MNOTE prints as
+# `IFO197 *** MNOTE ***`; everything else is an error that makes the deck a lie.
+mods = re.findall(r'\*\*\* ERROR ASMBLING (\S+) \*\*\*', t)
+created = set(re.findall(r'^(\S+) (?:TEXT|TXTLCL|TXTHRC) CREATED', t, re.M))
+missing = [m for m in mods if m not in created]
+
+# Per-module diagnostics, so an error names the module it is in.
+errs = {}
+mod = None
+for line in t.splitlines():
+    m = re.match(r'^EXEC VMFASM (\S+)', line)
+    if m:
+        mod = m.group(1); continue
+    d = re.match(r'^(IFO\d{3}) (?:\*\*\* )?(.*?)(?: \*\*\*)?\s*$', line)
+    if d and mod and d.group(1) != 'IFO197':
+        errs.setdefault(mod, []).append(d.group(1))
+
+if missing:
+    print('### NO OBJECT DECK: %s' % sorted(set(missing)))
+if errs:
+    print('### REAL DIAGNOSTICS (an object deck may exist and be WRONG):')
+    for m in sorted(errs):
+        print('###   %-8s %d  %s' % (m, len(errs[m]),
+                                     ' '.join(sorted(set(errs[m])))))
+if not missing and not errs:
+    n = len(re.findall(r'IFO197', t))
+    print('--- clean: %d MNOTE(s) only, every deck created' % n)
+sys.exit(1 if (missing or errs) else 0)
 PY
 }
 
