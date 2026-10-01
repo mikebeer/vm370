@@ -4,7 +4,8 @@
 #   build.sh full  [snapshot]   restore, stage everything, VMFMAC, assemble all
 #   build.sh quick <snapshot> <module>...   restore, reassemble named modules
 #   build.sh write              VMFLOAD + CP IPL 00C -- writes the nucleus
-#   build.sh test  [herc-spec]...           ESA/390 IPL, pgmtrace on
+#   build.sh test  [herc-spec]...           ESA/390 IPL on 3.13, pgmtrace on
+#   build.sh dual  <snapshot> [spec]...     the SAME test on 3.13 AND 4.9.1
 #
 # It lives in the repository rather than the scratchpad because the PROCEDURE is
 # the artifact: every ad-hoc copy of this logic grew a different hole, and the
@@ -19,6 +20,11 @@
 set -u
 C=${CE:-/home/claude/vm370/scratchpad/VM370CE.V1.R1.2}
 R=${REPO:-/home/claude/vm370}
+# Two engines. 3.13 stays the BUILD machine -- known-good, and every measurement
+# this project has made is against it.  4.9.1 is a second opinion on
+# architectural fidelity, never a replacement: see claude/HERCULES-4.md.
+HERC3=${HERC3:-hercules}
+HERC4=${HERC4:-/home/claude/herc4/install/bin/hercules}
 T=$R/arch/31bit/tools
 U=$R/arch/31bit/updates
 
@@ -31,10 +37,14 @@ w(){ for i in $(seq 1 1800); do test "$(pgrep -c hercules)" = "0" && return 0
      echo "### w(): Hercules still running after 90 minutes -- refusing to go on"
      return 1; }
 
-run(){ test "$(pgrep -c hercules)" = "0" || {
+# $2 is the engine, defaulting to 3.13.  The log name carries the engine so the
+# two runs of a dual test cannot overwrite each other -- a confusion that would
+# be indistinguishable from the engines agreeing.
+run(){ local eng=${2:-$HERC3}
+       test "$(pgrep -c hercules)" = "0" || {
          echo "### run($1): a Hercules is ALREADY running -- refusing to start a second"
          pgrep -a hercules | head -3; return 1; }
-       ( cd "$C" && setsid nohup hercules -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
+       ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
        sleep 8; w; }
 
 mk(){ python3 $T/mkrun.py "$C" "$@" >/dev/null || { echo "### mkrun failed"; return 1; }; }
@@ -61,8 +71,8 @@ sys.exit(1 if bad else 0)
 PY
 }
 
-restore(){ local snap=$1
-  python3 $T/snapshot.py check "$C" "$snap"; local rc=$?
+restore(){ local snap=$1 want=${2:-}
+  python3 $T/snapshot.py check "$C" "$snap" $want; local rc=$?
   case $rc in
     0) ;;
     2) echo "### $snap is stale -- restoring it anyway is only correct if you"
@@ -122,13 +132,47 @@ test)
   arch ESA/390
   mk t1 --bare "herc:pgmtrace +1:3" "herc:pgmtrace +2:3" "herc:pgmtrace +5:3" \
      "herc:pgmtrace +6:3" "herc:ipl 6A1:200" "${@:-herc:stop:6}" \
-     "herc:stop:6" "herc:psw:5" "herc:r 8C.10:5" "herc:gpr:6" || exit 1
+     "herc:stop:6" "herc:psw:5" "herc:r 80.20:5" "herc:gpr:6" || exit 1
   run t1 || exit 1
   r=$(py "import mkrun; print(mkrun.wrong_arch('$C/t1.log','ESA/390') or '')")
   test -z "$r" || { echo "### t1: $r"; exit 1; }
   echo "--- t1: ESA/390 confirmed"
   sed -n '/^pgmtrace/,$p' "$C/t1.log" | grep -vE "Pausing|Resuming|^$|HHCCD001I" | head -30
   arch S/370
+  ;;
+dual)
+  # Run the SAME test on both engines from the SAME starting state.  The restore
+  # between them is not optional: an ESA/390 IPL writes warm-start data, so the
+  # second engine would otherwise start from the first one's end state and any
+  # difference could be the state rather than the engine.
+  w || exit 1
+  snap=${2:-SNAP-2}; shift 2 2>/dev/null || shift $# 
+  arch ESA/390
+  for eng in 3 4; do
+    case $eng in 3) B=$HERC3;; 4) B=$HERC4;; esac
+    test -x "$B" -o -n "$(command -v "$B")" || { echo "### engine $eng not found: $B"; exit 1; }
+    ALLOW_STALE=yes restore "$snap" test >/dev/null || exit 1
+    # Engine 4 needs one thing turned off before it can be compared at all.
+    # HERC_DETECT_PGMINTLOOP is a *Hercules* facility, not an architectural one,
+    # and in 4.x it TERMINATES THE EMULATOR when CP's abend re-IPL loops, where
+    # 3.13 merely stops the CPU with HHCCP016I.  Left on, engine 4 exits 12
+    # seconds in, never reaches `stop`, and prints no PSW or registers -- which
+    # looks exactly like a disagreement and is not one.  I-120.
+    pre=""; test $eng = 4 && pre="herc:facility disable HERC_DETECT_PGMINTLOOP:3"
+    # Storage is read on 16-BYTE BOUNDARIES on purpose: 4.x prints the containing
+    # line with the requested bytes offset inside it, so `r 8C.10` and `r 80.20`
+    # produce differently shaped output.  Aligned, both engines print whole lines
+    # and the comparison is by address.
+    mk d$eng --bare ${pre:+"$pre"} "herc:pgmtrace +1:3" "herc:pgmtrace +2:3" \
+       "herc:pgmtrace +5:3" "herc:pgmtrace +6:3" "herc:ipl 6A1:200" "$@" \
+       "herc:stop:6" "herc:psw:5" "herc:r 80.20:5" "herc:r 20.20:5" \
+       "herc:gpr:6" || exit 1
+    run d$eng "$B" || exit 1
+    echo "--- engine $eng ($("$B" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+[0-9.]*' | head -1)): $(grep -c 'INST=' $C/d$eng.log) traced, $(grep -cE 'DMK[A-Z]{3}[0-9]' $C/d$eng.log) CP messages"
+  done
+  arch S/370
+  echo
+  python3 $T/dualdiff.py "$C/d3.log" "$C/d4.log"
   ;;
 *)
   sed -n '2,20p' "$0"

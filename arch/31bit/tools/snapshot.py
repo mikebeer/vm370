@@ -67,7 +67,8 @@ one the run itself made:
      more bootable than the live system; that specific mistake cost a rebuild
      from pristine.
 
-    python3 snapshot.py take  <ce-dir> <name> <log>   copy, manifest, validate
+    python3 snapshot.py take  <ce-dir> <name> <log> [--test]
+                                                     copy, manifest, validate
     python3 snapshot.py adopt <ce-dir> <name> <log>   manifest an existing one
     python3 snapshot.py check <ce-dir> <name>         valid?  and still current?
     python3 snapshot.py list  <ce-dir>                every snapshot and its state
@@ -121,8 +122,21 @@ def hercules_running():
         return -1
 
 
-def validate(log, updates=UPDATES):
-    """Reasons this log does NOT prove a current, pre-write build state."""
+def validate(log, updates=UPDATES, purpose='build'):
+    """Reasons this log does not prove the state the snapshot claims to be.
+
+    Two purposes, because they are two different objects with opposite rules:
+
+      * `build` -- restored to reassemble from.  It must NOT contain a written
+        nucleus, or it is no more bootable than the live system.
+      * `test`  -- restored to IPL under ESA/390.  It MUST contain a written
+        nucleus, because that is the artifact under test.
+
+    Conflating them is how a dual-engine test got run against the unconverted
+    CE nucleus and reported `PSW=000A0000 00000017` -- DMKCKP's "error loading
+    CKP page 2" -- which is a perfectly real failure of a machine nobody meant
+    to test.  I-119.
+    """
     bad = []
     n = hercules_running()
     if n != 0:
@@ -148,16 +162,20 @@ def validate(log, updates=UPDATES):
 
     if 'NOT FOUND' in text:
         bad.append('a COPY or MACRO was NOT FOUND (I-101)')
-    if 'Nucleus loaded on' in text:
-        bad.append('this run WROTE the nucleus -- a snapshot must be taken '
-                   'before the write, or it is not bootable')
+    wrote = 'Nucleus loaded on' in text
+    if purpose == 'build' and wrote:
+        bad.append('this run WROTE the nucleus -- a BUILD snapshot must be '
+                   'taken before the write, or it is not bootable')
+    if purpose == 'test' and not wrote:
+        bad.append("this run did NOT write the nucleus -- a TEST snapshot must "
+                   "contain the converted nucleus, or the IPL tests CE's own")
 
     # A patched module must show BOTH its deck going in and a TXTLCL coming out.
     # Checking only one of the two is how a TXTLCL built from a superseded deck
     # would pass: `APPLYING` alone proves the deck was read, `TXTLCL CREATED`
     # alone proves something was assembled.  Together they prove this run did it.
     noapply, notext = [], []
-    for m in patched_modules(updates):
+    for m in (patched_modules(updates) if purpose == 'build' else []):
         if not re.search(r"APPLYING '%s XA\d+DK" % m, text):
             noapply.append(m)
         if ('%s TXTLCL CREATED' % m) not in text:
@@ -171,7 +189,7 @@ def validate(log, updates=UPDATES):
     return bad
 
 
-def take(ce, name, log):
+def take(ce, name, log, purpose='build'):
     disks = os.path.join(ce, 'disks')
     src, dst = os.path.join(disks, 'shadows'), os.path.join(disks, name)
     if not os.path.isdir(src):
@@ -184,6 +202,7 @@ def take(ce, name, log):
         shutil.rmtree(dst)
     os.makedirs(dst)
     man = {'state': 'invalid',
+           'purpose': purpose,
            'reason': ['copy in progress -- not yet validated'],
            'taken': time.strftime('%Y-%m-%dT%H:%M:%S'),
            'log': os.path.basename(log),
@@ -197,7 +216,7 @@ def take(ce, name, log):
             shutil.copy2(s, os.path.join(dst, f))
     man['files'] = sorted(f for f in os.listdir(dst) if f != MANIFEST)
 
-    bad = validate(log)
+    bad = validate(log, purpose=purpose)
     if bad:
         man['reason'] = bad
         write_manifest(dst, man)
@@ -210,9 +229,12 @@ def take(ce, name, log):
     man['evidence'] = {'modules_with_text': len(man['modules']),
                        'hercules_down': True, 'pre_nucleus_write': True}
     write_manifest(dst, man)
-    print('--- %s is VALID: %d shadow files, %d patched modules with current '
-          'TEXT, Hercules down, taken before the nucleus write'
-          % (name, len(man['files']), len(man['modules'])))
+    print('--- %s is VALID (%s): %d shadow files, %s'
+          % (name, purpose, len(man['files']),
+             '%d patched modules with their decks applied and a TXTLCL created, '
+             'taken before the nucleus write' % len(man['modules'])
+             if purpose == 'build' else
+             'contains a written nucleus, Hercules down'))
     return 0
 
 
@@ -276,7 +298,7 @@ def read_manifest(d):
         return None
 
 
-def check(ce, name):
+def check(ce, name, want=None):
     d = os.path.join(ce, 'disks', name)
     man = read_manifest(d)
     if man is None:
@@ -287,6 +309,14 @@ def check(ce, name):
         print('### %s is INVALID:' % name, file=sys.stderr)
         for r in man.get('reason', ['(no reason recorded)']):
             print('      - %s' % r, file=sys.stderr)
+        return 1
+
+    got = man.get('purpose', 'build')
+    if want and got != want:
+        print('### %s is a %s snapshot, and a %s one was asked for.  A build '
+              'snapshot holds no written nucleus and a test snapshot is not '
+              'reassembled from -- restoring the wrong kind tests the wrong '
+              'machine.  I-119.' % (name, got, want), file=sys.stderr)
         return 1
 
     now, then = fingerprints(), man.get('inputs', {})
@@ -342,12 +372,13 @@ def main():
         print(__doc__)
         return 2
     verb = a[0]
-    if verb == 'take' and len(a) == 4:
-        return take(a[1], a[2], a[3])
+    if verb == 'take' and len(a) in (4, 5):
+        return take(a[1], a[2], a[3],
+                    'test' if (len(a) == 5 and a[4] == '--test') else 'build')
     if verb == 'adopt' and len(a) == 4:
         return adopt(a[1], a[2], a[3])
-    if verb == 'check' and len(a) == 3:
-        return check(a[1], a[2])
+    if verb == 'check' and len(a) in (3, 4):
+        return check(a[1], a[2], a[3] if len(a) == 4 else None)
     if verb == 'list' and len(a) == 2:
         return listing(a[1])
     print(__doc__)
