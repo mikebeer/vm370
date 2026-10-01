@@ -1,0 +1,28 @@
+./ R 51700000          $ 51700100 100                                           
+*  SHRPAGE IS AN STE IN ALL BUT NAME -- SHRTABLE.COPY SAYS SO  XA0036DK         
+*  IN A COMMENT AND NO SYMBOL JOINS THEM -- SO ITS LENGTH      XA0036DK         
+*  FIELD MOVES WITH THE STE'S: PTL IS THE LOW NIBBLE AND       XA0036DK         
+*  COUNTS 16 ENTRIES AT A TIME.                                XA0036DK         
+         N     R9,=A(SEGPTLF) LEAVE ONLY PTL                   XA0036DK         
+         LA    R9,1(,R9)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R9,4           NUMBER OF PAGES                  XA0036DK         
+         BCTR  R9,0           MINUS ONE, AS BEFORE             XA0036DK         
+./ R 52200000          $ 52200100 100                                           
+         LA    R8,PAGPFRA     POINTER TO 1ST PAGE ADDRESS      XA0036DK         
+./ R 52400000          $ 52400100 100                                           
+         USING PAGPFRA,R8                                      XA0036DK         
+./ R 53800000          $ 53800100 100                                           
+         TM    PAGPFRA+2,PAGINV IS PAGE IN CORE?               XA0036DK         
+./ R 54000000 54100000 $ 54000100 100                                           
+*  THE S/370 PTE VALUE WAS ALSO THE CORTABLE OFFSET: A FRAME   XA0036DK         
+*  NUMBER TIMES 16 IS BOTH, SO ONE MASK SERVED TWO PURPOSES.   XA0036DK         
+*  AN ESA/390 PTE IS THE FRAME'S REAL ADDRESS, SO THE INDEX    XA0036DK         
+*  NEEDS AN SRL 8. NOTHING REPORTS THIS: A R2,ACORETBL NAMES   XA0036DK         
+*  NO DAT FIELD.                                               XA0036DK         
+         L     R2,PAGPFRA     LOAD A PAGE TABLE ENTRY          XA0036DK         
+         N     R2,=A(PAGPFRM) LEAVE ONLY THE FRAME ADDRESS     XA0036DK         
+         SRL   R2,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 57400000          $ 57400100 100                                           
+         MVC   PAGPFRA,=A(PAGINVW) INVALIDATE PAGE TABLE       XA0036DK         
+./ R 62000000          $ 62000100 100                                           
+         LA    R8,L'PAGPFRA(,R8) ADDRESS THE NEXT ENTRY        XA0036DK         

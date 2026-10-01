@@ -3225,6 +3225,77 @@ DATMODS = {
         ]),
     ],
 
+    # `OI PAGCORE+1,PAGINVAL+PAGREF` sets two flags that shared byte 1.  In
+    # ESA/390 the invalid bit is in byte 2 and the referenced flag in byte 3, so
+    # ONE instruction becomes TWO at every such site -- six of them, in DMKRPA
+    # and DMKPTR.  Nothing about the card hints that it is two operations; the
+    # only clue is that the two flags no longer share a byte.
+    'DMKRPA': [
+        ('00122000', ["         USING PAGPFRA,R9"]),
+        ('00174000', Deck.comment(
+            "PAGINVAL AND PAGREF SHARED BYTE 1. NOW I IS BIT 21, IN BYTE 2, AND "
+            "PAGREF IS IN BYTE 3, WHERE THE HARDWARE IGNORES IT. SO ONE OI "
+            "BECOMES TWO, AT ALL SIX SITES THAT NAME BOTH FLAGS.") + [
+            "         OI    PAGPFRA+2,PAGINV FLAG PAGE INVALID",
+            "         OI    PAGPFRA+3,PAGREF AND REFERENCED",
+        ]),
+        ('00184000', [
+            "         ST    R0,PAGPFRA     AND ALSO THE PAGE ENTRY.",
+        ]),
+        ('00185100', [
+            "         OI    PAGPFRA+2,PAGINV FLAG PAGE INVALID",
+            "         OI    PAGPFRA+3,PAGREF AND REFERENCED",
+        ]),
+        ('00253100', [
+            "         OI    PAGPFRA+2,PAGINV INVALIDATE ACROSS",
+            "         OI    PAGPFRA+3,PAGREF WRITE",
+        ]),
+        ('00266100', [
+            "         NI    PAGPFRA+2,255-PAGINV FINISHED, VALIDATE",
+            "         NI    PAGPFRA+3,255-PAGREF ...",
+        ]),
+    ],
+
+    # The third instance of one pattern, and the one that names it: the S/370
+    # halfword PTE value IS the CORTABLE offset, because a page frame number
+    # times 16 is both.  An ESA/390 PTE is the frame's real address, so an
+    # SRL 8 has to be inserted -- and `A R2,ACORETBL` names no DAT field, so
+    # nothing reports it.  DMKPTR 00721000 states the relationship outright:
+    # `S R7,ACORETBL  GET PAGE ADDRESS/256`.
+    'DMKCPP': [
+        ('51700000', Deck.comment(
+            "SHRPAGE IS AN STE IN ALL BUT NAME -- SHRTABLE.COPY SAYS SO IN A "
+            "COMMENT AND NO SYMBOL JOINS THEM -- SO ITS LENGTH FIELD MOVES WITH "
+            "THE STE'S: PTL IS THE LOW NIBBLE AND COUNTS 16 ENTRIES AT A TIME.") + [
+            "         N     R9,=A(SEGPTLF) LEAVE ONLY PTL",
+            "         LA    R9,1(,R9)      UNITS OF 16 ENTRIES",
+            "         SLL   R9,4           NUMBER OF PAGES",
+            "         BCTR  R9,0           MINUS ONE, AS BEFORE",
+        ]),
+        ('52200000', [
+            "         LA    R8,PAGPFRA     POINTER TO 1ST PAGE ADDRESS",
+        ]),
+        ('52400000', ["         USING PAGPFRA,R8"]),
+        ('53800000', [
+            "         TM    PAGPFRA+2,PAGINV IS PAGE IN CORE?",
+        ]),
+        ('54000000', '54100000', Deck.comment(
+            "THE S/370 PTE VALUE WAS ALSO THE CORTABLE OFFSET: A FRAME NUMBER "
+            "TIMES 16 IS BOTH, SO ONE MASK SERVED TWO PURPOSES. AN ESA/390 PTE "
+            "IS THE FRAME'S REAL ADDRESS, SO THE INDEX NEEDS AN SRL 8. NOTHING "
+            "REPORTS THIS: A R2,ACORETBL NAMES NO DAT FIELD.") + [
+            "         L     R2,PAGPFRA     LOAD A PAGE TABLE ENTRY",
+            "         N     R2,=A(PAGPFRM) LEAVE ONLY THE FRAME ADDRESS",
+            "         SRL   R2,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('57400000', [
+            "         MVC   PAGPFRA,=A(PAGINVW) INVALIDATE PAGE TABLE",
+        ]),
+        ('62000000', [
+            "         LA    R8,L'PAGPFRA(,R8) ADDRESS THE NEXT ENTRY",
+        ]),
+    ],
+
     # Clearing a PTE's frame address while keeping its flags.  The halfword form
     # was MVI byte 0 / NI byte 1 keeping the low nibble / OI the invalid bit.
     # For a fullword the order has to change: PAGREF is saved FIRST, while byte 3

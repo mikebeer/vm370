@@ -1,0 +1,20 @@
+./ R 00122000          $ 00122100 100                                           
+         USING PAGPFRA,R9                                      XA0036DK         
+./ R 00174000          $ 00174100 100                                           
+*  PAGINVAL AND PAGREF SHARED BYTE 1. NOW I IS BIT 21, IN      XA0036DK         
+*  BYTE 2, AND PAGREF IS IN BYTE 3, WHERE THE HARDWARE         XA0036DK         
+*  IGNORES IT. SO ONE OI BECOMES TWO, AT ALL SIX SITES THAT    XA0036DK         
+*  NAME BOTH FLAGS.                                            XA0036DK         
+         OI    PAGPFRA+2,PAGINV FLAG PAGE INVALID              XA0036DK         
+         OI    PAGPFRA+3,PAGREF AND REFERENCED                 XA0036DK         
+./ R 00184000          $ 00184100 100                                           
+         ST    R0,PAGPFRA     AND ALSO THE PAGE ENTRY.         XA0036DK         
+./ R 00185100          $ 00185200 100                                           
+         OI    PAGPFRA+2,PAGINV FLAG PAGE INVALID              XA0036DK         
+         OI    PAGPFRA+3,PAGREF AND REFERENCED                 XA0036DK         
+./ R 00253100          $ 00253110 010                                           
+         OI    PAGPFRA+2,PAGINV INVALIDATE ACROSS              XA0036DK         
+         OI    PAGPFRA+3,PAGREF WRITE                          XA0036DK         
+./ R 00266100          $ 00266200 100                                           
+         NI    PAGPFRA+2,255-PAGINV FINISHED, VALIDATE         XA0036DK         
+         NI    PAGPFRA+3,255-PAGREF ...                        XA0036DK         

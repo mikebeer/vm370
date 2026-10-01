@@ -77,6 +77,15 @@ CLASSES = [
     Class('addr-split', re.compile(r'^\s+(SRDL|SLDL)\s+R?\d+,(4|8|16|20)\b'),
           'any', 'M1',
           'splits a virtual address: 16 bits of segment becomes 20, 4 of page 8'),
+    # Found in DMKCPP, and it is the third instance of one pattern: the S/370
+    # halfword PTE value IS the CORTABLE offset, because a page frame number
+    # times 16 is both.  DMKPTR 00721000 states it -- `S R7,ACORETBL  GET PAGE
+    # ADDRESS/256`.  An ESA/390 PTE is the frame's real address, so every one of
+    # these needs an SRL 8 inserted (or an SLL 8 in the reverse direction).
+    # Invisible: `A R7,ACORETBL` names no DAT field.
+    Class('cortable-index', re.compile(r'^\s+(A|AL|S|SL)\s+R?\d+,ACORETBL\b'),
+          'dat', 'M1',
+          'a PTE value used as a CORTABLE index -- both were pageno*16'),
     Class('pack3', re.compile(r"^\s+(ICM|STCM|CLM)\s+R?\d+,B'0111'"), 'any', 'M5',
           'a three-byte address field -- 24 bits by construction'),
 ]
