@@ -1,6 +1,9 @@
 # The walls between a converted CP and a clean IPL
 
-Started 28 September 2026, rewritten 1 October, **re-measured 1 October (later)**.
+Started 28 September 2026, rewritten 1 October, re-measured 1 October (midday),
+**re-measured again 1 October 18:45 UTC — see the dated notes below.** Every
+section that has been superseded says so where it stands rather than being
+deleted, because the diff is the point of this file.
 Extends **STATE.md** and **BUILD-CYCLE.md**. Read after GOTCHAS.md.
 
 **This file is the version-controlled original; the project's copy is published
@@ -29,8 +32,12 @@ survived contact.
 | 9 | CP executes an ECPS:VM assist *before* probing for assists | `SCNRU` / `STEVL`, operation exception | `pgmtrace`, one run |
 | 10 | Our own DSECT grew; the block generator did not | `CPI001` — SYSRES not found | `dumpscan.py` on the dump |
 | 11 | **`TRANS` loads an S/370 STD and `LRA` rejects it** | `PRG018` = translation specification | the dump, below |
+| 12 | **Not a CP wall: the build environment is reclaimed mid-run** | Hercules, the driver and the watcher vanish together; the log ends on a normal `Ready;` | `uptime`, two hours late |
 
-Walls 1–10 are closed. Detail for each in `docs/13-ISSUES.md`; the entries
+Walls 1–10 are closed. **Wall 11 is converted and assembles; it is not yet
+proven at run time.** Wall 12 is not CP's and is described last.
+
+Walls 1–10 are closed, and for the record: Detail for each in `docs/13-ISSUES.md`; the entries
 worth reading are **I-77**, **I-102**, **I-104**, **I-108**, **I-110**,
 **I-114** and **I-116**.
 
@@ -92,32 +99,124 @@ segment-table format into M1. **No site count changed — only the sequencing.**
 
 ---
 
-## What is between here and `DMKCPI966I` — re-measured
+## What is between here and `DMKCPI966I` — re-measured 18:45 UTC
 
-The two earlier answers to this question were a guess and a sweep. This one is
-the **assembler's**, which is the first version of it that cannot be argued with:
+The three earlier answers to this question were a guess, a sweep, and the
+assembler's first verdict. This one is the assembler's **second** verdict, after
+the conversion was written.
+
 `CORE.XA0033DK` renames every DAT field with no alias, so an unconverted site
-fails to assemble. The build of 1 October reported **190 statements flagged
-across 186 modules, 176 of them naming a renamed symbol**, and `asmerr.py`
-reconciled them against `dattab.py`'s independent sweep:
+cannot assemble. The midday build raised **176 undefined-symbol diagnostics**
+across 16 modules — one per site needing work. The build of 13:15 UTC, with the
+conversion written, raised **none**:
 
 ```
-CONFIRMED  176  flagged and predicted
+CONFIRMED    0  flagged and predicted
 MISSED       0  flagged but NOT predicted -- the sweep has a hole
-SILENT      67  predicted but NOT flagged -- no diagnostic exists
+COLLIDED     0  a symbol this conversion introduced, already defined
+SILENT     176  predicted but NOT flagged -- no diagnostic exists
 ```
 
-### Group 1 — known, small, and mechanical: 10 cards
+The modules did assemble, so every deck applied and every renamed site was
+converted. **~700 cards across 23 modules in 53 update decks.**
 
-| Module | Sites | What | Fix |
+That build's module accounting, which took three attempts to state correctly
+(`I-147` — I reported the denominator as 198, then 192, and it is 186):
+
+| | |
+|---|---|
+| modules assembled | **186** |
+| OK — clean *and* an object deck | **180** |
+| DEFECT — a diagnostic that is not an MNOTE | **5** |
+| MISSING — no `TEXT`/`TXTLCL`/`TXTHRC` | **0** |
+| MNOTE-only — `DMKRIO`, `I-34`'s 3375/3390 notes | **1** |
+
+The five defects had nothing to do with ESA/390, and all four causes are now
+asserted statically by `tools/replchk.py` before a build starts: a replacement
+must carry forward any label it covers (`PURCONT`), must not define one that
+survives on an unreplaced record (`CKSEG`), must take continuation cards with it
+(`DMKCPP` 62000000 carried an `X` in **column 72**), and must only name symbols
+the module can see (seven diagnostics from putting nine architecture constants in
+`CORE COPY`, copied by 42 modules, instead of `EQU COPY`, copied by 179 of 192).
+`I-143`. All four are fixed and the confirming build is in progress.
+
+**So wall 11 is converted and assembles. It is not yet proven at run time**, and
+nothing below should be read as claiming otherwise. The measurement that decides
+it is the nucleus write and the IPL on both engines.
+
+### Group 1 — RETRACTED: not 10 cards, 95 sites
+
+**The figure in the previous version of this section was wrong, and the way it
+was wrong matters more than the number.** It read:
+
+> `DMKCPI` 1, `DMKPSA` 4, `DMKSAV` 5 — unchanged, and still a day.
+
+Ten or eleven sites, specific enough to be believed, and quoted across several
+sessions. It was three modules someone had looked at, written down as a total.
+`22-S370-ONLY.md`, **in this same directory**, has held the real measurement all
+along — 200 nucleus sites across 28 modules, taken from Hercules's own opcode
+table. Two documents in one directory disagreeing by a factor of twenty, neither
+mentioning the other. The tell was available: `DMKPSA` has **five** `ISK`s, not
+four, and a count taken by reading is not off by one in a list of five. `I-141`.
+
+`tools/privchk.py` now reports the **remainder** where `s370only.py` reports the
+total, and the two were reconciled before either was trusted: with the deck
+subtraction disabled they agree **199 against 200**, the single difference being
+`STIDC`, missing from `privchk`'s opcode list until the check found it. Every
+other opcode matches site for site — TIO 71, SIO 48, ISK 38, SSK 16, RRB 13,
+HIO 5, HDV 4, TCH 3, CLRIO 1 — and both put the same four standalone utilities
+outside the nucleus.
+
+**95 sites remain, and the split matters more than the total.**
+
+| | sites | where | on the IPL path? |
 |---|---|---|---|
-| `DMKCPI` | 1 | `SIO 0(R15)` at 00485480, a sense to the IPL device | 1 card |
-| `DMKPSA` | 4 | `ISK R15,R15` — storage keys in the interrupt handlers | `ISKE`, 4 cards |
-| `DMKSAV` | 5 | `SIO`/`TIO` in `QDISK` and the sense path | 5 cards |
+| **storage keys** | **62** | 14 modules, `DMKPTR` holding 23 | not for CP coming up; `DMKPSA`'s five are in the fetch/storage-protection checks, reached when a virtual machine touches storage, and `DMKPTR`'s 23 when paging starts |
+| **synchronous channel** | **33** | `DMKLD00E` 19, `DMKVMI` 7, `DMKSAV` 5, `DMKCPI` 1, `DMKENT` 1 | **partly yes** |
 
-Unchanged, and still a day.
+`ISK`, `SSK` and `RRB` are `GENx370x___x___` in Hercules's opcode table — they do
+not exist in ESA/390 at all, so each one executed is an operation exception.
+Walls 7 and 8 were exactly this.
 
-### Group 2 — the DAT tables: 176 flagged sites in 16 modules, plus ~90 silent
+**The channel group cannot ride with the deferred multi-channel work, which is
+what the previous version assumed.** `DMKLD00E` is the standalone loader that
+loads the nucleus; it runs before CP exists. Its 19 sites are on the
+*nucleus-write* path, which runs under `ARCHMODE S/370`, so they do not block
+this IPL — they block ever loading a nucleus under ESA/390. `DMKSAV`'s five are
+in `QDISK`, `SCPZCAW` and the sense-retry path, which is consistent with CP
+already restoring its nucleus image successfully; its main restore path is
+converted. `DMKCPI`'s is the sense to the IPL device.
+
+### The storage-key family is cheaper than it looked, and provable first
+
+CE sets `CPCREG0 DC X'81800CC0'` where base `PSA MACRO` has `X'80800CC0'`. The
+added bit is `CR0_STORKEY_4K`, and Hercules tests it in exactly three places —
+`insert_storage_key`, `reset_reference_bit` and `set_storage_key`, the **2 KB**
+instructions — raising a special-operation exception when it is **off**, which is
+the S/370 rule for models with the 4 KB-key feature. **CE therefore already runs
+with 4 KB keys, and both halves of every paired operation already reach one key.**
+
+That turns what looked like a design decision into an observation. CP keeps a key
+per 2 KB half of its own accord (`SWPKEY1`, `SWPKEY2`) and packs both hardware
+keys into one register against a two-byte mask, because `ISK` only loads bits
+24-31. Reading replicates the one 4 KB key into both halves and yields the
+*identical* register value; writing takes `SWPKEY1`, because the second `SSK`
+already wins and already carries it. `DMKPRV` answers a guest `ISK` from
+`SWPTABLE` rather than from hardware, so the guest keeps seeing its two distinct
+keys either way. **No deviation to document — only register pressure per site.**
+And because `ISKE`/`SSKE`/`RRBE` are valid in S/370 too, all 67 sites can be
+converted and tested on CE **as it runs today**, before anything else moves.
+`23-STORAGE-KEYS.md` has the detail; `I-142` records that I twice generalised one
+site's answer into a rule before checking.
+
+### Group 2 — the DAT tables: WRITTEN. 176 flagged sites converted, ~90 silent read
+
+**Status as of 18:45 UTC: all 176 flagged sites are converted and the modules
+assemble.** The text below is the midday analysis, kept because the measurements
+and the reasoning still hold; where it describes work as outstanding, read it as
+describing what was done. The one item in it that is **still open** is the `VMSEG`
+readers, and that is now the largest known remaining item on the path to CP
+coming up — see the estimate at the end.
 
 | module | flagged | module | flagged |
 |---|---|---|---|
@@ -204,10 +303,67 @@ than edited. Both are invisible through a clean IPL and both are large:
 Neither belongs in M1 and neither was in anyone's count. They belong in
 `WHAT-31BIT-NEEDS.md`.
 
+## Wall 12 — not CP's: the build environment is reclaimed mid-run
+
+Recorded here because it is what stopped progress on 1 October afternoon, and
+because mistaking an environmental failure for a CP one is how a day goes.
+
+Three verification builds died at 13 minutes, 4 minutes and 9 minutes, each
+taking Hercules, the `nohup`'d driver and (the third time) the liveness watcher
+together, each leaving a log that ends on a normal `Ready;` with no error. Memory
+was 7.5 GB of 8 GB free, disk had 22 GB, the kernel log showed no kill, and the
+Hercules script was complete. I added `setsid`, wrote a watcher, and reasoned
+from three deaths and one 70-minute success that background work does not outlive
+a foreground call.
+
+**One command settled it, two hours late: `uptime` reported 39 minutes against
+five hours of work.** The container is reclaimed and restarted. Files on disk
+survive; processes do not. Nothing done to a background job survives that.
+
+Two consequences, both now in the driver:
+
+* **A long build is not a thing to protect, it is a thing to avoid.** `full`
+  stages 104 files and assembles 186 modules in about seventy minutes. But the
+  staleness report already names exactly what changed since the snapshot — 45
+  inputs — and the snapshot holds the rest, so `build.sh spec` stages 49 files and
+  assembles the 58 affected modules. `I-146`.
+* **A reaped run must not be mistaken for a finished one.** `w()` waits for
+  Hercules to *disappear* and returns success when it does, so a reaped run
+  reached `chk` and `asmchk` looking healthy — 15 card files of 104, no
+  assemblies, and therefore no diagnostics to find. That is a **false pass on the
+  verification build for the whole conversion**, not merely lost time.
+  `mkrun.incomplete()` now compares the log against `hercules.rc` — the script is
+  what the run was *asked* to do — and `chk()` calls it first. `I-144`.
+
+The reclaim is also why the 13:15 build's output no longer exists: each `full`
+begins by restoring `SNAP-2`, and three restarts discarded 180 good modules to
+redo four one-line fixes. `I-111`'s property, invoked carelessly.
+
 ## The estimate, stated honestly
 
-**Group 1 is a day.** Group 3 is not on the path to a clean IPL, but two of its
-items are now sized for the milestones that own them.
+**Revised 18:45 UTC.**
+
+**Group 2 is written** — ~700 cards, 23 modules, 53 decks, zero undefined-symbol
+diagnostics where there were 176. Unproven at run time.
+
+**Group 1 is not a day; it is 95 sites.** 62 storage-key, 33 channel. The
+storage-key family is the one piece of this project that can be written **and
+tested** before anything else moves, because `ISKE`/`SSKE`/`RRBE` are valid in
+S/370 and CE already runs with 4 KB keys. That makes it the obvious next
+substantial piece of work, not because it is small but because it is *provable*.
+
+**The largest known item still blocking CP coming up is the `VMSEG` readers** —
+92 `L`/`LCTL` sites in 40 modules, of 30 classified 16 needing a mask added and 14
+carrying a constant that must change. None is flagged, because `VMSEG` is not
+renamed; the remedy is the one that worked for the DAT fields, a second rename
+pass with no alias so the assembler enumerates all 105 references.
+
+**And the honest part: expect a wall 13 that is not on this list.** Eleven walls
+have been found and every one was invisible until the previous one fell. Three
+answers to "how much is left" have now been given and all three were wrong — the
+first two by guessing, the third by quoting a document that disagreed with
+another document in the same folder. Group 3 is not on the path to a clean IPL,
+but two of its items are now sized for the milestones that own them.
 
 **Group 2 is about 229 remaining changes**, and that figure deserves its
 caveats. It is the assembler's 139 remaining flagged sites plus ~90 measured
