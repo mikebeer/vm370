@@ -3296,6 +3296,166 @@ DATMODS = {
         ]),
     ],
 
+    # Attaching and detaching shared segments: 23 flagged sites and 24 idiom
+    # candidates, of which reading rejects four.  00805000-00808000 is the clean
+    # example of candidate-versus-verdict -- `LR R7,R2 / N R7,XPAGNUM /
+    # SRL R7,8 / AL R7,ACORETBL` starts from a REAL ADDRESS, not a PTE, so the
+    # shift is already right and the card needs nothing.
+    'DMKATS': [
+        ('00126000', ["         USING PAGPFRA,R6"]),
+        ('00187000', [
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R8,R6          ADDRESS OF SEGTABLE ENTRY",
+        ]),
+        ('00188000', ["         L     R6,SEGPTO      LOAD ADDRESS OF PTO"]),
+        ('00189000', [
+            "         TM    SEGPTO+3,SEGINVAL SEGMENT VALID",
+        ]),
+        ('00194000', [
+            "         SL    R0,=A(PAGPFRA-PAGSTMP) BACKUP TO PAGTABLE",
+        ]),
+        ('00196000', ["         L     R3,SEGPTO      LOAD R3 WITH STE"]),
+        ('00197000', '00198000', Deck.comment(
+            "SRL R3,28 TOOK SEGPLEN FROM BITS 0-3 AND THE NEXT CARD ADDED ONE. "
+            "PTL IS BITS 28-31 IN UNITS OF 16 ENTRIES.") + [
+            "         N     R3,=A(SEGPTLF) NUMBER OF PTES",
+            "         LA    R3,1(,R3)      UNITS OF 16 ENTRIES",
+            "         SLL   R3,4           PAGES IN THIS SEGMENT",
+        ]),
+        ('00291000', [
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R2,R6          ADDR OF SEGTABLE ENTRY",
+        ]),
+        ('00294000', [
+            "         S     R2,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00337000', [
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R2,R6          ADDR OF SEGMENT ENTRY",
+        ]),
+        ('00340000', [
+            "         S     R2,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00431000', ["         USING PAGPFRA,R6"]),
+        ('00497000', [
+            "         L     R5,VMSEG       THE DESIGNATION",
+            "         N     R5,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R8,R5          ADDR SEGTABLE ENTRY",
+        ]),
+        ('00498000', ["         L     R6,SEGPTO      LOAD ADDR PTO"]),
+        ('00500000', [
+            "         S     R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00510000', [
+            "         A     R6,=A(PAGPFRA-PAGSTMP) RESET TO PTO",
+        ]),
+        ('00511000', ["         L     R3,SEGPTO      LOAD STE"]),
+        ('00512000', '00513000', [
+            "         N     R3,=A(SEGPTLF) NUMBER OF PTES",
+            "         LA    R3,1(,R3)      UNITS OF 16 ENTRIES",
+            "         SLL   R3,4           PAGES IN THIS SEGMENT",
+        ]),
+        ('00515000', ["         L     R1,PAGPFRA     USE CORTABLE FOR TEST"]),
+        ('00515600', ["         CL    R1,INVLPTE     FRAME BEEN ASSIGNED"]),
+        ('00517000', ["         L     R7,PAGPFRA     LOAD CORTABLE INDEX"]),
+        ('00518000', [
+            "         N     R7,RESMASK     CLEAR UNWANTED BITS",
+            "         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('00520000', [
+            "         TM    PAGPFRA+2,PAGINV    CHANGED PAGE",
+        ]),
+        ('00566000', [
+            "         LA    R6,PAGPFRA+L'PAGPFRA BUMP TO NEXT PTE",
+        ]),
+        ('00610000', ["         L     R0,SEGPTO      LOAD STE"]),
+        ('00611000', '00612000', [
+            "         N     R0,=A(SEGPTLF) NUMBER PTE'S",
+            "         LA    R0,1(,R0)      UNITS OF 16 ENTRIES",
+            "         SLL   R0,4           PAGES IN THIS SEGMENT",
+        ]),
+        ('00613000', [
+            "         A     R1,=A(PAGPFRA-PAGSTMP) LOAD ADDR PTO",
+        ]),
+        ('00614000', Deck.comment(
+            "STCM KEPT BYTE 0, WHICH HELD SEGPLEN. THE FLAGS ARE BITS 26-31 NOW, "
+            "SO THE ENTRY IS REBUILT FROM THE OLD FLAGS AND THE NEW ORIGIN.") + [
+            "         L     R15,SEGPTO     THE CURRENT ENTRY",
+            "         N     R15,=A(SEGFLGM) KEEP I, C AND PTL",
+            "         OR    R15,R1         WITH THE NEW ORIGIN",
+            "         ST    R15,SEGPTO     UPDATE SEGTABLE ENTRY",
+        ]),
+        ('00615000', [
+            "         OI    SEGPTO+3,SEGINVAL MARK ENTRY AS INVALID",
+        ]),
+        ('00623000', ["         USING PAGPFRA,R1"]),
+        ('00627000', [
+            "         AL    R2,=A(PAGPFRA-PAGSTMP) BUMP TO PTO",
+        ]),
+        ('00629000', ["         MVC   PAGPFRA,INVLPTE INVALIDATE PTE"]),
+        ('00630000', [
+            "         TM    PAGPFRA+2-PAGPFRA(R2),PAGINV OLD PTE VALID",
+        ]),
+        ('00643000', [
+            "NXTENT3  TM    PAGPFRA+2-PAGPFRA(R2),PAGINV PTE VALID",
+        ]),
+        ('00652000', [
+            "         LA    R1,PAGPFRA+L'PAGPFRA BUMP TO NEXT NEW PTE",
+        ]),
+        ('00668000', ["         USING PAGPFRA,R6"]),
+        ('00672000', [
+            "         L     R3,PAGPFRA-PAGPFRA(,R2) GET CORTABLE INDEX",
+        ]),
+        ('00673000', [
+            "         N     R3,RESMASK     CLEAR UNWANTED BITS",
+            "         SRL   R3,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('00713000', [
+            "         N     R6,=A(SEGPTOM) CLEAR PTE COUNTER",
+        ]),
+        ('00714000', '00715000', [
+            "         N     R0,=A(SEGPTLF) NUMBER PTES",
+            "         LA    R0,1(,R0)      UNITS OF 16 ENTRIES",
+            "         SLL   R0,4           PAGES IN THIS SEGMENT",
+        ]),
+        ('00719000', [
+            "         S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00735000', ["         L     R7,PAGPFRA     LOAD CORTABLE INDEX"]),
+        ('00736000', [
+            "         N     R7,RESMASK     CLEAR UNWANTED BITS",
+            "         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE",
+        ]),
+        ('00783000', [
+            "         LA    R6,PAGPFRA+L'PAGPFRA BUMP TO NEXT PTE",
+        ]),
+        ('00815000', [
+            "         SLL   R15,2          FOR 4 BYTE PG TABLE ENTRIES",
+        ]),
+        ('00817000', [
+            "         SL    R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        # Five constants, every one of them a format assumption written out.
+        ('00852000', ["RESMASK  DC    A(PAGPFRM)     MASK FOR PAGE RESIDENT"]),
+        ('00854000', ["CLCNTINV DC    A(SEGPTOM)     CLEAR COUNT, INVALID &"]),
+        ('00860000', Deck.comment(
+            "PAGREF MOVED FROM BYTE 1 TO BYTE 3, SO THIS MASK IS DERIVED FROM "
+            "PAGREF RATHER THAN WRITTEN OUT. IT WAS X'0000FFFE'.") + [
+            "REFMASK  DC    A(X'FFFFFFFF'-PAGREF) FORCE REF BIT OFF",
+        ]),
+        ('00860500', [
+            "INVLPTE  DC    A(PAGINVW)     INVALID PTE BIT MASK",
+        ]),
+        ('00861000', Deck.comment(
+            "SWLENGTH WAS DC F'192' -- A HARD-CODED PAGBMP, IN THIS MODULE AND "
+            "IN DMKVMA, WITH NOTHING JOINING IT TO CORE.COPY. I-116'S SHAPE.") + [
+            "SWLENGTH DC    A(PAGBMP)      LENGTH OF SHARED PAGE &",
+        ]),
+    ],
+
     # The densest module in the conversion: the shared-segment and attached-
     # processor configuration.  Its AP path is DELIBERATELY NOT CONVERTED -- see
     # the ABEND at 01024000 and I-139.

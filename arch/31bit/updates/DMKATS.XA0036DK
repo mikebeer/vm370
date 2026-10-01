@@ -1,0 +1,135 @@
+./ R 00126000          $ 00126100 100                                           
+         USING PAGPFRA,R6                                      XA0036DK         
+./ R 00187000          $ 00187100 100                                           
+         L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R8,R6          ADDRESS OF SEGTABLE ENTRY        XA0036DK         
+./ R 00188000          $ 00188100 100                                           
+         L     R6,SEGPTO      LOAD ADDRESS OF PTO              XA0036DK         
+./ R 00189000          $ 00189100 100                                           
+         TM    SEGPTO+3,SEGINVAL SEGMENT VALID                 XA0036DK         
+./ R 00194000          $ 00194100 100                                           
+         SL    R0,=A(PAGPFRA-PAGSTMP) BACKUP TO PAGTABLE       XA0036DK         
+./ R 00196000          $ 00196100 100                                           
+         L     R3,SEGPTO      LOAD R3 WITH STE                 XA0036DK         
+./ R 00197000 00198000 $ 00197100 100                                           
+*  SRL R3,28 TOOK SEGPLEN FROM BITS 0-3 AND THE NEXT CARD      XA0036DK         
+*  ADDED ONE. PTL IS BITS 28-31 IN UNITS OF 16 ENTRIES.        XA0036DK         
+         N     R3,=A(SEGPTLF) NUMBER OF PTES                   XA0036DK         
+         LA    R3,1(,R3)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R3,4           PAGES IN THIS SEGMENT            XA0036DK         
+./ R 00291000          $ 00291100 100                                           
+         L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R2,R6          ADDR OF SEGTABLE ENTRY           XA0036DK         
+./ R 00294000          $ 00294100 100                                           
+         S     R2,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00337000          $ 00337100 100                                           
+         L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R2,R6          ADDR OF SEGMENT ENTRY            XA0036DK         
+./ R 00340000          $ 00340100 100                                           
+         S     R2,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00431000          $ 00431100 100                                           
+         USING PAGPFRA,R6                                      XA0036DK         
+./ R 00497000          $ 00497100 100                                           
+         L     R5,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R5,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R8,R5          ADDR SEGTABLE ENTRY              XA0036DK         
+./ R 00498000          $ 00498100 100                                           
+         L     R6,SEGPTO      LOAD ADDR PTO                    XA0036DK         
+./ R 00500000          $ 00500100 100                                           
+         S     R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00510000          $ 00510100 100                                           
+         A     R6,=A(PAGPFRA-PAGSTMP) RESET TO PTO             XA0036DK         
+./ R 00511000          $ 00511100 100                                           
+         L     R3,SEGPTO      LOAD STE                         XA0036DK         
+./ R 00512000 00513000 $ 00512100 100                                           
+         N     R3,=A(SEGPTLF) NUMBER OF PTES                   XA0036DK         
+         LA    R3,1(,R3)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R3,4           PAGES IN THIS SEGMENT            XA0036DK         
+./ R 00515000          $ 00515100 100                                           
+         L     R1,PAGPFRA     USE CORTABLE FOR TEST            XA0036DK         
+./ R 00515600          $ 00515700 100                                           
+         CL    R1,INVLPTE     FRAME BEEN ASSIGNED              XA0036DK         
+./ R 00517000          $ 00517100 100                                           
+         L     R7,PAGPFRA     LOAD CORTABLE INDEX              XA0036DK         
+./ R 00518000          $ 00518100 100                                           
+         N     R7,RESMASK     CLEAR UNWANTED BITS              XA0036DK         
+         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 00520000          $ 00520100 100                                           
+         TM    PAGPFRA+2,PAGINV    CHANGED PAGE                XA0036DK         
+./ R 00566000          $ 00566100 100                                           
+         LA    R6,PAGPFRA+L'PAGPFRA BUMP TO NEXT PTE           XA0036DK         
+./ R 00610000          $ 00610100 100                                           
+         L     R0,SEGPTO      LOAD STE                         XA0036DK         
+./ R 00611000 00612000 $ 00611100 100                                           
+         N     R0,=A(SEGPTLF) NUMBER PTE'S                     XA0036DK         
+         LA    R0,1(,R0)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R0,4           PAGES IN THIS SEGMENT            XA0036DK         
+./ R 00613000          $ 00613100 100                                           
+         A     R1,=A(PAGPFRA-PAGSTMP) LOAD ADDR PTO            XA0036DK         
+./ R 00614000          $ 00614100 100                                           
+*  STCM KEPT BYTE 0, WHICH HELD SEGPLEN. THE FLAGS ARE BITS    XA0036DK         
+*  26-31 NOW, SO THE ENTRY IS REBUILT FROM THE OLD FLAGS AND   XA0036DK         
+*  THE NEW ORIGIN.                                             XA0036DK         
+         L     R15,SEGPTO     THE CURRENT ENTRY                XA0036DK         
+         N     R15,=A(SEGFLGM) KEEP I, C AND PTL               XA0036DK         
+         OR    R15,R1         WITH THE NEW ORIGIN              XA0036DK         
+         ST    R15,SEGPTO     UPDATE SEGTABLE ENTRY            XA0036DK         
+./ R 00615000          $ 00615100 100                                           
+         OI    SEGPTO+3,SEGINVAL MARK ENTRY AS INVALID         XA0036DK         
+./ R 00623000          $ 00623100 100                                           
+         USING PAGPFRA,R1                                      XA0036DK         
+./ R 00627000          $ 00627100 100                                           
+         AL    R2,=A(PAGPFRA-PAGSTMP) BUMP TO PTO              XA0036DK         
+./ R 00629000          $ 00629100 100                                           
+         MVC   PAGPFRA,INVLPTE INVALIDATE PTE                  XA0036DK         
+./ R 00630000          $ 00630100 100                                           
+         TM    PAGPFRA+2-PAGPFRA(R2),PAGINV OLD PTE VALID      XA0036DK         
+./ R 00643000          $ 00643100 100                                           
+NXTENT3  TM    PAGPFRA+2-PAGPFRA(R2),PAGINV PTE VALID          XA0036DK         
+./ R 00652000          $ 00652100 100                                           
+         LA    R1,PAGPFRA+L'PAGPFRA BUMP TO NEXT NEW PTE       XA0036DK         
+./ R 00668000          $ 00668100 100                                           
+         USING PAGPFRA,R6                                      XA0036DK         
+./ R 00672000          $ 00672100 100                                           
+         L     R3,PAGPFRA-PAGPFRA(,R2) GET CORTABLE INDEX      XA0036DK         
+./ R 00673000          $ 00673100 100                                           
+         N     R3,RESMASK     CLEAR UNWANTED BITS              XA0036DK         
+         SRL   R3,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 00713000          $ 00713100 100                                           
+         N     R6,=A(SEGPTOM) CLEAR PTE COUNTER                XA0036DK         
+./ R 00714000 00715000 $ 00714100 100                                           
+         N     R0,=A(SEGPTLF) NUMBER PTES                      XA0036DK         
+         LA    R0,1(,R0)      UNITS OF 16 ENTRIES              XA0036DK         
+         SLL   R0,4           PAGES IN THIS SEGMENT            XA0036DK         
+./ R 00719000          $ 00719100 100                                           
+         S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00735000          $ 00735100 100                                           
+         L     R7,PAGPFRA     LOAD CORTABLE INDEX              XA0036DK         
+./ R 00736000          $ 00736100 100                                           
+         N     R7,RESMASK     CLEAR UNWANTED BITS              XA0036DK         
+         SRL   R7,8           A CORTABLE ENTRY IS 16 A PAGE    XA0036DK         
+./ R 00783000          $ 00783100 100                                           
+         LA    R6,PAGPFRA+L'PAGPFRA BUMP TO NEXT PTE           XA0036DK         
+./ R 00815000          $ 00815100 100                                           
+         SLL   R15,2          FOR 4 BYTE PG TABLE ENTRIES      XA0036DK         
+./ R 00817000          $ 00817100 100                                           
+         SL    R6,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
+./ R 00852000          $ 00852100 100                                           
+RESMASK  DC    A(PAGPFRM)     MASK FOR PAGE RESIDENT           XA0036DK         
+./ R 00854000          $ 00854100 100                                           
+CLCNTINV DC    A(SEGPTOM)     CLEAR COUNT, INVALID &           XA0036DK         
+./ R 00860000          $ 00860100 100                                           
+*  PAGREF MOVED FROM BYTE 1 TO BYTE 3, SO THIS MASK IS         XA0036DK         
+*  DERIVED FROM PAGREF RATHER THAN WRITTEN OUT. IT WAS         XA0036DK         
+*  X'0000FFFE'.                                                XA0036DK         
+REFMASK  DC    A(X'FFFFFFFF'-PAGREF) FORCE REF BIT OFF         XA0036DK         
+./ R 00860500          $ 00860600 100                                           
+INVLPTE  DC    A(PAGINVW)     INVALID PTE BIT MASK             XA0036DK         
+./ R 00861000          $ 00861100 100                                           
+*  SWLENGTH WAS DC F'192' -- A HARD-CODED PAGBMP, IN THIS      XA0036DK         
+*  MODULE AND IN DMKVMA, WITH NOTHING JOINING IT TO            XA0036DK         
+*  CORE.COPY. I-116'S SHAPE.                                   XA0036DK         
+SWLENGTH DC    A(PAGBMP)      LENGTH OF SHARED PAGE &          XA0036DK         
