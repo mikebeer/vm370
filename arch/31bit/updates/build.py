@@ -62,6 +62,7 @@ XA32 = 'XA0032DK'
 XA33 = 'XA0033DK'
 XA34 = 'XA0034DK'
 XA35 = 'XA0035DK'
+XA36 = 'XA0036DK'
 
 
 def psa():
@@ -3143,6 +3144,108 @@ def dmkbld():
     return d
 
 
+def datdeck(module, cards):
+    """One DAT-conversion deck, with the increment chosen for each replacement.
+
+    Every module after `DMKBLD` and `DMKCPI` is the same shape of work -- rename
+    a field, mask a pointer, widen a shift -- so it is a table of replacements
+    rather than a routine of its own.  `cards` is a list of
+    `(seq, [lines])` or `(seq, to, [lines])`, in ascending anchor order, which
+    `UPDATE` requires and `Deck._anchor` enforces.
+    """
+    d = Deck(XA36)
+    src = os.path.join(SRC, '%s.ASSEMBLE' % module)
+    for item in cards:
+        seq, to, lines = (item if len(item) == 3 else (item[0], None, item[1]))
+        limit = next_seq(src, to or seq)
+        base = int(seq)
+        for inc in (100, 10, 1):
+            if limit is None or base + inc * len(lines) < int(limit):
+                d.replace(seq, to, first=str(base + inc).zfill(8), inc=inc,
+                          limit=limit, lines=lines)
+                break
+        else:
+            raise ValueError('%s: no room after %s for %d cards before %s'
+                             % (module, seq, len(lines), limit))
+    return d
+
+
+# The small modules, read with block.py and converted by the same rules DMKBLD
+# established.  Each entry carries only what it needs; the reasoning common to
+# all of them is in docs/27-STE-DESIGN.md.
+DATMODS = {
+
+    # One flagged site and one silent neighbour.  The silent one is the address
+    # split: a segment is 1 MB now, so 16 bits of segment number become 20.
+    'DMKCFH': [
+        ('00334000', [
+            "         L     R2,VMSEG       GET SEGTABLE ADDRESS",
+            "         N     R2,=A(SEGSTOM) WITHOUT THE LENGTH",
+        ]),
+        ('00336000', [
+            "         SRDL  R0,20          SEGMENT TO LOW ORDER OF R0,",
+        ]),
+        ('00339000', [
+            "         TM    3(R2),SEGINVAL VALID SEGMENT",
+        ]),
+    ],
+
+    # The swap-table address computed from the page table, half symbolically:
+    # `16*L'PAGCORE` becomes `256*L'PAGPFRA`, and the page-within-segment field
+    # widens from four bits to eight.
+    'DMKVMD': [
+        ('00886000', [
+            "         L     R1,VMSEG            SEGMENT TABLE BASE",
+            "         N     R1,=A(SEGSTOM)      WITHOUT THE LENGTH",
+        ]),
+        ('00888000', [
+            "         SRDL  R14,20              GET SEGMENT NUMBER ONLY",
+        ]),
+        ('00892000', [
+            "         L     R1,0(,R1)           PAGE TABLE POINTER",
+            "         N     R1,=A(SEGPTOM)      WITHOUT THE FLAGS",
+        ]),
+        ('00893000', [
+            "         LA    R1,256*L'PAGPFRA+(SWPFLAG-SWPVM)(,R1)",
+        ]),
+        ('00896000', [
+            "         SLDL  R14,8               MOVE PAGE NUMBER IN",
+        ]),
+    ],
+
+    # `PAGCORE+1-PAGCORE` is the source's own way of writing "byte 1 of the
+    # entry" with symbols instead of a literal 1.  The flag byte is byte 2 now,
+    # so the same idiom carries the change for free.
+    'DMKCDS': [
+        ('00896000', [
+            "         OI    PAGPFRA+2-PAGPFRA(R14),PAGINV ENQUEUE ON",
+        ]),
+        ('00905000', [
+            "         NI    PAGPFRA+2-PAGPFRA(R14),X'FF'-PAGINV DEQUEUE",
+        ]),
+    ],
+
+    # Clearing a PTE's frame address while keeping its flags.  The halfword form
+    # was MVI byte 0 / NI byte 1 keeping the low nibble / OI the invalid bit.
+    # For a fullword the order has to change: PAGREF is saved FIRST, while byte 3
+    # is still intact, because clearing bytes 0-2 is now a separate operation
+    # from clearing the flags.
+    'DMKMCH': [
+        ('00746000', ["         USING PAGPFRA,R6     ADDRESSABILITY FOR PTE"]),
+        ('00749000', '00751000', Deck.comment(
+            "THE HALFWORD FORM CLEARED BYTE 0, THEN KEPT THE LOW NIBBLE OF BYTE "
+            "1 -- WHERE PAGINVAL AND PAGREF LIVED -- THEN SET INVALID. A "
+            "FULLWORD PTE KEEPS PAGREF IN BYTE 3 AND I IN BYTE 2, SO PAGREF IS "
+            "SAVED FIRST, WHILE BYTE 3 IS STILL INTACT, AND THE FRAME ADDRESS "
+            "IS CLEARED AS ITS OWN THREE BYTES.") + [
+            "         NI    PAGPFRA+3,PAGREF KEEP ONLY REFERENCED",
+            "         XC    PAGPFRA(3),PAGPFRA CLEAR THE FRAME ADDRESS",
+            "         OI    PAGPFRA+2,PAGINV INVALIDATE THE PAGE TABLE",
+        ]),
+    ],
+}
+
+
 def dmkcpidat():
     """DMKCPI: the ESA/390 DAT tables CP builds for ITSELF, and the CORTABLE walk.
 
@@ -3595,6 +3698,15 @@ def main():
               % (name, sum(1 for _ in open(os.path.join(HERE, name))),
                  'OK' if not bad else 'BAD ' + repr(bad[:3])))
         ok = ok and not bad
+    for m in sorted(DATMODS):
+        dk = datdeck(m, DATMODS[m])
+        path = os.path.join(HERE, '%s.%s' % (m, XA36))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA36, 'ESA/390 DAT TABLES: RENAMES, MASKS AND ADDRESS SPLITS')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA36, n,
+              'OK' if not verify(path) else 'BAD'))
+
     bld = dmkbld()
     n = bld.write(os.path.join(HERE, 'DMKBLD.%s' % XA34))
     aux(os.path.join(HERE, 'DMKBLD.AUXLCL'),

@@ -1,0 +1,12 @@
+./ R 00746000          $ 00746100 100                                           
+         USING PAGPFRA,R6     ADDRESSABILITY FOR PTE           XA0036DK         
+./ R 00749000 00751000 $ 00749100 100                                           
+*  THE HALFWORD FORM CLEARED BYTE 0, THEN KEPT THE LOW NIBBLE  XA0036DK         
+*  OF BYTE 1 -- WHERE PAGINVAL AND PAGREF LIVED -- THEN SET    XA0036DK         
+*  INVALID. A FULLWORD PTE KEEPS PAGREF IN BYTE 3 AND I IN     XA0036DK         
+*  BYTE 2, SO PAGREF IS SAVED FIRST, WHILE BYTE 3 IS STILL     XA0036DK         
+*  INTACT, AND THE FRAME ADDRESS IS CLEARED AS ITS OWN THREE   XA0036DK         
+*  BYTES.                                                      XA0036DK         
+         NI    PAGPFRA+3,PAGREF KEEP ONLY REFERENCED           XA0036DK         
+         XC    PAGPFRA(3),PAGPFRA CLEAR THE FRAME ADDRESS      XA0036DK         
+         OI    PAGPFRA+2,PAGINV INVALIDATE THE PAGE TABLE      XA0036DK         

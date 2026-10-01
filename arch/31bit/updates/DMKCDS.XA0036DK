@@ -1,0 +1,4 @@
+./ R 00896000          $ 00896100 100                                           
+         OI    PAGPFRA+2-PAGPFRA(R14),PAGINV ENQUEUE ON        XA0036DK         
+./ R 00905000          $ 00905100 100                                           
+         NI    PAGPFRA+2-PAGPFRA(R14),X'FF'-PAGINV DEQUEUE     XA0036DK         

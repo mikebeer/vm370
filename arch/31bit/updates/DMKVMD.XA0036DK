@@ -1,0 +1,12 @@
+./ R 00886000          $ 00886100 100                                           
+         L     R1,VMSEG            SEGMENT TABLE BASE          XA0036DK         
+         N     R1,=A(SEGSTOM)      WITHOUT THE LENGTH          XA0036DK         
+./ R 00888000          $ 00888100 100                                           
+         SRDL  R14,20              GET SEGMENT NUMBER ONLY     XA0036DK         
+./ R 00892000          $ 00892100 100                                           
+         L     R1,0(,R1)           PAGE TABLE POINTER          XA0036DK         
+         N     R1,=A(SEGPTOM)      WITHOUT THE FLAGS           XA0036DK         
+./ R 00893000          $ 00893100 100                                           
+         LA    R1,256*L'PAGPFRA+(SWPFLAG-SWPVM)(,R1)           XA0036DK         
+./ R 00896000          $ 00896100 100                                           
+         SLDL  R14,8               MOVE PAGE NUMBER IN         XA0036DK         

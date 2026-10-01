@@ -1,0 +1,7 @@
+./ R 00334000          $ 00334100 100                                           
+         L     R2,VMSEG       GET SEGTABLE ADDRESS             XA0036DK         
+         N     R2,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+./ R 00336000          $ 00336100 100                                           
+         SRDL  R0,20          SEGMENT TO LOW ORDER OF R0,      XA0036DK         
+./ R 00339000          $ 00339100 100                                           
+         TM    3(R2),SEGINVAL VALID SEGMENT                    XA0036DK         
