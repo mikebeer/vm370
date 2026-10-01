@@ -61,6 +61,7 @@ XA31 = 'XA0031DK'
 XA32 = 'XA0032DK'
 XA33 = 'XA0033DK'
 XA34 = 'XA0034DK'
+XA35 = 'XA0035DK'
 
 
 def psa():
@@ -3142,6 +3143,85 @@ def dmkbld():
     return d
 
 
+def dmkcpidat():
+    """DMKCPI: the ESA/390 DAT tables CP builds for ITSELF, and the CORTABLE walk.
+
+    `DMKBLDRT` allocates and shapes the tables; this routine fills them in for
+    CP's own 16 MB and marks every page locked in the CORTABLE.  It is therefore
+    the second of the two modules that must be right before `LRA` can succeed --
+    the rest of the conversion is other people's virtual machines.
+
+    Five sites are flagged and six are not.  The six are the usual shape:
+
+      * `L R3,VMSEG` with no mask, and `LA R9,0(,R9)  CLEAR TABLE LENGTH`
+        which strips nothing now that STL is in the low bits (`I-128`)
+      * `S R8,F4  BACK UP TO SWPTABLE POINTER` -- the same assumption
+        `DMKBLD` makes twice, that `PAGSWP` sits four bytes below the page
+        table (`I-130`)
+      * `LA R6,16  GET NUMBER OF PAGES IN A SEGMENT FOR BCT` and
+        `AL R9,F2  POINT TO NEXT PAGTABLE ENTRY` -- 256 pages, 4-byte entries
+      * `ALR R2,R4  BUMP REAL PAGE ADDRESS`, where `R4` is X'10' because it is
+        *also* the `BXLE` increment for a 16-byte CORTABLE entry.  One register
+        served two strides that happened to agree; they no longer do.
+
+    And one flagged site is worth reading for what it says about literals:
+
+        NI    SEGPAGE+3,255-1 CLEAR INVALID STE BIT
+
+    `255-1`, not `255-SEGINV`.  The rename reached it only because the same card
+    names `SEGPAGE`; had the author written `3(R3)` for the field as well, this
+    would have been silent in a routine whose failure mode is a CP that builds
+    plausible tables and dies in `LRA`.
+    """
+    d = Deck(XA35)
+    src = SRC + '/DMKCPI.ASSEMBLE'
+
+    def one(seq, lines, to=None):
+        limit = next_seq(src, to or seq)
+        base = int(seq)
+        for inc in (100, 10, 1):
+            if limit is None or base + inc * len(lines) < int(limit):
+                d.replace(seq, to, first=str(base + inc).zfill(8), inc=inc,
+                          limit=limit, lines=lines)
+                return
+        raise ValueError('no room after %s for %d cards' % (seq, len(lines)))
+
+    one('01495000', [
+        "         L     R3,VMSEG       GET ADDRESS OF SEGMENT TABLE",
+        "         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH",
+    ])
+    one('01496000', ["         USING SEGPTO,R3       ADDRESSABILITY"])
+    one('01509000', Deck.comment(
+        "255-1 WAS A LITERAL WHERE SEGINV WAS MEANT. THE RENAME REACHED THIS "
+        "CARD ONLY BECAUSE IT ALSO NAMES SEGPAGE.") + [
+        "         NI    SEGPTO+3,255-SEGINVAL CLEAR INVALID STE BIT",
+    ])
+    one('01510000', ["         L     R9,SEGPTO      GET PAGETABLE ADDR"])
+    one('01511000', [
+        "         N     R9,=A(SEGPTOM) CLEAR TABLE LENGTH",
+    ])
+    one('01512000', ["         USING PAGPFRA,R9     ADDRESSABILITY"])
+    one('01513000', [
+        "         LA    R6,256         NO. PAGES IN A SEGMENT FOR BCT",
+    ])
+    one('01515000', [
+        "         S     R8,=A(PAGPFRA-PAGSWP) BACK UP TO SWPTABLE",
+    ])
+    one('01528000', [
+        "         ST    R2,PAGPFRA     INITIALIZE PAGTABLE ENTRY",
+    ])
+    one('01546000', Deck.comment(
+        "R4 IS X'10' BECAUSE IT IS ALSO THE BXLE INCREMENT FOR A 16-BYTE "
+        "CORTABLE ENTRY, AND AN S/370 PTE HAPPENS TO STEP BY 16 TOO. AN ESA/390 "
+        "PTE IS THE PAGE'S REAL ADDRESS, SO THE TWO STRIDES PART COMPANY.") + [
+        "         AL    R2,F4096       BUMP REAL PAGE ADDRESS",
+    ])
+    one('01554000', [
+        "         AL    R9,F4          POINT TO NEXT PAGTABLE ENTRY",
+    ])
+    return d
+
+
 def corecopy():
     """STE-DESIGN step 1: the DAT table DSECTs, with every changed name CHANGED.
 
@@ -3392,8 +3472,19 @@ def main():
 
     cpi = dmkcpi()
     cpi.write(os.path.join(HERE, 'DMKCPI.%s' % XA13))
+    # A SECOND deck on DMKCPI rather than cards added to XA0013DK: UPDATE scans
+    # forward once, so a card must follow every card with a lower anchor, and
+    # XA0013DK's anchors already run to 03506100 while the DAT sites are at
+    # 01495000.  Interleaving them into one generator would put the reasoning for
+    # two unrelated changes in one place.  Verified not to overlap: XA0013DK
+    # touches nothing between 01490000 and 01560000.
+    cpd = dmkcpidat()
+    n = cpd.write(os.path.join(HERE, 'DMKCPI.%s' % XA35))
     aux(os.path.join(HERE, 'DMKCPI.AUXLCL'),
-        [(XA13, 'CR6 SUBCLASS MASK AND SUBCHANNEL DISCOVERY')])
+        [(XA35, 'ESA/390 DAT TABLES FOR CP ITSELF, AND THE CORTABLE WALK'),
+         (XA13, 'CR6 SUBCLASS MASK AND SUBCHANNEL DISCOVERY')])
+    print('%-8s %-9s %3d cards  %s' % ('DMKCPI', XA35, n,
+          'OK' if not verify(os.path.join(HERE, 'DMKCPI.%s' % XA35)) else 'BAD'))
 
     sys_ = dmksys()
     sys_.write(os.path.join(HERE, 'DMKSYS.%s' % XA14))

@@ -1,0 +1,29 @@
+./ R 01495000          $ 01495100 100                                           
+         L     R3,VMSEG       GET ADDRESS OF SEGMENT TABLE     XA0035DK         
+         N     R3,=A(SEGSTOM) WITHOUT THE LENGTH               XA0035DK         
+./ R 01496000          $ 01496100 100                                           
+         USING SEGPTO,R3       ADDRESSABILITY                  XA0035DK         
+./ R 01509000          $ 01509100 100                                           
+*  255-1 WAS A LITERAL WHERE SEGINV WAS MEANT. THE RENAME      XA0035DK         
+*  REACHED THIS CARD ONLY BECAUSE IT ALSO NAMES SEGPAGE.       XA0035DK         
+         NI    SEGPTO+3,255-SEGINVAL CLEAR INVALID STE BIT     XA0035DK         
+./ R 01510000          $ 01510100 100                                           
+         L     R9,SEGPTO      GET PAGETABLE ADDR               XA0035DK         
+./ R 01511000          $ 01511100 100                                           
+         N     R9,=A(SEGPTOM) CLEAR TABLE LENGTH               XA0035DK         
+./ R 01512000          $ 01512100 100                                           
+         USING PAGPFRA,R9     ADDRESSABILITY                   XA0035DK         
+./ R 01513000          $ 01513100 100                                           
+         LA    R6,256         NO. PAGES IN A SEGMENT FOR BCT   XA0035DK         
+./ R 01515000          $ 01515100 100                                           
+         S     R8,=A(PAGPFRA-PAGSWP) BACK UP TO SWPTABLE       XA0035DK         
+./ R 01528000          $ 01528100 100                                           
+         ST    R2,PAGPFRA     INITIALIZE PAGTABLE ENTRY        XA0035DK         
+./ R 01546000          $ 01546100 100                                           
+*  R4 IS X'10' BECAUSE IT IS ALSO THE BXLE INCREMENT FOR A     XA0035DK         
+*  16-BYTE CORTABLE ENTRY, AND AN S/370 PTE HAPPENS TO STEP    XA0035DK         
+*  BY 16 TOO. AN ESA/390 PTE IS THE PAGE'S REAL ADDRESS, SO    XA0035DK         
+*  THE TWO STRIDES PART COMPANY.                               XA0035DK         
+         AL    R2,F4096       BUMP REAL PAGE ADDRESS           XA0035DK         
+./ R 01554000          $ 01554100 100                                           
+         AL    R9,F4          POINT TO NEXT PAGTABLE ENTRY     XA0035DK         
