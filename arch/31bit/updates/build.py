@@ -4936,11 +4936,24 @@ def main():
         # RDEVICE joins the list for I-116: it is CP's own macro, and it has
         # to be in DMKLCL for DMKRIO to assemble against the updated copy
         # rather than the shipped one -- the same reason PSA is here.
+        #
+        # EQU joins it for I-149, and the failure is worth stating because the
+        # file is easy to read as a MACLIB member list and is not one: it is
+        # the list of members whose AUX DECKS VMFASM APPLIES.  `EQU.XA0037DK`
+        # and `EQU.AUXLCL` were both staged onto the A-disk and verified read,
+        # and the deck was still never applied -- the log shows
+        # `APPLYING 'CORE XA0033DK A1'` and nothing for EQU -- because CORE is
+        # named here and EQU was not.  The nine architecture constants had just
+        # been MOVED out of CORE COPY into EQU COPY (I-143), so CORE's deck
+        # removed them and EQU's deck never added them: all nine came back
+        # `IFO188 UNDEFINED SYMBOL` in five modules, including DMKATS and
+        # DMKBLD, which had assembled clean the previous build.  A move is two
+        # halves and only one of them was wired up.
         for name, typ in (('PSA', 'MACRO'), ('RBLOKS', 'COPY'),
                           ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
                           ('XAOPS', 'MACRO'), ('XAIO', 'MACRO'),
                           ('XAIOB', 'MACRO'), ('RDEVICE', 'MACRO'),
-                          ('CORE', 'COPY')):
+                          ('CORE', 'COPY'), ('EQU', 'COPY')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
