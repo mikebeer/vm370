@@ -146,6 +146,15 @@ def card(text, src=''):
 
 def main():
     ce, run = sys.argv[1], sys.argv[2]
+    # Clear the staging directory first.  A previous, LARGER run leaves io
+    # files behind, and `iochk` then compares them against decks that have
+    # since changed and refuses the run -- which is correct of it, and the
+    # reason it refused here was a stale `DMKLCL.EXEC` from a 49-file run
+    # lingering into an 11-file one.  Leftovers from a bigger run are the same
+    # stale-artifact shape as I-131, I-138 and I-140, one directory further in.
+    import glob as _glob
+    for _old in _glob.glob(os.path.join(ce, 'io', 'r*.txt')):
+        os.remove(_old)
     skip = set()
     for i, a in enumerate(sys.argv):
         if a == '--punch':
@@ -453,6 +462,33 @@ def incomplete(ce, run):
             got_asm += 1
         if 'CP SHUTDOWN' in line.upper() or 'SYSTEM SHUTDOWN' in line.upper():
             shut = True
+    # `?CP: VMFASM` means the command went to CP and CP did not know it -- the
+    # virtual machine is in CP READ and CMS is not running, so EVERY command in
+    # the script is being rejected and the run does nothing.  On 2 October a
+    # whole slice ran this way: `?CP: LOGON`, `?CP: READCARD`, `?CP: VMFMAC`,
+    # then ten `?CP: VMFASM`, a clean Hercules shutdown, and `chk` passed it,
+    # because `boot_failed()` looks for a boot that did not happen rather than
+    # for commands that were refused.  I-112's shape again -- 48 identical card
+    # failures over 25 minutes -- and the third time a run has reported success
+    # while doing nothing.  One rejected command is enough to void a run.
+    # Only OUR commands count.  The first version voided any run containing
+    # `?CP:` at all and would have thrown away a perfectly good one: CP's own
+    # IPL dialogue produces `?CP: COLD` before the logon, which is noise, not
+    # failure.  A check that is too strict destroys good evidence as surely as
+    # one that is too lax accepts bad -- and I had just written this check to
+    # catch a run that did nothing, then nearly used it to discard a run that
+    # did everything.
+    FATAL = ('LOGON', 'READCARD', 'CPACC', 'VMFMAC', 'VMFASM', 'VMFLOAD',
+             'ACCESS', 'LINK', 'ERASE', 'COPYFILE')
+    rejected = [line.strip() for line in open(lg, errors='replace')
+                if '?CP:' in line
+                and line.split('?CP:')[1].strip().split()[0].upper() in FATAL]
+    if rejected:
+        return ('%d command(s) were rejected by CP -- CMS is not running and '
+                'the script is talking to CP READ, so nothing in this run '
+                'happened; first was %r'
+                % (len(rejected), rejected[0][-40:]))
+
     # Every readcard must have produced a `RDR FILE nnnn HAS BEEN READ`.  With
     # the pauses cut, this is what stands between a fast build and a silently
     # truncated deck.

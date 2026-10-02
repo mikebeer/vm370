@@ -71,6 +71,11 @@ mk(){ # Four invariants on every ./ R, checked before 50 minutes are spent on a
       # that survives on an unreplaced record, must take continuation cards with
       # it, and must only name symbols the module can actually see.  All twelve
       # diagnostics of the 1 October build were one of these four.  I-143.
+      # A member we update that is not named in DMKLCL.EXEC produces a deck
+      # that is generated, verified, staged, read -- and inert.  I-149.
+      python3 $T/wirechk.py >/dev/null 2>&1 || {
+        echo "### wirechk: a member we update is not wired into DMKLCL.EXEC"
+        python3 $T/wirechk.py; return 1; }
       python3 $T/replchk.py >/dev/null 2>&1 || {
         echo "### replchk: the decks break an invariant -- see below"
         python3 $T/replchk.py; return 1; }
