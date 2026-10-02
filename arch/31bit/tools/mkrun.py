@@ -446,13 +446,15 @@ def incomplete(ce, run):
     lg = os.path.join(ce, '%s.log' % run)
     if not os.path.exists(rc) or not os.path.exists(lg):
         return 'no %s.log or hercules.rc to compare' % run
-    want_cards = want_asm = 0
+    want_cards = want_asm = want_vmfasm = 0
     for line in open(rc, errors='replace'):
         t = line.strip()
         if t.startswith('/readcard'):
             want_cards += 1
         elif t.startswith('/asmdmk'):
             want_asm += 1
+        elif t.startswith('/vmfasm'):
+            want_vmfasm += 1
     got_cards = got_asm = 0
     shut = False
     for line in open(lg, errors='replace'):
@@ -503,6 +505,19 @@ def incomplete(ce, run):
         return ('the script asked for %d card files and the log shows %d -- the '
                 'run did not finish, so every check after this one would be '
                 'measuring a fraction of the work' % (want_cards, got_cards))
+    # Count the PER-MODULE assemblies too.  The first version counted
+    # `/readcard` and `/asmdmk` and not `/vmfasm`, which is the mechanism the
+    # sliced build actually uses -- so it reported COMPLETE on a run reclaimed
+    # after 15 of 19 modules.  Fourth false pass in three days, and this one from
+    # the check written to stop the other three.  I-154.
+    got_vmfasm = sum(1 for line in open(lg, errors='replace')
+                     if 'ASMBLING' in line)
+    if got_vmfasm < want_vmfasm:
+        return ('the script asked for %d module assembly(s) and the log shows '
+                '%d -- the run was cut short, so the modules after the last one '
+                'named still hold their PREVIOUS object deck'
+                % (want_vmfasm, got_vmfasm))
+
     if got_asm < want_asm:
         return ('the script asked for %d assembly pass(es) and the log shows %d'
                 % (want_asm, got_asm))
