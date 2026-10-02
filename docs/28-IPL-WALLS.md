@@ -48,7 +48,7 @@ run that proves it is in the build journal.
 | 13 | ~~Privileged-operation exception on `SSM`, DAT on, in problem state~~ | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` | **NOT A WALL — downgraded 2 Oct** |
 | 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
-| 16 | CP reaches the dispatcher's **enabled** wait having printed nothing, and ignores console input | `PSW=030E0000 00000000`, `cmwp=E`, `GR12`=`DMKDSPCH`; external code `X'1004'` (clock comparator) re-waking it; `GR14=50034C98` | `psw`/`gpr` after a 60-second run with `cold` delivered to `0009` | **OPEN — where CP stops now** |
+| 16 | **CP writes a one-byte blank to the console from an `X'EE'`-filled buffer** — not silent, empty | `CCW=09056360 60000001`, buffer `40EEEEEE…`, `Stat=0C00`; no read CCW anywhere; dispatcher enabled wait `PSW=030E0000` | CCW trace armed **before** the ipl | **OPEN — where CP stops now** — `I-165` |
 
 **Walls 1–11, 14 and 15 are closed.** Wall 11 fell on 2 October at 12:02 UTC:
 `PRG018` is gone after five days. Wall 12 is not CP's. **Wall 16 is where CP
@@ -116,25 +116,46 @@ Measured 2 October, three runs, identical each time:
 | console output | **none** |
 | `cold` sent to `0009` | delivered (`/(0009) cold`) and **ignored** — same wait, same registers |
 
-Two readings are open and the evidence does not yet separate them:
+### RESOLVED 2 October 19:08 UTC — CP is not silent, it writes one blank byte
 
-1. **CP is idle.** It initialised, has no work, and is sitting in the
-   dispatcher's wait being re-woken by the clock — which is what a healthy
-   idle CP looks like. The messages are undrained because the ordinary console
-   path has never worked (see the caution above).
-2. **CP is stuck before console I/O exists.** It never reached the point of
-   reading the operator console, which is why `cold` had no effect.
+Two readings were open: CP idle with undrained messages, or CP stuck before
+console I/O existed. **Neither.** With CCW tracing armed *before* the IPL — which
+`build.sh test` could not express until the `--` marker was added — the entire
+console conversation is six CCWs (`I-165`):
 
-The `cold` being ignored argues for (2), but not decisively: an input that
-arrives before CP has posted a console read would be dropped either way.
+```
+0009: Halt subchannel
+0009:CCW=0406DA80 20000020 => all zeros      sense, 32 bytes; Stat=0C00 Count=001F
+0009:CCW=09056360 60000001 => 40EEEEEE EE..  WRITE, count 1; Stat=0C00
+0009:CCW=03000000 20000001                   NOP;   Stat=0C00
+```
 
-A harness limitation found while testing this, worth fixing before the next
-attempt: `build.sh test` passes `--bare` to `mkrun`, which **omits the whole
-`BOOT` dialogue** — the null line, `cold`, `cp disc`, `logon maint`. `--bare` is
-correct for its original purpose, a standalone loader IPL with no operating
-system underneath, and wrong for testing a CP nucleus. Specs given to the `test`
-verb are also appended *after* `herc:ipl`, so CCW tracing can never cover the
-IPL itself; a trace of the IPL needs the specs before it.
+Every CCW completes with `Stat=0C00` — CE+DE, no error. So the channel program
+is right, the device is right, and the one byte CP writes is `X'40'`, an EBCDIC
+blank. **The lone blank line in every run's output is CP's message.** The buffer
+at `X'056360'` is still full of `X'EE'`, DMKFRE's `&FRETRAP` fill for allocated
+storage that has never been written, so the text was never moved in and the
+count was never set.
+
+There is **no read CCW anywhere** — opcodes `04`, `09`, `03` only. CP never posts
+a console read, so the `cold` typed at `0009` was discarded by the 3215 with no
+error and no trace. That half is settled too.
+
+So wall 16 is not "CP prints nothing". It is **CP writes an empty message**: a
+correct channel program pointed at an unfilled buffer with a length of 1. A
+length that collapses to 1 next to a buffer that is never filled is the
+signature of a length read from the wrong place — `I-128`'s structural law, and
+therefore the same class as walls 14 and 15.
+
+**What the harness cost here.** Three runs armed `t+009` *after* `herc:ipl`,
+recorded an empty trace, and that emptiness was read as "CP issues no I/O". It
+was not evidence of anything. Two limitations, now fixed or written down:
+`build.sh test` appended every caller spec after the ipl, so a trace could never
+cover the IPL (fixed — specs before a literal `--` now precede it); and `test`
+passes `--bare` to `mkrun`, which **omits the whole `BOOT` dialogue** — the null
+line, `cold`, `cp disc`, `logon maint`. `--bare` is correct for its original
+purpose, a standalone loader IPL with no operating system underneath, and wrong
+for testing a CP nucleus.
 
 ## What CP does today
 

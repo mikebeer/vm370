@@ -4,7 +4,7 @@
 #   build.sh full  [snapshot]   restore, stage everything, VMFMAC, assemble all
 #   build.sh quick <snapshot> <module>...   restore, reassemble named modules
 #   build.sh write              VMFLOAD + CP IPL 00C -- writes the nucleus
-#   build.sh test  [herc-spec]...           ESA/390 IPL on 3.13, pgmtrace on
+#   build.sh test  [spec]... [-- [spec]...]   ESA/390 IPL; specs before `--` precede the ipl
 #   build.sh dual  <snapshot> [spec]...     the SAME test on 3.13 AND 4.9.1
 #
 # It lives in the repository rather than the scratchpad because the PROCEDURE is
@@ -273,11 +273,40 @@ write)
   grep -q "00000012" "$C/n1.log" || { echo "### NUCLEUS WRITE FAILED"; exit 1; }
   ;;
 test)
+  # Specs go AFTER the ipl by default.  A literal `--` splits them: everything
+  # before it is emitted BEFORE `ipl 6A1`, everything after it afterwards.
+  #
+  #     build.sh test "herc:t+009:3" -- "herc:stop:40"
+  #
+  # This exists because CCW tracing armed after the ipl records nothing -- the
+  # IPL is the part worth tracing, and for three runs on 2 October `t+009` was
+  # switched on only to be followed immediately by `stop`, which produced an
+  # empty trace that looked like "CP issued no I/O" and was not evidence of
+  # anything.  `pgmtrace` was always before the ipl; nothing else could be.
+  #
+  # Note what this does NOT fix: `--bare` below omits mkrun's whole BOOT
+  # dialogue, so nothing answers CP's
+  #     Start ((Warm|Force|COLD|CKPT) (DRain) (DIsable) (NOAUTOlo)):
+  # prompt.  That is right for a standalone loader IPL, which has no operating
+  # system underneath and nothing to log on to, and wrong for a CP nucleus.
+  # Answer it with a `cmd:` spec until there is a verb that does it properly --
+  # and remember that a line typed at a 3215 with no outstanding read is
+  # DISCARDED with no error and no trace, so `cold` arriving unanswered proves
+  # nothing on its own.
   w || exit 1
   shift || true
   arch ESA/390
+  pre=(); post=(); seen=no
+  for a in "$@"; do
+    if test "$a" = "--"; then seen=yes; continue; fi
+    if test $seen = no; then pre+=("$a"); else post+=("$a"); fi
+  done
+  # With no `--`, every spec is a post spec, exactly as before.
+  if test $seen = no; then post=("${pre[@]}"); pre=(); fi
+  test ${#post[@]} -gt 0 || post=("herc:stop:6")
   mk t1 --bare "herc:pgmtrace +1:3" "herc:pgmtrace +2:3" "herc:pgmtrace +5:3" \
-     "herc:pgmtrace +6:3" "herc:ipl 6A1:200" "${@:-herc:stop:6}" \
+     "herc:pgmtrace +6:3" ${pre[@]+"${pre[@]}"} "herc:ipl 6A1:200" \
+     "${post[@]}" \
      "herc:stop:6" "herc:psw:5" "herc:r 80.20:5" "herc:gpr:6" || exit 1
   run t1 || exit 1
   r=$(py "import mkrun; print(mkrun.wrong_arch('$C/t1.log','ESA/390') or '')")
