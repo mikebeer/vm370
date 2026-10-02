@@ -346,8 +346,18 @@ def archmode(conf, mode):
     import re
     want = {'S/370':   [('ARCHMODE', 'S/370'),   ('CPUMODEL', '4381'),
                         ('ECPSVM', 'YES'),       ('MAINSIZE', '16')],
+            # ESA/390 was 256 MB until 2 October, and that was wrong in a way
+            # that cost most of a day's diagnosis.  `R-25` keeps Hercules at
+            # **16 MB real** on purpose: real storage above 16 MB is M5, and it
+            # is deferred.  Giving the ESA/390 test machine 256 MB tested M1 on
+            # an M5 machine, and the visible effect was a CP that looped inside
+            # DMKFRE with free storage exhausted -- a wall I diagnosed at length
+            # and reported, which the harness had manufactured.  Setting it to 16
+            # moved the loop out of DMKFRE entirely.  The two sizes must match
+            # until M5, or every ESA/390 measurement is of a different machine
+            # from the one the milestone describes.  I-157.
             'ESA/390': [('ARCHMODE', 'ESA/390'), ('CPUMODEL', '3090'),
-                        ('ECPSVM', 'NO'),        ('MAINSIZE', '256')]}[mode]
+                        ('ECPSVM', 'NO'),        ('MAINSIZE', '16')]}[mode]
     text = open(conf).read()
     for key, val in want:
         text = re.sub(r'(?m)^%s\s+\S+.*$' % key, '%-15s %s' % (key, val), text)
