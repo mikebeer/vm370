@@ -319,8 +319,16 @@ if __name__ == '__main__':
     sys.exit(main())
 
 
-def archmode(conf, mode):
+def archmode(conf, mode, mb=None):
     """Set ARCHMODE and the three settings that must move with it.
+
+    `mb` overrides MAINSIZE for a deliberate size sweep and is otherwise None,
+    which keeps the matched pair below.  An override is a MEASUREMENT, not a
+    new default: it must be set back, and `build.sh sizes` does that in a trap
+    so an interrupted sweep cannot leave the config on some other machine.
+    Every ESA/390 measurement this project reports is against 16 MB unless it
+    says otherwise, because I-157 was exactly the cost of not knowing which
+    machine a number came from.
 
     Flipping ARCHMODE alone leaves CE's config self-contradictory, and Mike
     caught it: `CPUMODEL 4381` is a S/370 4381, a machine that does not exist
@@ -358,6 +366,8 @@ def archmode(conf, mode):
             # from the one the milestone describes.  I-157.
             'ESA/390': [('ARCHMODE', 'ESA/390'), ('CPUMODEL', '3090'),
                         ('ECPSVM', 'NO'),        ('MAINSIZE', '16')]}[mode]
+    if mb is not None:
+        want = [(k, str(mb) if k == 'MAINSIZE' else v) for k, v in want]
     text = open(conf).read()
     for key, val in want:
         text = re.sub(r'(?m)^%s\s+\S+.*$' % key, '%-15s %s' % (key, val), text)
@@ -536,3 +546,42 @@ def incomplete(ce, run):
                 'shutdown -- Hercules did not exit on its own, so the run may '
                 'have been cut short after the last thing checked here')
     return None
+
+
+def ipl_progress(ce, run, core=None):
+    """One comparable line of "how far did CP get" for a size sweep.
+
+    The same four measurements for every machine size, so the sizes can be
+    compared rather than described.  Deliberately NOT a pass/fail: wall 16 is
+    open, so every size is expected to end in the dispatcher's enabled wait and
+    the interesting signal is whether each one gets that far by the same route.
+
+      ccw     channel programs traced on the IPL volume -- the bulk of IPL work
+      msgs    CP console messages, which until wall 16 falls means abends only
+      logo    copies of the EBCDIC startup logo found in CP FREE storage, i.e.
+              did CP build and queue its startup messages
+      psw     final PSW, which says enabled wait vs abend wait vs running
+
+    `core` is a savecore image covering free storage; without one the logo
+    column reads `-` rather than `0`, because absent evidence and measured
+    absence are different things and conflating them cost this project two
+    wrong conclusions on 2 October (I-165, I-168).
+    """
+    import os
+    import re
+    lg = os.path.join(ce, '%s.log' % run)
+    try:
+        text = open(lg, errors='replace').read()
+    except OSError as e:
+        return 'no log: %s' % e
+    ccw = len(re.findall(r'HHCCP048I', text))
+    msgs = sorted(set(re.findall(r'DMK[A-Z]{3}[0-9]{3}[A-Z]', text)))
+    psw = re.findall(r'^psw (sm=.*)$', text, re.M)
+    logo = '-'
+    if core and os.path.exists(core):
+        d = open(core, 'rb').read()
+        # EBCDIC 'VM/3', counted only in CP free storage: the nucleus's own
+        # copies are template text and would be counted at every size.
+        logo = d[0x40000:0x80000].count(b'\xe5\xd4\x61\xf3')
+    return ('ccw=%-5d logo=%-3s msgs=%-28s psw=%s'
+            % (ccw, logo, ','.join(msgs) or 'none', psw[-1] if psw else '?'))

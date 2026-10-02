@@ -5,6 +5,7 @@
 #   build.sh quick <snapshot> <module>...   restore, reassemble named modules
 #   build.sh write              VMFLOAD + CP IPL 00C -- writes the nucleus
 #   build.sh test  [spec]... [-- [spec]...]   ESA/390 IPL; specs before `--` precede the ipl
+#   build.sh sizes [mb]...      sweep MAINSIZE, same four measurements each
 #   build.sh dual  <snapshot> [spec]...     the SAME test on 3.13 AND 4.9.1
 #
 # It lives in the repository rather than the scratchpad because the PROCEDURE is
@@ -321,6 +322,56 @@ test)
   echo "--- t1: ESA/390 confirmed"
   sed -n '/^pgmtrace/,$p' "$C/t1.log" | grep -vE "Pausing|Resuming|^$|HHCCD001I" | head -30
   arch S/370
+  ;;
+sizes)
+  # Sweep MAINSIZE and report the SAME four measurements for each, so the
+  # machines can be compared rather than described.  No rebuild: only the
+  # Hercules config changes, so a size is about four minutes.
+  #
+  # Why this is worth running now: the DAT conversion is geometry-dependent and
+  # every ESA/390 measurement so far has been against exactly one machine size.
+  # A size that reaches the same place by the same route is evidence the
+  # conversion is not tuned to 16 MB; a size that stops earlier is a cheap find.
+  #
+  # MAINSIZE is restored to 16 in a trap, because an interrupted sweep that
+  # left the config on another size would make every later measurement a
+  # measurement of a different machine -- which is I-157, and it cost a day.
+  #
+  # The DEFAULT SIZES ARE 4 8 12 16 AND THAT IS NOT ARBITRARY.  CE generates
+  # `SYSCOR RMSIZE=16384K` (DMKSYS), and DMKCPI takes the SMALLER of the real
+  # machine and the SYSGEN size:
+  #
+  #     L  R1,=A(DMKSYSRM)    real machine size
+  #     L  R15,=A(DMKSYSRV)   SYSGEN specified size
+  #     C  R1,0(,R15)
+  #     BNH *+8               low or equal -- use ACTUAL main storage
+  #     L  R1,0(,R15)         high -- use SYSGEN size
+  #
+  # So above 16 MB CP CLAMPS ITSELF TO 16384K and a 24 or 32 MB run measures
+  # Hercules, not CP: same CP storage size, same geometry, just unused real
+  # storage.  The first sweep was written as `8 16 24 32` and half of it would
+  # have been wasted.  Genuinely testing above 16 MB needs RMSIZE regenerated,
+  # which is M5.
+  #
+  # The pause after `ipl` is 100s, not the 200s the assembly path uses.  That
+  # number covers 30-95 seconds of emulated assembly work (see BOOT above); a
+  # bare IPL settles well inside 100 and the sweep is four runs, so the
+  # difference is minutes.
+  w || exit 1
+  shift || true
+  trap 'py "import mkrun; mkrun.archmode('"'"'$C/vm370ce.conf'"'"', '"'"'S/370'"'"')"; echo "--- MAINSIZE restored"' EXIT
+  for mb in ${@:-4 8 12 16}; do
+    py "import mkrun; mkrun.archmode('$C/vm370ce.conf', 'ESA/390', $mb)"
+    mk t1 --bare "herc:pgmtrace +1:3" "herc:pgmtrace +2:3" "herc:pgmtrace +5:3" \
+       "herc:pgmtrace +6:3" "herc:t+6a1:3" "herc:ipl 6A1:200" "herc:stop:15" \
+       "herc:savecore $C/core-$mb.bin 0 7FFFF:12" \
+       "herc:psw:5" "herc:gpr:6" "herc:cr:6" >/dev/null || exit 1
+    run t1 >/dev/null || exit 1
+    a=$(py "import mkrun; print(mkrun.wrong_arch('$C/t1.log','ESA/390') or 'ESA/390 ok')")
+    printf '%6s MB  %s\n' "$mb" "$(py "import mkrun; print(mkrun.ipl_progress('$C','t1','$C/core-$mb.bin'))")"
+    test "$a" = "ESA/390 ok" || echo "         !! $a"
+    cp "$C/t1.log" "$C/size-$mb.log"
+  done
   ;;
 dual)
   # Run the SAME test on both engines from the SAME starting state.  The restore
