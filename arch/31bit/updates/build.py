@@ -3505,10 +3505,80 @@ DATMODS = {
     #   01975000  LH / N / LR / A            and used as an index
     'DMKPTR': [
         ('00260000', ["         USING PAGPFRA,R9"]),
+        # I-162.  Five instructions in GETENTRY/GETENTR2 have to agree about
+        # page geometry, and the first version of this deck converted ONE of
+        # them -- 00338000, the swap-table displacement.  The four that feed it
+        # kept 64 KB/16-page/2-byte geometry, so R1 could hold only a 4-bit
+        # page number and CP looked up the swap entry of a DIFFERENT page.
+        #
+        # LRA returns the real address of the invalid PTE in R7 on CC=2, so
+        # `SR R7,R1` needs R1 = page*L'PAGPFRA to get back to the start of the
+        # array, and the swap entry then needs page*8.  With the old shifts
+        # R1 was (page AND 15)*2 and then *8.
+        #
+        # Measured on the live nucleus for virtual X'B7000' (page 183 of
+        # segment 0): the code computed R5 = X'FFB30E', which is not even
+        # entry-aligned, and read X'61' there -- SWPALLOC set -- so
+        # `TM SWPFLAG,SWPTRANS+SWPALLOC / BNZ INTRAN` enqueued the request and
+        # waited for an I/O nobody had started.  The correct R5 is X'FFB5B8',
+        # whose SWPFLAG is X'40' (SWPRECMP only), and the test falls through to
+        # the not-resident path.  A CCW trace over the loop showed zero channel
+        # programs, which is what "waiting for an I/O that was never started"
+        # looks like from outside.
+        #
+        # The mask stays a literal, one-for-one with the X'0000F000' it
+        # replaces, because it is used once.  The shared constant for the whole
+        # class belongs in EQU COPY and is a separate change -- adding it here
+        # would reassemble every module that copies EQU for a one-site fix.
+        ('00321000', Deck.comment(
+            "WAS N R1,=XL4'0000F000'. A 1 MB SEGMENT HAS 256 PAGES, SO THE "
+            "PAGE INDEX IS BITS 12-19, NOT THE FOUR BITS A 64 KB SEGMENT "
+            "NEEDED. I-162.") + [
+            "         N     R1,=XL4'000FF000'   PAGE INDEX, BITS 12-19",
+        ]),
+        ('00322000', Deck.comment(
+            "WAS SRL R1,11 -- PAGE NUMBER*2 FOR A TWO-BYTE ENTRY. THE ENTRY "
+            "IS A FULLWORD NOW AND SR R7,R1 BELOW BACKS UP OVER IT.") + [
+            "         SRL   R1,10          GET PAGE NUMBER*L'PAGPFRA",
+        ]),
+        ('00337000', Deck.comment(
+            "WAS SLL R1,2 -- PAGE*2 TIMES FOUR. R1 NOW ARRIVES AS PAGE*4 AND "
+            "A SWAP ENTRY IS STILL PAGSWPE BYTES, SO THE SHIFT IS ONE.") + [
+            "         SLL   R1,1           GET PAGE NUMBER*PAGSWPE",
+        ]),
         ('00338000', [
             "         LA    R5,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R7)",
         ]),
         ('00343000', ["         L     R7,PAGPFRA     GET PAGE TABLE ENTRY"]),
+        # I-163, the same half-converted shape as I-162 one card further on.
+        # An S/370 PTE was a HALFWORD holding the frame address divided by 256
+        # in bits 0-11 with flags in 12-15, so `N R7,=A(X'FFF0')` stripped the
+        # flags and left page*16 -- which IS the CORTABLE index, because a
+        # CORTABLE entry is 16 bytes (CORFPNT, CORBPNT, CORSWPNT, CORPGPNT,
+        # with CORFLAG ORG'd over CORSWPNT at +8).  One mask did two jobs.
+        #
+        # An ESA/390 PTE is a fullword whose PFRA is the real address itself,
+        # so that mask leaves X'F000' rather than an index and the following
+        # `A R7,ACORETBL` lands on an unrelated entry -- which is then WRITTEN
+        # through by `ST R2,CORFPNT-CORTABLE(,R3)`.  Measured: the bogus entry
+        # read CORFREE off, `BZ CNTFLR` did flush-list accounting for a page
+        # that was never flushed, and DMKPTRUC went 0-1.  DMKPTRUC (R10+X'2CC')
+        # was 0 and DMKPTRP2 (R10+X'2EC') was 1 at the abend, so CNTFLR had run
+        # exactly once.  That is ABEND PTR020, DMKPTR.ASSEMBLE:412.
+        #
+        # So the two jobs separate: mask the PFRA, then scale to the index.
+        # SRL does not set the condition code, so the `BZ READPAGE` on the next
+        # card still tests the N -- that is why the shift goes here and not
+        # after the branch.
+        ('00344000', Deck.comment(
+            "WAS N R7,=A(X'FFF0'), WHICH MASKED A HALFWORD PTE'S FLAGS AND "
+            "LEFT PAGE*16 FOR ACORETBL IN ONE STROKE. AN ESA/390 PTE HOLDS "
+            "THE REAL ADDRESS, SO THE MASK AND THE SCALING ARE NOW TWO "
+            "INSTRUCTIONS. SRL SETS NO CONDITION CODE, SO THE BZ BELOW STILL "
+            "TESTS THE N. I-163.") + [
+            "         N     R7,=A(PAGPFRM) IS THE PAGE STILL IN CORE ?",
+            "         SRL   R7,8           REAL ADDRESS TO CORTABLE INDEX",
+        ]),
         ('00721000', '00723000', Deck.comment(
             "THE /256 VALUE WAS STORED AS THE PTE AND THEN SHIFTED TO MAKE THE "
             "REAL ADDRESS. AN ESA/390 PTE IS THAT ADDRESS, SO THE SHIFT MOVES "

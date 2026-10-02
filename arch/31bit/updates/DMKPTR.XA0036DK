@@ -1,9 +1,32 @@
 ./ R 00260000          $ 00260100 100                                           
          USING PAGPFRA,R9                                      XA0036DK         
+./ R 00321000          $ 00321100 100                                           
+*  WAS N R1,=XL4'0000F000'. A 1 MB SEGMENT HAS 256 PAGES, SO   XA0036DK         
+*  THE PAGE INDEX IS BITS 12-19, NOT THE FOUR BITS A 64 KB     XA0036DK         
+*  SEGMENT NEEDED. I-162.                                      XA0036DK         
+         N     R1,=XL4'000FF000'   PAGE INDEX, BITS 12-19      XA0036DK         
+./ R 00322000          $ 00322100 100                                           
+*  WAS SRL R1,11 -- PAGE NUMBER*2 FOR A TWO-BYTE ENTRY. THE    XA0036DK         
+*  ENTRY IS A FULLWORD NOW AND SR R7,R1 BELOW BACKS UP OVER    XA0036DK         
+*  IT.                                                         XA0036DK         
+         SRL   R1,10          GET PAGE NUMBER*L'PAGPFRA        XA0036DK         
+./ R 00337000          $ 00337100 100                                           
+*  WAS SLL R1,2 -- PAGE*2 TIMES FOUR. R1 NOW ARRIVES AS        XA0036DK         
+*  PAGE*4 AND A SWAP ENTRY IS STILL PAGSWPE BYTES, SO THE      XA0036DK         
+*  SHIFT IS ONE.                                               XA0036DK         
+         SLL   R1,1           GET PAGE NUMBER*PAGSWPE          XA0036DK         
 ./ R 00338000          $ 00338100 100                                           
          LA    R5,256*L'PAGPFRA+(SWPFLAG-SWPVM)(R1,R7)         XA0036DK         
 ./ R 00343000          $ 00343100 100                                           
          L     R7,PAGPFRA     GET PAGE TABLE ENTRY             XA0036DK         
+./ R 00344000          $ 00344100 100                                           
+*  WAS N R7,=A(X'FFF0'), WHICH MASKED A HALFWORD PTE'S FLAGS   XA0036DK         
+*  AND LEFT PAGE*16 FOR ACORETBL IN ONE STROKE. AN ESA/390     XA0036DK         
+*  PTE HOLDS THE REAL ADDRESS, SO THE MASK AND THE SCALING     XA0036DK         
+*  ARE NOW TWO INSTRUCTIONS. SRL SETS NO CONDITION CODE, SO    XA0036DK         
+*  THE BZ BELOW STILL TESTS THE N. I-163.                      XA0036DK         
+         N     R7,=A(PAGPFRM) IS THE PAGE STILL IN CORE ?      XA0036DK         
+         SRL   R7,8           REAL ADDRESS TO CORTABLE INDEX   XA0036DK         
 ./ R 00721000 00723000 $ 00721100 100                                           
 *  THE /256 VALUE WAS STORED AS THE PTE AND THEN SHIFTED TO    XA0036DK         
 *  MAKE THE REAL ADDRESS. AN ESA/390 PTE IS THAT ADDRESS, SO   XA0036DK         
