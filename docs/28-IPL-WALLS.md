@@ -51,7 +51,7 @@ run that proves it is in the build journal.
 | 13 | ~~Privileged-operation exception on `SSM`, DAT on, in problem state~~ | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` | **NOT A WALL — downgraded 2 Oct** |
 | 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
-| 16 | **CP builds its startup logo, queues it, and `DMKCNS` writes one CONTASK and never advances** | logo intact in storage with today's date; three copies queued in free storage; the one CCW written is a *different*, empty CONTASK — the leading blank line | breakpoint at `DMKQCNWT`, then scanning the nucleus for EBCDIC `VM/3` | **OPEN — where CP stops now** — `I-166` |
+| 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints | **OPEN — where CP stops now** — `I-166`, `I-169`; **interrupt routing, not queue pointers** |
 | 17 | **A one-byte corruption of static nucleus data** — `DMKCPI`'s logo literal reads `VM/380` | `X'6DD99'` holds `'8'` where `DMKCPI.ASSEMBLE:2461` puts `'7'`; all four CE literals say `VM/370`; three runtime copies inherit it | EBCDIC scan of the nucleus vs the source literals | **OPEN** — `I-167`, may or may not share a cause with 16 |
 
 **Walls 1–11, 14 and 15 are closed.** Wall 11 fell on 2 October at 12:02 UTC:
@@ -110,6 +110,41 @@ This section has been rewritten three times on 2 October. All three versions are
 below, oldest last, because **the churn is the lesson**: each reading was
 consistent with everything measured at the time and each was wrong about where
 the defect was. Read the first one.
+
+### Fourth and current, 20:30 UTC — P0 answered: the completion never reaches `DMKCNS`
+
+`I-169`. Every link measured, in order:
+
+| step | measured |
+|---|---|
+| Hercules completes the write | subchannel `X'0004'` (device `0009`), `Stat=0C00`, CE+DE, no error |
+| the console's IOBLOK | `X'056940'` — `IOBUSER = X'052870'` matches every CONTASK's `CONUSER`, and `IOBCAW = X'056340'` is exactly `CONTASK X'056328' + X'18'` = `CONCCW1` |
+| **`IOBCSW`** | **zero** — no status recorded anywhere in CP |
+| the written CONTASK | `CONSTAT = AA` — **`CONACTV` still set**, "active on real device" |
+| breakpoint at `DMKCNSIN` (`X'FE40'`) | **never hit** |
+| is CP deaf to I/O? | **no** — the I/O old PSW at `X'38'` *is* the enabled-wait PSW, and `IOSCHNO` reads `X'0056'` = device `06A1`, so DASD interrupts are taken out of the wait |
+| `CR6` at the stop | `FF000000` — all eight interruption subclasses enabled |
+
+So the defect is in **interrupt routing, not queue pointers**, which is precisely
+the fork P0 was constructed to resolve. The messages are not the problem: nine
+CONTASKs chain cleanly from `X'056328'` — the logo (`cnt=67`), `"Now 20:16:20
+GMT"` (32), `DMKCPI971I` (44), `DMKCPI977I` (30) — every link valid, every
+`CONUSER` identical.
+
+`DMKCNSIN = X'FE40'` came from `IOBIRA` and is corroborated by the code there
+(`LM R12,R13,…` / `LH R1,0(R10)` = `LH R1,IOBRADD`), matching DMKCNS's own
+documented convention, *"GPR 10 = ADDRESS OF THE UNSTACKED IOBLOK"*. An earlier
+attempt to place it by abend bracketing put it inside DMKSVC, which was wrong —
+`abendmap`'s coverage is sparse in low storage and the bracket spans 142 KB.
+
+**The next fork, ready to run.** The I/O new PSW at `X'78'` puts CP's
+first-level I/O handler at **`X'6638'`**. A breakpoint there separates:
+
+1. Hercules never presents subchannel `X'0004'` — then the console subchannel's
+   PMCW enable/ISC is the suspect, which is wall 5's shape (`MSCH` count 0)
+   surviving for the console after being fixed for DASD.
+2. It is presented and CP's first-level handler drops it before `DMKIOT` routes
+   it to `IOBIRA` — then the routing is CP's.
 
 ### Third and current, 19:45 UTC — CP builds its logo and `DMKCNS` writes one CONTASK
 
