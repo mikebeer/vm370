@@ -3,8 +3,10 @@
 Started 28 September 2026, rewritten 1 October, re-measured 1 October (midday),
 re-measured again 1 October 18:45 UTC,
 again 2 October 12:10 UTC when wall 11 fell,
-**and again 2 October 18:55 UTC, when walls 14 and 15 fell, wall 13 was
-downgraded, and a Status column was added.** Every
+again 2 October 18:55 UTC, when walls 14 and 15 fell, wall 13 was
+downgraded, and a Status column was added,
+**and again 2 October 19:50 UTC, when CP was caught building its startup logo
+correctly and wall 16 was re-characterised for the third time in one day.** Every
 section that has been superseded says so where it stands rather than being
 deleted, because the diff is the point of this file.
 Extends **STATE.md** and **BUILD-CYCLE.md**. Read after GOTCHAS.md.
@@ -14,8 +16,8 @@ from it.** It answers one standing question — *what is between the current sta
 and an IPL without errors?* — and that answer has now been given three times with
 three different numbers, so it belongs somewhere with a diff.
 
-Sixteen walls so far, thirteen of them closed, one downgraded to "never was a
-wall", one not CP's, and one open. Every one was located to a specific
+Seventeen walls so far, thirteen of them closed, one downgraded to "never was a
+wall", one not CP's, and two open. Every one was located to a specific
 instruction at a specific address rather than inferred, and **each was only
 visible once the previous one fell** — which is the single most useful thing
 this document records, because it is also why no estimate of "how much is left"
@@ -23,7 +25,8 @@ has ever survived contact.
 
 The count itself is evidence for that last point: this file said "eleven walls"
 for two days while walls 14 and 15 were already in the nucleus, waiting to be
-reached.
+reached. Wall 16 was then described three different ways in six hours (see its
+section), which is the same lesson at a shorter timescale.
 
 ## The walls, in the order CP hit them
 
@@ -48,7 +51,8 @@ run that proves it is in the build journal.
 | 13 | ~~Privileged-operation exception on `SSM`, DAT on, in problem state~~ | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` | **NOT A WALL — downgraded 2 Oct** |
 | 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
-| 16 | **CP writes a one-byte blank to the console from an `X'EE'`-filled buffer** — not silent, empty | `CCW=09056360 60000001`, buffer `40EEEEEE…`, `Stat=0C00`; no read CCW anywhere; dispatcher enabled wait `PSW=030E0000` | CCW trace armed **before** the ipl | **OPEN — where CP stops now** — `I-165` |
+| 16 | **CP builds its startup logo, queues it, and `DMKCNS` writes one CONTASK and never advances** | logo intact in storage with today's date; three copies queued in free storage; the one CCW written is a *different*, empty CONTASK — the leading blank line | breakpoint at `DMKQCNWT`, then scanning the nucleus for EBCDIC `VM/3` | **OPEN — where CP stops now** — `I-166` |
+| 17 | **A one-byte corruption of static nucleus data** — `DMKCPI`'s logo literal reads `VM/380` | `X'6DD99'` holds `'8'` where `DMKCPI.ASSEMBLE:2461` puts `'7'`; all four CE literals say `VM/370`; three runtime copies inherit it | EBCDIC scan of the nucleus vs the source literals | **OPEN** — `I-167`, may or may not share a cause with 16 |
 
 **Walls 1–11, 14 and 15 are closed.** Wall 11 fell on 2 October at 12:02 UTC:
 `PRG018` is gone after five days. Wall 12 is not CP's. **Wall 16 is where CP
@@ -100,7 +104,59 @@ Walls 1–10 are closed, and for the record: Detail for each in `docs/13-ISSUES.
 worth reading are **I-77**, **I-102**, **I-104**, **I-108**, **I-110**,
 **I-114**, **I-116**, **I-162** and **I-163**.
 
-## Wall 16 — every fact measured so far, and the two readings it allows
+## Wall 16 — characterised three times in one day, and the third is the one to act on
+
+This section has been rewritten three times on 2 October. All three versions are
+below, oldest last, because **the churn is the lesson**: each reading was
+consistent with everything measured at the time and each was wrong about where
+the defect was. Read the first one.
+
+### Third and current, 19:45 UTC — CP builds its logo and `DMKCNS` writes one CONTASK
+
+A breakpoint at `DMKQCNWT` (`AQCNWT` = `X'419F8'`, read from the PSA) is reached
+with `GR00 = X'47'` — **71 bytes** — and `GR01 = X'6DD92'`. That storage reads:
+
+```
+R:0006DD90  85151515 15E5D461 F3F8F040 ...
+            151515 "VM/370 Community Edition Version  1 Release  1.2
+                    10/02/26 18:27:53" 1515
+```
+
+That is `STMSG` in `DMKCPI`, with today's date and time filled in by `DMKSAV`.
+**CP builds its startup logo correctly — the furthest this project has ever
+observed CP get.**
+
+Scanning the whole nucleus for EBCDIC `VM/3` finds the logo text in **three**
+places in CP free storage as well as the `DMKCPI` original, so the messages were
+built, copied into CONTASKs *and* queued. The single CCW that reaches the
+console is `09 056360 60 000001` — one byte of `X'40'` from `X'056360'`, a
+**different** CONTASK 288 bytes before the first logo one. That is the leading
+blank line VM/370 writes ahead of its logo.
+
+So the defect is **neither** the message build **nor** `DMKQCN`: `DMKCNS` writes
+the first CONTASK and never advances to the next. Everything else fits — the
+write completes `Stat=0C00`, `CR6 = FF000000` *measured at the stop*, so no
+interruption subclass is masked, CP takes the completion, finds the queue
+unadvanced, and idles in the dispatcher's enabled wait.
+
+Two corrections this made to the second version: the trailing-blank stripper is
+**not** involved (the message ends in `X'15'`, not a blank, so `CLI 0(R15),C' '`
+fails at once and the count stays 71), and "no read CCW" remains true but is no
+longer the interesting fact.
+
+### Second, 19:08 UTC — superseded: "CP writes an empty message"
+
+Correct about the CCWs, wrong about the cause. It concluded the one-byte write
+*was* the defect — an unfilled buffer with a length of 1 — and predicted a
+length taken from the wrong place (`I-128`'s shape). The length was never wrong:
+71 bytes were passed. The buffer it examined belonged to a different CONTASK.
+
+### First, earlier — superseded: "CP prints nothing"
+
+The facts that version measured are all still true and still worth having, but
+the conclusion drawn from them ("CP is idle, or stuck before console I/O")
+was wrong in both branches:
+
 
 Measured 2 October, three runs, identical each time:
 
@@ -157,6 +213,93 @@ line, `cold`, `cp disc`, `logon maint`. `--bare` is correct for its original
 purpose, a standalone loader IPL with no operating system underneath, and wrong
 for testing a CP nucleus.
 
+## Next steps, in the order I would do them
+
+Each step says what it would establish, not just what it would change, because
+every "how much is left" estimate in this file has been wrong and the ones that
+were least wrong came from measurements rather than plans.
+
+### P0 — `DMKCNS`: find where the CONTASK queue stops advancing
+
+The one open blocker. The queue has at least three messages on it and exactly
+one CCW went out, so the question is narrow: after the first write completes,
+what is supposed to dequeue the next CONTASK and why doesn't it?
+
+Instrument, do not read: `b` at `DMKCNS`'s I/O-interrupt entry and at its
+write-issue path, then compare the CONTASK chain pointers before and after. The
+CONTASK addresses are already known (`X'056360'`, and logo copies at `X'056480'`
+and `X'056620'`), so the chain can be walked out of a `savecore` directly.
+
+**Expected outcome:** either CP never re-enters `DMKCNS` after the completion
+(an interrupt-routing problem) or it re-enters and finds the chain wrong (a
+queue-pointer problem). Those need different fixes and the measurement
+distinguishes them in one run.
+
+### P1 — wall 17: the one-byte store into the nucleus
+
+`X'6DD99'` holds `'8'` where every source says `'7'`. One stray byte landing in
+static nucleus data is worth more attention than its symptom suggests, because
+the same misaddressed store could be landing elsewhere harmlessly today and
+somewhere fatal tomorrow. `CPIVER`/`CPIREL`/`CPILEV` are filled from `HDKCPEID`
+and `DMKCPICD` plus the time field are filled by `DMKSAV` — four stores into
+that area, all near the corrupted byte. A watchpoint on `X'6DD99'`, or a
+`savecore` before and after `DMKSAV` runs, identifies which.
+
+It may share a root cause with wall 16; nothing measured says it does.
+
+### P2 — extend `geomchk.py` to the shift classes
+
+Free, no build. Today it knows shifts by 11 and 16 plus two mask families and
+reports **15 PROVEN** unconverted sites. It does **not** know shifts by 4, 6 or
+20, which is **93 further sites** across CP. Classify, do not convert: the
+checker should emit module, sequence, instruction and a *candidate*
+classification (address geometry, page count, table size, segment number, byte
+offset, key granularity), and `SLL R1,4+4` in `DMKBLD` is the standing proof
+that one instruction can hold two different pieces of arithmetic.
+
+**Expected outcome:** a measured conversion list, which is the prerequisite for
+P4 and the thing that tells us whether that work is 15 sites or 100.
+
+### P3 — freeze this state as a regression point, which means fixing `I-164`
+
+The current nucleus is worth far more than a source tree carrying another
+hundred untested geometry edits: ESA/390 + the DAT conversion + a DASD IPL +
+1,477 CCWs + a correctly built logo. `snapshot.py` currently **refuses** to
+bless it, because it demands a deck `APPLYING` line and a `TXTLCL CREATED` for
+all 40 patched modules and a sliced `spec` build only ever journals the two it
+assembled. The tool needs a notion of *incremental on top of a valid snapshot*:
+check the modules named in this run, inherit the rest from the parent manifest.
+
+Until then the state is reproducible only as "`SNAP-DAT2` plus one `spec`
+invocation", which works but is not a snapshot.
+
+### P4 — central geometry EQUs, once P2 has classified the sites
+
+`PAGSHFT`, `SEGSHFT`, `PTLSHFT`, `KEYSHFT` in `EQU COPY`, replacing only the
+subset whose semantics really are geometry. The mechanism is right and matches
+this project's existing practice for derived *lengths* (`PAGTSWP`, `PAGBMP`,
+`PAGSWPE` in `CORE.XA0033DK`), which was never extended to *shifts* — all 161
+are bare literals today.
+
+Two cautions. First, named constants **do not find existing wrong values**; they
+make future ones fail at assembly time. P2 finds the defects, so P2 strictly
+comes first. Second, `EQU COPY` is copied broadly, so this forces a whole-CP
+reassembly — and full builds are exactly what the container has reclaimed three
+times (`I-146`), with `spec` unable to express "every module that copies EQU".
+Pay that cost once, for the whole class, not per site.
+
+### Not now
+
+- **Patching Hercules** to instrument interrupt presentation. Breakpoints are
+  control-validated and sufficient; `I-168` is about `t+ADDR-ADDR`, not about
+  needing emulator changes. The standing rule holds: convert CP to the ESA
+  interface rather than making the emulator accept S/370 behaviour.
+- **The remaining 62 storage-key sites** and the 33 synchronous-channel sites.
+  None is in the I/O or paging supervisor; 31 of the 33 are standalone
+  utilities. They do not block CP coming up.
+- **`DMKVAT`'s `ARCHTECT` table** (milestone B), `I-126` (215 strip sites, M2),
+  `I-132` (278 three-byte fields, M5), real storage above 16 MB (M5).
+
 ## What CP does today
 
 IPL 6A1 under `ARCHMODE ESA/390`, on a nucleus 32 update decks deep, built by
@@ -166,9 +309,14 @@ CE's own 1970s assembler:
   builds its CORTABLE, enumerates **and enables** its 949 subchannels,
 - reads volume labels from its DASD and **resolves SYSRES by volume serial**,
 - disables the ECPS:VM assists it cannot have and carries on,
-- **prints on the operator console**, and
+- **prints on the operator console**,
 - **writes a complete formatted dump of itself** — registers, control
-  registers, TOD clock, 3.4 MB of storage — through a converted printer path.
+  registers, TOD clock, 3.4 MB of storage — through a converted printer path,
+  confirmed again on 2 October by a 30,669-line dump ending in
+  `*** END OF DUMP ***`, and
+- **builds its startup logo correctly** — `VM/370 Community Edition Version 1
+  Release 1.2` with the date and time filled in by `DMKSAV` — copies it into
+  CONTASKs and queues them for the console.
 
 Confirmed from inside the machine: `GR01 = 01000000` (the storage size),
 `CR6 = FF000000` (the I/O-interruption subclass mask), and the RDEVBLOK array
@@ -450,7 +598,8 @@ than edited. Both are invisible through a clean IPL and both are large:
 Neither belongs in M1 and neither was in anyone's count. They belong in
 `WHAT-31BIT-NEEDS.md`.
 
-## Wall 13 — where CP stops now
+## Wall 13 — SUPERSEDED heading, kept for the diff: it is no longer where CP
+stops, and it was never a wall (see the downgrade above)
 
 Measured 2 October 12:02 UTC, on a nucleus built from 59 modules all assembling
 clean (59 OK, 0 DEFECT, each run verified complete), written successfully
