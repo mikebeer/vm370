@@ -168,10 +168,24 @@ PURCONT  L     R3,VMSEG       GET ADDRESS OF SEGTABLE          XA0036DK
          L     R4,SEGPTO      VALID PNTR?                      XA0036DK         
          N     R4,=A(SEGPTOM) ...                              XA0036DK         
          BNZ   B2             YES                              XA0036DK         
-./ R 00956000          $ 00956100 100                                           
-         TM    SEGPTO+3,SEGINVAL INVALID STE?                  XA0036DK         
+./ R 00956000          $ 00956010 010                                           
+*  THE ORIGINAL IS CLI SEGPAGE+3,SEGINV -- AN EQUALITY TEST,   XA0036DK         
+*  NOT A BIT TEST. BYTE 3 EQUALS SEGINV EXACTLY ONLY WHEN THE  XA0036DK         
+*  PTO'S LOW BYTE IS ZERO AND THE INVALID FLAG IS SET, WHICH   XA0036DK         
+*  IS THE 'NEVER BUILT' CASE. THE NEXT TWO CARDS THEN          XA0036DK         
+*  SEPARATE A SECOND CASE -- BUILT BUT INVALID, MIGRATING --   XA0036DK         
+*  AND THAT IS THE ONE THE TRANS AT 00962000 EXISTS TO WAIT    XA0036DK         
+*  FOR. CONVERTING THIS TO TM COLLAPSED THE TWO INTO ONE: ANY  XA0036DK         
+*  INVALID ENTRY TOOK NEXTSEG, SO REACHING 00958000 MEANT THE  XA0036DK         
+*  BIT WAS CLEAR, BZ WAS ALWAYS TAKEN, AND THE TRANS BECAME    XA0036DK         
+*  DEAD CODE. THE EQUALITY TEST SURVIVES THE CONVERSION        XA0036DK         
+*  UNCHANGED IN KIND -- ONLY THE CONSTANT MOVES, BECAUSE AN    XA0036DK         
+*  UNBUILT ESA/390 STE READS X'20': INVALID WITH PTL ZERO,     XA0036DK         
+*  CONFIRMED BY READING CP'S OWN SEGMENT TABLE, WHERE UNUSED   XA0036DK         
+*  ENTRIES ARE 00000020. I-159.                                XA0036DK         
+         CLI   SEGPTO+3,SEGINVAL INVALID STE(NOT BUILT)?       XA0036DK         
 ./ R 00957000          $ 00957100 100                                           
-         BO    NEXTSEG        YES, NOTHING TO RELEASE          XA0036DK         
+         BE    NEXTSEG        YES, NOTHING TO RELEASE          XA0036DK         
 ./ R 00958000          $ 00958100 100                                           
 B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK         
 ./ R 00979000          $ 00979100 100                                           
