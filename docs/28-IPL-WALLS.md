@@ -1,7 +1,8 @@
 # The walls between a converted CP and a clean IPL
 
 Started 28 September 2026, rewritten 1 October, re-measured 1 October (midday),
-**re-measured again 1 October 18:45 UTC — see the dated notes below.** Every
+re-measured again 1 October 18:45 UTC,
+**and again 2 October 12:10 UTC, when wall 11 fell.** Every
 section that has been superseded says so where it stands rather than being
 deleted, because the diff is the point of this file.
 Extends **STATE.md** and **BUILD-CYCLE.md**. Read after GOTCHAS.md.
@@ -31,11 +32,19 @@ survived contact.
 | 8 | `SSK` sized storage at **zero**, and FRELOOP ate the nucleus | `C6D9C5C5` (`"FREE"`) every 16 bytes, incl. lowcore | breakpoint + arithmetic |
 | 9 | CP executes an ECPS:VM assist *before* probing for assists | `SCNRU` / `STEVL`, operation exception | `pgmtrace`, one run |
 | 10 | Our own DSECT grew; the block generator did not | `CPI001` — SYSRES not found | `dumpscan.py` on the dump |
-| 11 | **`TRANS` loads an S/370 STD and `LRA` rejects it** | `PRG018` = translation specification | the dump, below |
+| 11 | **`CR0`'s translation format says 64 KB segments** — NOT the STDs, see the retraction below | `PRG018` = translation specification | Hercules's `dat.c`, a day late |
 | 12 | **Not a CP wall: the build environment is reclaimed mid-run** | Hercules, the driver and the watcher vanish together; the log ends on a normal `Ready;` | `uptime`, two hours late |
+| 13 | **Privileged-operation exception on `SSM`, DAT on, in problem state** | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` |
 
-Walls 1–10 are closed. **Wall 11 is converted and assembles; it is not yet
-proven at run time.** Wall 12 is not CP's and is described last.
+**Walls 1–11 are closed.** Wall 11 fell on 2 October at 12:02 UTC: `PRG018` is
+gone after five days. Wall 12 is not CP's. **Wall 13 is where CP stops now.**
+
+A caution on reading the next section: by the measure of *what CP visibly does*,
+it currently does **less** than on 30 September — it prints nothing at all, where
+it used to initialise fully and dump itself. That is not a regression in the
+conversion. It is what happens when a fault moves from late in initialisation to
+early in it: the old failure came after CP had finished talking, the new one
+comes before it starts.
 
 Walls 1–10 are closed, and for the record: Detail for each in `docs/13-ISSUES.md`; the entries
 worth reading are **I-77**, **I-102**, **I-104**, **I-108**, **I-110**,
@@ -60,7 +69,38 @@ striding `X'60'` and abutting the RCUBLOKs exactly. Since 1 October the same
 facts are confirmed on **two engines**, Hercules 3.13 and SDL 4.9.1, which agree
 on all six compared values (`claude/HERCULES-4.md`).
 
-## Wall 11, in detail — where CP stops now
+## Wall 11, in detail — RETRACTED CAUSE, and what it actually was
+
+**The diagnosis below is kept verbatim because it is wrong in an instructive
+way.** It attributes `PRG018` to the segment table being in System/370 format.
+The tables were genuinely wrong and converting them was genuinely necessary —
+but they were **not the cause of the exception**, and converting them did not
+clear it.
+
+Hercules checks `CR0` at `[3.11.3.2]`, **before fetching a single table entry**:
+
+    if ((regs->CR(0) & CR0_TRAN_FMT) != CR0_TRAN_ESA390)
+        goto tran_spec_excp;
+
+    CR0_TRAN_FMT    0x00F80000   bits 8-12, the translation format
+    CR0_TRAN_ESA390 0x00B00000   1 MB segments, 4 KB pages
+
+CE sets `CPCREG0 DC X'81800CC0'`, and `X'81800CC0' & X'00F80000'` is
+**`X'00800000'`** — System/370 for 4 KB pages and **64 KB segments**. Two bits.
+
+The proof is a converted nucleus whose tables were verified correct *first*, read
+out of the stopped machine on 2 October: `CR1 = X'00FFC005'` (bit 0 clear, origin
+`X'FFC000'` 4096-aligned), `STE 0 = X'00FFAC0F'` (bit 0 clear, PTO 64-aligned,
+PTL 15), a page table of `00000000 00001000 00002000 00003000 …` — textbook
+ESA/390 PTEs — **and the identical `PRG018` at the identical `LRA`.** One card,
+`CPCREG0 DC X'81B00CC0'`, cleared it. `I-152`.
+
+The lesson is about diagnosis rather than about `CR0`: a dump showed a wrong
+value, the wrong value was real, and nobody asked whether it was the value the
+hardware complains about **first**. The emulator's own source answers that in
+four lines.
+
+## Wall 11 as originally diagnosed — kept for the diff
 
 `DMKDMP908I SYSTEM FAILURE; CODE PRG018`. The code is literal: **018 decimal is
 `X'12'`, a translation-specification exception.**
@@ -303,6 +343,43 @@ than edited. Both are invisible through a clean IPL and both are large:
 Neither belongs in M1 and neither was in anyone's count. They belong in
 `WHAT-31BIT-NEEDS.md`.
 
+## Wall 13 — where CP stops now
+
+Measured 2 October 12:02 UTC, on a nucleus built from 59 modules all assembling
+clean (59 OK, 0 DEFECT, each run verified complete), written successfully
+(`SYSTEM LOAD DECK COMPLETE`, `Nucleus loaded on VM50-1`, wait state `12`), and
+IPLed under ESA/390 on SDL Hercules 4.9.1:
+
+    HHC00801I Processor CP00: Privileged-operation exception interruption
+    HHC02324I PSW=040D0000 0006D130  INST=8000D129  SSM  297(13)
+    CR00=81B00CC0  CR01=00FFC005
+    GR03=00FFC000  GR12=0006C008  GR13=0006D008
+
+What this says:
+
+* **`CR00 = 81B00CC0`** — wall 11's fix is live.
+* **`CR01 = 00FFC005`** — the designation is in ESA/390 form and the hardware
+  accepted it, along with the segment table and the page tables. CP is past the
+  translation that used to fault.
+* **`PSW = 040D0000`** — byte 0 `04` sets **bit 5: DAT ON**. Byte 1 `0D` sets
+  bit 12 (ESA/390 mode, which is `wall 2`'s requirement met) and **bit 15:
+  problem state.**
+* **`SSM` is privileged**, so problem state alone explains the exception.
+
+The open question is whose instruction it is, and it has exactly two answers:
+CP's own code running with the problem-state bit wrongly set, or a virtual
+machine's `SSM` that CP failed to intercept. Two facts bear on it and they point
+different ways. `GR03 = 00FFC000` is the segment-table address, which is CP's own
+table-walking idiom. But **CP emits no console messages at all** in this run — no
+`DMKCPI957I`, no `DMKCPI966I` — so it has not finished initialising, and running
+a virtual machine before announcing initialisation would be surprising.
+
+`X'6D130'` is 436 KB in. The pre-conversion nucleus was 336 KB, but the
+conversion grew CP's tables substantially — page tables from 32 bytes to 1024,
+`PAGBMP` from 1048 to 3136 — so the address being past the old nucleus end is not
+evidence either way until the new nucleus size is read from this build rather
+than remembered from the last one.
+
 ## Wall 12 — not CP's: the build environment is reclaimed mid-run
 
 Recorded here because it is what stopped progress on 1 October afternoon, and
@@ -343,8 +420,12 @@ redo four one-line fixes. `I-111`'s property, invoked carelessly.
 
 **Revised 18:45 UTC.**
 
-**Group 2 is written** — ~700 cards, 23 modules, 53 decks, zero undefined-symbol
-diagnostics where there were 176. Unproven at run time.
+**Group 2 is written and now partly proven.** ~700 cards, 23 modules, 53 decks,
+zero undefined-symbol diagnostics where there were 176, 59 modules assembling
+clean, and — as of 2 October — **the DAT structures it produces are accepted by
+the hardware**: the designation, the segment table and the page tables all pass
+ESA/390 translation. What remains unproven is everything that happens after
+translation succeeds, which is now where CP fails.
 
 **Group 1 is not a day; it is 95 sites.** 62 storage-key, 33 channel. The
 storage-key family is the one piece of this project that can be written **and
