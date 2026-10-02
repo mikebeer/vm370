@@ -225,7 +225,7 @@ reset)
   # Restore the snapshot and nothing else, so a sliced build has one known
   # baseline and the slices that follow do not rewind it.  I-148.
   arch S/370
-  ALLOW_STALE=yes restore "${2:-SNAP-2}" || exit 1
+  ALLOW_STALE=yes restore "${2:-SNAP-2}" ${3:-} || exit 1
   ;;
 stage)
   # One SLICE of staging, no restore, so progress accumulates on the disk.

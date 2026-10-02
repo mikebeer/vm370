@@ -157,6 +157,51 @@ def psa():
     #     `AIF ('&SYSECT' EQ 'DMKPSA').PSA1`, so every other module gets a
     #     DSECT and no DC.  The field keeps its length, so no other module's
     #     offsets move.  I-71.
+    # --- CR0's TRANSLATION FORMAT: the bits that were never the tables.
+    #
+    # `IPL-WALLS.md` attributed `PRG018` to the segment table being in S/370
+    # format with bit 0 set in every entry.  The tables WERE wrong and that was
+    # a real defect, but it was not the cause of the exception, and converting
+    # them did not clear it.  Hercules checks CR0 FIRST, at [3.11.3.2], before
+    # it fetches a single table entry:
+    #
+    #     if ((regs->CR(0) & CR0_TRAN_FMT) != CR0_TRAN_ESA390)
+    #         goto tran_spec_excp;
+    #
+    #     CR0_TRAN_FMT    0x00F80000   bits 8-12, the translation format
+    #     CR0_TRAN_ESA390 0x00B00000   1 MB segments, 4 KB pages
+    #
+    # CE sets `CPCREG0 DC X'81800CC0'` (094/PSA.HRC004DK), and
+    # X'81800CC0' & X'00F80000' is X'00800000' -- System/370 for 4 KB pages and
+    # **64 KB segments**.  ESA/390 requires X'00B00000'.  Two bits, 10 and 11.
+    #
+    # Measured on 2 October from a converted nucleus whose tables were verified
+    # correct first: CR1 = X'00FFC005' with bit 0 clear and the origin 4096-
+    # aligned, STE 0 = X'00FFAC0F' with PTO 64-aligned and PTL 15, and a page
+    # table of X'00000000 00001000 00002000 ...' -- textbook ESA/390 entries --
+    # and the identical PRG018 at the identical LRA.  Everything the conversion
+    # touched was right and the one constant it never touched was wrong.  I-152.
+    #
+    # X'81B00CC0' keeps bit 7 (CR0_STORKEY_4K, which CE already sets and which
+    # 23-STORAGE-KEYS.md depends on) and every external mask in X'0CC0'.
+    # The anchor is the RESOLVED sequence, 00242490: HRC004DK replaced record
+    # 00242000 with `$ 242490 490`, so 00242000 no longer exists in the tree our
+    # decks apply over.  `next_seq` refused the stale number rather than letting
+    # it become a NOT FOUND at update time -- I-52's guard working.
+    # Seven cards between 00242490 and 00243000 need an increment of 10, not
+    # 100: the generator refused 00242500 step 100 because the seventh card
+    # would land on 00243100, past CPCREG6.  R-22's check, doing its job.
+    d.replace('00242490', first='00242500', inc=10,
+              limit=next_seq(SRC + '/PSA.MACRO', '00242490'), lines=[
+        "*  CR0 BITS 8-12 ARE THE TRANSLATION FORMAT. S/370 PUT PAGE",
+        "*  SIZE IN 8-9 AND SEGMENT SIZE IN 11-12; ESA/390 REQUIRES",
+        "*  THE SINGLE PATTERN X'00B00000' -- 1 MB SEGMENTS, 4 KB",
+        "*  PAGES. CE'S X'81800CC0' GIVES X'00800000', WHICH IS 64 KB",
+        "*  SEGMENTS, AND LRA TAKES A TRANSLATION-SPECIFICATION",
+        "*  EXCEPTION BEFORE IT READS ANY TABLE. I-152.",
+        "CPCREG0  DC    X'81B00CC0' CP ARCH CONTROL AND EXTERNAL MASK",
+    ])
+
     d.replace('00243000', first='00243010', inc=10, limit='00244000',
               lines=Deck.comment(
         "WAS DC F'0' -- CP ASSIST AND VMA MASK. ON ESA/390 CR6 IS THE I/O "
