@@ -2,7 +2,9 @@
 
 Started 28 September 2026, rewritten 1 October, re-measured 1 October (midday),
 re-measured again 1 October 18:45 UTC,
-**and again 2 October 12:10 UTC, when wall 11 fell.** Every
+again 2 October 12:10 UTC when wall 11 fell,
+**and again 2 October 18:55 UTC, when walls 14 and 15 fell, wall 13 was
+downgraded, and a Status column was added.** Every
 section that has been superseded says so where it stands rather than being
 deleted, because the diff is the point of this file.
 Extends **STATE.md** and **BUILD-CYCLE.md**. Read after GOTCHAS.md.
@@ -12,43 +14,127 @@ from it.** It answers one standing question — *what is between the current sta
 and an IPL without errors?* — and that answer has now been given three times with
 three different numbers, so it belongs somewhere with a diff.
 
-Eleven walls so far. Every one was located to a specific instruction at a
-specific address rather than inferred, and **each was only visible once the
-previous one fell** — which is the single most useful thing this document
-records, because it is also why no estimate of "how much is left" has ever
-survived contact.
+Sixteen walls so far, thirteen of them closed, one downgraded to "never was a
+wall", one not CP's, and one open. Every one was located to a specific
+instruction at a specific address rather than inferred, and **each was only
+visible once the previous one fell** — which is the single most useful thing
+this document records, because it is also why no estimate of "how much is left"
+has ever survived contact.
+
+The count itself is evidence for that last point: this file said "eleven walls"
+for two days while walls 14 and 15 were already in the nucleus, waiting to be
+reached.
 
 ## The walls, in the order CP hit them
 
-| # | Wall | How it presented | Found by |
-|---|---|---|---|
-| 1 | The conversion executes, and S/370 rejects it | disabled wait `X'111111'`, `B234` = `STSCH` under `ARCHMODE S/370` | reading the PSW |
-| 2 | **BC-mode PSW is a third axis, never counted** | `Invalid IPL PSW: 00040000 00004470` — bit 12 zero | Hercules refused the IPL |
-| 3 | The standalone loader is itself S/370 I/O | `9D00 8000` = `TIO 0(R8)` in `DMKLD00E` | PSW at `X'44C2'` |
-| 4 | `XAIO` borrowed R15, a `USING` base in 54 modules | interruption code `X'15'`, operand exception | PoP + the trace |
-| 5 | Subchannels resolved but never enabled | `MSCH` count 0; cc 3 from every `SSCH` | counting MSCHs in the artifact |
-| 6 | The architecture probe clobbered R1 | exactly one device per module failed | register dump |
-| 7 | `DMKDMP` took the dump with `ISK` | `DMKDMP905W SYSTEM DUMP FAILURE` | `0934` at the failing address |
-| 8 | `SSK` sized storage at **zero**, and FRELOOP ate the nucleus | `C6D9C5C5` (`"FREE"`) every 16 bytes, incl. lowcore | breakpoint + arithmetic |
-| 9 | CP executes an ECPS:VM assist *before* probing for assists | `SCNRU` / `STEVL`, operation exception | `pgmtrace`, one run |
-| 10 | Our own DSECT grew; the block generator did not | `CPI001` — SYSRES not found | `dumpscan.py` on the dump |
-| 11 | **`CR0`'s translation format says 64 KB segments** — NOT the STDs, see the retraction below | `PRG018` = translation specification | Hercules's `dat.c`, a day late |
-| 12 | **Not a CP wall: the build environment is reclaimed mid-run** | Hercules, the driver and the watcher vanish together; the log ends on a normal `Ready;` | `uptime`, two hours late |
-| 13 | **Privileged-operation exception on `SSM`, DAT on, in problem state** | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` |
+The **Status** column is the one to read first. It is deliberately not a
+percentage: a wall is `closed` only when the failure it names is gone *and* the
+run that proves it is in the build journal.
 
-**Walls 1–11 are closed.** Wall 11 fell on 2 October at 12:02 UTC: `PRG018` is
-gone after five days. Wall 12 is not CP's. **Wall 13 is where CP stops now.**
+| # | Wall | How it presented | Found by | Status |
+|---|---|---|---|---|
+| 1 | The conversion executes, and S/370 rejects it | disabled wait `X'111111'`, `B234` = `STSCH` under `ARCHMODE S/370` | reading the PSW | **closed** |
+| 2 | **BC-mode PSW is a third axis, never counted** | `Invalid IPL PSW: 00040000 00004470` — bit 12 zero | Hercules refused the IPL | **closed** |
+| 3 | The standalone loader is itself S/370 I/O | `9D00 8000` = `TIO 0(R8)` in `DMKLD00E` | PSW at `X'44C2'` | **closed** |
+| 4 | `XAIO` borrowed R15, a `USING` base in 54 modules | interruption code `X'15'`, operand exception | PoP + the trace | **closed** |
+| 5 | Subchannels resolved but never enabled | `MSCH` count 0; cc 3 from every `SSCH` | counting MSCHs in the artifact | **closed** |
+| 6 | The architecture probe clobbered R1 | exactly one device per module failed | register dump | **closed** |
+| 7 | `DMKDMP` took the dump with `ISK` | `DMKDMP905W SYSTEM DUMP FAILURE` | `0934` at the failing address | **closed** |
+| 8 | `SSK` sized storage at **zero**, and FRELOOP ate the nucleus | `C6D9C5C5` (`"FREE"`) every 16 bytes, incl. lowcore | breakpoint + arithmetic | **closed** |
+| 9 | CP executes an ECPS:VM assist *before* probing for assists | `SCNRU` / `STEVL`, operation exception | `pgmtrace`, one run | **closed** |
+| 10 | Our own DSECT grew; the block generator did not | `CPI001` — SYSRES not found | `dumpscan.py` on the dump | **closed** |
+| 11 | **`CR0`'s translation format says 64 KB segments** — NOT the STDs, see the retraction below | `PRG018` = translation specification | Hercules's `dat.c`, a day late | **closed** 2 Oct 12:02 UTC |
+| 12 | **Not a CP wall: the build environment is reclaimed mid-run** | Hercules, the driver and the watcher vanish together; the log ends on a normal `Ready;` | `uptime`, two hours late | **not CP's** — mitigated by sliced builds |
+| 13 | ~~Privileged-operation exception on `SSM`, DAT on, in problem state~~ | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` | **NOT A WALL — downgraded 2 Oct** |
+| 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
+| 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
+| 16 | CP reaches the dispatcher's **enabled** wait having printed nothing, and ignores console input | `PSW=030E0000 00000000`, `cmwp=E`, `GR12`=`DMKDSPCH`; external code `X'1004'` (clock comparator) re-waking it; `GR14=50034C98` | `psw`/`gpr` after a 60-second run with `cold` delivered to `0009` | **OPEN — where CP stops now** |
 
-A caution on reading the next section: by the measure of *what CP visibly does*,
-it currently does **less** than on 30 September — it prints nothing at all, where
-it used to initialise fully and dump itself. That is not a regression in the
-conversion. It is what happens when a fault moves from late in initialisation to
-early in it: the old failure came after CP had finished talking, the new one
-comes before it starts.
+**Walls 1–11, 14 and 15 are closed.** Wall 11 fell on 2 October at 12:02 UTC:
+`PRG018` is gone after five days. Wall 12 is not CP's. **Wall 16 is where CP
+stops now.**
+
+### Wall 13 is downgraded, not closed
+
+It was recorded as a wall on the strength of a privileged-operation exception on
+`SSM`. The PSW that was quoted for it says otherwise and always did:
+`040D0000` has `cmwp=D`, i.e. **bit 15 set — problem state** — and Hercules
+printed the operand as `V:0006D131`, a *virtual* address. That is a virtual
+machine executing `SSM`, which CP is supposed to intercept and virtualise in
+`DMKPRV`; the exception is the mechanism, not a fault. On 2 October CP ran
+**past** it to the dispatcher's wait in every run, which settles it. The entry
+stays in the table with its original wording struck through, because a wall that
+was never a wall is exactly the kind of thing this file exists to keep visible.
+
+### Walls 14 and 15 are the same defect class, and it is ours
+
+Both are groups of instructions that encode page geometry and must change
+together — and in both, an earlier pass converted **one** member and left the
+rest. That is worse than converting none: the arithmetic stays internally
+consistent enough to produce a plausible address, so it fails as a hang or a
+counter underflow rather than as an assembly error. Wall 14 cost five days for
+three cards. `tools/geomchk.py` now sweeps for the class and reports a site only
+where no deck of ours replaces its sequence number; it currently lists **15
+PROVEN** unconverted sites, including the identical `16*2+8` swap-table
+expression in `DMKCDB`, `DMKCDM` and `DMKPGS`. The class is not confined to
+`DMKPTR` and wall 16 may well be another member of it.
+
+A caution on reading the next section, **superseded 2 October 18:55 UTC and kept
+for the diff**. It read: *"by the measure of what CP visibly does, it currently
+does less than on 30 September — it prints nothing at all, where it used to
+initialise fully and dump itself."* That held while wall 14 stood. With walls 14
+and 15 closed, CP talks again: the wall-15 build printed
+`DMKDMP908I SYSTEM FAILURE; CODE PTR020` and a complete 30,669-line dump ending
+in `*** END OF DUMP ***`, so DMKDMP's whole path — abend, message, formatted
+dump, converted printer — works end to end.
+
+What has **not** been shown at any point is CP printing a *normal*
+initialisation message. Every console line this project has ever seen came from
+DMKDMP on the abend path. So in wall 16, silence is **not** evidence that
+initialisation failed, and that asymmetry is the trap to avoid repeating: the
+ordinary message path (`DMKQCNWT` → `DMKCNS`) has never been exercised
+successfully, and until it has, "prints nothing" and "did nothing" are different
+claims.
 
 Walls 1–10 are closed, and for the record: Detail for each in `docs/13-ISSUES.md`; the entries
 worth reading are **I-77**, **I-102**, **I-104**, **I-108**, **I-110**,
-**I-114** and **I-116**.
+**I-114**, **I-116**, **I-162** and **I-163**.
+
+## Wall 16 — every fact measured so far, and the two readings it allows
+
+Measured 2 October, three runs, identical each time:
+
+| | |
+|---|---|
+| PSW | `030E0000 00000000` — `sm=03`, `cmwp=E`, `am=24`, `ia=0` |
+| state | **enabled** wait (W=1), supervisor, interrupts not masked |
+| `GR12` / `GR13` | `00032BC0` / `00033BC0` — `DMKDSPCH`'s base pair, from `ADSPCH` in the PSA |
+| `GR14` | `50034C98` — return address `X'34C98'`, just past DMKDSP's two-base range |
+| `X'86'` | external interruption code `X'1004'` — clock comparator |
+| varies run to run | `GR03` (a TOD value), `GR09` (`50`→`54`) |
+| constant run to run | `GR04=9`, `GR05=5`, `GR07=165` |
+| console output | **none** |
+| `cold` sent to `0009` | delivered (`/(0009) cold`) and **ignored** — same wait, same registers |
+
+Two readings are open and the evidence does not yet separate them:
+
+1. **CP is idle.** It initialised, has no work, and is sitting in the
+   dispatcher's wait being re-woken by the clock — which is what a healthy
+   idle CP looks like. The messages are undrained because the ordinary console
+   path has never worked (see the caution above).
+2. **CP is stuck before console I/O exists.** It never reached the point of
+   reading the operator console, which is why `cold` had no effect.
+
+The `cold` being ignored argues for (2), but not decisively: an input that
+arrives before CP has posted a console read would be dropped either way.
+
+A harness limitation found while testing this, worth fixing before the next
+attempt: `build.sh test` passes `--bare` to `mkrun`, which **omits the whole
+`BOOT` dialogue** — the null line, `cold`, `cp disc`, `logon maint`. `--bare` is
+correct for its original purpose, a standalone loader IPL with no operating
+system underneath, and wrong for testing a CP nucleus. Specs given to the `test`
+verb are also appended *after* `herc:ipl`, so CCW tracing can never cover the
+IPL itself; a trace of the IPL needs the specs before it.
 
 ## What CP does today
 
