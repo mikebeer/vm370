@@ -63,7 +63,11 @@ run(){ local eng=${2:-$HERC3}
        python3 "$T/iochk.py" "$C" || {
          echo "### run($1): re-run 'mk' (or restage those files) first"; return 1; }
        ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
-       sleep 8; w; }
+       sleep 8; w
+       # Append to the journal, so the next snapshot can be validated against
+       # everything since the restore rather than against this slice alone.
+       test -f "$C/$1.log" && cat "$C/$1.log" >> "$C/build.journal"
+       return 0; }
 
 mk(){ # Four invariants on every ./ R, checked before 50 minutes are spent on a
       # build that would report them as assembler diagnostics instead: a
@@ -158,6 +162,17 @@ restore(){ local snap=$1 want=${2:-}
   esac
   rm -rf "$C/disks/shadows"; cp -r "$C/disks/$snap" "$C/disks/shadows"
   rm -f "$C/disks/shadows/MANIFEST.json"
+  # Start a fresh BUILD JOURNAL.  `snapshot.py take` validates a snapshot
+  # against ONE log, because a `full` build is one Hercules run.  A sliced build
+  # (I-146) is nine runs and `run()` archives each log as the next begins
+  # (I-131), so no single log holds more than its own slice and the snapshot was
+  # refused with "no deck APPLYING line for 37 patched module(s)" -- three of
+  # this project's own guards combining into a false negative (I-155).  The
+  # journal is the evidence for everything done since this restore, derived by
+  # appending each finished log rather than reconstructed from whichever logs
+  # survive.  A nucleus write lands in it too, which is correct: after a write
+  # the state is no longer a BUILD state, and snapshot.py says so.
+  : > "$C/build.journal"
   echo "--- restored $snap"; }
 
 specs_all(){ local s=""

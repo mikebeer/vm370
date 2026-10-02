@@ -78,8 +78,64 @@ def deck_ops(path):
     return out
 
 
+# Constants this project introduced, with their bit counts.  A TM whose mask has
+# more than one bit gives CC3 only when ALL of them are set, and CC1 when some
+# are -- so `BO` means "all", `BNZ`/`BM` mean "any", and the two are different
+# questions.  I-159 was the same confusion from the other direction.
+MASKS = {'SEGINVAL': 0x20, 'PAGINV': 0x04, 'SEGPTLF': 0x0F, 'SEGFLGM': 0x3F,
+         'SEGENQ': 0x10, 'PAGREF': 0x02, 'PAGSHR': 0x01, 'SEGMIG': 0x10,
+         'PAGTSWP': None, 'SWPSHR': 0x01, 'CORSHARE': 0x01}
+BITS = re.compile(r"X'([0-9A-F]+)'")
+
+
+def maskbits(operand):
+    """How many bits does this TM mask select?  None if unresolvable."""
+    arg = operand.split(',')[-1].strip()
+    tot = 0
+    for part in re.split(r'\+', arg):
+        part = part.strip()
+        m = BITS.match(part)
+        if m:
+            tot |= int(m.group(1), 16)
+        elif part in MASKS and MASKS[part] is not None:
+            tot |= MASKS[part]
+        elif part.isdigit():
+            tot |= int(part)
+        else:
+            return None
+    return bin(tot).count('1')
+
+
+def multibit(deck, recs, byseq, D):
+    """TM cards a deck INTRODUCES whose mask selects more than one bit."""
+    out = []
+    for seq, lines in D.items():
+        for ln in lines:
+            if opcode(ln) != 'TM':
+                continue
+            f = ln[9:].split(None, 1)
+            if len(f) < 2:
+                continue
+            n = maskbits(f[1].split()[0])
+            if n is None or n < 2:
+                continue
+            # the branch that follows, converted or kept
+            br = ''
+            i = byseq.get(seq)
+            if i is not None:
+                for j in range(i + 1, min(i + 4, len(recs))):
+                    s2, t2 = recs[j]
+                    if opcode(t2).startswith('B'):
+                        br = (opcode(D[s2][0]) if s2 in D and D[s2]
+                              else opcode(t2) + ' (kept)')
+                        break
+            out.append((seq, n, f[1].split()[0], br))
+    return out
+
+
 def main():
     hits = []
+    multi = []
     for deck in sorted(glob.glob(os.path.join(UPDATES, '*.XA*DK'))):
         mod = os.path.basename(deck).split('.')[0]
         src = os.path.join(SRC, '%s.ASSEMBLE' % mod)
@@ -113,6 +169,8 @@ def main():
             hits.append((mod, seq, shape, oo, no, br_o,
                          br_n, 'branch ok' if ok or br_n == '(kept)'
                          else 'BRANCH SUSPECT'))
+        for seq, n, mask, br in multibit(deck, recs, byseq, D):
+            multi.append((mod, seq, n, mask, br))
     print('%d test-shape change(s).  Each is a CANDIDATE: the tool finds the'
           % len(hits))
     print('shape change, a human reads the mask.')
@@ -121,6 +179,19 @@ def main():
         print('  %-8s %s  %-16s %-4s -> %-3s   branch %-4s -> %-7s %s'
               % (mod, seq, shape, oo, no, bo, bn, verdict))
     if not hits:
+        print('  none')
+    print()
+    print('%d introduced TM(s) with a MULTI-BIT mask.  `BO` asks "all these'
+          % len(multi))
+    print('bits", `BNZ`/`BM` ask "any of them" -- different questions.')
+    print()
+    for mod, seq, n, mask, br in sorted(multi):
+        verdict = ('reads as ALL' if br.startswith('BO')
+                   else 'reads as ANY' if br.startswith(('BNZ', 'BM'))
+                   else 'read it')
+        print('  %-8s %s  %d bits  %-24s branch %-12s %s'
+              % (mod, seq, n, mask, br or '(none found)', verdict))
+    if not multi:
         print('  none')
     return 0
 
