@@ -52,7 +52,46 @@ run that proves it is in the build journal.
 | 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
 | 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints | **OPEN — where CP stops now** — `I-166`, `I-169`; **interrupt routing, not queue pointers** |
-| 17 | **A one-byte corruption of static nucleus data** — `DMKCPI`'s logo literal reads `VM/380` | `X'6DD99'` holds `'8'` where `DMKCPI.ASSEMBLE:2461` puts `'7'`; all four CE literals say `VM/370`; three runtime copies inherit it | EBCDIC scan of the nucleus vs the source literals | **OPEN** — `I-167`, may or may not share a cause with 16 |
+| 17 | ~~A one-byte corruption of static nucleus data — `DMKCPI`'s logo reads `VM/380`~~ | it is CE's own `HRC370DK`: `MVI STMSG+7,C'8'  tell them this is System/380`, reached only when a `BSM` into AMODE 31 succeeds | breakpoint at the store, `am=31`, `INSTWRD1 = F8000000` | **NOT A WALL — retracted 2 Oct.** CE detecting that our conversion works — `I-173` |
+
+### Wall 17 is retracted, and what replaced it is good news
+
+`HRC370DK` is CE's **System/380 architecture probe**, in `DMKCPI`:
+
+```
+* Since we support both System/380 and System/370 machines,
+* let's see on which we are running, and adjust the version message accordingly.
+         MVI   INSTWRD1,C'7'
+         MVC   SAVEDPSW(8),PCNEWPSW    save program check new PSW
+         MVC   PCNEWPSW(8),TRAPPER     set our own interrupt handler
+         LA    R14,CHK3701
+         ICM   R14,8,=X'80'            try to switch to 31-bit mode
+         DC    X'0B0E'                 BSM R0,R14
+* If we arrive here, the BSM instruction was valid and we are
+* executing on a System/380 machine.
+CHK3701  MVI   INSTWRD1,C'8'
+         MVI   STMSG+7,C'8'            tell them this is System/380
+```
+
+**Our CP reaches `CHK3701`.** The breakpoint at the store fires with `am=31`,
+`GR14 = 8006E0C2` (bit 0 set), and `INSTWRD1` at PSA `X'430'` reads `F8000000`.
+So `VM/380` is not corruption — it is **CE detecting that our conversion
+produced a 31-bit-capable machine**, and it is the most direct confirmation of
+the AMODE-31 work this project has had.
+
+Two things to keep. `INSTWRD1` byte 0 is a CE-maintained PSA flag for "is this
+a 31-bit machine", and `DMKCNS` already reads it to choose its banner — existing
+infrastructure. And `HRC065DK` (Logical Device Support) does
+`L R8,INSTWRD1 -> LDEVCTL` while `HRC370DK` puts a character in byte 0: a flag
+packed into the high byte of a pointer, which is **`I-128`'s law in CE's own
+shipped code**. Latent here (bytes 1–3 are zero, LDEVs inactive), fatal to LDEV
+support under AMODE 31.
+
+How it was got wrong: the evidence for "corruption" was that all four
+`C'VM/3?0 Community Edition'` literals read `VM/370`. True, and **incomplete** —
+I searched for a corrupted *literal* and never for code that *modifies* one. The
+modifying card is an `MVI`, which that search shape could not find. A
+well-formed search for the wrong hypothesis.
 
 **Walls 1–11, 14 and 15 are closed.** Wall 11 fell on 2 October at 12:02 UTC:
 `PRG018` is gone after five days. Wall 12 is not CP's. **Wall 16 is where CP
