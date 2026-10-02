@@ -307,7 +307,14 @@ test)
   mk t1 --bare "herc:pgmtrace +1:3" "herc:pgmtrace +2:3" "herc:pgmtrace +5:3" \
      "herc:pgmtrace +6:3" ${pre[@]+"${pre[@]}"} "herc:ipl 6A1:200" \
      "${post[@]}" \
-     "herc:stop:6" "herc:psw:5" "herc:r 80.20:5" "herc:gpr:6" || exit 1
+     "herc:stop:6" "herc:psw:5" "herc:r 80.20:5" "herc:gpr:6" \
+     "herc:cr:6" || exit 1
+  # `cr` is dumped at the STOP, not only where pgmtrace happens to fire.  Until
+  # 2 October the only control registers in any log came from the early SSM
+  # program exception, and CR6 was read from THERE and quoted as the state at
+  # the final wait -- an inference presented as a measurement.  CR6 is the
+  # I/O-interruption subclass mask and the whole "did CP take the interrupt?"
+  # question turns on it, so it is now captured where the question is asked.
   run t1 || exit 1
   r=$(py "import mkrun; print(mkrun.wrong_arch('$C/t1.log','ESA/390') or '')")
   test -z "$r" || { echo "### t1: $r"; exit 1; }
