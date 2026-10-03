@@ -3462,6 +3462,29 @@ KEYMODS = {
             "ALREADY BEING SET THE SAME. I-177.") + [
             "         SSKE  R6,R7          ZERO KEY, WHOLE 4 KB PAGE",
         ]),
+        # DMKPTR's four ISK sites are both READ pairs, so they convert the
+        # same way as everyone else's and do NOT wait for the RRB work.  In
+        # each, the mask below the pair tests the same bit in both byte
+        # positions -- SWPREF2*256+SWPREF2 at 01016000, =A(X'00000202') at
+        # 02069260 -- and with one key the register holds it twice, so both
+        # masks still test exactly what they say.  I-192.
+        ('01012000', Deck.comment(
+            "ISK PAIR, READ. THE LA R14,2048(,R6) BETWEEN THEM STILL NAMES "
+            "THIS PAGE, SO BOTH ISKES RETURN ITS ONE KEY AND 01016000'S "
+            "SWPREF2*256+SWPREF2 MASK FINDS IT IN BOTH BYTES. I-192.") + [
+            "         ISKE  R15,R6         GET STORAGE KEY",
+        ]),
+        ('01015000', [
+            "         ISKE  R15,R14        GET OTHER STORAGE KEY",
+        ]),
+        ('02069220', Deck.comment(
+            "ISK PAIR, READ, IN THE DMKVMA SCAN ADDED BY VA07230. SAME "
+            "SHAPE AND SAME REASONING AS 01012000. I-192.") + [
+            "         ISKE  R0,R2          LOAD FIRST KEY",
+        ]),
+        ('02069250', [
+            "         ISKE  R0,R2          LOAD SECOND KEY",
+        ]),
     ],
 
     # Wall 21's likely next stop.  CHKFETCH at 01157000 runs on every channel
