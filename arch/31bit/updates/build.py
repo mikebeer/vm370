@@ -66,6 +66,7 @@ XA36 = 'XA0036DK'
 XA37 = 'XA0037DK'
 XA38 = 'XA0038DK'
 XA39 = 'XA0039DK'
+XA40 = 'XA0040DK'
 
 
 def psa():
@@ -3695,6 +3696,64 @@ KEYMODS = {
 
 
 # ---------------------------------------------------------------------------
+# The S/370 channel instructions that are left in the NUCLEUS.  I-192, wall 22.
+#
+# There is exactly one, and finding that out took a corrected instrument.  A
+# sweep for `^\s+(TCH|TIO|SIO|...)` reported none anywhere, which was wrong in
+# the way `I-168` warns about: the card is
+#
+#     TCHLOOP  TCH   0(R2)            CHANNEL STATUS?
+#
+# and a labelled card does not start with whitespace.  Allowing an optional
+# label found 33 sites the first pattern had been silently missing, and the
+# useful half of that is what it did NOT find: 64 of the 65 are `SIO` and `TIO`
+# in DMKDDR, DMKDIR, DMKFMT, DMKLD00E, DMKSAV and DMKSSP, which are STANDALONE
+# programs -- they run without CP, in S/370 mode, and the nucleus does not
+# contain them.  The 65th is this one.
+CHANMODS = {
+
+    # DMKENTTI is VM/MONITOR's I/O utilisation sampler, driven by a timer
+    # request block.  It walks the sixteen channel numbers testing each with
+    # TCH and counting how many are busy, and the count goes into monitor
+    # record MN602CHB and nowhere else -- no control flow anywhere depends on
+    # it.  SYSMON AUTO=YES in DMKSYS starts the monitor at every IPL, which is
+    # why "MONITOR AUTO STARTING" appears in every boot log and why this is
+    # reached within seconds.
+    #
+    # ESA/390 has no channel to test.  The channel subsystem has subchannels,
+    # and "channel busy" is not an observable of the same kind: a path can be
+    # busy, a subchannel can be status-pending, but the S/370 notion the
+    # sampler counts does not exist.  So the honest conversion is to stop
+    # sampling and leave the counters at zero, which reports accurately that
+    # the measurement is unavailable -- rather than inventing a number from
+    # STSCH across every subchannel, which would be a different measurement
+    # wearing this one's name.
+    #
+    # One card, and it is the same length.  TCH is S-format and four bytes; an
+    # unconditional branch is RX and four bytes.  So nothing shifts, the
+    # BC 9,NOINCR below it becomes four unreachable bytes, and the loop still
+    # steps R1 through the sample fields and ends on C R2,F4096 -- the record's
+    # shape and its sample count are untouched.
+    'DMKENT': [
+        ('00242450', Deck.comment(
+            "WAS TCH 0(R2) -- TEST CHANNEL, WHICH ESA/390 DOES NOT HAVE AND "
+            "WHICH ABENDED CP WITH PRG001 AT DMKENT+294 WITHIN SECONDS OF "
+            "THE MONITOR STARTING. THE LOOP COUNTS BUSY CHANNELS FOR MONITOR "
+            "RECORD MN602CHB AND NOTHING ELSE READS IT, SO BRANCHING PAST "
+            "THE INCREMENT LEAVES THE COUNTERS AT ZERO AND REPORTS THAT THE "
+            "MEASUREMENT IS NOT AVAILABLE. A CHANNEL SUBSYSTEM HAS NO "
+            "CHANNEL TO TEST; SYNTHESISING ONE FROM STSCH ACROSS EVERY "
+            "SUBCHANNEL WOULD BE A DIFFERENT MEASUREMENT UNDER THIS ONE'S "
+            "NAME. B IS FOUR BYTES AND SO IS TCH, SO NOTHING SHIFTS. THE "
+            "LABEL TCHLOOP STAYS ON THE CARD -- 00242770 BRANCHES BACK TO "
+            "IT, AND REPLCHK CAUGHT ITS LOSS BEFORE THIS EVER ASSEMBLED. "
+            "I-192.") + [
+            "TCHLOOP  B     NOINCR         NO CHANNEL TO TEST IN ESA/390",
+        ]),
+    ],
+}
+
+# ---------------------------------------------------------------------------
 # The name.  I-179.
 #
 # CE's `HRC370DK` probes for System/380 -- a program-check trap around a `BSM`
@@ -5790,6 +5849,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA38, 'ESA/390 STORAGE KEYS AT 4 KB: THE 2 KB PAIRS COLLAPSE')])
         print('%-8s %-9s %3d cards  %s' % (m, XA38, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(CHANMODS):
+        dk = datdeck(m, CHANMODS[m], ident=XA40)
+        path = os.path.join(HERE, '%s.%s' % (m, XA40))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA40, 'NO TCH: A CHANNEL SUBSYSTEM HAS NO CHANNEL TO TEST')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA40, n,
               'OK' if not verify(path) else 'BAD'))
 
     bld = dmkbld()
