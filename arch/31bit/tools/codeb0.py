@@ -52,6 +52,12 @@ DCX = re.compile(r"^\s+DC\s+X'([0-9A-F]{8})'")
 # What each of the six words in a row means, in order.
 MEANING = ['page-number mask', 'segment-number mask']
 
+# The three halfwords after the two flag bytes, and then the three after that.
+HALF = re.compile(r"^\s+DC\s+H'(\d+)',H'(\d+)',H'(\d+)'")
+SHIFTNAME = ['PAGSHFT', 'SEGSHFT', 'PTEINCR']
+LENNAME = ['MAXSEGS', 'PAGTLEN', 'PAGINCR']
+SHIFTOP = re.compile(r'\b(SRL|SLL|SRA|SLA|SRDL|SLDL|SRDA|SLDA)\s+R\d+,(\d+)')
+
 
 def table():
     """The eight rows of DMKVAT's geometry table, from the source."""
@@ -74,6 +80,29 @@ def table():
         if h and len(rows[cur]) < 2:
             rows[cur].append((h.group(1), seq))
         # A row ends at its DS 5H filler.
+        if 'DS' in c and '5H' in c:
+            cur = None
+    return rows
+
+
+def halfwords():
+    """The two H'a',H'b',H'c' triples of each row: shifts, then lengths."""
+    cards = applied.assembled('DMKVAT')
+    rows = {}
+    cur = None
+    for seq, text in cards:
+        c = text[:71]
+        if c.startswith('*'):
+            continue
+        m = ROW.match(c)
+        if m:
+            cur = m.group(1)
+            rows[cur] = []
+        if cur is None:
+            continue
+        h = HALF.match(c)
+        if h and len(rows[cur]) < 2:
+            rows[cur].append(tuple(int(g) for g in h.groups()))
         if 'DS' in c and '5H' in c:
             cur = None
     return rows
@@ -108,6 +137,29 @@ def main():
     for v in sorted(wrong):
         print(f"  X'{v}'  {'; '.join(wrong[v])}")
     print()
+
+    # The shift counts, the same way.  CODE80's PAGSHFT of 11 is the S/370
+    # page shift that geomchk's PROVEN rows keep finding; naming it as CODE80's
+    # turns "this looks wrong" into "this is the halfword-PTE row's value".
+    hw = halfwords()
+    if 'CODEB0' in hw and len(hw['CODEB0']) == 2:
+        shifts, lens = hw['CODEB0']
+        print()
+        print('CODEB0 shifts: ' + ', '.join(
+            f'{n}={v}' for n, v in zip(SHIFTNAME, shifts)))
+        print('CODEB0 lengths: ' + ', '.join(
+            f'{n}={v}' for n, v in zip(LENNAME, lens)))
+        badshift = {}
+        for name, pair in hw.items():
+            if name == 'CODEB0' or len(pair) < 1:
+                continue
+            for i, v in enumerate(pair[0][:2]):      # PAGSHFT, SEGSHFT only
+                if v not in shifts[:2]:
+                    badshift.setdefault(v, []).append(
+                        f'{name} {SHIFTNAME[i]}')
+        print('shift counts belonging to other rows: ' + ', '.join(
+            f'{v} ({"; ".join(w)})' for v, w in sorted(badshift.items())))
+        print()
 
     only_ours = '--ours' in sys.argv
     mods = sorted({os.path.basename(p).split('.')[0]
