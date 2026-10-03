@@ -210,6 +210,52 @@ witness, agreeing with the manual and with the running machine. When the guest
 tables need converting, the mechanism is to extend that table; its author left
 `DS 5H  RESERVED FOR FUTURE USE`.
 
+#### And one of its rows *is* our geometry
+
+Read a day later, chasing `I-188`, and it should have been read first. The eight
+codes are a matrix, and the last of them is the one this project is building:
+
+    *              X'B0' - LARGE PAGE, LARGE SEG, FULLWORD ENTRIES
+
+Large page is 4 KB, large seg is 1 MB, fullword entries is the ESA/390 PTE. That
+is not an approximation of our target — it is our target, named, with its
+constants written out beside it:
+
+    CODEB0   DC    X'000FF000'            page-number mask
+             DC    X'7FF00000'            segment-number mask
+             DC    X'08',X'06'            page-invalid bit, must-be-zero bits
+             DC    H'10',H'18',H'4'       PAGSHFT, SEGSHFT, PTEINCR
+             DC    H'127',H'1024',H'64'   MAXSEGS, PAGTLEN, PAGINCR
+
+Every one of those is a constant this project derived separately, and in several
+cases painfully:
+
+| `CODEB0` | what we arrived at, and where |
+|---|---|
+| page mask `X'000FF000'` | `DMKPTR 00321400`, written out as `I-162` after a `SRL 11` was found beside it |
+| segment mask `X'7FF00000'` | got **wrong** as `X'00F00000'` and it cost a build cycle — `I-188` |
+| `PAGSHFT H'10'` | `DMKPTR 00322400 SRL R1,10  GET PAGE NUMBER*L'PAGPFRA` |
+| `SEGSHFT H'18'` | `DMKDRD 01096100 SRL R8,18`, and `SRDL 20`+`SLL 2` elsewhere |
+| `PTEINCR H'4'` | the fullword PTE, `CORE.XA0033DK`'s `PAGPFRA DS 1F` |
+| `PAGTLEN H'1024'` | `PAGTSWP`'s `256*L'PAGPFRA` |
+| `PAGINCR H'64'` | the 64-byte `STL` unit — the whole of `I-188` |
+| `MAXSEGS H'127'` | `SEGSTLM EQU X'0000007F'`, read out of the PoO |
+
+So the "central EQUs" that P4 proposes to define already exist, in IBM's hand,
+in a module every DAT-touching part of CP can see. **P4's shape should change
+accordingly**: rather than inventing `PAGSHFT`/`SEGSHFT`/`PTLSHFT`/`KEYSHFT`,
+derive them from this row, and treat any site whose constant disagrees with
+`CODEB0` as a site to read. That is a checkable rule where the current plan is a
+list, and it would have caught `I-188` before it was built: `X'00F00000'`
+appears in this very table, at `CODE90` and `CODE50`, which are the **halfword-
+entry** rows — a 24-bit truncation of the same geometry, not this one.
+
+The lesson generalises past this table. Three times now the authority for a
+conversion has turned out to be inside CP rather than in the manual: `DMKSYM`
+for the address map (`symtab.py`), `DMKBLDRT`'s own entry conditions for the
+register layout `I-185` got wrong, and `CODEB0` here. The question to ask before
+deriving a constant is whether CP already states it.
+
 ---
 
 ## 7. The design decisions, and the one that was attempted and abandoned

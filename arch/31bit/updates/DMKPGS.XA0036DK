@@ -247,15 +247,21 @@ B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK
 ./ R 01047000          $ 01047100 100                                           
          SL    R5,=A(PAGPFRA-PAGSTMP)                          XA0036DK         
 ./ R 01049000          $ 01049100 100                                           
-*  X'00FF0000' KEPT THE 64 KB SEGMENT NUMBER, BITS 8-15. A 1   XA0036DK         
-*  MB SEGMENT NUMBER IS BITS 8-11.                             XA0036DK         
-         N     R1,=X'00F00000' RESET R1 TO SEGMENT START       XA0036DK         
+*  X'00FF0000' KEPT THE 64 KB SEGMENT NUMBER, BITS 8-15 --     XA0036DK         
+*  WHICH IS EVERY SEGMENT A 24-BIT ADDRESS CAN NAME, SO THE    XA0036DK         
+*  ORIGINAL WAS GENERAL FOR ITS ARCHITECTURE. A 1 MB SEGMENT   XA0036DK         
+*  NUMBER IS BITS 1-11, 2048 OF THEM, AND X'7FF00000' IS       XA0036DK         
+*  DMKVAT'S OWN CODEB0 MASK FOR THIS GEOMETRY. THIS CARD READ  XA0036DK         
+*  X'00F00000' FOR ONE BUILD CYCLE; THAT REACHES SIXTEEN       XA0036DK         
+*  SEGMENTS, WHICH IS A 16 MB MACHINE AND NOT AN               XA0036DK         
+*  ARCHITECTURE, AND IT COST THE CYCLE. I-188.                 XA0036DK         
+         N     R1,=X'7FF00000' RESET R1 TO SEGMENT START       XA0036DK         
 ./ R 01053000          $ 01053100 100                                           
          LA    R3,SEGPTO+4    POINT TO NEXT STE                XA0036DK         
 ./ R 01054000          $ 01054100 100                                           
 *  WAS N R1,=X'00FF0000' -- THE 64 KB SEGMENT-NUMBER MASK.     XA0036DK         
 *  SAME CHANGE AS 01049300, WHICH THIS DECK ALREADY MADE.      XA0036DK         
-         N     R1,=X'00F00000' SAVE SEGMENT NUMBER             XA0036DK         
+         N     R1,=X'7FF00000' SAVE SEGMENT NUMBER             XA0036DK         
 ./ R 01055000          $ 01055100 100                                           
 *  WAS A R1,=X'00010000' -- A 64 KB BUMP. ONE SEGMENT IS NOW   XA0036DK         
 *  A MEGABYTE, AND R3 ABOVE ALREADY STEPS BY ONE FULLWORD      XA0036DK         

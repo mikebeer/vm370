@@ -2,6 +2,13 @@
          L     R10,VMSEG-VMBLOK(,R10)   SYSTEM ADDR SPACE      XA0036DK         
          N     R10,=A(SEGSTOM) WITHOUT THE LENGTH              XA0036DK         
 ./ R 01093000          $ 01093100 100                                           
-         L     R8,=A(X'00F00000') ...TO GET THE SEGMENT NO.    XA0036DK         
+*  WAS X'00FF0000'. X'7FF00000' IS DMKVAT'S OWN CODEB0         XA0036DK         
+*  SEGMENT MASK -- LARGE PAGE, LARGE SEG, FULLWORD ENTRIES --  XA0036DK         
+*  AND THE SRL 18 BELOW IS CODEB0'S SEGSHFT. I-188:            XA0036DK         
+*  X'00F00000' REACHES ONLY SIXTEEN SEGMENTS, WHICH IS A 16    XA0036DK         
+*  MB MACHINE AND NOT AN ARCHITECTURE. R9 HOLDS A(DMKSYM), A   XA0036DK         
+*  CLEAN NUCLEUS ADDRESS, SO THE WIDER MASK CANNOT PICK UP A   XA0036DK         
+*  DIRTY HIGH BYTE HERE.                                       XA0036DK         
+         L     R8,=A(X'7FF00000') ...TO GET THE SEGMENT NO.    XA0036DK         
 ./ R 01096000          $ 01096100 100                                           
          SRL   R8,18(0)       CONVERT TO SEGTABLE INDEX        XA0036DK         

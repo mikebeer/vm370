@@ -2977,6 +2977,30 @@ def dmkbld():
                          'must go somewhere else' % (seq, len(lines), limit))
 
     # ---------------------------------------------------------- DMKBLDRT
+    # Pages -> units, the inverse of the units -> segments -> pages conversion
+    # made at 00222700 below, and missed when that one was made.  I-188: this is
+    # the card that made the segment table sixteen times longer than the machine,
+    # which let DMKPGS's PGOUT2 scan run past VMSIZE, where DMKPTRAN's
+    # `LA R1,0(,R1)  STRIP HIGH BYTE` turned 16 MB into 0 and the loop closed.
+    one('00207000', Deck.comment(
+        "WAS SRDL R0,8. R0 ARRIVES AS A PAGE COUNT AND LEAVES AS A COUNT OF "
+        "64-BYTE UNITS, WHICH IS WHAT STL COUNTS AND WHAT 00262000 STORES "
+        "AFTER A BCTR. THE PROJECT'S OWN CARDS SETTLE THE UNITS: 00249000 "
+        "DOES LR R7,R3 AND 00250000 SLL R7,6 -- TIMES 64 BYTES PER TABLE -- "
+        "AND 00222500 READS LA R1,1(,R1)  SEGMENT COUNT/16.") + Deck.comment(
+        "A 64-BYTE UNIT IS SIXTEEN FULLWORD STES IN BOTH ARCHITECTURES, "
+        "BECAUSE AN STE IS A FULLWORD IN BOTH. WHAT MOVED IS WHAT SIXTEEN "
+        "ENTRIES COVER: 16 TIMES 64 KB IS 1 MB, 16 TIMES 1 MB IS 16 MB. SO "
+        "THE SAME TABLE LENGTH NOW SPANS SIXTEEN TIMES THE ADDRESS SPACE AND "
+        "THE SHIFT THAT DIVIDES PAGES BY A UNIT GROWS BY FOUR. IT IS WRITTEN "
+        "8+4 BECAUSE 00222700 IS ITS EXACT INVERSE, SLL R1,4+8.") + Deck.comment(
+        "DMKVAT'S OWN GEOMETRY TABLE IS THE CITATION. CODEB0 -- LARGE PAGE, "
+        "LARGE SEG, FULLWORD ENTRIES, WHICH IS THIS ARCHITECTURE -- CARRIES "
+        "PAGINCR H'64', THE UNIT, AND MAXSEGS H'127', A SEVEN-BIT STL. 128 "
+        "UNITS OF 16 MB IS 2 GB, WHICH IS THE WHOLE 31-BIT SPACE, SO THE "
+        "FIELD IS WIDE ENOUGH AND ONLY THIS SHIFT WAS WRONG.") + [
+        "         SRDL  R0,8+4         SHIFT TO OBTAIN NUMBER OF UNITS",
+    ])
     # The segment-table length, read from the STD.  S/370 keeps it in bits 0-7,
     # ESA/390 in bits 25-31, so the byte moves from 0 to 3.  Both sites clear the
     # register first (SR R4,R4 / SR R1,R1), so IC alone leaves it clean.
@@ -3678,8 +3702,14 @@ DATMODS = {
             "         L     R10,VMSEG-VMBLOK(,R10)   SYSTEM ADDR SPACE",
             "         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH",
         ]),
-        ('01093000', [
-            "         L     R8,=A(X'00F00000') ...TO GET THE SEGMENT NO.",
+        ('01093000', Deck.comment(
+            "WAS X'00FF0000'. X'7FF00000' IS DMKVAT'S OWN CODEB0 SEGMENT "
+            "MASK -- LARGE PAGE, LARGE SEG, FULLWORD ENTRIES -- AND THE "
+            "SRL 18 BELOW IS CODEB0'S SEGSHFT. I-188: X'00F00000' REACHES "
+            "ONLY SIXTEEN SEGMENTS, WHICH IS A 16 MB MACHINE AND NOT AN "
+            "ARCHITECTURE. R9 HOLDS A(DMKSYM), A CLEAN NUCLEUS ADDRESS, SO "
+            "THE WIDER MASK CANNOT PICK UP A DIRTY HIGH BYTE HERE.") + [
+            "         L     R8,=A(X'7FF00000') ...TO GET THE SEGMENT NO.",
         ]),
         ('01096000', [
             "         SRL   R8,18(0)       CONVERT TO SEGTABLE INDEX",
@@ -4266,9 +4296,15 @@ DATMODS = {
             "         SL    R5,=A(PAGPFRA-PAGSTMP)",
         ]),
         ('01049000', Deck.comment(
-            "X'00FF0000' KEPT THE 64 KB SEGMENT NUMBER, BITS 8-15. A 1 MB "
-            "SEGMENT NUMBER IS BITS 8-11.") + [
-            "         N     R1,=X'00F00000' RESET R1 TO SEGMENT START",
+            "X'00FF0000' KEPT THE 64 KB SEGMENT NUMBER, BITS 8-15 -- WHICH "
+            "IS EVERY SEGMENT A 24-BIT ADDRESS CAN NAME, SO THE ORIGINAL WAS "
+            "GENERAL FOR ITS ARCHITECTURE. A 1 MB SEGMENT NUMBER IS BITS "
+            "1-11, 2048 OF THEM, AND X'7FF00000' IS DMKVAT'S OWN CODEB0 "
+            "MASK FOR THIS GEOMETRY. THIS CARD READ X'00F00000' FOR ONE "
+            "BUILD CYCLE; THAT REACHES SIXTEEN SEGMENTS, WHICH IS A 16 MB "
+            "MACHINE AND NOT AN ARCHITECTURE, AND IT COST THE CYCLE. "
+            "I-188.") + [
+            "         N     R1,=X'7FF00000' RESET R1 TO SEGMENT START",
         ]),
         ('01053000', ["         LA    R3,SEGPTO+4    POINT TO NEXT STE"]),
         # I-183, wall 20.  The card above advances the STE pointer by FOUR --
@@ -4288,13 +4324,14 @@ DATMODS = {
         # The LRA's cc=3 is the length violation that entry 256 earns.
         #
         # The mask is the one THIS DECK already uses at 01049300, five cards
-        # up, with the reasoning written out there: X'00FF0000' kept the 64 KB
-        # segment number in bits 8-15, and a 1 MB segment number is bits 8-11.
-        # Converting one of a pair and not the other is I-162 exactly.
+        # up, with the reasoning written out there.  Converting one of a pair
+        # and not the other is I-162 exactly -- and then getting the shared
+        # constant wrong in both is I-188, which is why the reasoning lives in
+        # one place and both cards point at it.
         ('01054000', Deck.comment(
             "WAS N R1,=X'00FF0000' -- THE 64 KB SEGMENT-NUMBER MASK. SAME "
             "CHANGE AS 01049300, WHICH THIS DECK ALREADY MADE.") + [
-            "         N     R1,=X'00F00000' SAVE SEGMENT NUMBER",
+            "         N     R1,=X'7FF00000' SAVE SEGMENT NUMBER",
         ]),
         ('01055000', Deck.comment(
             "WAS A R1,=X'00010000' -- A 64 KB BUMP. ONE SEGMENT IS NOW A "
@@ -4546,17 +4583,18 @@ DATMODS = {
         # start down to page 0, end up to the last page -- and 00343000 reuses
         # the second mask to extract a page number.  All three are geometry.
         ('00863000', '00864000', Deck.comment(
-            "FORCEPG0 WAS X'00FF0000', THE 64 KB SEGMENT NUMBER IN BITS 8-15. "
-            "A 1 MB SEGMENT NUMBER IS BITS 8-11, SO THE MASK THAT LEAVES A "
-            "SEGMENT START IS X'00F00000' -- THE SAME VALUE DMKPGS 01049300 "
-            "AND 01054000 CARRY.") + Deck.comment(
+            "FORCEPG0 WAS X'00FF0000', THE 64 KB SEGMENT NUMBER IN BITS 8-15, "
+            "WHICH IS EVERY SEGMENT A 24-BIT ADDRESS CAN NAME. A 1 MB SEGMENT "
+            "NUMBER IS BITS 1-11, SO THE MASK THAT LEAVES A SEGMENT START IS "
+            "X'7FF00000' -- DMKVAT'S OWN CODEB0 VALUE, AND THE SAME ONE "
+            "DMKPGS 01049300 AND 01054000 CARRY. I-188.") + Deck.comment(
             "FORCEPGF WAS X'0000F000', PAGE 15, THE LAST OF A 64 KB SEGMENT'S "
             "SIXTEEN. A 1 MB SEGMENT HAS 256 PAGES AND ITS LAST IS 255, SO "
             "THE MASK IS X'000FF000'. 00343000 ANDS WITH THIS SAME CONSTANT "
             "TO GET A PAGE NUMBER -- BITS 12-19 NOW, NOT 16-19 -- AND THE "
             "SRL 9 THAT FOLLOWS IT STAYS: IT RELATES A PAGE'S ADDRESS WEIGHT "
             "OF 4096 TO AN 8-BYTE SWPTABLE ENTRY, AND NEITHER MOVED.") + [
-            "FORCEPG0 DC    X'00F00000'    MASK FOR SEGMENT & PAGE 0",
+            "FORCEPG0 DC    X'7FF00000'    MASK FOR SEGMENT & PAGE 0",
             "FORCEPGF DC    X'000FF000'    MASK FOR LAST PAGE OF SEGMENT",
         ]),
     ],
