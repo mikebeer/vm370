@@ -135,7 +135,42 @@ SEGTABLEN = re.compile(r'\bIC\s+R\d+,\w*CR1\b')
 #   (A 16-bit page number does cap an address space at 256 MB.  That is a real
 #   limit for real storage above 256 MB -- M5 territory -- and not for the
 #   16 MB this milestone targets.  Recorded, not actioned.)
-DASDGEOM = re.compile(r'\b(CYL|HEAD|SECT|TRACK|CCHH|SEEK|RECORD|DEVICE CODE)\b')
+# Plural and extended forms spelled out rather than trusting a prefix: `\bCYL\b`
+# cannot match CYLINDER, which is how `DMKRSP 00954000 GET CYLINDER NUMBER` was
+# missed by the first version.  Dropping the trailing \b instead would make
+# HEAD match HEADER and RECORD match RECORDING.
+DASDGEOM = re.compile(
+    r'\b(CYL|CYLS|CYLINDER|CYLINDERS|HEAD|HEADS|SECT|SECTOR|SECTORS|TRACK|'
+    r'TRACKS|CCHH|CCHHR|SEEK|RECORD|RECORDS|DEVICE CODE)\b')
+# `RECORD` also catches a non-DASD record size -- DMKMON packs one into the
+# top halfword -- so the `dasd-field` label is slightly wide there.  The
+# conclusion is the same either way and is what the class actually asserts:
+# the shift amount is a FIELD WIDTH, not a geometry constant.
+
+# Evidence on the card itself that it really is segment arithmetic.  `SEG.` and
+# `STE` have to be in here: `DMKPTR 00793000 STE NO.` and `DMKBLD 00202000
+# ADDRESS OF FIRST SEG. TO BUILD` are both genuine sites, and a plain `'SEG '`
+# test misses the abbreviated forms.
+SEGEVID = re.compile(r'\b(SEGMENT|SEGMENTS|SEG|SEGS|STE|STO|STL)\b')
+
+# A shift of 4 is one hex digit, and CP converts and formats a lot of hex.
+# `SLL Rn,4  ASSEMBLE NEXT DIGIT`, `SLDL R2,4  SAVE THE SIGNIFICANT 4 BITS`,
+# `SRL R3,4  4 PLACES TO THE RIGHT`.  Also register-field and bit isolation,
+# and DMKSCH's exponential smoothing -- `(15*OLD + NEW)/16` -- where the 16 is
+# a filter weight and has no geometry in it at all.
+NIBBLE = re.compile(
+    r'\b(DIGIT|DIGITS|HEX|4 BITS|FOUR BITS|NIBBLE|PARITY|BIT INDEX|'
+    r'PLACES|EBCDIC|DECIMAL|PRINTABLE|CHARACTER|REG|REGISTER|MASK BITS|'
+    r'ISOLATE)\b|/16\b|\*16\b|15\*')
+# PSW and interruption-code fields.  A System/370 BC-mode PSW packs the
+# interruption code into bits 16-31, so a shift or mask of 16 there is a PSW
+# field boundary.  Guests stay S/370 machines until M4, so these stay as they
+# are and are not segment arithmetic.
+INTCODE = re.compile(r'\b(INTERUPTION|INTERRUPTION|INT CODE|CSW|CC|COND|PSW)\b')
+# 3270 buffer addressing splits a 12-bit address into two 6-bit characters, so
+# a shift of 6 in a display module is a terminal-protocol field, not PTLSHFT.
+GRAF3270 = re.compile(r'\b(3270|BUFFER|SBA|ADDRESS BYTE|SCREEN|SIX BIT|'
+                      r'SIX BITS|ADDRCURS)\b|X.3F3F.|,X3F\b')
 # The CORTABLE index idiom, and the reason a shift of 4 is so often innocent:
 #
 #     LR  R2,R12         a real address
@@ -207,9 +242,27 @@ def classify(window, code, wide=()):
     if (SEGTABLEN.search(' '.join(wide or window).upper())
             and re.search(r'\bS[RL]L\s+R\d+,6\b', code)):
         return 'segtab-len NOT-A-SITE'
-    if (re.search(r'\bS[RL][DL]?L\s+R\d+,4\b', code)
-            and 'SEGMENT' not in code.upper() and CORTBL.search(up)):
-        return 'cortable-entry NOT-A-SITE'
+    if re.search(r'\bS[RL][DL]?L\s+R\d+,4\b', code) \
+            and not SEGEVID.search(code.upper()):
+        if CORTBL.search(up):
+            return 'cortable-entry NOT-A-SITE'
+        if NIBBLE.search(code.upper()):
+            return 'nibble-or-weight NOT-A-SITE'
+    # The 64 KB mask class, which never reached these checks: both sites
+    # are `N R1,=XL4'FFFF0000'  ZERO INTERUPTION CODE`, clearing the low
+    # halfword of a System/370 BC-mode PSW, where the interruption code
+    # lives.  Nothing to do with a segment mask.
+    if (re.search(r"X?L?4?'0*FFFF0000'", code)
+            and not SEGEVID.search(code.upper())
+            and INTCODE.search(code.upper())):
+        return 'psw-intcode NOT-A-SITE'
+    # Window, not card: the first half of the pair (`SLL R6,6  SHIFT THEM INTO
+    # THE RIGHT PLACE`) names nothing, while the cards around it say
+    # `STRIP TO GET SIX BIT ADDR` and `PUT THE PIECES OF ADDR TOGETHER`.
+    if (re.search(r'\bS[RL][DL]?L\s+R\d+,6\b', code)
+            and not SEGEVID.search(code.upper())
+            and GRAF3270.search(up)):
+        return 'graf-3270 NOT-A-SITE'
     if re.search(r'\bS[RL][DL]?L\s+R\d+,16\b', code):
         # The card's OWN comment outranks the window.  Four rows were
         # misclassified NOT-A-SITE by window context while saying `SEGMENT` on
@@ -222,12 +275,13 @@ def classify(window, code, wide=()):
         # `DMKPTR 00796000 ENDING SEGMENT ADDRESS` slipped through the first
         # version of this check.  A shift card's operand is `Rn,nn` and can
         # never contain these words, so searching the whole card is safe here.
-        own = code.upper()
-        if 'SEGMENT' not in own and 'SEG ' not in own:
+        if not SEGEVID.search(code.upper()):
             if DASDGEOM.search(up):
                 return 'dasd-field NOT-A-SITE'
             if PACKEDHW.search(up):
                 return 'packed-halfword NOT-A-SITE'
+            if INTCODE.search(code.upper()):
+                return 'psw-intcode NOT-A-SITE'
     for name, syms in FAMILY:
         if any(s in up for s in syms):
             return name
@@ -237,6 +291,11 @@ def classify(window, code, wide=()):
     for name, words in WORDS:
         if any(w in com for w in words):
             return name + '?'
+    # The card says SEG/STE/STO/STL but no family matched: still segment work,
+    # and these are the rows that matter most -- `DMKPTR 00793000 STE NO.` is
+    # half of a matched pair with 00796000 and both need the same change.
+    if SEGEVID.search(code.upper()):
+        return 'segment'
     return '?'
 
 
