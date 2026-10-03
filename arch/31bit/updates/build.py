@@ -4245,6 +4245,37 @@ DATMODS = {
             "         N     R1,=X'00F00000' RESET R1 TO SEGMENT START",
         ]),
         ('01053000', ["         LA    R3,SEGPTO+4    POINT TO NEXT STE"]),
+        # I-183, wall 20.  The card above advances the STE pointer by FOUR --
+        # one fullword ESA/390 entry, covering one 1 MB segment -- and the two
+        # cards below advance the VIRTUAL ADDRESS that must stay in step with
+        # it.  They were left at 64 KB granularity, so R3 moved a megabyte per
+        # iteration while R1 moved sixty-four kilobytes, and they drifted by a
+        # factor of sixteen from the first pass.
+        #
+        # Measured at a breakpoint on the LRA inside the TRANS at 00962000:
+        # R3 = X'FFD400', entry 256 of a table that CR1 = X'00FFD001' says
+        # holds 32 entries, while R1 = 0 -- so DMKPGS tested segment 256's
+        # invalid bit and asked DMKPTRAN to translate segment 0.  DMKPTRAN
+        # cleared segment 0, the test never cleared, and PGOUT2 looped for
+        # ever: no return to the dispatcher, so the console read was never
+        # re-armed and the attention Hercules raised was never serviced.
+        # The LRA's cc=3 is the length violation that entry 256 earns.
+        #
+        # The mask is the one THIS DECK already uses at 01049300, five cards
+        # up, with the reasoning written out there: X'00FF0000' kept the 64 KB
+        # segment number in bits 8-15, and a 1 MB segment number is bits 8-11.
+        # Converting one of a pair and not the other is I-162 exactly.
+        ('01054000', Deck.comment(
+            "WAS N R1,=X'00FF0000' -- THE 64 KB SEGMENT-NUMBER MASK. SAME "
+            "CHANGE AS 01049300, WHICH THIS DECK ALREADY MADE.") + [
+            "         N     R1,=X'00F00000' SAVE SEGMENT NUMBER",
+        ]),
+        ('01055000', Deck.comment(
+            "WAS A R1,=X'00010000' -- A 64 KB BUMP. ONE SEGMENT IS NOW A "
+            "MEGABYTE, AND R3 ABOVE ALREADY STEPS BY ONE FULLWORD STE, SO "
+            "THIS IS THE CARD THAT KEEPS THE TWO IN STEP.") + [
+            "         A     R1,=X'00100000' BUMP SEGMENT BY 1",
+        ]),
         ('01116000', ["         L     R2,PAGPFRA     PTE"]),
         ('01117100', Deck.comment(
             "AN ESA/390 PTE IS THE FRAME'S REAL ADDRESS, SO THE SHIFT GOES.") + [

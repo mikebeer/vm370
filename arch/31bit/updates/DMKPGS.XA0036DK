@@ -231,6 +231,15 @@ B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK
          N     R1,=X'00F00000' RESET R1 TO SEGMENT START       XA0036DK         
 ./ R 01053000          $ 01053100 100                                           
          LA    R3,SEGPTO+4    POINT TO NEXT STE                XA0036DK         
+./ R 01054000          $ 01054100 100                                           
+*  WAS N R1,=X'00FF0000' -- THE 64 KB SEGMENT-NUMBER MASK.     XA0036DK         
+*  SAME CHANGE AS 01049300, WHICH THIS DECK ALREADY MADE.      XA0036DK         
+         N     R1,=X'00F00000' SAVE SEGMENT NUMBER             XA0036DK         
+./ R 01055000          $ 01055100 100                                           
+*  WAS A R1,=X'00010000' -- A 64 KB BUMP. ONE SEGMENT IS NOW   XA0036DK         
+*  A MEGABYTE, AND R3 ABOVE ALREADY STEPS BY ONE FULLWORD      XA0036DK         
+*  STE, SO THIS IS THE CARD THAT KEEPS THE TWO IN STEP.        XA0036DK         
+         A     R1,=X'00100000' BUMP SEGMENT BY 1               XA0036DK         
 ./ R 01116000          $ 01116100 100                                           
          L     R2,PAGPFRA     PTE                              XA0036DK         
 ./ R 01117100          $ 01117200 100                                           
