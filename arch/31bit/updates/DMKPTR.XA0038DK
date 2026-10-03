@@ -26,6 +26,71 @@
          ISKE  R15,R6         GET STORAGE KEY                  XA0038DK         
 ./ R 01015000          $ 01015100 100                                           
          ISKE  R15,R14        GET OTHER STORAGE KEY            XA0038DK         
+./ R 01021000 01026000 $ 01021100 100                                           
+*  WAS RRB 0(R6) / BZ *+8 / OI SWPKEY1,4 / RRB 2048(R6) / BZ   XA0038DK         
+*  *+8 / OI SWPKEY2,4. ONE KEY, SO ONE RRBE, AND ITS RESULT    XA0038DK         
+*  GOES TO BOTH BACK-UP KEYS. THE BZ NOW HAS TWO OIS TO SKIP   XA0038DK         
+*  INSTEAD OF ONE, SO *+8 BECOMES THE LABEL NOBKUP1 RATHER     XA0038DK         
+*  THAN *+12 -- R-26. I-192.                                   XA0038DK         
+         RRBE  0,R6           ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+         BZ    NOBKUP1        NO BITS TO BACK UP               XA0038DK         
+         OI    SWPKEY1,4      VIRT. BACK-UP KEY                XA0038DK         
+         OI    SWPKEY2,4      BOTH HALVES, ONE REAL KEY        XA0038DK         
+NOBKUP1  DS    0H                                              XA0038DK         
+./ R 01302000 01308000 $ 01302100 100                                           
+*  WAS RRB 0(R6) / BC 8+4,TSTRRB2 / OI SWPKEY1,4 / RRB         XA0038DK         
+*  2048(R6) / BC 8+4,STKEY2+4 / STKEY2 DS 0H / OI SWPKEY2,4.   XA0038DK         
+*  THE SECOND RRB AND ITS BC GO; THE FALL-THROUGH NOW BACKS    XA0038DK         
+*  UP BOTH HALVES FROM THE ONE RESULT. STKEY2 MOVES ONTO THE   XA0038DK         
+*  OI SO STKEY2+4 STILL NAMES THE NI AT 01309000, WHICH        XA0038DK         
+*  01323000 BRANCHES TO. I-192.                                XA0038DK         
+         RRBE  0,R6           ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+         BC    8+4,TSTRRB2    REF OFF, PAGE IS A CANDIDATE     XA0038DK         
+         OI    SWPKEY1,4      REF. BIT TO VIRT. BACK-UP KEY    XA0038DK         
+STKEY2   OI    SWPKEY2,4      AND THE SECOND HALF, ONE KEY     XA0038DK         
+./ R 01318000 01321000 $ 01318100 100                                           
+*  WAS BALR R14,0 / RRB 2048(R6) / BC 2+1,STKEY2 / BALR        XA0038DK         
+*  R15,R0. THE RRB READ THE SECOND HALF'S REFERENCE BIT AND    XA0038DK         
+*  THE BC ACTED ON IT; WITH ONE KEY THE BRANCH THAT REACHED    XA0038DK         
+*  HERE ALREADY PROVED IT OFF, SO NEITHER CAN FIRE. BOTH       XA0038DK         
+*  BALRS STAY AND NOW PARK THE SAME CONDITION CODE, WHICH IS   XA0038DK         
+*  WHAT OR R14,R15 COMBINES. I-192.                            XA0038DK         
+         BALR  R14,0          SAVE C.C. FOR CHANGE TEST        XA0038DK         
+         BALR  R15,R0         ONE KEY, SO THE SAME C.C.        XA0038DK         
+./ R 01461000 01466000 $ 01461100 100                                           
+*  BCHNGE. WAS RRB 0(R6) / BC 8+2,*+8 / OI SWPKEY1,2 / RRB     XA0038DK         
+*  2048(R6) / BC 8+2,*+8 / OI SWPKEY2,2 -- WHICH OF THE TWO    XA0038DK         
+*  KEYS WAS CHANGED. THERE IS ONE, AND ITS CHANGE BIT APPLIES  XA0038DK         
+*  TO BOTH HALVES. THE *+8 BECOMES NOCHGBK, R-26. I-192.       XA0038DK         
+         RRBE  0,R6           ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+         BC    8+2,NOCHGBK    NOT CHANGED                      XA0038DK         
+         OI    SWPKEY1,2      BACK-UP CHANGE BITS              XA0038DK         
+         OI    SWPKEY2,2      BOTH HALVES, ONE REAL KEY        XA0038DK         
+NOCHGBK  DS    0H                                              XA0038DK         
+./ R 01987000 01994000 $ 01987100 100                                           
+*  WAS RRB 0(R1) / BALR R14,0 / BC 8+4,*+8 / OI SWPKEY1,4 /    XA0038DK         
+*  RRB 2048(R1) / BALR R15,0 / BC 8+4,*+8 / OI SWPKEY2,4.      XA0038DK         
+*  BOTH BALRS STAY AND PARK THE SAME CONDITION CODE, WHICH IS  XA0038DK         
+*  WHAT OR R14,R15 AT 01998000 COMBINES AND SPM R14 AT         XA0038DK         
+*  02001000 RESTORES. THE TWO *+8 OFFSETS BECOME ONE LABEL,    XA0038DK         
+*  NOREFBK, R-26. I-192.                                       XA0038DK         
+         RRBE  0,R1           ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+         BALR  R14,0          SAVE CONDITION CODE              XA0038DK         
+         BALR  R15,R0         ONE KEY, SO THE SAME C.C.        XA0038DK         
+         BC    8+4,NOREFBK    REF WAS OFF, NOTHING TO BACK UP  XA0038DK         
+         OI    SWPKEY1,4      REF. BIT RESET, BACK-UP TO VIRT  XA0038DK         
+         OI    SWPKEY2,4      BOTH HALVES, ONE REAL KEY        XA0038DK         
+NOREFBK  DS    0H                                              XA0038DK         
+./ R 02019000 02024000 $ 02019100 100                                           
+*  WAS RRB 0(R1) / BC 8+2,*+8 / OI SWPKEY1,2 / RRB 2048(R1) /  XA0038DK         
+*  BC 8+2,*+8 / OI SWPKEY2,2. SAME SHAPE AS 01461000, REACHED  XA0038DK         
+*  FROM THE OTHER SIDE OF SPM R14 AT 02015000. THE *+8         XA0038DK         
+*  BECOMES NOCHGB2, R-26. I-192.                               XA0038DK         
+         RRBE  0,R1           ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+         BC    8+2,NOCHGB2    NOT CHANGED                      XA0038DK         
+         OI    SWPKEY1,2      REAL CHANGE BIT TO VIRT. BACKUP  XA0038DK         
+         OI    SWPKEY2,2      BOTH HALVES, ONE REAL KEY        XA0038DK         
+NOCHGB2  DS    0H                                              XA0038DK         
 ./ R 02069220          $ 02069221 001                                           
 *  ISK PAIR, READ, IN THE DMKVMA SCAN ADDED BY VA07230. SAME   XA0038DK         
 *  SHAPE AND SAME REASONING AS 01012000. I-192.                XA0038DK         

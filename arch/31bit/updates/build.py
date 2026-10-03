@@ -3478,6 +3478,104 @@ KEYMODS = {
         ('01015000', [
             "         ISKE  R15,R14        GET OTHER STORAGE KEY",
         ]),
+        # ------------------------------------------------- the eleven RRBs
+        # R-12 decided (23-STORAGE-KEYS.md): one real reference/change pair for
+        # 4 KB, reported for BOTH half-page back-up keys.  Over-reporting a
+        # reference or a change costs a page write; under-reporting would lose
+        # data, and cannot happen here.
+        #
+        # What makes these tractable after all is that the branch targets are
+        # LABELS -- STKEY2, STKEY2+4, TSTRRB2, NONZERO -- so the assembler
+        # recomputes them when instructions disappear.  The six `*+8` offsets
+        # are the exception, and each becomes a named label, which is R-26's
+        # standing instruction rather than a nicety: a `*+8` that skipped one
+        # OI must skip two now.
+        #
+        # RRB is S-format and four bytes; the RRBE macro emits four.  So a
+        # first RRB is a same-length swap and only the SECOND of each pair
+        # goes, because with one key it would read the state the first one just
+        # reset -- which would under-report, the direction that matters.
+        ('01021000', '01026000', Deck.comment(
+            "WAS RRB 0(R6) / BZ *+8 / OI SWPKEY1,4 / RRB 2048(R6) / BZ *+8 / "
+            "OI SWPKEY2,4. ONE KEY, SO ONE RRBE, AND ITS RESULT GOES TO BOTH "
+            "BACK-UP KEYS. THE BZ NOW HAS TWO OIS TO SKIP INSTEAD OF ONE, SO "
+            "*+8 BECOMES THE LABEL NOBKUP1 RATHER THAN *+12 -- R-26. I-192.") + [
+            "         RRBE  0,R6           ONE KEY FOR THE WHOLE PAGE",
+            "         BZ    NOBKUP1        NO BITS TO BACK UP",
+            "         OI    SWPKEY1,4      VIRT. BACK-UP KEY",
+            "         OI    SWPKEY2,4      BOTH HALVES, ONE REAL KEY",
+            "NOBKUP1  DS    0H                                   ",
+        ]),
+        # DORRB.  A page is selectable only if the reference bit was off AND no
+        # back-up reference bit is set; the change bits are OR'd for the later
+        # test.  With one key the first RRBE answers for the whole page, so the
+        # second RRB and the BC that tested it both go.  STKEY2 stays ON the
+        # OI SWPKEY2 card so that STKEY2+4 still names the NI below it -- two
+        # branches reach that address, 01306000's (which goes) and 01323000's
+        # (which stays).
+        ('01302000', '01308000', Deck.comment(
+            "WAS RRB 0(R6) / BC 8+4,TSTRRB2 / OI SWPKEY1,4 / RRB 2048(R6) / "
+            "BC 8+4,STKEY2+4 / STKEY2 DS 0H / OI SWPKEY2,4. THE SECOND RRB "
+            "AND ITS BC GO; THE FALL-THROUGH NOW BACKS UP BOTH HALVES FROM "
+            "THE ONE RESULT. STKEY2 MOVES ONTO THE OI SO STKEY2+4 STILL "
+            "NAMES THE NI AT 01309000, WHICH 01323000 BRANCHES TO. I-192.") + [
+            "         RRBE  0,R6           ONE KEY FOR THE WHOLE PAGE",
+            "         BC    8+4,TSTRRB2    REF OFF, PAGE IS A CANDIDATE",
+            "         OI    SWPKEY1,4      REF. BIT TO VIRT. BACK-UP KEY",
+            "STKEY2   OI    SWPKEY2,4      AND THE SECOND HALF, ONE KEY",
+        ]),
+        # TSTRRB2's second RRB tested the other half's reference bit, which
+        # cannot be set here: the BC that reached this label established that
+        # the page's reference bit was off, and there is only one now.  So the
+        # RRB and the BC 2+1 both go, and BALR R15,R0 parks the SAME condition
+        # code R14 already holds -- which is what OR R14,R15 at 01323100 then
+        # combines, idempotently.
+        ('01318000', '01321000', Deck.comment(
+            "WAS BALR R14,0 / RRB 2048(R6) / BC 2+1,STKEY2 / BALR R15,R0. "
+            "THE RRB READ THE SECOND HALF'S REFERENCE BIT AND THE BC ACTED "
+            "ON IT; WITH ONE KEY THE BRANCH THAT REACHED HERE ALREADY PROVED "
+            "IT OFF, SO NEITHER CAN FIRE. BOTH BALRS STAY AND NOW PARK THE "
+            "SAME CONDITION CODE, WHICH IS WHAT OR R14,R15 COMBINES. "
+            "I-192.") + [
+            "         BALR  R14,0          SAVE C.C. FOR CHANGE TEST",
+            "         BALR  R15,R0         ONE KEY, SO THE SAME C.C.",
+        ]),
+        ('01461000', '01466000', Deck.comment(
+            "BCHNGE. WAS RRB 0(R6) / BC 8+2,*+8 / OI SWPKEY1,2 / RRB "
+            "2048(R6) / BC 8+2,*+8 / OI SWPKEY2,2 -- WHICH OF THE TWO KEYS "
+            "WAS CHANGED. THERE IS ONE, AND ITS CHANGE BIT APPLIES TO BOTH "
+            "HALVES. THE *+8 BECOMES NOCHGBK, R-26. I-192.") + [
+            "         RRBE  0,R6           ONE KEY FOR THE WHOLE PAGE",
+            "         BC    8+2,NOCHGBK    NOT CHANGED",
+            "         OI    SWPKEY1,2      BACK-UP CHANGE BITS",
+            "         OI    SWPKEY2,2      BOTH HALVES, ONE REAL KEY",
+            "NOCHGBK  DS    0H                                   ",
+        ]),
+        ('01987000', '01994000', Deck.comment(
+            "WAS RRB 0(R1) / BALR R14,0 / BC 8+4,*+8 / OI SWPKEY1,4 / RRB "
+            "2048(R1) / BALR R15,0 / BC 8+4,*+8 / OI SWPKEY2,4. BOTH BALRS "
+            "STAY AND PARK THE SAME CONDITION CODE, WHICH IS WHAT OR R14,R15 "
+            "AT 01998000 COMBINES AND SPM R14 AT 02001000 RESTORES. THE TWO "
+            "*+8 OFFSETS BECOME ONE LABEL, NOREFBK, R-26. I-192.") + [
+            "         RRBE  0,R1           ONE KEY FOR THE WHOLE PAGE",
+            "         BALR  R14,0          SAVE CONDITION CODE",
+            "         BALR  R15,R0         ONE KEY, SO THE SAME C.C.",
+            "         BC    8+4,NOREFBK    REF WAS OFF, NOTHING TO BACK UP",
+            "         OI    SWPKEY1,4      REF. BIT RESET, BACK-UP TO VIRT",
+            "         OI    SWPKEY2,4      BOTH HALVES, ONE REAL KEY",
+            "NOREFBK  DS    0H                                   ",
+        ]),
+        ('02019000', '02024000', Deck.comment(
+            "WAS RRB 0(R1) / BC 8+2,*+8 / OI SWPKEY1,2 / RRB 2048(R1) / BC "
+            "8+2,*+8 / OI SWPKEY2,2. SAME SHAPE AS 01461000, REACHED FROM "
+            "THE OTHER SIDE OF SPM R14 AT 02015000. THE *+8 BECOMES "
+            "NOCHGB2, R-26. I-192.") + [
+            "         RRBE  0,R1           ONE KEY FOR THE WHOLE PAGE",
+            "         BC    8+2,NOCHGB2    NOT CHANGED",
+            "         OI    SWPKEY1,2      REAL CHANGE BIT TO VIRT. BACKUP",
+            "         OI    SWPKEY2,2      BOTH HALVES, ONE REAL KEY",
+            "NOCHGB2  DS    0H                                   ",
+        ]),
         ('02069220', Deck.comment(
             "ISK PAIR, READ, IN THE DMKVMA SCAN ADDED BY VA07230. SAME "
             "SHAPE AND SAME REASONING AS 01012000. I-192.") + [
