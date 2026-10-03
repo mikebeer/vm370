@@ -117,6 +117,27 @@ WORDS = [('segment', ('SEGMENT', 'SEG ')), ('page', ('PAGE',)),
 # pass would corrupt both of these.
 SEGTABLEN = re.compile(r'\bIC\s+R\d+,\w*CR1\b')
 
+# A shift of 16 is a FIELD WIDTH far more often than it is SEGSHFT, and the two
+# cases below account for most of the SEGSHFT-16 rows.  Both were read before
+# being named, because the whole point of I-162 is that a plausible
+# classification applied without reading is how the five-day bug was made.
+#
+#   DASD slot addressing.  DMKCKS packs cylinder, page and device code into one
+#   word: `SRL R1,16  CYL NUM TO LOW ORDER` then `LA 1(,R1)` / `SLL R1,8` /
+#   `SLL R1,8  MAKE ROOM FOR DEVICE CODE`.  The 16 is the cylinder field's
+#   width.  Nothing here is a segment and nothing changes.
+#
+#   Packed halfword pairs.  DMKATS loads `SYSPAGNM`, one word holding a START
+#   and an END page number as two halfwords, and splits them with
+#   `SRDL R8,16` / `SRL R9,16` before `SLL R8,12` turns each page number into
+#   an address.  The 16 is the struct field width; the 12 is the page-size
+#   shift, which is 4 KB in BOTH architectures and so also correct.
+#   (A 16-bit page number does cap an address space at 256 MB.  That is a real
+#   limit for real storage above 256 MB -- M5 territory -- and not for the
+#   16 MB this milestone targets.  Recorded, not actioned.)
+DASDGEOM = re.compile(r'\b(CYL|HEAD|SECT|TRACK|CCHH|SEEK|RECORD|DEVICE CODE)\b')
+PACKEDHW = re.compile(r'\bS[RL]L\s+R\d+,12\b|\bSRDL\s+R\d+,16\b')
+
 
 def replaced():
     """{module: {(lo,hi)}} -- the sequence ranges our decks replace."""
@@ -167,10 +188,30 @@ def classify(window, code, wide=()):
     if (SEGTABLEN.search(' '.join(wide or window).upper())
             and re.search(r'\bS[RL]L\s+R\d+,6\b', code)):
         return 'segtab-len NOT-A-SITE'
+    if re.search(r'\bS[RL][DL]?L\s+R\d+,16\b', code):
+        # The card's OWN comment outranks the window.  Four rows were
+        # misclassified NOT-A-SITE by window context while saying `SEGMENT` on
+        # the card itself -- including `DMKPTR 00796000 ENDING SEGMENT ADDRESS`,
+        # in the paging module, which is precisely where I-162 cost five days.
+        # A nearby `SLL ,12` or a cylinder in a neighbouring card is weaker
+        # evidence than the programmer's own word on the line in question.
+        # The whole card, not a fixed comment column: a comment can start at
+        # column 30 and `code[40:]` lands INSIDE the word -- which is how
+        # `DMKPTR 00796000 ENDING SEGMENT ADDRESS` slipped through the first
+        # version of this check.  A shift card's operand is `Rn,nn` and can
+        # never contain these words, so searching the whole card is safe here.
+        own = code.upper()
+        if 'SEGMENT' not in own and 'SEG ' not in own:
+            if DASDGEOM.search(up):
+                return 'dasd-field NOT-A-SITE'
+            if PACKEDHW.search(up):
+                return 'packed-halfword NOT-A-SITE'
     for name, syms in FAMILY:
         if any(s in up for s in syms):
             return name
-    com = code[40:71].upper()
+    # Also the whole card past the operand, for the same reason: a fixed
+    # column-40 comment slice truncates words that start at column 30.
+    com = code[20:71].upper()
     for name, words in WORDS:
         if any(w in com for w in words):
             return name + '?'
