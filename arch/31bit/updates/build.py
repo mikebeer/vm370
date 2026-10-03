@@ -64,6 +64,7 @@ XA34 = 'XA0034DK'
 XA35 = 'XA0035DK'
 XA36 = 'XA0036DK'
 XA37 = 'XA0037DK'
+XA38 = 'XA0038DK'
 
 
 def psa():
@@ -1419,6 +1420,51 @@ def dmkcpi():
         "CPIDSAVE DS    3F             SSID, SCHNO, COUNT",
         "CPISSID0 DC    X'00010000'    SUBSYSTEM ID PREFIX, LCSS 0",
         "CPINSCH  EQU   256            SUBCHANNELS PROBED AT IPL",
+    ])
+
+    # --- Wall 19.  The interval timer does not exist in 370-XA, and CP
+    #     refuses to start without it.  `TIMETEST` reads location X'50',
+    #     polls it 40,000 times for a change, writes "Turn on the Interval
+    #     Timer" and branches back to poll again -- 181,775 times in one run
+    #     before the harness stopped it.
+    #
+    #     The authority is the same PoO table that justified I-174 and I-175.
+    #     Appendix F, "Comparison between System/370 and 370-XA", lists the
+    #     assigned-storage locations that differ, and three of this project's
+    #     defects are one row each:
+    #
+    #       Channel-status word         64 (X'40')  ->  gone    I-175
+    #       Channel-address word        72 (X'48')  ->  gone    still open
+    #       Interval timer              80 (X'50')  ->  gone    this
+    #       Subsystem ID                gone -> 184 (X'B8')     I-174
+    #       I/O-interruption parameter  gone -> 188 (X'BC')     I-174
+    #
+    #     CR0 bit 24, the interval-timer subclass mask, goes with it.
+    #
+    #     So the test cannot be satisfied and must not be run.  Only the
+    #     `EQU *` is replaced: `TLOOP1`, `TLOOP` and `NOMPMSG` stay defined
+    #     because cards below still branch to them, and the dead loop costs
+    #     nothing.  `B TIMETEST` at 02700000 is the only branch in.
+    #
+    #     This is NOT "timing is gone". The CPU timer and clock comparator
+    #     are ESA/390 facilities and CP already uses `STPT`/`SPT` in the
+    #     dispatcher. What is gone is the location-X'50' interval timer, and
+    #     CP reads it elsewhere -- DMKSCH and DMKDSP most of all -- so the
+    #     accounting and time-slicing that depend on it are a separate and
+    #     larger piece of work. Clearing the start-up gate does not fix them.
+    d.replace('02785000', first='02785010', inc=10,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '02785000'),
+              lines=Deck.comment(
+        "WAS TIMETEST EQU * -- THE HEAD OF A POLL ON THE INTERVAL TIMER AT "
+        "X'50'. 370-XA DELETED THAT TIMER (PoO APPENDIX F), SO THE VALUE "
+        "NEVER CHANGES, THE TEST NEVER PASSES, AND CP SAT IN TLOOP1 WRITING "
+        "\'TURN ON THE INTERVAL TIMER\' FOREVER. THE LOOP BELOW IS LEFT IN "
+        "PLACE AND UNREACHABLE: TLOOP1, TLOOP AND NOMPMSG ARE STILL BRANCH "
+        "TARGETS FURTHER DOWN. THE CPU TIMER AND CLOCK COMPARATOR DO EXIST "
+        "AND CP ALREADY USES STPT AND SPT, SO THIS REMOVES A START-UP GATE "
+        "AND NOT CP\'S TIMEKEEPING. WALL 19, I-178.") + [
+        "TIMETEST DS    0H             NOTHING TO TEST ANY MORE",
+        "         B     TIMERON        STRAIGHT PAST THE DEAD POLL",
     ])
 
     # SCHIBLOK, PMCW* and the subchannel EQUs live in XABLOKS, which until now
@@ -3256,8 +3302,64 @@ def dmkbld():
     return d
 
 
-def datdeck(module, cards):
-    """One DAT-conversion deck, with the increment chosen for each replacement.
+# ---------------------------------------------------------------------------
+# ESA/390 storage keys at 4 KB.  I-177, wall 18.
+#
+# System/370 keys cover 2 KB, so CP keys a 4 KB page as TWO halves and keeps
+# TWO key bytes per page in the swap table -- `SWPKEY1  VIRTUAL STORAGE KEY,
+# 1ST 2048 BYTES` and `SWPKEY2 ... 2ND 2048 BYTES`.  The ESA/390 PoO gives the
+# 370-XA facilities "key-controlled protection on only 4K-byte blocks", so each
+# pair of `SSK`s becomes one `SSKE` and the arithmetic that moved from one key
+# byte to the other goes with it.  That is I-128's structural law again: S/370
+# packed two things where ESA/390 has one slot.
+#
+# This is a SEPARATE deck from the DAT work even though DMKPTR carries both,
+# because the two axes fail differently and a bisect wants them apart: DAT
+# errors give a plausible wrong address, a missed key gives an operation
+# exception at a named instruction.
+#
+# `ISKE`, `SSKE` and `RRBE` are already in XAOPS.MACRO and already proven by
+# execution in `11-storage-keys.rc`, and `DMKCPI.XA0013DK` has been running an
+# `SSKE` since I-104.  So this is not new ground, only unfinished ground.
+KEYMODS = {
+
+    # The abend that opened wall 18, and the one site where the two keys can
+    # genuinely DIFFER -- they are the guest's own keys for the two halves.
+    # Collapsing them has to choose, and the choice is guest-visible through
+    # ISKE, which is R-12 and belongs with M4.  SWPKEY1 is kept: it is the
+    # first half's key, so a guest that set both halves the same -- which is
+    # every guest CP itself creates -- sees no change at all.
+    'DMKPTR': [
+        ('00643000', '00645000', Deck.comment(
+            "WAS SSK R3,R8 / SRL R3,8 / SSK R3,R6 -- THE 2ND HALF PAGE'S KEY "
+            "THEN THE 1ST. AN ESA/390 KEY COVERS THE WHOLE 4 KB PAGE, SO THE "
+            "PAIR BECOMES ONE SSKE AND THE SHIFT BETWEEN THEM IS NOW THE "
+            "SELECTION OF WHICH KEY SURVIVES. SWPKEY1 IS KEPT, THE FIRST "
+            "HALF'S. A GUEST THAT SET ITS TWO HALVES DIFFERENTLY CANNOT BE "
+            "REPRESENTED AT ALL -- THAT IS R-12, GUEST-VISIBLE THROUGH ISKE, "
+            "AND BELONGS WITH M4. RECORDED HERE SO THE CHOICE IS NOT MISTAKEN "
+            "FOR AN EQUIVALENCE. R8 STILL CARRIES THE 2ND-HALF ADDRESS FROM "
+            "00640000 AND IS NOW UNUSED; THE LA IS LEFT ALONE SO NO OTHER "
+            "REGISTER STATE CHANGES. I-177.") + [
+            "         SRL   R3,8           SWPKEY1, THE FIRST HALF'S KEY",
+            "         SSKE  R3,R6          ONE KEY FOR THE WHOLE PAGE",
+        ]),
+        # Here both halves get the SAME key -- `SR R6,R6  SET KEY TO ZERO` two
+        # cards up -- so the collapse is exact and loses nothing.  R5 keeps the
+        # second half's address and goes unused, same as R8 above.
+        ('00939000', '00940000', Deck.comment(
+            "WAS SSK R6,R7 / SSK R6,R5 -- FIRST 2K THEN SECOND 2K, BOTH WITH "
+            "THE KEY ZEROED BY SR R6,R6 AT 00937000. ONE KEY, ONE "
+            "INSTRUCTION, AND NOTHING IS LOST BECAUSE BOTH HALVES WERE "
+            "ALREADY BEING SET THE SAME. I-177.") + [
+            "         SSKE  R6,R7          ZERO KEY, WHOLE 4 KB PAGE",
+        ]),
+    ],
+}
+
+
+def datdeck(module, cards, ident=None):
+    """One table-driven deck, with the increment chosen for each replacement.
 
     Every module after `DMKBLD` and `DMKCPI` is the same shape of work -- rename
     a field, mask a pointer, widen a shift -- so it is a table of replacements
@@ -3265,7 +3367,7 @@ def datdeck(module, cards):
     `(seq, [lines])` or `(seq, to, [lines])`, in ascending anchor order, which
     `UPDATE` requires and `Deck._anchor` enforces.
     """
-    d = Deck(XA36)
+    d = Deck(ident or XA36)
     src = os.path.join(SRC, '%s.ASSEMBLE' % module)
     for item in cards:
         seq, to, lines = (item if len(item) == 3 else (item[0], None, item[1]))
@@ -5184,6 +5286,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA36, 'ESA/390 DAT TABLES: RENAMES, MASKS AND ADDRESS SPLITS')])
         print('%-8s %-9s %3d cards  %s' % (m, XA36, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(KEYMODS):
+        dk = datdeck(m, KEYMODS[m], ident=XA38)
+        path = os.path.join(HERE, '%s.%s' % (m, XA38))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA38, 'ESA/390 STORAGE KEYS AT 4 KB: THE 2 KB PAIRS COLLAPSE')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA38, n,
               'OK' if not verify(path) else 'BAD'))
 
     bld = dmkbld()

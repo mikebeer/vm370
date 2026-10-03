@@ -53,7 +53,41 @@ run that proves it is in the build journal.
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
 | 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints; nucleus disassembly at the I/O new PSW | **CLOSED AS A HANG.** Two defects in series, both fixed: `I-174` (ORB interruption parameter) and `I-175` (the interrupt path read a CSW ESA/390 never stores). Measured after: `CSW X'40'` non-zero, `CONACTV` **clear**, `CONCNT` `002C`/`001E` instead of `0001`. The messages still do not reach the terminal — CP now abends in DMKPTR first (wall 18) — so this is not yet a working console |
 | 17 | ~~A one-byte corruption of static nucleus data — `DMKCPI`'s logo reads `VM/380`~~ | it is CE's own `HRC370DK`: `MVI STMSG+7,C'8'  tell them this is System/380`, reached only when a `BSM` into AMODE 31 succeeds | breakpoint at the store, `am=31`, `INSTWRD1 = F8000000` | **NOT A WALL — retracted 2 Oct.** CE detecting that our conversion works — `I-173` |
-| 18 | **Storage keys: `SSK` does not exist in ESA/390, and CP keys a 4 KB page as two 2 KB halves** | operation exception `CODE=0001 ILC=2` at `X'3DD78'`, `INST=0838  SSK 3,8`, then `DMKDMP908I … CODE PRG001`; `GR06=00EC4000` and `GR08=00EC4800` are 2 KB apart | `abendmap` brackets it inside DMKPTR, same module both sides; registers pin it to `DMKPTR 00643000` | **OPEN — where CP stops now** — `I-177`; 59 sites in 15 modules, DMKPTR has 19; structural, not an opcode swap |
+| 18 | **Storage keys: `SSK` does not exist in ESA/390, and CP keys a 4 KB page as two 2 KB halves** | operation exception `CODE=0001 ILC=2` at `X'3DD78'`, `INST=0838  SSK 3,8`, then `DMKDMP908I … CODE PRG001`; `GR06=00EC4000` and `GR08=00EC4800` are 2 KB apart | `abendmap` brackets it inside DMKPTR, same module both sides; registers pin it to `DMKPTR 00643000` | **FIXED** — `I-177`; the two DMKPTR pairs collapse to `SSKE` and CP ran straight past, printing its whole banner. 57 key sites remain unconverted and unreached |
+| 19 | **CP will not start without the interval timer, and 370-XA deleted it** | the full start-up banner, then `Turn on the Interval Timer` **181,775 times** | `DMKCPI` `TIMETEST` at 02785000 polls location `X'50'`; PoO Appendix F lists the interval timer as System/370-only | **OPEN — where CP stops now** — `I-178`; fix built, one card |
+
+## The PoO table this project should have used as a checklist
+
+Appendix F of the ESA/390 Principles of Operation, "Comparison between
+System/370 and 370-XA", lists the assigned-storage locations that differ
+between the two architectures. Three separate walls turned out to be one row of
+it each, and each arrived as a surprise because the table was read one row at a
+time instead of once as a list:
+
+| field | System/370 | 370-XA | ours |
+|---|---|---|---|
+| Channel-status word | 64 (`X'40'`) | — | `I-175`, wall 16 — we synthesise it with `TSCH` |
+| Channel-address word | 72 (`X'48'`) | — | **still open** — `s370only` flags it in `DMKLD00E` |
+| Interval timer | 80 (`X'50'`) | — | `I-178`, wall 19 |
+| Trace-table designation | 84 | — | not reached |
+| Channel ID | 168 | — | `PSA.XA0001DK` renamed it `S370CHID` |
+| IOEL address | 172 | — | renamed `S370IOEL` |
+| Limited channel logout | 176 | — | renamed `S370ECSW` |
+| Measurement byte | 185 | — | not reached |
+| I/O address | 186 | — | the `INTTIO` rename, R-02 |
+| Subsystem ID | — | 184 (`X'B8'`) | `I-174` |
+| I/O-interruption parameter | — | 188 (`X'BC'`) | `I-174` |
+
+And in the control registers: block-multiplexing control, storage-key-exception
+control, page-fault-assist control, the **interval-timer subclass mask** (CR0.24)
+and the channel masks (CR2) are all System/370-only, while
+fetch-protection override and the new segment-table origin and length fields in
+CR1 are 370-XA. `I-71` (CR6 as the I/O-interruption subclass mask) and `I-152`
+(CR0's translation format) are two more rows of the same figure.
+
+The remaining unticked rows are the honest answer to "what else is waiting":
+the CAW at `X'48'`, the trace-table designation, and the measurement byte.
+
 
 ## Wall 18 — storage keys, and why it is not the opcode swap it looks like
 
