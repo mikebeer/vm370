@@ -56,6 +56,75 @@ run that proves it is in the build journal.
 | 18 | **Storage keys: `SSK` does not exist in ESA/390, and CP keys a 4 KB page as two 2 KB halves** | operation exception `CODE=0001 ILC=2` at `X'3DD78'`, `INST=0838  SSK 3,8`, then `DMKDMP908I … CODE PRG001`; `GR06=00EC4000` and `GR08=00EC4800` are 2 KB apart | `abendmap` brackets it inside DMKPTR, same module both sides; registers pin it to `DMKPTR 00643000` | **FIXED** — `I-177`; the two DMKPTR pairs collapse to `SSKE` and CP ran straight past, printing its whole banner. 57 key sites remain unconverted and unreached |
 | 19 | **CP will not start without the interval timer, and 370-XA deleted it** | the full start-up banner, then `Turn on the Interval Timer` **181,775 times** | `DMKCPI` `TIMETEST` at 02785000 polls location `X'50'`; PoO Appendix F lists the interval timer as System/370-only | **OPEN — where CP stops now** — `I-178`; fix built, one card |
 
+## Wall 20 — CLOSED, and the measurement that closed it
+
+**Symptom.** CP printed its storage report, started the monitor, and accepted
+nothing further. A terminal on another device got nothing either, which made it
+look like a console defect for several hours.
+
+**What it actually was.** Three defects in a chain, each hidden by the one in
+front of it.
+
+1. `I-183` — `DMKPGS`'s `NEXTSEG` advanced its segment-table pointer by one
+   fullword (1 MB) and its virtual address by 64 KB, so they drifted by
+   sixteen from the first iteration. Fixed, and the scan then terminated:
+   `GR03` went from `00FFD400`, entry **256** of a 32-entry table, to
+   `00FFD080`, the byte after entry 31.
+2. `I-184` — six more cards in the same two loops, reached only once the loop
+   could advance. Fixing `I-183` alone would have moved the hang three cards
+   down.
+3. `I-188` — and then the loop came back, in a different shape, and the cause
+   was my own constant. `X'00F00000'` reaches sixteen segments; R1 climbed to
+   `X'01000000'` and the next pass's `N` zeroed it, so R1 cycled 1–16 MB for
+   ever while R3 climbed past the end of its table. The root cause underneath
+   was `DMKBLD 00207000 SRDL R0,8`, which made the table sixteen times longer
+   than the machine — a 64-byte unit holds sixteen entries in both
+   architectures, but they now cover 16 MB instead of 1 MB.
+
+**The instruments that settled it**, after a day of reading a decoded `ia=` line
+off the Hercules panel and getting a different answer each time:
+
+- `symtab.py` reads **CP's own symbol table** out of a `savecore` image.
+  `DMKSYM` is a file of `SYM` macro calls, `SYM.MACRO` expands each to
+  `DC CL8'&MODULE ',V(&MODULE)`, and `DMKCPI` writes the result as the first
+  record of every dump. 261 entries, naming entry points rather than CSECTs.
+  `X'3DA38'` → `DMKPTRAN + 0`; `X'C58'` → `DMKSVCIN + 0`; `X'63906'` →
+  `DMKPGS + 2310`.
+- `psa.py` reads the assigned storage locations and resolves each old PSW
+  through it. The panel's `psw` command prints its decoded line and its hex
+  line from two separate reads of a *running* CPU, so they disagree and neither
+  is a measurement of a moment. The old PSWs were stored by the hardware at a
+  defined instant. `X'20'` gave `000C2000 00063906` — the instruction after
+  the `SVC 8`, which is the caller's identity and nothing else could supply it.
+- **CP counted the loop itself.** `GR00 = 020FC4D9` is `DMKPTRCT`, incremented
+  by `DMKPTRAN` cards `00291000`–`00293000`: **34,587,353** calls.
+
+**What CP does now.** Everything above, plus:
+
+```
+15:29:50 AUTO LOGON   ***   AUTOLOG1 USERS = 002  BY  OPERATOR
+DMKCPI966I Initialization complete
+```
+
+It returns to the dispatcher, runs the autolog list, builds a second virtual
+machine, and says it is finished initialising.
+
+---
+
+## Wall 21 — `ISK`, and it is reached at once
+
+```
+PSW=000C1000 000008B4 INST=09FF   ISK   15,15   operation exception CODE=0001
+15:29:50 DMKDMP908I SYSTEM FAILURE; CODE PRG001 PROCESSOR 00
+```
+
+`ISK` does not exist in ESA/390. `X'8B4'` is in `DMKPSA`'s fetch- and
+store-protection check — `DMKPSAFP`, `DMKPSASP`, `DMKPSAFC`, `DMKPSASC` — which
+CP runs whenever a virtual machine's instruction or channel program touches
+storage and the real key must be verified. A second virtual machine had just
+started, so the path had just become reachable. 54 instructions in 15 modules;
+see `I-192`.
+
 ## The PoO table this project should have used as a checklist
 
 Appendix F of the ESA/390 Principles of Operation, "Comparison between
