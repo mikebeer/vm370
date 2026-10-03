@@ -1,0 +1,13 @@
+./ R 00612000          $ 00612100 100                                           
+*  ISK PAIR, READ. =A(X'202') AT 00615000 TESTS THE CHANGE     XA0038DK         
+*  BIT IN BOTH BYTES AND R1 NOW HOLDS THE ONE KEY TWICE, SO    XA0038DK         
+*  IT STILL ANSWERS THE QUESTION IT ASKS. I-192.               XA0038DK         
+         ISKE  R1,R2          GET THE FIRST KEY FROM STORAGE   XA0038DK         
+./ R 00614000          $ 00614100 100                                           
+         ISKE  R1,R3          GET SECOND KEY FROM STORAGE      XA0038DK         
+./ R 00829000          $ 00829100 100                                           
+         SSKE  R4,R3          EXECERCISE THE                   XA0038DK         
+./ R 00830000          $ 00830100 100                                           
+         ISKE  R4,R3          FAILING STORAGE LOCATION         XA0038DK         
+./ R 00861000          $ 00861100 100                                           
+         SSKE  R8,R3          RESTORE THE PROPER KEY TO THE    XA0038DK         

@@ -1,0 +1,8 @@
+./ R 00909000          $ 00909100 100                                           
+*  ISK PAIR, READ, BUILDING THE KEY HALFWORD DMKVMD DISPLAYS.  XA0038DK         
+*  R1 ENDS WITH THIS PAGE'S ONE KEY IN BOTH BYTES, WHICH IS    XA0038DK         
+*  THE HONEST ANSWER: THE 4 KB KEY GOVERNS BOTH 2 KB HALVES.   XA0038DK         
+*  I-192.                                                      XA0038DK         
+         ISKE  R1,R2          PUT STORAGE KEY INTO R1          XA0038DK         
+./ R 00912000          $ 00912100 100                                           
+         ISKE  R1,R14         SAME KEY, R1 LOW ORDER           XA0038DK         

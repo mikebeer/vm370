@@ -1,0 +1,34 @@
+./ R 00973000 00979000 $ 00973100 100                                           
+*  WAS N R15,=A(X'F8F8') / N R14,XPAGNUM / LA R14,2048(,R14)   XA0038DK         
+*  / SSK R15,R14 / SRL R15,8 / N R14,XPAGNUM / SSK R15,R14 --  XA0038DK         
+*  THE SECOND HALF PAGE'S KEY FROM THE LOW BYTE, THEN THE      XA0038DK         
+*  FIRST FROM THE HIGH BYTE. ONE ESA/390 KEY COVERS THE WHOLE  XA0038DK         
+*  PAGE, SO THE SHIFT NOW SELECTS RATHER THAN REPOSITIONS AND  XA0038DK         
+*  SWPKEY1 IS KEPT. R14 STILL ENDS ON THE PAGE START, WHICH    XA0038DK         
+*  00980000'S LR R10,R14 NEEDS. THE X'F8F8' MASK IS LEFT AS    XA0038DK         
+*  IT IS: IT CLEARS REFERENCE AND CHANGE IN BOTH BYTES AND     XA0038DK         
+*  ONLY ONE OF THEM IS READ NOW, SO IT IS HARMLESS AND IT      XA0038DK         
+*  KEEPS THE SWAP TABLE'S FORMAT INTACT. I-192.                XA0038DK         
+         N     R15,=A(X'F8F8') CLEAR CHANGE/REFERENCE BITS     XA0038DK         
+         N     R14,XPAGNUM    CLEAR DISPLACEMENT               XA0038DK         
+         SRL   R15,8          SWPKEY1, THE FIRST HALF'S KEY    XA0038DK         
+         SSKE  R15,R14        ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+./ R 01157000          $ 01157100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0038DK         
+./ R 01180000          $ 01180100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0038DK         
+./ R 01192000          $ 01192100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0038DK         
+./ R 03584000 03589000 $ 03584100 100                                           
+*  THE SAME PACKED-HALFWORD PAIR AS 00973000, IN THE OTHER     XA0038DK         
+*  COPY OF THIS ROUTINE. R14 ARRIVES AS THE PAGE START AND     XA0038DK         
+*  MUST LEAVE AS ONE -- 03592000'S OR R1,R14 BUILDS THE        XA0038DK         
+*  REPLACEMENT PAGE ADDRESS FROM IT -- SO THE N R14,XPAGNUM    XA0038DK         
+*  IS KEPT EVEN THOUGH THE LA THAT MADE IT NECESSARY IS GONE.  XA0038DK         
+*  I-192.                                                      XA0038DK         
+         N     R15,=A(X'F8F8') CLEAR CHANGE/REFERENCE BITS     XA0038DK         
+         SRL   R15,8          SWPKEY1, THE FIRST HALF'S KEY    XA0038DK         
+         N     R14,XPAGNUM    BACK TO BEGINING ADDRESS         XA0038DK         
+         SSKE  R15,R14        ONE KEY FOR THE WHOLE PAGE       XA0038DK         
+./ R 03631000          $ 03631100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0038DK         

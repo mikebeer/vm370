@@ -3463,6 +3463,211 @@ KEYMODS = {
             "         SSKE  R6,R7          ZERO KEY, WHOLE 4 KB PAGE",
         ]),
     ],
+
+    # Wall 21's likely next stop.  CHKFETCH at 01157000 runs on every channel
+    # program that touches fetch-protected storage, and CCWCHKEY at 03631000 on
+    # every one that has a CAW key at all -- so these are reached as soon as a
+    # virtual machine does I/O, which is the next thing AUTOLOG1 will do.
+    # I-192.
+    'DMKCCW': [
+        # The two SSK pairs are the WRITE case, so the pair cannot simply be
+        # left in place the way DMKPSACC's read pair was: the two SSKs come
+        # from two DIFFERENT bytes.  SWPFLAG holds a packed halfword of two
+        # keys -- masked X'F8F8' one card up -- and the original sets the low
+        # byte into the second half, shifts right eight, and sets the high byte
+        # into the first.  One key now, so the shift stops being a reposition
+        # and becomes the choice of which byte survives: SWPKEY1, the first
+        # half's, exactly as I-177 chose in DMKPTR.
+        ('00973000', '00979000', Deck.comment(
+            "WAS N R15,=A(X'F8F8') / N R14,XPAGNUM / LA R14,2048(,R14) / SSK "
+            "R15,R14 / SRL R15,8 / N R14,XPAGNUM / SSK R15,R14 -- THE SECOND "
+            "HALF PAGE'S KEY FROM THE LOW BYTE, THEN THE FIRST FROM THE HIGH "
+            "BYTE. ONE ESA/390 KEY COVERS THE WHOLE PAGE, SO THE SHIFT NOW "
+            "SELECTS RATHER THAN REPOSITIONS AND SWPKEY1 IS KEPT. R14 STILL "
+            "ENDS ON THE PAGE START, WHICH 00980000'S LR R10,R14 NEEDS. THE "
+            "X'F8F8' MASK IS LEFT AS IT IS: IT CLEARS REFERENCE AND CHANGE IN "
+            "BOTH BYTES AND ONLY ONE OF THEM IS READ NOW, SO IT IS HARMLESS "
+            "AND IT KEEPS THE SWAP TABLE'S FORMAT INTACT. I-192.") + [
+            "         N     R15,=A(X'F8F8') CLEAR CHANGE/REFERENCE BITS",
+            "         N     R14,XPAGNUM    CLEAR DISPLACEMENT",
+            "         SRL   R15,8          SWPKEY1, THE FIRST HALF'S KEY",
+            "         SSKE  R15,R14        ONE KEY FOR THE WHOLE PAGE",
+        ]),
+        # CHKFETCH.  Mnemonic only: N R15,F8 below it isolates the
+        # fetch-protect bit, which ISKE returns in the same place, and
+        # X2048BND above it stays because ISKE takes its block from bits 1-19
+        # and ignores bits 20-31 -- where ISK demanded zeros or took a
+        # specification exception.
+        ('01157000', [
+            "         ISKE  R15,R15       GET THE REAL STORAGE KEY",
+        ]),
+        # CKSHRCHG reads the change bit in each half and branches the same way
+        # on either.  With one key the second read returns the same byte and
+        # sets the same condition code, so the pair is left in place: it is
+        # behaviour-preserving, and NXTKEY is a branch target at 01190000 that
+        # collapsing would have to re-aim.  Both reads converted.
+        ('01180000', [
+            "         ISKE  R15,R15       GET THE REAL STORAGE KEY",
+        ]),
+        ('01192000', [
+            "         ISKE  R15,R15       GET THE REAL STORAGE KEY",
+        ]),
+        ('03584000', '03589000', Deck.comment(
+            "THE SAME PACKED-HALFWORD PAIR AS 00973000, IN THE OTHER COPY OF "
+            "THIS ROUTINE. R14 ARRIVES AS THE PAGE START AND MUST LEAVE AS "
+            "ONE -- 03592000'S OR R1,R14 BUILDS THE REPLACEMENT PAGE ADDRESS "
+            "FROM IT -- SO THE N R14,XPAGNUM IS KEPT EVEN THOUGH THE LA THAT "
+            "MADE IT NECESSARY IS GONE. I-192.") + [
+            "         N     R15,=A(X'F8F8') CLEAR CHANGE/REFERENCE BITS",
+            "         SRL   R15,8          SWPKEY1, THE FIRST HALF'S KEY",
+            "         N     R14,XPAGNUM    BACK TO BEGINING ADDRESS",
+            "         SSKE  R15,R14        ONE KEY FOR THE WHOLE PAGE",
+        ]),
+        # CCWCHKEY.  Mnemonic only; N R15,F240 isolates the access-control
+        # key, which ISKE returns in bits 24-27 exactly as ISK did.
+        ('03631000', [
+            "         ISKE  R15,R15       GET THE REAL STORAGE KEY",
+        ]),
+    ],
+
+    # -------------------------------------------------------------------
+    # The mnemonic-only sites, and the reason there are so many of them.
+    #
+    # The half-page idiom is always `op Rx,Ry` / `LA Ry,2048(,Ry)` /
+    # `op Rx,Ry`.  The second operand still names the SAME 4 KB page -- 2048
+    # is inside it -- and ISKE and SSKE take their block from bits 1-19 and
+    # IGNORE bits 20-31, where ISK and SSK required bits 29-31 to be zero or
+    # took a specification exception.  So under ESA/390 the second operation
+    # reads or writes the same key byte as the first.
+    #
+    # For a READ pair that makes the second ISKE a redundant repeat: it returns
+    # the same key and sets the same condition code, so the pair is
+    # behaviour-preserving with nothing but the mnemonic changed, and any mask
+    # that tests both byte positions -- DMKVMA's CHGBITS of X'00000202',
+    # DMKMCH's =A(X'202') -- still works, because the register now holds the
+    # same key in both halves.  For a WRITE pair it depends on where the two
+    # written values come from: if they are the same byte, as in DMKCDS, the
+    # second SSKE rewrites what the first wrote; if a shift sits between them,
+    # as in DMKCCW and DMKDGD, they are DIFFERENT bytes of a packed halfword
+    # and the pair must genuinely collapse.
+    #
+    # That is why these are one-word edits and DMKCCW's and DMKDGD's are not.
+    # Leaving the redundant operation in place is deliberate: it keeps each
+    # site reviewable in isolation, and removing dead instructions shifts the
+    # `BZ *+8` offsets around them, which is its own way of going wrong.
+    'DMKCFH': [
+        # Reads two keys into a halfword to hand to the guest, which is the
+        # display format DMKCFH's buffer wants.  One key, shown for both.
+        ('00350000', Deck.comment(
+            "ISK PAIR, READ. THE A R15,=F'2048' BETWEEN THEM STILL NAMES THIS "
+            "PAGE, SO BOTH ISKES RETURN ITS ONE KEY AND THE OR AT 00354000 "
+            "BUILDS THE SAME HALFWORD SHAPE AS BEFORE. I-192.") + [
+            "         ISKE  R14,R15       GET THE PRESENT KEY",
+        ]),
+        ('00353000', [
+            "         ISKE  R14,R15       GET PRESENT KEY FOR THAT HALF",
+        ]),
+    ],
+    'DMKDIB': [
+        ('01145000', [
+            "         ISKE  R1,R1          GET THE REAL STORAGE KEY",
+        ]),
+    ],
+    'DMKUNT': [
+        ('00473000', [
+            "         ISKE  R15,R15       GET REAL STORAGE KEY",
+        ]),
+    ],
+    'DMKVCA': [
+        ('01634000', [
+            "         ISKE  R1,R1          GET REAL STORAGE KEY",
+        ]),
+    ],
+    'DMKVMA': [
+        ('00209000', Deck.comment(
+            "ISK PAIR, READ. CHGBITS IS X'00000202' AND TESTS THE CHANGE BIT "
+            "IN BOTH BYTE POSITIONS; WITH ONE KEY R0 HOLDS IT TWICE, SO THE "
+            "MASK IS STILL CORRECT AND STILL TESTS WHAT IT SAYS. I-192.") + [
+            "         ISKE  R0,R2          TAKE A LOOK AT THE KEY",
+        ]),
+        ('00212000', [
+            "         ISKE  R0,R2          TAKE A LOOK AT THIS HALF",
+        ]),
+    ],
+    'DMKVMD': [
+        ('00909000', Deck.comment(
+            "ISK PAIR, READ, BUILDING THE KEY HALFWORD DMKVMD DISPLAYS. R1 "
+            "ENDS WITH THIS PAGE'S ONE KEY IN BOTH BYTES, WHICH IS THE "
+            "HONEST ANSWER: THE 4 KB KEY GOVERNS BOTH 2 KB HALVES. I-192.") + [
+            "         ISKE  R1,R2          PUT STORAGE KEY INTO R1",
+        ]),
+        ('00912000', [
+            "         ISKE  R1,R14         SAME KEY, R1 LOW ORDER",
+        ]),
+    ],
+    'DMKMCH': [
+        ('00612000', Deck.comment(
+            "ISK PAIR, READ. =A(X'202') AT 00615000 TESTS THE CHANGE BIT IN "
+            "BOTH BYTES AND R1 NOW HOLDS THE ONE KEY TWICE, SO IT STILL "
+            "ANSWERS THE QUESTION IT ASKS. I-192.") + [
+            "         ISKE  R1,R2          GET THE FIRST KEY FROM STORAGE",
+        ]),
+        ('00614000', [
+            "         ISKE  R1,R3          GET SECOND KEY FROM STORAGE",
+        ]),
+        # The SPF exercise loop: set a key and read it back, five times for
+        # each of sixteen key values, to decide whether a storage-protection
+        # failure is intermittent.  Both halves of the pair act on R3 and
+        # neither is the other's source, so each converts on its own.
+        ('00829000', [
+            "         SSKE  R4,R3          EXECERCISE THE",
+        ]),
+        ('00830000', [
+            "         ISKE  R4,R3          FAILING STORAGE LOCATION",
+        ]),
+        ('00861000', [
+            "         SSKE  R8,R3          RESTORE THE PROPER KEY TO THE",
+        ]),
+    ],
+    'DMKCDS': [
+        # A WRITE pair whose two writes come from the SAME byte: R0 is re-read
+        # by the second ISKE and masked identically, so the second SSKE writes
+        # back exactly what the first wrote.  Mnemonic only.
+        ('00882000', Deck.comment(
+            "ISK/SSK PAIR. THE SECOND TRIPLE AT 00886000-00888000 RE-READS "
+            "AND REWRITES THE SAME KEY BYTE NOW, SO IT IS REDUNDANT RATHER "
+            "THAN WRONG, AND =A(X'FFFFF8') STILL CLEARS REFERENCE AND CHANGE "
+            "AND KEEPS ACCESS CONTROL AND FETCH-PROTECT. I-192.") + [
+            "         ISKE  R0,R14         GET REAL STORAGE KEY",
+        ]),
+        ('00884000', [
+            "         SSKE  R0,R14         SET HARDWARE KEY",
+        ]),
+        ('00886000', [
+            "         ISKE  R0,R14         GET REAL STORAGE KEY",
+        ]),
+        ('00888000', [
+            "         SSKE  R0,R14         SET IN NEW STORAGE KEY",
+        ]),
+    ],
+    'DMKDGD': [
+        # The third instance of DMKCCW's packed-halfword write pair, and it
+        # has to collapse for the same reason: SRL R5,8 between the two SSKs
+        # means they write DIFFERENT bytes.  SWPKEY1 is kept.  R4 must leave as
+        # the page start -- 00526000's OR R1,R4 builds the replacement page
+        # address from it -- so the N R4,XPAGNUM stays even though the LA that
+        # made it necessary is gone.
+        ('00519000', '00523000', Deck.comment(
+            "WAS LA R4,2048(,R4) / SSK R5,R4 / SRL R5,8 / N R4,XPAGNUM / SSK "
+            "R5,R4 -- THE SECOND HALF PAGE'S KEY FROM SWPFLAG'S LOW BYTE, "
+            "THEN THE FIRST FROM ITS HIGH BYTE. THE SHIFT NOW SELECTS RATHER "
+            "THAN REPOSITIONS AND SWPKEY1 IS KEPT, AS IN DMKCCW 00973000 AND "
+            "I-177'S DMKPTR. I-192.") + [
+            "         SRL   R5,8           SWPKEY1, THE FIRST HALF'S KEY",
+            "         N     R4,XPAGNUM     BACK TO BEGINING ADDRESS",
+            "         SSKE  R5,R4          ONE KEY FOR THE WHOLE PAGE",
+        ]),
+    ],
 }
 
 

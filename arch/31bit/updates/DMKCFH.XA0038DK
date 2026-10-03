@@ -1,0 +1,8 @@
+./ R 00350000          $ 00350100 100                                           
+*  ISK PAIR, READ. THE A R15,=F'2048' BETWEEN THEM STILL       XA0038DK         
+*  NAMES THIS PAGE, SO BOTH ISKES RETURN ITS ONE KEY AND THE   XA0038DK         
+*  OR AT 00354000 BUILDS THE SAME HALFWORD SHAPE AS BEFORE.    XA0038DK         
+*  I-192.                                                      XA0038DK         
+         ISKE  R14,R15       GET THE PRESENT KEY               XA0038DK         
+./ R 00353000          $ 00353100 100                                           
+         ISKE  R14,R15       GET PRESENT KEY FOR THAT HALF     XA0038DK         

@@ -1,0 +1,8 @@
+./ R 00209000          $ 00209100 100                                           
+*  ISK PAIR, READ. CHGBITS IS X'00000202' AND TESTS THE        XA0038DK         
+*  CHANGE BIT IN BOTH BYTE POSITIONS; WITH ONE KEY R0 HOLDS    XA0038DK         
+*  IT TWICE, SO THE MASK IS STILL CORRECT AND STILL TESTS      XA0038DK         
+*  WHAT IT SAYS. I-192.                                        XA0038DK         
+         ISKE  R0,R2          TAKE A LOOK AT THE KEY           XA0038DK         
+./ R 00212000          $ 00212100 100                                           
+         ISKE  R0,R2          TAKE A LOOK AT THIS HALF         XA0038DK         

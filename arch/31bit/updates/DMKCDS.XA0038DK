@@ -1,0 +1,13 @@
+./ R 00882000          $ 00882100 100                                           
+*  ISK/SSK PAIR. THE SECOND TRIPLE AT 00886000-00888000        XA0038DK         
+*  RE-READS AND REWRITES THE SAME KEY BYTE NOW, SO IT IS       XA0038DK         
+*  REDUNDANT RATHER THAN WRONG, AND =A(X'FFFFF8') STILL        XA0038DK         
+*  CLEARS REFERENCE AND CHANGE AND KEEPS ACCESS CONTROL AND    XA0038DK         
+*  FETCH-PROTECT. I-192.                                       XA0038DK         
+         ISKE  R0,R14         GET REAL STORAGE KEY             XA0038DK         
+./ R 00884000          $ 00884100 100                                           
+         SSKE  R0,R14         SET HARDWARE KEY                 XA0038DK         
+./ R 00886000          $ 00886100 100                                           
+         ISKE  R0,R14         GET REAL STORAGE KEY             XA0038DK         
+./ R 00888000          $ 00888100 100                                           
+         SSKE  R0,R14         SET IN NEW STORAGE KEY           XA0038DK         
