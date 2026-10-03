@@ -339,8 +339,33 @@ def dmkios():
         "PREMISE OF THE WHOLE I/O CONVERSION: CHANGE THE TEN INSTRUCTIONS, "
         "NOT THE 1,917 REFERENCES.") + [
         "         MVC   IOBORB,ORBTMPL BUILD THE ORB -- IMPLICIT L'32",
+        "         MVC   IOBOPARM+2(2),IOBRADD  INT PARM = DEVICE ADDR",
         "         ST    R2,IOBOCCW     CCW ADDRESS FOR THIS OPERATION",
     ])
+
+    # 1b. I-174, wall 16.  The ORB's interruption parameter is the ONLY way an
+    #     ESA/390 I/O interrupt can carry anything of CP's choosing, and the
+    #     template left it zero -- so the hardware handed back zero and
+    #     `DMKIOT`'s `CLC IOINTPRM+2(2),IOBRADD` could never match ANY device.
+    #     Every asynchronous completion was therefore unroutable and dropped.
+    #
+    #     DASD hid it completely: its status is normally already pending at
+    #     `SSCH`, so cc=1 takes the synchronous `IOSXCC1`/`TSCH` path and never
+    #     needs an interrupt at all.  1,474 channel programs of nucleus load
+    #     and directory read all went that way.  The console write completes
+    #     asynchronously, and it was the first thing in five days that actually
+    #     depended on the interrupt path.
+    #
+    #     Measured: `IOSCHNO` read `X'0056'` -- only a real interrupt stores
+    #     that -- and the same interrupt stored `IOINTPRM = 00000000`.
+    #
+    #     The device address is the right value to carry, not the IOBLOK
+    #     address, because it makes all FOUR of DMKIOT's existing comparisons
+    #     work unchanged (`MVC 2(2,R14),IOINTPRM+2`, `LH R1,IOINTPRM+2`,
+    #     `CLC IOBRADD(2),IOINTPRM+2`, `CLC IOINTPRM+2(2),2(R14)`).  Carrying
+    #     the IOBLOK instead would be faster and would mean rewriting all of
+    #     them -- against this module's own stated premise, three comments up:
+    #     change the ten instructions, not the 1,917 references.
 
     # 2. SIO -> SSCH.  The operand meaning inverts: SIO takes the device
     #    address in R1 and ignores its operand; SSCH takes the subsystem id
@@ -517,6 +542,7 @@ def dmkios():
         "         SPACE 1",
         "IOSXSIO  DS    0H             SSCH FOR THE SENSE PATH",
         "         MVC   IOBORB,ORBTMPL BUILD THE ORB",
+        "         MVC   IOBOPARM+2(2),IOBRADD  DEV ADDR -- I-174",
         "         MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET",
         "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
         "         SSCH  IOBORB         START SUBCHANNEL",

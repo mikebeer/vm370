@@ -5,6 +5,7 @@ IOSTCAW  ST    R2,CAW         KEPT -- SEE BELOW                XA0004DK
 *  HONEST. THAT IS THE PREMISE OF THE WHOLE I/O CONVERSION:    XA0004DK         
 *  CHANGE THE TEN INSTRUCTIONS, NOT THE 1,917 REFERENCES.      XA0004DK         
          MVC   IOBORB,ORBTMPL BUILD THE ORB -- IMPLICIT L'32   XA0004DK         
+         MVC   IOBOPARM+2(2),IOBRADD  INT PARM = DEVICE ADDR   XA0004DK         
          ST    R2,IOBOCCW     CCW ADDRESS FOR THIS OPERATION   XA0004DK         
 ./ R 01206000          $ 01206100 010                                           
 *  SIO TOOK THE DEVICE ADDRESS IN R1 AND IGNORED ITS OPERAND.  XA0004DK         
@@ -142,6 +143,7 @@ IOSXHIO  DS    0H             HSCH REPLACES HIO AND HDV ALIKE  XA0004DK
          SPACE 1                                               XA0004DK         
 IOSXSIO  DS    0H             SSCH FOR THE SENSE PATH          XA0004DK         
          MVC   IOBORB,ORBTMPL BUILD THE ORB                    XA0004DK         
+         MVC   IOBOPARM+2(2),IOBRADD  DEV ADDR -- I-174        XA0004DK         
          MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET       XA0004DK         
          L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
          SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
