@@ -865,6 +865,47 @@ than edited. Both are invisible through a clean IPL and both are large:
 Neither belongs in M1 and neither was in anyone's count. They belong in
 `WHAT-31BIT-NEEDS.md`.
 
+## Wall 23 — CP executes data after `enable all`: a module nobody reassembled
+
+```
+HHCCP014I CPU0000: Data exception CODE=0007 ILC=2 DXC=01
+PSW=000C0000 00F020D4 INST=20E8  LPDR 14,8
+19:21:11 DMKDMP908I SYSTEM FAILURE; CODE PRG001 PROCESSOR 00   (another run, at 5640E)
+```
+
+Supervisor state, DAT off, and the PSW in the middle of free storage. The landing
+site moved whenever a breakpoint was armed on it, which is the signature of a
+value that depends on timing — so the destination could not be caught, and the
+branch had to be found from its *source*. Three traces, each on one fixed
+instruction or module, armed only after `cold`:
+
+1. **w23g** — the dispatcher's unstack `BR R12` (`DMKDSP 01818000`, at `338D4`).
+   Nine hits, all sane; the last went to `3D990` with R10 = the IOBLOK.
+2. **w23h** — all of `DMKFRET`. It ran to completion correctly and returned.
+   What it showed was the *caller's* state: R5 = block+X'20' before FRET was
+   entered, and the fault PSW at R5+4 or R5+8 in every run.
+3. The code at `3D990` reads `R5` from `IOBLOK+X'50'` and ends in `BR R5`.
+
+`3D990` is not in `DMKSYM`, so `symtab.py` could not name it; the eyecatcher at
+`3D5E0` reads `HDKD8C` — VM/370 CE's DIAGNOSE X'8C' module, reached from
+`DMKGRFEN` when a 3270 is enabled. It appends its work area after `IOBLOK` with
+`ORG ,`, and its compiled code reads `SAVERRET` at `X'50'`: an `IOBLOK` of
+`X'48'` bytes, the old nine doublewords. Ours is 23. The reassembled `DMKIOS`
+stores the CCW address there, and on completion `HDKD8C` branches to it.
+
+**The cause is the build, not the code.** `ASMDMK EXEC` names 186 DMK modules
+and nothing else; `CPLOAD` also loads `HDKD58 HDKD7C HDKD8C HDKCQU HDKCQA`. The
+journal shows zero HDK assemblies — all five rode on CE's shipped TEXT decks
+with the pre-conversion `IOBLOK` and `RDEVBLOK` layouts. `HDKD58` and `HDKD7C`
+also allocate IOBLOKs 112 bytes too short for the ORB/IRB the new `DMKIOS`
+writes, a second silent corruptor from the same omission. None of the five has
+an S/370-only instruction; `build.sh full` now assembles them (`$HDKMODS`).
+Status: fix built, full build running, unverified. `I-194`.
+
+The lesson belongs next to `I-111`: **the set of modules to reassemble is the
+set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
+a load list fails exactly like a stale snapshot — convincingly, and late.
+
 ## Wall 13 — SUPERSEDED heading, kept for the diff: it is no longer where CP
 stops, and it was never a wall (see the downgrade above)
 

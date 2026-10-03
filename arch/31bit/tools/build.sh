@@ -27,6 +27,8 @@ R=${REPO:-/home/claude/vm370}
 HERC3=${HERC3:-hercules}
 HERC4=${HERC4:-/home/claude/herc4/install/bin/hercules}
 T=$R/arch/31bit/tools
+# CE modules outside ASMDMK that must be reassembled with every COPY change (I-194).
+HDKMODS="asm:HDKD58 asm:HDKD7C asm:HDKD8C asm:HDKCQU asm:HDKCQA"
 U=$R/arch/31bit/updates
 
 py(){ python3 -c "
@@ -223,7 +225,15 @@ full)
   snap=${2:-SNAP-2}
   arch S/370
   ALLOW_STALE=yes restore "$snap" || exit 1
-  mk f1 $(specs_all) mac:DMKLCL "post:asmdmk dmklcl:300" || exit 1
+  # I-194 / wall 23: CE's ASMDMK EXEC names the 186 DMK modules and NOTHING
+  # else, yet CPLOAD also loads five CE modules -- HDKD58 HDKD7C HDKD8C HDKCQU
+  # HDKCQA -- which COPY IOBLOKS and RBLOKS.  Left on CE's shipped TEXT decks
+  # they keep the OLD control-block layouts inside a nucleus using the new
+  # ones: HDKD8C's work area, appended after IOBLOK, lands under the ORB that
+  # the reassembled DMKIOS now writes, so its saved return address becomes the
+  # CCW address and the completion path branches into the channel program.
+  # They carry no S/370-only instruction; reassembly is the whole fix.
+  mk f1 $(specs_all) mac:DMKLCL $HDKMODS "post:asmdmk dmklcl:300" || exit 1
   run f1 || exit 1; chk f1 S/370 || exit 1; asmchk f1 || exit 1
   echo "--- clean: $(grep -c 'NO STATEMENTS FLAGGED' $C/f1.log)"
   python3 $T/snapshot.py take "$C" "SNAP-$(date +%H%M)" "$C/f1.log"
