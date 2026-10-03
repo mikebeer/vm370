@@ -250,6 +250,18 @@ list, and it would have caught `I-188` before it was built: `X'00F00000'`
 appears in this very table, at `CODE90` and `CODE50`, which are the **halfword-
 entry** rows — a 24-bit truncation of the same geometry, not this one.
 
+`codeb0.py` makes this the check it ought to be. It parses the eight rows out
+of the source rather than hardcoding them, takes `CODEB0`'s two masks as the
+authority, and flags any card in any module carrying a constant from one of the
+other seven — **naming which row it came from**. That is what turns a note into
+a test: `X'00F00000'` is not a value nobody wrote down, it is `CODE50`'s and
+`CODE90`'s segment mask, the halfword-entry rows, and the tool says so. Run
+against the tree after the `I-188` fix it reports exactly one card, `DMKTCS
+00667000 L R1,=X'00FF0000'  INITIALIZED FOSC`, which is a 3800 printer's
+forms-overlay copy count and a coincidence of the kind section 4 is about. Had
+it existed in the morning it would have flagged `DMKPGS 01049300` and the three
+sites I copied it to, before any of them were assembled.
+
 The lesson generalises past this table. Three times now the authority for a
 conversion has turned out to be inside CP rather than in the manual: `DMKSYM`
 for the address map (`symtab.py`), `DMKBLDRT`'s own entry conditions for the
