@@ -279,6 +279,79 @@ makes the whole family provable: if `ISK` and `ISKE` agree on CE as this
 predicts, all 67 sites can be converted and tested in S/370 mode, before
 anything else moves.
 
+## R-12 decided, and the part of it that is empirical
+
+`R-12` has been open since 27 September as *"choose deliberately between
+simulating 2 KB semantics in `DMKPRV` and exposing 4 KB"*, deferred to M4. Wall
+21 made it blocking instead: `DMKPTR`'s eleven `RRB`s and `DMKPRV`'s two sites
+cannot be converted without it. Reading `DMKPRV` settles most of it, and splits
+the rest into two very different residues.
+
+**What `DMKPRV` already does.** A guest's `ISK` is a privileged instruction, so
+CP intercepts it. `DMKPRV 00930000`-`00946000`:
+
+    SLR  R1,R1          INDEX TO SWPKEYS
+    TM   2(R3),X'08'    EVEN OR ODD HALF-PAGE?
+    BZ   HALFONE
+    LA   R1,1(0,0)      ODD
+    HALFONE LRA R2,0(0,R6)
+    ISK  R4,R2          GET REAL KEY
+    ...
+    IC   R9,SWPKEY1(R1) GET KEY FROM SWPTABLE
+    OR   R9,R4          ...PLUS REAL KEY
+
+So the guest's **access-control key and fetch-protect bit** have never come
+from hardware at all. They come from `SWPKEY1` or `SWPKEY2`, indexed by which
+2 KB half the guest named — CP's own software record, one byte per half. Only
+the **reference and change bits** are taken from the real key and OR'd in.
+
+That divides R-12 cleanly.
+
+**The access keys are not affected.** `SWPTABLE` is CP-private and the pair of
+bytes stays. A guest setting different keys on the two halves of a page keeps
+working exactly as it did, because that was always simulated. Nothing to
+decide, and the half of R-12 that sounded hardest is not a problem.
+
+**The reference and change bits lose their per-half resolution, in the safe
+direction.** One real key means one R/C pair for 4 KB, so CP must report the
+same bits for both halves. That **over-reports**: a page shows changed when
+only the other half changed. A guest then writes a page it need not have
+written — a performance loss. It can never under-report, which is the failure
+that would matter: a guest told "unchanged" that skipped a write would lose
+data, and that cannot arise, because the real change bit is set if either half
+was written.
+
+**The one genuine loss is in the real key CP sets, not the one it reports.**
+`DMKCCW`, `DMKDGD` and `I-177`'s `DMKPTR` all take `SWPKEY1` — the first half's
+byte — and `SSKE` it over the whole page. When the two halves carry different
+access keys, hardware then enforces the first half's on both, and if `SWPKEY1`
+is the *less* restrictive of the two, an access to the second half that should
+fail will succeed. **Under-protection**, which is the wrong direction, and no
+choice of single byte avoids it: access keys are not ordered, so there is no
+"more restrictive" one to pick.
+
+**So the decision is to measure rather than guess.** The cases where it matters
+are exactly those where a guest sets `SWPKEY1 ≠ SWPKEY2` on a page, and that is
+a condition CP can test at the moment it sets them. The plan:
+
+1. Keep the `SWPKEY1`/`SWPKEY2` pair and `DMKPRV`'s per-half indexing exactly
+   as they are. The guest's view of its access keys does not change.
+2. Report the single real R/C pair for both halves. Over-reporting, documented.
+3. Take `SWPKEY1` for the real key, as the three converted sites already do —
+   **and count the times the two bytes differ.** A counter in `DMKPTR`, in the
+   same shape as `DMKPTRCT`, which `I-188` showed is exactly how to measure
+   something CP does millions of times.
+4. If that counter stays zero under CMS and under an OS/VS guest, R-12 is
+   closed empirically and nothing more is owed. If it does not, the fallback is
+   known but expensive: give such a page a real key no guest PSW key matches,
+   so every access to it traps into CP's software check.
+
+The `I-177` deck comment already states the expectation — *"a guest that set
+both halves the same, which is every guest CP itself creates, sees no change at
+all"* — and step 3 turns that expectation into a number. That is the difference
+between this and the version of R-12 that has been open for a week: not a
+better argument, a detector.
+
 ## Order of work
 
 1. Read `HRC004DK`'s six decks.
