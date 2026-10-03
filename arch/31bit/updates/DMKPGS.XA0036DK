@@ -201,6 +201,27 @@ B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK
          N     R15,=A(SEGPTOM) WITHOUT THE FLAGS               XA0036DK         
 ./ R 01010000          $ 01010100 100                                           
          N     R14,F255       (WITHOUT SEGMENT NO.)            XA0036DK         
+./ R 01011000          $ 01011100 100                                           
+*  WAS ALR R14,R14 -- PAGE NUMBER TIMES TWO, THE INDEX OF A    XA0036DK         
+*  HALFWORD S/370 PTE. AN ESA/390 PTE IS A FULLWORD.           XA0036DK         
+         SLL   R14,2          PAGE NO. * 4 -> PTE INDEX        XA0036DK         
+./ R 01013000          $ 01013100 100                                           
+*  WAS SLL R14,2. THE CARD ABOVE NOW LEAVES PAGE*4 WHERE IT    XA0036DK         
+*  LEFT PAGE*2, AND AN SWPTABLE ENTRY IS STILL EIGHT BYTES,    XA0036DK         
+*  SO THIS SHIFT DROPS FROM 2 TO 1. THE TWO TOGETHER STILL     XA0036DK         
+*  GIVE PAGE*8.                                                XA0036DK         
+         SLL   R14,1          PAGE NO. * 8 -> SWAPTABLE ENTRY  XA0036DK         
+./ R 01015000          $ 01015010 010                                           
+*  WAS LA R5,16*2+8(R14,R15) -- SIXTEEN HALFWORD PTES PLUS AN  XA0036DK         
+*  EIGHT-BYTE SWPTABLE HEADER, WRITTEN OUT RATHER THAN TAKEN   XA0036DK         
+*  FROM CORE.COPY, WHERE CORE.XA0033DK ALREADY MOVED PAGTSWP   XA0036DK         
+*  TO 256 FULLWORD ENTRIES. R15 HOLDS THE PTO, WHICH POINTS    XA0036DK         
+*  AT PAGPFRA, SO THE HEADER AHEAD OF IT COMES BACK OFF;       XA0036DK         
+*  DMKATS 00341000 SPELLS THE SAME PLACE PAGTSWP+8 BECAUSE     XA0036DK         
+*  ITS BASE IS PAGSTMP. THE CARD CARRIES NO COMMENT BECAUSE    XA0036DK         
+*  THE EXPRESSION ITSELF REACHES COLUMN 54 AND THE LIMIT IS    XA0036DK         
+*  61.                                                         XA0036DK         
+         LA    R5,PAGTSWP-(PAGPFRA-PAGSTMP)+8(R14,R15)         XA0036DK         
 ./ R 01034200          $ 01034210 010                                           
 *  STCM B'1000' PUT R4'S BYTE 0 INTO THE STE'S BYTE 0, WHICH   XA0036DK         
 *  HELD THE LENGTH, SO IT COPIED THE OTHER PAGE TABLE'S        XA0036DK         

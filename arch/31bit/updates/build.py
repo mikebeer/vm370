@@ -4214,6 +4214,32 @@ DATMODS = {
             "         N     R15,=A(SEGPTOM) WITHOUT THE FLAGS",
         ]),
         ('01010000', ["         N     R14,F255       (WITHOUT SEGMENT NO.)"]),
+        # Three cards in PGOUT2's own body, found while fixing I-183 five cards
+        # below.  They compute the PTE and SWPTABLE addresses for the page the
+        # loop is about to release, so the loop could not reach them while it
+        # was spinning -- the fix for I-183 is what exposes them.
+        ('01011000', Deck.comment(
+            "WAS ALR R14,R14 -- PAGE NUMBER TIMES TWO, THE INDEX OF A "
+            "HALFWORD S/370 PTE. AN ESA/390 PTE IS A FULLWORD.") + [
+            "         SLL   R14,2          PAGE NO. * 4 -> PTE INDEX",
+        ]),
+        ('01013000', Deck.comment(
+            "WAS SLL R14,2. THE CARD ABOVE NOW LEAVES PAGE*4 WHERE IT LEFT "
+            "PAGE*2, AND AN SWPTABLE ENTRY IS STILL EIGHT BYTES, SO THIS "
+            "SHIFT DROPS FROM 2 TO 1. THE TWO TOGETHER STILL GIVE PAGE*8.") + [
+            "         SLL   R14,1          PAGE NO. * 8 -> SWAPTABLE ENTRY",
+        ]),
+        ('01015000', Deck.comment(
+            "WAS LA R5,16*2+8(R14,R15) -- SIXTEEN HALFWORD PTES PLUS AN "
+            "EIGHT-BYTE SWPTABLE HEADER, WRITTEN OUT RATHER THAN TAKEN FROM "
+            "CORE.COPY, WHERE CORE.XA0033DK ALREADY MOVED PAGTSWP TO 256 "
+            "FULLWORD ENTRIES. R15 HOLDS THE PTO, WHICH POINTS AT PAGPFRA, "
+            "SO THE HEADER AHEAD OF IT COMES BACK OFF; DMKATS 00341000 "
+            "SPELLS THE SAME PLACE PAGTSWP+8 BECAUSE ITS BASE IS PAGSTMP. "
+            "THE CARD CARRIES NO COMMENT BECAUSE THE EXPRESSION ITSELF "
+            "REACHES COLUMN 54 AND THE LIMIT IS 61.") + [
+            "         LA    R5,PAGTSWP-(PAGPFRA-PAGSTMP)+8(R14,R15)",
+        ]),
         ('01034200', Deck.comment(
             "STCM B'1000' PUT R4'S BYTE 0 INTO THE STE'S BYTE 0, WHICH HELD THE "
             "LENGTH, SO IT COPIED THE OTHER PAGE TABLE'S LENGTH -- WHATEVER IT "
@@ -4361,6 +4387,16 @@ DATMODS = {
             "         LA    R3,1(,R3)      UNITS OF 16 ENTRIES",
             "         SLL   R3,4           PAGES IN THIS SEGMENT",
         ]),
+        ('00289000', Deck.comment(
+            "WAS SRL R2,16 -- THE 64 KB SEGMENT NUMBER. THE NEXT CARD'S "
+            "SLL R2,2 IS RIGHT IN BOTH ARCHITECTURES, SINCE AN STE IS A "
+            "FULLWORD IN BOTH; ONLY THE SHIFT THAT ISOLATES THE SEGMENT "
+            "NUMBER MOVES, 16 TO 20. THE THREE CARDS AT 00291000 BELOW, "
+            "WHICH THIS DECK ALREADY REPLACED, FORM THE ADDRESS THIS "
+            "INDEX GOES INTO -- I-162: THE GROUP WAS CONVERTED AND ITS "
+            "FIRST MEMBER WAS NOT.") + [
+            "         SRL   R2,20          SEGMENT NO. ONLY",
+        ]),
         ('00291000', [
             "         L     R6,VMSEG       THE DESIGNATION",
             "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
@@ -4368,6 +4404,20 @@ DATMODS = {
         ]),
         ('00294000', [
             "         S     R2,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER",
+        ]),
+        ('00298000', Deck.comment(
+            "WAS N R1,F15 -- A PAGE NUMBER WITHIN A SIXTEEN-PAGE SEGMENT. "
+            "THE SRL 12 ABOVE IS RIGHT IN BOTH ARCHITECTURES AND THE SLL 3 "
+            "BELOW IS AN EIGHT-BYTE SWPTABLE ENTRY, ALSO UNCHANGED; ONLY "
+            "THE NUMBER OF PAGES A SEGMENT HOLDS MOVED. DMKPGS 01010000 IS "
+            "THE SAME CARD AND ALREADY READS F255. BOTH F15 AND F255 ARE "
+            "DEFINED IN PSA.MACRO, SO NOTHING ELSE HAS TO BE DECLARED.") + [
+            "         N     R1,F255        PAGE NO. WITHIN SEGMENT",
+        ]),
+        ('00335000', Deck.comment(
+            "WAS SRL R2,16. SAME CHANGE AS 00289000, IN REBRANGE RATHER "
+            "THAN NXTRANGE -- THE TWO LOOPS ARE NEAR-DUPLICATES.") + [
+            "         SRL   R2,20          SEGMENT NUMBER ONLY",
         ]),
         ('00337000', [
             "         L     R6,VMSEG       THE DESIGNATION",
@@ -4491,6 +4541,23 @@ DATMODS = {
             "SWLENGTH WAS DC F'192' -- A HARD-CODED PAGBMP, IN THIS MODULE AND "
             "IN DMKVMA, WITH NOTHING JOINING IT TO CORE.COPY. I-116'S SHAPE.") + [
             "SWLENGTH DC    A(PAGBMP)      LENGTH OF SHARED PAGE &",
+        ]),
+        # The pair at 00330000/00331000 brackets a range to whole segments --
+        # start down to page 0, end up to the last page -- and 00343000 reuses
+        # the second mask to extract a page number.  All three are geometry.
+        ('00863000', '00864000', Deck.comment(
+            "FORCEPG0 WAS X'00FF0000', THE 64 KB SEGMENT NUMBER IN BITS 8-15. "
+            "A 1 MB SEGMENT NUMBER IS BITS 8-11, SO THE MASK THAT LEAVES A "
+            "SEGMENT START IS X'00F00000' -- THE SAME VALUE DMKPGS 01049300 "
+            "AND 01054000 CARRY.") + Deck.comment(
+            "FORCEPGF WAS X'0000F000', PAGE 15, THE LAST OF A 64 KB SEGMENT'S "
+            "SIXTEEN. A 1 MB SEGMENT HAS 256 PAGES AND ITS LAST IS 255, SO "
+            "THE MASK IS X'000FF000'. 00343000 ANDS WITH THIS SAME CONSTANT "
+            "TO GET A PAGE NUMBER -- BITS 12-19 NOW, NOT 16-19 -- AND THE "
+            "SRL 9 THAT FOLLOWS IT STAYS: IT RELATES A PAGE'S ADDRESS WEIGHT "
+            "OF 4096 TO AN 8-BYTE SWPTABLE ENTRY, AND NEITHER MOVED.") + [
+            "FORCEPG0 DC    X'00F00000'    MASK FOR SEGMENT & PAGE 0",
+            "FORCEPGF DC    X'000FF000'    MASK FOR LAST PAGE OF SEGMENT",
         ]),
     ],
 
