@@ -33,7 +33,20 @@ py(){ python3 -c "
 import sys; sys.path.insert(0,'$T')
 $1"; }
 
-w(){ for i in $(seq 1 1800); do test "$(pgrep -c hercules)" = "0" && return 0
+# `pgrep -f`, not `pgrep -c`, and the reason is specific and dangerous.
+# Hercules 4.9.1 RENAMES ITS MAIN THREAD, so the process `comm` is
+# `impl_thread` and `pgrep -c hercules` -- which matches comm -- returns 0 while
+# 4.9.1 is running normally.  `pgrep -f` matches the command line and finds it.
+#
+# Blind to engine 4, this harness did three wrong things at once: `w()` returned
+# immediately, `run()` archived each log MID-RUN so every engine-4 log was
+# truncated at whatever CP had printed so far, and `dual` then reported "0 CP
+# messages" and declared the engines in disagreement when they agree.  Worst of
+# all, the guard below is what stops a SECOND Hercules starting on the same
+# pack, which is I-63 -- so with engine 4 that protection was simply off.
+# I-180.
+herc_running(){ pgrep -f '[h]ercules -f' | wc -l; }
+w(){ for i in $(seq 1 1800); do test "$(herc_running)" = "0" && return 0
        sleep 3; done
      echo "### w(): Hercules still running after 90 minutes -- refusing to go on"
      return 1; }
@@ -42,9 +55,9 @@ w(){ for i in $(seq 1 1800); do test "$(pgrep -c hercules)" = "0" && return 0
 # two runs of a dual test cannot overwrite each other -- a confusion that would
 # be indistinguishable from the engines agreeing.
 run(){ local eng=${2:-$HERC3}
-       test "$(pgrep -c hercules)" = "0" || {
+       test "$(herc_running)" = "0" || {
          echo "### run($1): a Hercules is ALREADY running -- refusing to start a second"
-         pgrep -a hercules | head -3; return 1; }
+         pgrep -af '[h]ercules -f' | head -3; return 1; }
        # Keep the previous log.  The name is fixed per verb, so every `full`
        # used to overwrite the last one -- and a build log is not a transcript,
        # it is the MEASUREMENT: asmerr.py and deckchk.py both read it, and the
