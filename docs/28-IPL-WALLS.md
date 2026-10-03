@@ -51,8 +51,55 @@ run that proves it is in the build journal.
 | 13 | ~~Privileged-operation exception on `SSM`, DAT on, in problem state~~ | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` | **NOT A WALL — downgraded 2 Oct** |
 | 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
-| 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints; nucleus disassembly at the I/O new PSW | **TWO DEFECTS IN SERIES, both now named.** First fixed (`I-174`, ORB interruption parameter). Second is the interrupt path reading a CSW ESA/390 never stores (`I-175`) — **fix built, verification building** |
+| 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints; nucleus disassembly at the I/O new PSW | **CLOSED AS A HANG.** Two defects in series, both fixed: `I-174` (ORB interruption parameter) and `I-175` (the interrupt path read a CSW ESA/390 never stores). Measured after: `CSW X'40'` non-zero, `CONACTV` **clear**, `CONCNT` `002C`/`001E` instead of `0001`. The messages still do not reach the terminal — CP now abends in DMKPTR first (wall 18) — so this is not yet a working console |
 | 17 | ~~A one-byte corruption of static nucleus data — `DMKCPI`'s logo reads `VM/380`~~ | it is CE's own `HRC370DK`: `MVI STMSG+7,C'8'  tell them this is System/380`, reached only when a `BSM` into AMODE 31 succeeds | breakpoint at the store, `am=31`, `INSTWRD1 = F8000000` | **NOT A WALL — retracted 2 Oct.** CE detecting that our conversion works — `I-173` |
+| 18 | **Storage keys: `SSK` does not exist in ESA/390, and CP keys a 4 KB page as two 2 KB halves** | operation exception `CODE=0001 ILC=2` at `X'3DD78'`, `INST=0838  SSK 3,8`, then `DMKDMP908I … CODE PRG001`; `GR06=00EC4000` and `GR08=00EC4800` are 2 KB apart | `abendmap` brackets it inside DMKPTR, same module both sides; registers pin it to `DMKPTR 00643000` | **OPEN — where CP stops now** — `I-177`; 59 sites in 15 modules, DMKPTR has 19; structural, not an opcode swap |
+
+## Wall 18 — storage keys, and why it is not the opcode swap it looks like
+
+CP reaches this only because `I-175` let it past wall 16. The failure is clean
+and took one run to diagnose, because the registers name the card:
+
+```
+CPU0000: Operation exception CODE=0001 ILC=2
+PSW=000C0000 0003DD78 INST=0838   SSK   3,8
+GR03=00000000  GR06=00EC4000  GR08=00EC4800  GR12=0003DA48
+```
+
+`GR12` is DMKPTR's base and `abendmap` brackets `X'3DD78'` between
+`DMKPTR ABEND 20` at −508 and `DMKPTR ABEND 8` at +1422 — same module both
+sides. `GR08 − GR06` is exactly 2048, which pins it to `DMKPTR 00643000`:
+
+```
+00638000  S   R6,ACORETBL     GET PAGE ADDRESS/256
+00639000  SLL R6,8            GET PAGE ADDRESS             -> GR06=00EC4000
+00640000  LA  R8,2048(,R6)    GET ADDRESS OF 2ND HALF PAGE -> GR08=00EC4800
+00641000  L   R3,SWPFLAG      GET USER'S KEYS IN LOW ORDER
+00642000  N   R3,=A(X'F8F8')  CLEAR REF/CHANGE BITS        -> GR03=00000000
+00643000  SSK R3,R8           SET KEY FOR 2'ND HALF PAGE   <-- fails here
+00644000  SRL R3,8            JUSTIFY KEY FOR 1'ST HALF PAGE
+00645000  SSK R3,R6           SET KEY FOR 1'ST HALF PAGE
+```
+
+Two key bytes in one halfword (`X'F8F8'`), two `SSK`s, and a shift between them
+to get from one to the other. System/370 keys cover 2 KB; the PoO says the
+370-XA facilities provide "key-controlled protection on **only 4K-byte
+blocks**", contrasting with System/370 in the same sentence. So `SSKE` sets the
+whole page's key in one instruction, the pair collapses, the `SRL R3,8`
+disappears, and `SWPFLAG`'s two key bytes become one. That is the I-128
+structural law again: S/370 packed something where ESA/390 has one slot.
+
+This was predicted. `I-44` and [23-STORAGE-KEYS.md](23-STORAGE-KEYS.md) already
+recorded that the pairs must collapse rather than translate, and that a third of
+the family lives in DMKPTR, the page manager. A live abend on exactly such a
+pair confirms that analysis rather than adding to it — and while writing this up
+I briefly claimed those docs said the opposite, from memory rather than from the
+file. Retracted before it was acted on; see `I-177`.
+
+What is newly measured is which modules have **none**: DMKIOS, DMKIOT, DMKPGS
+and DMKVAT are all zero. The I/O supervisor and the DAT-table modules are clear,
+so the exposure is DMKPTR plus the command and simulation modules.
+
 
 ### Wall 17 is retracted, and what replaced it is good news
 
