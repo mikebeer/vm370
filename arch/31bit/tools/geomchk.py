@@ -136,6 +136,25 @@ SEGTABLEN = re.compile(r'\bIC\s+R\d+,\w*CR1\b')
 #   limit for real storage above 256 MB -- M5 territory -- and not for the
 #   16 MB this milestone targets.  Recorded, not actioned.)
 DASDGEOM = re.compile(r'\b(CYL|HEAD|SECT|TRACK|CCHH|SEEK|RECORD|DEVICE CODE)\b')
+# The CORTABLE index idiom, and the reason a shift of 4 is so often innocent:
+#
+#     LR  R2,R12         a real address
+#     SRL R2,12          -> page number        (4 KB pages, both architectures)
+#     SLL R2,4           -> * 16               (16-byte entry, both)
+#     AL  R2,ACORETBL    + table origin
+#
+# A CORTABLE entry is four fullwords in CORE.COPY and `CORE.XA0033DK` does not
+# change it -- it converts the PAGTABLE and SEGTABLE DSECTs only.  Our own
+# working I-163 fix proves the size independently: `SRL R7,8  REAL ADDRESS TO
+# CORTABLE INDEX` is (addr>>12)<<4 collapsed, which is right only for a 16-byte
+# entry.  So both halves of the idiom are architecture-independent and a bulk
+# PAGSHFT 4->8 pass would corrupt all thirteen sites.
+#
+# The inverse appears too, and its comment misleads: DMKCPI's
+# `SRL R11,4  GET NO OF PAGES  DIV BY 16` follows `SL R11,ACORETBL`, so it
+# divides the table's BYTE SIZE by the entry length to get an entry count.  It
+# is not pages-per-segment, which is what the words sound like.
+CORTBL = re.compile(r'\b(ACORETBL|CORETBL|CORTABLE|CORFLAG|CORE TABLE|CORETABLE)\b')
 PACKEDHW = re.compile(r'\bS[RL]L\s+R\d+,12\b|\bSRDL\s+R\d+,16\b')
 
 
@@ -188,6 +207,9 @@ def classify(window, code, wide=()):
     if (SEGTABLEN.search(' '.join(wide or window).upper())
             and re.search(r'\bS[RL]L\s+R\d+,6\b', code)):
         return 'segtab-len NOT-A-SITE'
+    if (re.search(r'\bS[RL][DL]?L\s+R\d+,4\b', code)
+            and 'SEGMENT' not in code.upper() and CORTBL.search(up)):
+        return 'cortable-entry NOT-A-SITE'
     if re.search(r'\bS[RL][DL]?L\s+R\d+,16\b', code):
         # The card's OWN comment outranks the window.  Four rows were
         # misclassified NOT-A-SITE by window context while saying `SEGMENT` on
@@ -308,6 +330,20 @@ def main():
         print()
     p = len([r for r in rows if r[0] == 'PROVEN'])
     v = len([r for r in rows if r[0] == 'REVIEW'])
+    na = [r for r in rows if 'NOT-A-SITE' in r[5]]
+    if na:
+        import collections as _c
+        print('-- %d of the REVIEW rows are classified NOT-A-SITE: the shift'
+              % len(na))
+        print('   amount is a FIELD WIDTH or an ENTRY SIZE that is the same in')
+        print('   both architectures, so a bulk shift pass would corrupt them.')
+        for k, n in sorted(_c.Counter(
+                r[5].replace(' NOT-A-SITE', '') for r in na).items()):
+            print('     %-16s %3d' % (k, n))
+        print('   Each class was READ before it was named -- see the comments')
+        print('   above each recognizer. That leaves %d rows to read.'
+              % (v - len(na)))
+        print()
     vd = len([r for r in rows if r[0] == 'REVIEW' and r[6]])
     print('-- %d PROVEN, %d REVIEW (%d of the REVIEW rows are in modules that'
           % (p, v, vd))
