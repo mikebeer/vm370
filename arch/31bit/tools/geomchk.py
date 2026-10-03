@@ -53,6 +53,8 @@ import os
 import re
 import sys
 
+import applied
+
 SRC = '/home/claude/vmce/maintenance/files/394'
 UPD = '/home/claude/vm370/arch/31bit/updates'
 
@@ -172,14 +174,17 @@ def scan(only, dat_only):
         if dat_only and mod not in dat:
             continue
         ranges = rep.get(mod, set())
-        lines = open(os.path.join(SRC, f), 'r', errors='replace').readlines()
-        for i, line in enumerate(lines):
-            if line.startswith('*'):
+        # Scan the cards the assembler actually sees, not the 1979 base file.
+        # The applied APAR chain deletes cards wholesale, conditional assembly
+        # skips more, and the decks' own replacement cards carry constants the
+        # base file never had -- so the base file is wrong in both directions.
+        # I-176 cost a detour through DMKIOS's I/O interruption supervisor,
+        # 473 cards an APAR had already moved into DMKIOT.
+        cards = applied.assembled(mod)
+        lines = [t for _s, t in cards]
+        for i, (seq, code) in enumerate(cards):
+            if code.startswith('*'):
                 continue
-            code, seqf = line[:71], line[72:80].strip()
-            if not seqf.isdigit():
-                continue
-            seq = int(seqf)
             if covered(ranges, seq):
                 continue
             window = [l[:71] for l in lines[max(0, i - 4):i + 5]]
@@ -235,6 +240,15 @@ def main():
           % (p, v, vd))
     print('   touch the DAT structures).  A site is listed only when no XA')
     print('   deck of ours replaces its sequence number.')
+    print()
+    print('   Scanned against the EFFECTIVE source -- the base file with the')
+    print('   applied APAR chain merged in -- not the 1979 base file, which')
+    print('   was wrong in BOTH directions.  It showed 2 PROVEN and 17 REVIEW')
+    print('   phantoms in cards the build never assembles (one of them in')
+    print('   DMKPTR, inside an &AP block, where a patch would have had no')
+    print('   effect at all), and it HID 26 REVIEW sites that arrive on the')
+    print('   decks\' own replacement cards -- 20 of those in DAT modules.')
+    print('   I-176.')
 
 
 if __name__ == '__main__':

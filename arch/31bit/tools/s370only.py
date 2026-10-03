@@ -21,6 +21,8 @@ its 20 September 2026 import (`UPSTREAM.md`); where a number matters, confirm
 it against what `VMFASM` produces.  R-23.
 """
 import os
+
+import applied
 import re
 import sys
 
@@ -182,16 +184,20 @@ def main():
                                                       'SLC', 'SPB'}
 
     hits = {}
+    # Count against the cards the assembler actually sees, not the 1979 base
+    # file.  The applied APAR chain deletes cards wholesale -- 473 of DMKIOS,
+    # including its entire I/O interruption supervisor -- conditional assembly
+    # skips more, and the decks' own replacement cards ADD instructions the
+    # base file never had (36 across the tree, 22 in DMKFMT).  Scanning the
+    # base file got all three wrong in both directions.  I-176.
     for name in sorted(os.listdir(src)):
         if not name.endswith('.ASSEMBLE'):
             continue
         mod = name[:-9]
-        for n, line in enumerate(open(os.path.join(src, name),
-                                     errors='replace'), 1):
-            op = opcode_of(line.rstrip('\n'))
+        for seq, text in applied.assembled(mod):
+            op = opcode_of(text)
             if op in table:
-                seq = line[72:80].strip() if len(line) > 72 else ''
-                hits.setdefault(op, []).append((mod, seq or str(n)))
+                hits.setdefault(op, []).append((mod, '%08d' % seq))
 
     print('S/370-ONLY INSTRUCTIONS ISSUED BY CP')
     print('(opcode table: %d mnemonics marked GENx370x___x___)\n' % len(table))

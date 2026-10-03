@@ -51,7 +51,7 @@ run that proves it is in the build journal.
 | 13 | ~~Privileged-operation exception on `SSM`, DAT on, in problem state~~ | `PSW=040D0000 0006D130`, `INST=8000D129` | SDL 4.9.1 + `pgmtrace` | **NOT A WALL — downgraded 2 Oct** |
 | 14 | **A half-converted geometry group in `DMKPTR` `GETENTRY`** — one of five instructions converted, four left at 64 KB | silent hang: CP alive, in supervisor state, taking I/O interrupts, printing nothing, for five days | `abendmap.py` + arithmetic checked against a `savecore` | **closed** 2 Oct — `I-162` |
 | 15 | **`N R7,=A(X'FFF0')` did two jobs on a halfword PTE** — strip flags *and* leave page×16 for `ACORETBL` | `ABEND PTR020`, "DMKPTRUC IS NEGATIVE", with a 30,669-line dump | `DMKPTRUC`/`DMKPTRP2` read out of the nucleus | **closed** 2 Oct — `I-163` |
-| 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints | **OPEN — where CP stops now** — `I-166`, `I-169`; **interrupt routing, not queue pointers** |
+| 16 | **The console's I/O completion never reaches `DMKCNS`**, so the queued startup messages never go out | nine CONTASKs queued and intact; `IOBCSW` zero in the console IOBLOK; `CONACTV` still set; breakpoint at `DMKCNSIN` never hit, while DASD interrupts ARE taken out of the wait | IOBLOK found by `IOBUSER`+`IOBCAW` cross-check; control-validated breakpoints; nucleus disassembly at the I/O new PSW | **TWO DEFECTS IN SERIES, both now named.** First fixed (`I-174`, ORB interruption parameter). Second is the interrupt path reading a CSW ESA/390 never stores (`I-175`) — **fix built, verification building** |
 | 17 | ~~A one-byte corruption of static nucleus data — `DMKCPI`'s logo reads `VM/380`~~ | it is CE's own `HRC370DK`: `MVI STMSG+7,C'8'  tell them this is System/380`, reached only when a `BSM` into AMODE 31 succeeds | breakpoint at the store, `am=31`, `INSTWRD1 = F8000000` | **NOT A WALL — retracted 2 Oct.** CE detecting that our conversion works — `I-173` |
 
 ### Wall 17 is retracted, and what replaced it is good news
@@ -150,7 +150,50 @@ below, oldest last, because **the churn is the lesson**: each reading was
 consistent with everything measured at the time and each was wrong about where
 the defect was. Read the first one.
 
-### Fourth and current, 20:30 UTC — P0 answered: the completion never reaches `DMKCNS`
+### Fifth and current, 3 October 07:50 UTC — both defects now named; the second is the CSW
+
+Wall 16 is **two defects in series**. I-174 cleared the first: the ORB's
+interruption parameter was zero, so no interrupt could be routed to a device.
+The second is the symmetric omission to the one we fixed months of work ago on
+the other path.
+
+On System/370 an I/O interruption **itself stores a CSW** at `X'40'`. The
+channel subsystem does not: the status stays in the subchannel and `TEST
+SUBCHANNEL` is the only way to get it. We built that shim for the `SSCH` path —
+`IOSXCC1` does `TSCH IOBIRB` and then synthesises the CSW — and **never for the
+interrupt path**. `DMKIOT`'s interruption supervisor reads `CSW` at about forty
+sites and `DMKIOT.XA0012DK` converted none of them.
+
+| step | measured |
+|---|---|
+| the interrupt is taken | `IOSSID X'B8' = 00010004` — the console's subchannel, which only a real interrupt stores |
+| the device is found correctly | `LH R1,X'BE'` at `X'6708'`, and `X'BE'` is `IOINTPRM+2`, exactly where I-174 writes the device address |
+| the CSW CP then reads | `X'40' = 0000000000000000` |
+| the status it saves | `IOBCSW = 00000000 00000000` |
+
+So every status test reads zero, no unit status is ever seen, the IOBLOK is
+never completed, `CONSTAT` keeps `CONACTV`, and `DMKCNSIN` never fires. That is
+the whole of wall 16's remainder. **Fix built, not yet verified** — `I-175`.
+
+Two retractions, both mine, and the second is the more useful:
+
+* I spent a run of steps on `DMKIOSIN`, "the unconverted handler", at
+  `DMKIOS.ASSEMBLE:436`, with eight live `INTTIO` references and no deck of
+  ours covering sequence `00400000`–`00699999`. All of it true of the file and
+  false of the build: `DMKIOS.R09587DK` says `./ * DMKIOSIN BEING MOVED INTO
+  DMKIOT` and `./ D 418000 890000`. The handler is `DMKIOTIN`, in a module we
+  had already converted. `DMKIOS.AUXR60` states it in one line I had not read:
+  `R09587DK 602 SPLIT MODULE DMKIOS INTO DMKIOS AND DMKIOT`.
+* I predicted `INTTIO` would resolve to `X'BA'`, the subchannel number, and
+  that this was the defect. It resolves to `X'BE'`. The device lookup works.
+
+What settled both was decoding the nucleus rather than reading more source, with
+two independent anchors inside the same macro expansion — `IOOPSW+4 = X'3C'`
+and `CSW = X'40'`, both known-correct — to prove the displacements were being
+read right. The general lesson became `I-176` and a tool, `applied.py`: **our
+scanners read the 1979 base file, which is not the file the assembler sees.**
+
+### Fourth, 2 October 20:30 UTC — P0 answered: the completion never reaches `DMKCNS`
 
 `I-169`. Every link measured, in order:
 
