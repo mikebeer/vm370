@@ -105,17 +105,78 @@ the page manager's tightest code.
 
 ## Where the sites are
 
+The first version of this table said 67 sites in 17 modules. It was counted
+against the **base** files, before `applied.py` existed, so it counted cards the
+APAR chain deletes and missed none that it adds — the `I-168` error in the
+direction that overstates work. Counted against the source the assembler
+actually sees, on 3 October:
+
 | Module | Sites | Mnemonics |
 |---|---|---|
-| `DMKPTR` | 23 | `RRB`×13 `ISK`×6 `SSK`×4 |
+| `DMKPTR` | 15 | `RRB`×11 `ISK`×4 |
 | `DMKCCW` | 8 | `SSK`×4 `ISK`×4 |
 | `DMKMCH` | 5 | `ISK`×3 `SSK`×2 |
 | `DMKPSA` | 5 | `ISK`×5 |
 | `DMKCDS` | 4 | `ISK`×2 `SSK`×2 |
-| `DMKDMP` | 4 | `ISK`×4 |
 | `DMKCDB` `DMKCDM` `DMKCFH` `DMKDGD` `DMKPRV` `DMKVMA` `DMKVMD` | 2 each | |
-| `DMKCPI` `DMKDIB` `DMKUNT` `DMKVCA` | 1 each | |
-| **Total** | **67** | across 17 modules |
+| `DMKDIB` `DMKUNT` `DMKVCA` | 1 each | |
+| **Total** | **54** | across 15 modules |
+
+`DMKDMP` and `DMKCPI` have none: their sites are in cards the chain removed.
+`DMKPTR` is still the largest share and still the page manager.
+
+## What each site needs, determined site by site
+
+Read on 3 October, when wall 21 made this the blocking work rather than
+deferred work. Three classes, and the first two are the bulk.
+
+**Class 1 — the mnemonic and nothing else.** The result layout did not move:
+`ISK` returns bits 24-27 access control, 28 fetch-protect, 29 reference, 30
+change, and so does `ISKE`. So every mask below one of these sites survives
+unchanged — `F8` for fetch, `F240` for the key, `F2` for change,
+`=A(X'FFFFF8')` for "clear ref and change". And `X2048BND  GET MASK FOR BITS
+8-20` stays too, because `ISKE` takes its block from bits 1-19 of the operand
+and **ignores** bits 20-31, where S/370's `ISK` required bits 29-31 to be zero
+or took a specification exception. A 2 KB-aligned address is still legal; it
+just names the 4 KB page containing it. Sites: `DMKPSA` all five,
+`DMKCCW 01157000` and `03631000`, `DMKCDB 01428000`, `DMKCDM 01140000`, and the
+singletons in `DMKDIB`, `DMKUNT`, `DMKVCA`.
+
+**Class 2 — a half-page pair that collapses.** The shape is always the same:
+read or set the key, `LA Rx,2048(,Rx)`, do it again. One 4 KB key makes the
+second operation read or write the same byte, so the pair becomes one
+instruction. Where the second is a *read*, leaving it in place is behaviour-
+preserving — it returns the same key and sets the same condition code — which
+is why `DMKPSA`'s `DMKPSACC` pair was converted in place rather than deleted,
+to keep the change set on the critical path reviewable. Where the second is a
+*write*, it must go, because the two writes come from two different source
+bytes: `DMKCCW 00973000` loads a **packed halfword of two keys** from
+`SWPFLAG`, masks it `X'F8F8'`, `SSK`s the low byte into the second half,
+shifts right 8, and `SSK`s the high byte into the first. Converted, that is
+`SRL R15,8` then one `SSKE` — the first half's key for the whole page, which is
+exactly the convention `I-177` set in `DMKPTR`. Sites: `DMKCCW 00973000`-
+`00979000` and `03584000`-`03589000`, `DMKCDS 00882000`-`00888000`,
+`DMKVMA 00209000`-`00213000` (whose `CHGBITS` mask of `X'00000202'` tests the
+change bit in both byte positions and becomes a plain `F2`),
+`DMKVMD 00908000`-`00912000` and `DMKCDB`/`DMKCDM`'s first site each — those
+three build a key **pair** for display, so the honest conversion presents the
+one real key twice and keeps the display format.
+
+**Class 3 — `DMKPTR`'s `RRB` block, which is a design question and not an
+edit.** Two reasons. First, mechanics: `RRB` is SI-format with a storage
+operand, so `RRB 2048(R6)` carries its displacement in the instruction, and
+`RRBE` is RRE with only a register — there is nowhere to put the 2048, so every
+displaced `RRB` needs an `LA` first or needs to disappear. Second, and the real
+difficulty: this code maintains `SWPKEY1` and `SWPKEY2`, CP's **virtual
+back-up keys**, one per 2 KB half, from the two real keys. With one real key
+there is one real reference/change pair and two virtual ones to feed. The
+defensible answer is to set both back-up keys from the single key — a 4 KB
+page's reference and change state does apply to both of its halves — but that
+is a decision about what a guest sees, which is `R-12`, and it wants writing
+down before it is coded. The block is also intricate in its own right:
+`BC 8+4,STKEY2+4` branches into the middle of an instruction, `BALR R14,0`
+is used to park a condition code, and the `BZ *+8` offsets all shift when a
+pair collapses.
 
 **`DMKPTR` is a third of it**, and `DMKPTR` is the page manager — the module
 whose correctness the whole 31-bit exercise depends on. That is the opposite of
@@ -225,7 +286,18 @@ anything else moves.
    test module that does `ISK` and `ISKE` against the same frame and prints
    both, the way `XATEST` closed M0. If they agree, the pairs can collapse
    safely.
-3. Convert the 44 sites outside `DMKPTR` first — `ISK`/`SSK` only, mostly
+3. Convert the 39 sites outside `DMKPTR` first — `ISK`/`SSK` only, mostly
    unpaired, mechanical once step 2 is settled.
-4. Convert `DMKPTR` last and on its own, including the 13 `RRB`→`RRBE`
+4. Convert `DMKPTR` last and on its own, including the 11 `RRB`→`RRBE`
    register problem.
+
+Revised on 3 October, because wall 21 reordered it. `DMKPSA`'s five went first
+and alone, ahead of everything else, for one reason: `ISK` at `X'8B4'` is what
+abends CP now, within a second of a second virtual machine existing, so those
+five are the difference between a system that initialises and a system that
+runs. Steps 1 and 2 were skipped for them — step 2's granularity claim is
+already settled three ways (the PoO's *"only 4K-byte blocks"*, `XAOPS.MACRO`'s
+own *"PROVEN BY EXECUTION IN 11-storage-keys.rc"*, and `I-177` shipping an
+`SSKE`), and none of DMKPSA's five is a write, so no collapse decision was
+needed. Then `DMKCCW`, `DMKCDS`, `DMKVMA`, `DMKVMD` as one change set, then
+`DMKPTR` on its own with `R-12` written down first.

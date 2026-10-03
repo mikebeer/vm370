@@ -1,3 +1,13 @@
+./ R 00386000          $ 00386100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0022DK         
+./ R 00401000          $ 00401100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0022DK         
+./ R 00410000          $ 00410100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0022DK         
+./ R 00438000          $ 00438100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0022DK         
+./ R 00444000          $ 00444100 100                                           
+         ISKE  R15,R15       GET THE REAL STORAGE KEY          XA0022DK         
 ./ R 00646000 00647000 $ 00646100 100                                           
 *  HSCH FOR HIO. NO STORAGE AND NO CONDITION-CODE WORK: THE    XA0022DK         
 *  BC 8+1,EXTEXIT BELOW MEANS THE SAME THING UNDER HSCH. R1    XA0022DK         

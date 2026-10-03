@@ -2550,6 +2550,39 @@ def dmkpsa():
     d = Deck(XA22)
     nxt = lambda q: next_seq(SRC + '/DMKPSA.ASSEMBLE', q)
 
+    # ---------------------------------------------------- I-192, wall 21
+    # The five storage-key reads.  CP's OWN use of the keys, not a guest's --
+    # R-12 and DMKPRV are the place where a guest's 2 KB view has to be
+    # simulated, and none of that applies here.  So these are mechanical:
+    # ISK -> ISKE, same operands, and every mask below them survives, because
+    # the result layout did not move.  ISK returns bits 24-27 access control,
+    # 28 fetch-protect, 29 reference, 30 change; so does ISKE.  The three masks
+    # these routines use -- F8 for fetch, F240 for the key, F2 for change --
+    # therefore read the right bits of an ISKE result unchanged.
+    #
+    # X2048BND, "GET MASK FOR BITS 8-20", also stays.  ISKE takes its block
+    # from bits 1-19 of the operand and IGNORES bits 20-31, where S/370's ISK
+    # required bits 29-31 to be zero or took a specification exception.  So a
+    # 2 KB-aligned address is still a legal operand; it just names the 4 KB
+    # page that contains it.
+    for seq in ('00386000', '00401000', '00410000'):
+        d.replace(seq, first=seq[:-3] + '100', inc=100, limit=nxt(seq),
+                  lines=["         ISKE  R15,R15       GET THE REAL STORAGE KEY"])
+
+    # DMKPSACC checks the change bit in both 2 KB halves of a page: 00438000
+    # reads the first, and on a zero result 00441000-00446000 recomputes the
+    # address plus 2048 and reads "the last half page".  Under ESA/390 there is
+    # ONE key for the whole 4 KB, so the second read returns the same byte and
+    # the same condition code, and the routine's answer is unchanged either
+    # way.  Both are converted and the redundant pair is LEFT IN PLACE rather
+    # than deleted: the change set on the critical path stays five identical
+    # one-word edits, which can be reviewed in full, and removing dead cards is
+    # a separate change with its own way of going wrong.  I-177 collapsed the
+    # equivalent SSK pair in DMKPTR, so the precedent for tidying it exists.
+    for seq in ('00438000', '00444000'):
+        d.replace(seq, first=seq[:-3] + '100', inc=100, limit=nxt(seq),
+                  lines=["         ISKE  R15,R15       GET THE REAL STORAGE KEY"])
+
     d.replace('00646000', '00647000', first='00646100', inc=100,
               limit=nxt('00647000'), lines=Deck.comment(
         "HSCH FOR HIO. NO STORAGE AND NO CONDITION-CODE WORK: THE "

@@ -187,7 +187,26 @@ restore(){ local snap=$1 want=${2:-}
   # survive.  A nucleus write lands in it too, which is correct: after a write
   # the state is no longer a BUILD state, and snapshot.py says so.
   : > "$C/build.journal"
+  # The pack is a BUILD pack again: 6A1 holds CE's own S/370 nucleus, so an
+  # S/370 boot of it works.  I-191.
+  rm -f "$C/.written"
   echo "--- restored $snap"; }
+
+# I-191.  `stage` and `asmonly` have no restore -- that is the whole point of
+# I-148's sliced build -- so they are valid only BEFORE a write in the same
+# cycle.  After a write, 6A1 holds the ESA/390 nucleus and an S/370 boot of it
+# is SILENT: no banner, no Start prompt, and then every devinit after the first
+# comes back "000C busy or interrupt pending", which reads like a device fault
+# and is a dead machine.  One bit of state answers it, and the bit is about the
+# PACK rather than about what ran, which is why the journal cannot answer it.
+buildpack(){ test -f "$C/.written" || return 0
+  echo "### the pack has been WRITTEN since its last restore, so 6A1 holds the"
+  echo "### ESA/390 nucleus.  An S/370 boot of it is silent -- no banner, no"
+  echo "### Start prompt -- and every devinit after the first fails 000C busy."
+  echo "### I-191.  Restore first:"
+  echo "###     build.sh reset <snapshot>        then stage/asmonly"
+  echo "###     build.sh spec  <snapshot> <mod:deck>...   restores for you"
+  return 1; }
 
 specs_all(){ local s=""
   for f in $U/*.XA*DK; do local b=$(basename $f); s="$s read:${b%%.*}:${b#*.}"; done
@@ -263,6 +282,7 @@ stage)
   # boot, at ~28s per card file, is about 13 files.  Four slices plus an
   # assembly run beats one 70-minute build that cannot finish.  I-148.
   shift
+  buildpack || exit 1
   arch S/370
   mk s1 "$@" || exit 1
   run s1 || exit 1; chk s1 S/370 || exit 1
@@ -271,6 +291,7 @@ stage)
 asmonly)
   # The assembly pass over modules already on the disk, no restore, no staging.
   shift
+  buildpack || exit 1
   arch S/370
   sp=""; for m in "$@"; do sp="$sp asm:$m"; done
   mk a1 $sp || exit 1
@@ -285,6 +306,8 @@ write)
   run n1 || exit 1; chk n1 S/370 || exit 1
   grep -E "Nucleus loaded|LOAD DECK COMPLETE|DISABLED WAIT" "$C/n1.log" | tail -3
   grep -q "00000012" "$C/n1.log" || { echo "### NUCLEUS WRITE FAILED"; exit 1; }
+  # 6A1 now holds the ESA/390 nucleus.  I-191.
+  : > "$C/.written"
   ;;
 test)
   # Specs go AFTER the ipl by default.  A literal `--` splits them: everything
