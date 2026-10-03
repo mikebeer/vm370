@@ -85,6 +85,8 @@ REVIEW = SHIFTS + [
     ('SEG-MASK-64K', re.compile(r"X?L?4?'0*FFFF0000'"),
      "64 KB segment mask"),
 ]
+# Our own update identifiers: XAnnnnDK.  A card carrying one is ours.
+OURS = re.compile(r'^XA\d{4}DK$')
 COMPOSITE = re.compile(r'\bS[RL][DL]?L\s+R\d+,\s*\d+\s*\+\s*\d+')
 
 # Candidate classification.  Ordered: the first family whose symbols appear in
@@ -104,6 +106,16 @@ FAMILY = [
 ]
 WORDS = [('segment', ('SEGMENT', 'SEG ')), ('page', ('PAGE',)),
          ('key', ('KEY', '2K', '2048')), ('length', ('LENGTH', 'SIZE'))]
+
+# The segment-table-length idiom.  `IC Rn,xxxCR1` / `LA Rn,1(0,Rn)` /
+# `SLL Rn,6` computes (STL+1)*64 bytes from a control-register-1 length code,
+# and the ESA/390 PoO says bits 25-31 of CR1 give that length "in units of 64
+# bytes" -- the same unit System/370 uses in bits 0-7.  So the SHIFT is correct
+# in both architectures and this is not a site.  What moves is the FIELD: byte
+# 0 becomes byte 3, so the `IC` displacement changes, and only when guests stop
+# being S/370 machines at M4.  Called out by name because a bulk PTLSHFT 6->10
+# pass would corrupt both of these.
+SEGTABLEN = re.compile(r'\bIC\s+R\d+,\w*CR1\b')
 
 
 def replaced():
@@ -144,9 +156,17 @@ def dat_modules():
     return out
 
 
-def classify(window, code):
-    """Candidate family for a shift site, from the symbols and words near it."""
+def classify(window, code, wide=()):
+    """Candidate family for a shift site, from the symbols and words near it.
+
+    `wide` is a larger window used only for the segment-table-length idiom,
+    whose `IC Rn,xxxCR1` can sit several cards above the shift -- in DMKVAT it
+    is six cards up, with a CH/BNH/LH bounds check in between.
+    """
     up = ' '.join(window).upper()
+    if (SEGTABLEN.search(' '.join(wide or window).upper())
+            and re.search(r'\bS[RL]L\s+R\d+,6\b', code)):
+        return 'segtab-len NOT-A-SITE'
     for name, syms in FAMILY:
         if any(s in up for s in syms):
             return name
@@ -187,12 +207,24 @@ def scan(only, dat_only):
                 continue
             if covered(ranges, seq):
                 continue
+            # A card OUR OWN decks inserted is converted by definition, and it
+            # carries our identifier in columns 64-71.  The `covered()` test
+            # above cannot catch these: it holds the sequence numbers a deck
+            # REPLACES, and an inserted card gets a NEW number -- `./ R
+            # 01054000` replaces 01054000 but the card it writes is 01054100.
+            # Without this, scanning the effective source reports 19 of our own
+            # ESA/390 conversions as unconverted sites, which is how this check
+            # was found: `SRDL R14,20` next to `SLL R14,2` and `SEGSTOM` is
+            # 1 MB segments and a fullword STE, not a site to fix.
+            if OURS.match(code[63:71].strip()):
+                continue
             window = [l[:71] for l in lines[max(0, i - 4):i + 5]]
+            wide = [l[:71] for l in lines[max(0, i - 8):i + 5]]
             for bucket, pats in (('PROVEN', PROVEN), ('REVIEW', REVIEW)):
                 for tag, pat, _why in pats:
                     if not pat.search(code):
                         continue
-                    cand = (classify(window, code)
+                    cand = (classify(window, code, wide)
                             if bucket == 'REVIEW' else '')
                     if COMPOSITE.search(code):
                         cand = (cand + ' COMPOSITE').strip()
@@ -246,9 +278,12 @@ def main():
     print('   was wrong in BOTH directions.  It showed 2 PROVEN and 17 REVIEW')
     print('   phantoms in cards the build never assembles (one of them in')
     print('   DMKPTR, inside an &AP block, where a patch would have had no')
-    print('   effect at all), and it HID 26 REVIEW sites that arrive on the')
-    print('   decks\' own replacement cards -- 20 of those in DAT modules.')
-    print('   I-176.')
+    print('   effect at all), and it HID 7 REVIEW sites that arrive on the')
+    print('   CE APAR decks\' own cards -- including two PTLSHFT-6 sites in')
+    print('   DMKVAT, the DAT module. Cards carrying OUR identifier are')
+    print('   skipped: 19 of them are conversions we already made, which')
+    print('   `covered()` cannot catch because a replaced card 01054000 is')
+    print('   rewritten as a NEW card 01054100. I-176.')
 
 
 if __name__ == '__main__':
