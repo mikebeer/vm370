@@ -24,6 +24,22 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
 from mkdeck import Deck, aux, auxcheck, verify, next_seq    # noqa: E402
 
+
+def auxdrop(path, deck):
+    """Remove one deck from an AUXLCL, which is what un-applies it.
+
+    `aux()` merges and never removes -- correct for its job, since two
+    generators writing the same module's AUXLCL used to mean whichever ran last
+    won (`I-138`).  Bisection needs the opposite: `VMFASM` applies what the
+    AUXLCL lists, so dropping the line is how a deck stops being applied
+    without deleting the file or editing the table.
+    """
+    if not os.path.exists(path):
+        return
+    keep = [l for l in open(path) if l.split(None, 1)[:1] != [deck]]
+    with open(path, 'w') as f:
+        f.writelines(keep)
+
 # The resolved tree the anchors are measured against.  R-23.
 SRC = '/home/claude/vmce/source/cp'
 
@@ -5940,7 +5956,19 @@ def main():
         print('%-8s %-9s %3d cards  %s' % (m, XA39, n,
               'OK' if not verify(path) else 'BAD'))
 
+    # Bisection control.  I-192's change set put 48 storage-key sites behind one
+    # measurement and the result was a regression, so the way back in is one
+    # group at a time.  KEYMODS_ONLY names the modules whose key deck is
+    # emitted; everything else keeps its AUXLCL line removed, which is what
+    # actually stops a deck being applied -- the file on disk is harmless if
+    # nothing lists it.  Empty or unset means all of them, which is the normal
+    # state once the culprit is found.
+    only = os.environ.get('KEYMODS_ONLY', '').replace(',', ' ').split()
     for m in sorted(KEYMODS):
+        if only and m not in only:
+            auxdrop(os.path.join(HERE, '%s.AUXLCL' % m), XA38)
+            print('%-8s %-9s  --  held out by KEYMODS_ONLY' % (m, XA38))
+            continue
         dk = datdeck(m, KEYMODS[m], ident=XA38)
         path = os.path.join(HERE, '%s.%s' % (m, XA38))
         n = dk.write(path)
