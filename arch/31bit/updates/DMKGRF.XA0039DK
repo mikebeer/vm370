@@ -1,0 +1,9 @@
+./ R 01705990          $ 01706090 100                                           
+*  WAS MVC 748(R1,1),INSTWRD1 -- ZAP THE 'VM/370 ONLINE'       XA0039DK         
+*  SCREEN WITH THE '7' OR '8' CE'S SYSTEM/380 PROBE LEFT IN    XA0039DK         
+*  THE PSA. THIS IS NOT SYSTEM/380. THE SCREEN TABLES ARE      XA0039DK         
+*  UNTOUCHED, SO THE LOGO KEEPS ITS OWN TEXT. I-179.           XA0039DK         
+         DS    0H             THE ZAP IS GONE                  XA0039DK         
+./ R 01708960          $ 01709060 100                                           
+*  AND THE SAME ZAP ON THE BIG LOGO SCREEN. I-179.             XA0039DK         
+         DS    0H             THE ZAP IS GONE                  XA0039DK         

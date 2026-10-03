@@ -9,6 +9,12 @@
 *  READ; THE TM CSW+4,ATTN BELOW IS ONLY REACHED ON CC1,       XA0021DK         
 *  WHERE XABTIO HAS BUILT THE CSW.                             XA0021DK         
          XABTIO               CLEAR PENDING STATUS, IF ANY     XA0021DK         
+./ R 01523100          $ 01523110 010                                           
+*  WAS MVC EBCLMSG+8(1),INSTWRD1 -- ZAP THE '7' OF VM/370      XA0021DK         
+*  WITH THE '7' OR '8' CE'S SYSTEM/380 PROBE LEFT IN THE PSA.  XA0021DK         
+*  THE LITERAL BELOW NOW READS VM/370+ AND MUST NOT BE         XA0021DK         
+*  OVERWRITTEN. I-179.                                         XA0021DK         
+         DS    0H             THE ZAP IS GONE                  XA0021DK         
 ./ R 01624147          $ 01624148 001                                           
 *  SSCH. BC 13 BELOW IS UNTOUCHED.                             XA0021DK         
          XABSIO               ATTEMPT TO START THE I/O         XA0021DK         
@@ -19,6 +25,12 @@
 *  THE PAIR CNSTSIO1 TESTS WITH BCR 8,R2 AND BC 1,CNSICC3.     XA0021DK         
          XABHIO               CLEAR UCW                        XA0021DK         
          XABCIO               CLEAR CC=3 CONDITION             XA0021DK         
+./ R 01701000          $ 01701100 100                                           
+*  WAS C' VM/370 ONLINE '. EBCLMSGL IS COMPUTED AS *-EBCLMSG   XA0021DK         
+*  SO THE EXTRA BYTE NEEDS NO OTHER CHANGE, AND THE ONLY       XA0021DK         
+*  FIXED-OFFSET READER OF THIS MESSAGE WAS THE ZAP REMOVED AT  XA0021DK         
+*  01523100. I-179.                                            XA0021DK         
+EBCLMSG  DC    X'151515',C' VM/370+ Online '                   XA0021DK         
 ./ I 01724000 $ 01724010 010                                                    
 *  XAIOB WORK AREAS AND SHIMS, BEFORE THE LTORG AND AFTER THE  XA0021DK         
 *  DC CONSTANTS, SO NOTHING FALLS INTO IT AND THE CALLERS'     XA0021DK         

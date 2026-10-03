@@ -155,6 +155,21 @@ CPISCHIB DS    13F            52 BYTES = SCHIBSIZ, FULLWORD    XA0013DK
 CPIDSAVE DS    3F             SSID, SCHNO, COUNT               XA0013DK         
 CPISSID0 DC    X'00010000'    SUBSYSTEM ID PREFIX, LCSS 0      XA0013DK         
 CPINSCH  EQU   256            SUBCHANNELS PROBED AT IPL        XA0013DK         
+./ R 02140100          $ 02140110 010                                           
+*  WAS C'VM/370 COMMUNITY EDITION VERSION '. CPIVER, CPIREL    XA0013DK         
+*  AND CPILEV FOLLOW AS SEPARATE DCs AND STMSGL IS *-STMSG,    XA0013DK         
+*  SO THE EXTRA BYTE SHIFTS NOTHING THAT IS ADDRESSED BY       XA0013DK         
+*  NAME. THE ONE FIXED-OFFSET READER WAS THE ZAP REMOVED AT    XA0013DK         
+*  02287560. I-179.                                            XA0013DK         
+         DC    C'VM/370+ Community Edition Version '           XA0013DK         
+./ R 02287560          $ 02287561 001                                           
+*  WAS MVI STMSG+7,C'8' -- 'TELL THEM THIS IS SYSTEM/380'. IT  XA0013DK         
+*  IS NOT: THIS IS A 31-BIT ESA/390 CONVERSION ON THE WAY TO   XA0013DK         
+*  64-BIT, AND THE NAME IS VM/370+. THE MVI INSTWRD1,C'8'      XA0013DK         
+*  ABOVE IS LEFT ALONE -- THE BSM PROBE DID SUCCEED AND THAT   XA0013DK         
+*  IS WORTH RECORDING -- BUT NOTHING MAY PAINT IT OVER THE     XA0013DK         
+*  BANNER. I-179.                                              XA0013DK         
+         DS    0H             THE ZAP IS GONE                  XA0013DK         
 ./ R 02785000          $ 02785010 010                                           
 *  WAS TIMETEST EQU * -- THE HEAD OF A POLL ON THE INTERVAL    XA0013DK         
 *  TIMER AT X'50'. 370-XA DELETED THAT TIMER (PoO APPENDIX     XA0013DK         

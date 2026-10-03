@@ -65,6 +65,7 @@ XA35 = 'XA0035DK'
 XA36 = 'XA0036DK'
 XA37 = 'XA0037DK'
 XA38 = 'XA0038DK'
+XA39 = 'XA0039DK'
 
 
 def psa():
@@ -1422,6 +1423,31 @@ def dmkcpi():
         "CPINSCH  EQU   256            SUBCHANNELS PROBED AT IPL",
     ])
 
+    # --- The name, on the console banner.  See the longer note in dmkcns():
+    #     CE's System/380 probe zaps a C'8' over the C'7' of "VM/370" in three
+    #     places.  We are not taking the /380 route, so the banner is VM/370+.
+    d.replace('02140100', first='02140110', inc=10,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '02140100'),
+              lines=Deck.comment(
+        "WAS C'VM/370 COMMUNITY EDITION VERSION '. CPIVER, CPIREL AND "
+        "CPILEV FOLLOW AS SEPARATE DCs AND STMSGL IS *-STMSG, SO THE EXTRA "
+        "BYTE SHIFTS NOTHING THAT IS ADDRESSED BY NAME. THE ONE "
+        "FIXED-OFFSET READER WAS THE ZAP REMOVED AT 02287560. I-179.") + [
+        "         DC    C'VM/370+ Community Edition Version '",
+    ])
+
+    # 02287580 is the next surviving record, twenty away, so number by one.
+    d.replace('02287560', first='02287561', inc=1,
+              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '02287560'),
+              lines=Deck.comment(
+        "WAS MVI STMSG+7,C'8' -- 'TELL THEM THIS IS SYSTEM/380'. IT IS NOT: "
+        "THIS IS A 31-BIT ESA/390 CONVERSION ON THE WAY TO 64-BIT, AND THE "
+        "NAME IS VM/370+. THE MVI INSTWRD1,C'8' ABOVE IS LEFT ALONE -- THE "
+        "BSM PROBE DID SUCCEED AND THAT IS WORTH RECORDING -- BUT NOTHING "
+        "MAY PAINT IT OVER THE BANNER. I-179.") + [
+        "         DS    0H             THE ZAP IS GONE",
+    ])
+
     # --- Wall 19.  The interval timer does not exist in 370-XA, and CP
     #     refuses to start without it.  `TIMETEST` reads location X'50',
     #     polls it 40,000 times for a change, writes "Turn on the Interval
@@ -2603,6 +2629,23 @@ def dmkcns():
         "         XABTIO               CLEAR PENDING STATUS, IF ANY",
     ])
 
+    # --- The name.  CE's HRC370DK probes for System/380 and, when the probe
+    #     succeeds, zaps a C'8' over the C'7' in three "VM/370" literals so the
+    #     system announces itself as VM/380.  We are NOT taking the /380 route:
+    #     this is a 31-bit ESA/390 conversion on the way to 64-bit, so the name
+    #     is VM/370+.  The probe itself is left alone -- it records a true fact
+    #     about the machine in INSTWRD1 byte 0 -- but nothing may overwrite the
+    #     banner with it.  Byte 0 is display-only; bytes 1-3 are the LDEVCTL
+    #     pointer that DMKCFP, DMKGRF and HDKD7C use, and MVI touches only
+    #     byte 0, so removing these readers changes no behaviour.
+    d.replace('01523100', first='01523110', inc=10, limit=nxt('01523100'),
+              lines=Deck.comment(
+        "WAS MVC EBCLMSG+8(1),INSTWRD1 -- ZAP THE '7' OF VM/370 WITH THE "
+        "'7' OR '8' CE'S SYSTEM/380 PROBE LEFT IN THE PSA. THE LITERAL "
+        "BELOW NOW READS VM/370+ AND MUST NOT BE OVERWRITTEN. I-179.") + [
+        "         DS    0H             THE ZAP IS GONE",
+    ])
+
     # Records here are spaced by seven, so number by one.
     d.replace('01624147', first='01624148', inc=1, limit=nxt('01624147'),
               lines=Deck.comment(
@@ -2618,6 +2661,14 @@ def dmkcns():
         "TESTS WITH BCR 8,R2 AND BC 1,CNSICC3.") + [
         "         XABHIO               CLEAR UCW",
         "         XABCIO               CLEAR CC=3 CONDITION",
+    ])
+
+    d.replace('01701000', first='01701100', inc=100, limit=nxt('01701000'),
+              lines=Deck.comment(
+        "WAS C' VM/370 ONLINE '. EBCLMSGL IS COMPUTED AS *-EBCLMSG SO THE "
+        "EXTRA BYTE NEEDS NO OTHER CHANGE, AND THE ONLY FIXED-OFFSET "
+        "READER OF THIS MESSAGE WAS THE ZAP REMOVED AT 01523100. I-179.") + [
+        "EBCLMSG  DC    X'151515',C' VM/370+ Online '",
     ])
 
     d.insert('01724000', first='01724010', inc=10, limit=nxt('01724000'),
@@ -3353,6 +3404,44 @@ KEYMODS = {
             "INSTRUCTION, AND NOTHING IS LOST BECAUSE BOTH HALVES WERE "
             "ALREADY BEING SET THE SAME. I-177.") + [
             "         SSKE  R6,R7          ZERO KEY, WHOLE 4 KB PAGE",
+        ]),
+    ],
+}
+
+
+# ---------------------------------------------------------------------------
+# The name.  I-179.
+#
+# CE's `HRC370DK` probes for System/380 -- a program-check trap around a `BSM`
+# -- and when the probe succeeds it zaps a C'8' over the C'7' of "VM/370" in
+# three separate literals, so the system announces itself as VM/380.
+#
+# This project is not taking that route.  It is a 31-bit ESA/390 conversion on
+# the way to 64-bit, so the name is **VM/370+**.  The probe is left in place
+# because it records a true fact about the machine in `INSTWRD1` byte 0, but
+# nothing may paint that byte over a banner.  Byte 0 is display-only; bytes 1-3
+# hold the LDEVCTL pointer used by DMKCFP, DMKGRF and HDKD7C, and `MVI` writes
+# only byte 0, so removing the three readers changes no behaviour at all.
+#
+# DMKCPI's console banner and DMKCNS's "VM/370 Online" are handled in their own
+# decks, where the literal and its zap sit in one module.  DMKGRF is different:
+# its two zaps write into 3270 logo SCREEN DATA at fixed displacements rather
+# than into a named literal, so they are removed and the logo keeps whatever the
+# screen tables already say.  Putting the `+` into the logo itself needs the
+# FMT77 screen layout and is deliberately left for later -- the point here is
+# that nothing says /380 any more, not that everything says /370+.
+NAMEMODS = {
+    'DMKGRF': [
+        ('01705990', Deck.comment(
+            "WAS MVC 748(R1,1),INSTWRD1 -- ZAP THE 'VM/370 ONLINE' SCREEN "
+            "WITH THE '7' OR '8' CE'S SYSTEM/380 PROBE LEFT IN THE PSA. "
+            "THIS IS NOT SYSTEM/380. THE SCREEN TABLES ARE UNTOUCHED, SO "
+            "THE LOGO KEEPS ITS OWN TEXT. I-179.") + [
+            "         DS    0H             THE ZAP IS GONE",
+        ]),
+        ('01708960', Deck.comment(
+            "AND THE SAME ZAP ON THE BIG LOGO SCREEN. I-179.") + [
+            "         DS    0H             THE ZAP IS GONE",
         ]),
     ],
 }
@@ -5286,6 +5375,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA36, 'ESA/390 DAT TABLES: RENAMES, MASKS AND ADDRESS SPLITS')])
         print('%-8s %-9s %3d cards  %s' % (m, XA36, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(NAMEMODS):
+        dk = datdeck(m, NAMEMODS[m], ident=XA39)
+        path = os.path.join(HERE, '%s.%s' % (m, XA39))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA39, 'THE NAME IS VM/370+, NOT VM/380')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA39, n,
               'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(KEYMODS):
