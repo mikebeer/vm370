@@ -292,7 +292,10 @@ def main():
     # there.  The VMFMAC/VMFASM block still follows, so a command can set
     # something up for an assembly.
     if '--bare' not in sys.argv:
-        rc.append('/cpacc\npause 25\n')
+        # 25 -> 15.  Measured at 8 seconds on 3 October (pacing.py over
+        # n1.log), and a failed CPACC is caught loudly: every later readcard
+        # and vmfasm fails and `asmchk` says so.  I-193.
+        rc.append('/cpacc\npause 15\n')
     for text, secs, guest in cmd:
         rc.append('%s%s\npause %d\n' % ('/' if guest else '', text, secs))
     for lib in mac:

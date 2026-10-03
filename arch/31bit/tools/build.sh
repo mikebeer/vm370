@@ -298,13 +298,27 @@ asmonly)
   run a1 || exit 1; chk a1 S/370 || exit 1; asmchk a1 || exit 1
   ;;
 write)
+  # I-193, cycle time.  vmfload was given 180 seconds and MEASURED at 10 --
+  # pacing.py over 3 October's n1.log, reading consecutive `Ready; T=` clock
+  # stamps -- and `cp ipl 00c` was given 150 for a standalone loader that
+  # prints `Nucleus loaded` and reaches its disabled wait well inside a
+  # minute.  Both cuts are safe for the same reason mkrun already cut its
+  # readcard pauses: the post-check is loud.  A short vmfload shows up as a
+  # missing `SYSTEM LOAD DECK COMPLETE`, and a short loader run as a missing
+  # `00000012`, which this verb already refuses to continue past.  330 seconds
+  # of pause becomes 100, on every write, and a write happens every cycle.
   w || exit 1
   arch S/370
   mk n1 "cmd:cp purge rdr all:10" "cmd:cp spool punch to *:10" \
-        "cmd:vmfload cpload dmklcl:180" "cmd:cp close punch:15" \
-        "cmd:cp ipl 00c:150" || exit 1
+        "cmd:vmfload cpload dmklcl:40" "cmd:cp close punch:15" \
+        "cmd:cp ipl 00c:60" || exit 1
   run n1 || exit 1; chk n1 S/370 || exit 1
   grep -E "Nucleus loaded|LOAD DECK COMPLETE|DISABLED WAIT" "$C/n1.log" | tail -3
+  # Both halves are now checked, not just the second.  With the pauses cut
+  # (I-193) a vmfload that did not finish must fail here rather than produce a
+  # short load deck that the loader then writes as a nucleus.
+  grep -q "LOAD DECK COMPLETE" "$C/n1.log" || {
+    echo "### VMFLOAD DID NOT COMPLETE -- raise its pause"; exit 1; }
   grep -q "00000012" "$C/n1.log" || { echo "### NUCLEUS WRITE FAILED"; exit 1; }
   # 6A1 now holds the ESA/390 nucleus.  I-191.
   : > "$C/.written"
@@ -330,6 +344,13 @@ test)
   # and remember that a line typed at a 3215 with no outstanding read is
   # DISCARDED with no error and no trace, so `cold` arriving unanswered proves
   # nothing on its own.
+  # I-193: ipl 6A1 was given 200 seconds and the Start prompt is up in about
+  # 25 -- measured on 3 October by watching t1.log once a second while the run
+  # booted.  60 keeps a margin of more than two, and a prompt that has not
+  # arrived fails loudly: the `/` and `cold` that follow are discarded by a
+  # 3215 with no outstanding read, so the dialogue never completes and
+  # wrong_arch() plus the missing CP messages say so. 140 seconds off every
+  # test.
   w || exit 1
   shift || true
   arch ESA/390
@@ -342,7 +363,7 @@ test)
   if test $seen = no; then post=("${pre[@]}"); pre=(); fi
   test ${#post[@]} -gt 0 || post=("herc:stop:6")
   mk t1 --bare "herc:pgmtrace +1:3" "herc:pgmtrace +2:3" "herc:pgmtrace +5:3" \
-     "herc:pgmtrace +6:3" ${pre[@]+"${pre[@]}"} "herc:ipl 6A1:200" \
+     "herc:pgmtrace +6:3" ${pre[@]+"${pre[@]}"} "herc:ipl 6A1:60" \
      "${post[@]}" \
      "herc:stop:6" "herc:psw:5" "herc:r 80.20:5" "herc:gpr:6" \
      "herc:cr:6" || exit 1
