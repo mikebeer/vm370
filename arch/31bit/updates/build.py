@@ -4035,6 +4035,16 @@ STORMODS = {
     # module.  The STORAGE = nnnnnK message grows to six digits with it, since
     # 262144K has six; DMKCVTBD returns eight zero-filled digits in R0:R1 and
     # the original already showed leading zeros below 10 MB.
+    # DMKDIR is the DIRECT command -- a standalone CP utility, built into the
+    # CMS DIRECT MODULE with LOAD and GENMOD -- and it refused 32M, 64M and
+    # 256M at CE's own console: DMKDIR751E INVALID OPERAND.  One compare, the
+    # same 16 MB, the same 256 MB ceiling.  UMACMCOR is a fullword and needs
+    # nothing.  I-203.
+    'DMKDIR': [
+        ('01133000', [
+            "         CL    R3,=F'268435456' OVER THE MAX, 256M?",
+        ]),
+    ],
     'DMKDEH': [
         ('00170000', [
             "         C     R0,F6          PARM COUNT OVER 6 ? (000000K)",
