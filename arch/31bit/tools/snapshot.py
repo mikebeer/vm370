@@ -193,17 +193,28 @@ def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
     # would pass: `APPLYING` alone proves the deck was read, `TXTLCL CREATED`
     # alone proves something was assembled.  Together they prove this run did it.
     need = patched_modules(updates) if purpose == 'build' else []
+    validate.proven = set()
+    if purpose == 'build':
+        for m in patched_modules(updates):
+            if re.search(r"APPLYING '%s XA\d+DK" % m, text) \
+                    and ('%s TXTLCL CREATED' % m) in text:
+                validate.proven.add(m)
     if parent_inputs is not None and purpose == 'build':
+        # A derived snapshot: whatever this log does not prove is simply not
+        # in it yet -- the same STALE state a deck changed after the snapshot
+        # produces, reported by name by check() and restorable with
+        # ALLOW_STALE.  It is not INVALID: the shadow files are a real,
+        # consistent build state, the parent's plus these assemblies.  Only a
+        # shared input (COPY, MACRO, EXEC) that changed makes the parent's
+        # assemblies unusable, and that is the one derived case that stays
+        # invalid.  I-198, corrected after SNAP-I203 was refused for a deck
+        # that merely existed, unassembled, when it was taken.
         now = fingerprints(updates)
-        changed = set()
         for k in set(now) | set(parent_inputs):
-            if parent_inputs.get(k) != now.get(k):
-                o = owners(k)
-                if o is None:
-                    changed = set(need)      # shared input: everything
-                    break
-                changed |= o
-        need = sorted(m for m in need if m in changed)
+            if parent_inputs.get(k) != now.get(k) and owners(k) is None:
+                bad.append('shared input %s changed since the parent, which '
+                           'invalidates every module the parent proved' % k)
+        return bad
     noapply, notext = [], []
     for m in need:
         if not re.search(r"APPLYING '%s XA\d+DK" % m, text):
@@ -217,6 +228,20 @@ def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
         bad.append('no TXTLCL CREATED for %d patched module(s): %s'
                    % (len(notext), ' '.join(notext)))
     return bad
+
+
+def derived_inputs(parent_inputs, proven, updates=UPDATES):
+    """The input fingerprints a derived snapshot INCORPORATES: the parent's,
+    plus the current ones for modules this build proved.  Anything else that
+    changed stays at the parent's value, so check() reports it stale by
+    name instead of calling the snapshot current."""
+    now = fingerprints(updates)
+    out = dict(parent_inputs)
+    for k, v in now.items():
+        o = owners(k)
+        if o is None or o <= proven:
+            out[k] = v
+    return out
 
 
 def take(ce, name, log, purpose='build', parent=None):
@@ -268,6 +293,9 @@ def take(ce, name, log, purpose='build', parent=None):
         for b in bad:
             print('      - %s' % b, file=sys.stderr)
         return 1
+    if parent_inputs is not None:
+        man['inputs'] = derived_inputs(parent_inputs, validate.proven)
+        man['proven'] = sorted(validate.proven)
     man['state'] = 'valid'
     man['reason'] = []
     man['evidence'] = {'modules_with_text': len(man['modules']),
@@ -327,6 +355,9 @@ def adopt(ce, name, log, parent=None):
         for b in bad:
             print('      - %s' % b, file=sys.stderr)
         return 1
+    if parent_inputs is not None:
+        man['inputs'] = derived_inputs(parent_inputs, validate.proven)
+        man['proven'] = sorted(validate.proven)
     man['state'] = 'valid'
     man['reason'] = []
     write_manifest(d, man)
