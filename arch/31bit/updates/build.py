@@ -86,6 +86,7 @@ XA40 = 'XA0040DK'
 XA41 = 'XA0041DK'
 XA42 = 'XA0042DK'
 XA43 = 'XA0043DK'
+XA44 = 'XA0044DK'
 
 
 def psa():
@@ -4022,6 +4023,128 @@ GUESTMODS = {
     ],
 }
 
+CONSMODS = {
+
+    # I-207.  The console could not look above 16 MB in a 32M machine: DISPLAY
+    # and STORE take a hexloc of at most six digits (DMKCDB FLDLEN = F6, DMKCDS
+    # CL R0,F6 twice), and DISPLAY printed every address through STCM
+    # R0,B'0011' -- the low six of DMKCVTBH's eight digits.  Eight digits now:
+    # the hexloc may be eight, and the line header is eight digits followed by
+    # two blanks, so data still starts at BUFBUF+10 and nothing else moves.
+    # The 'addr TO addr text' lines (suppressed, non-addressable, KEY) grow by
+    # two: TO at +9, the second address at +12, text at +21 (was +19) or +20
+    # their byte counts follow; the KEY = line keeps its two blanks (+21, +27, 29).  DMKCVTHB itself takes any
+    # length.  I-207.
+    'DMKCDS': [
+        ('00408000', [
+            "         CL    R0,F8          FIELD LONGER THAN EIGHT CHARS ?",
+        ]),
+        ('00459000', [
+            "         C     R0,F8          ADDRESS FIELD LONGER THAN 8 ?",
+        ]),
+    ],
+    'DMKCDB': [
+        ('00657000', [
+            "         MVC   FLDLEN(4),F8   SET MAX FIELD LENGTH, 8 DIGITS",
+        ]),
+        # non-addressable page, 'addr TO addr NON-ADDRESSABLE STORAGE'
+        ('00982100', '00983100', [
+            "         STCM  R0,B'1111',BUFBUF EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+4",
+        ]),
+        ('00985000', '00987000', [
+            "         MVC   BUFBUF+9(2),=C'TO'",
+            "         MVC   BUFBUF+21(23),=C'NON-ADDRESSABLE STORAGE'",
+            "         MVC   BFRCNT,=AL2(21+23) SET BYTE COUNT",
+        ]),
+        ('00993100', '00994100', [
+            "         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+16",
+        ]),
+        # I-209.  DISPLAY K (GETKEY) was converted only as far as the STE
+        # (XA0036DK); the page half still read a 2-byte PTE, a 16-entry swap
+        # table at PTO+40, and ISK -- an operation exception on ESA/390, so
+        # `d kff0000` took CP down with PRG001.  The page number is eight bits
+        # at 12-19, the swap entry is PAGSWPE bytes at PAGTSWP from the table
+        # header, the PTE is a fullword with PAGINV in byte 2, and the real
+        # key comes from ISKE on the 4 KB frame (R-12: one key per frame).
+        ('01062200', '01081000', [
+            "         L     R2,0(,R3)      THE STE",
+            "         LR    R3,R2          ...",
+            "         N     R3,=A(SEGPTOM) PAGE TABLE ORIGIN",
+            "         N     R2,=A(SEGPTLF) PTL, UNITS OF 16 ENTRIES",
+            "         LA    R2,1(,R2)      ...",
+            "         SLL   R2,4           PAGES IN THIS SEGMENT",
+            "         SR    R14,R14        ZERO WORK REGISTER",
+            "         SLDL  R14,8          PAGE NUMBER, BITS 12-19",
+            "         CR    R14,R2         WITHIN THE PAGE TABLE ?",
+            "         BNL   INVDKEY        NO - THATS MORE THAN WE HAVE",
+            "         SLL   R14,3          TIMES PAGSWPE",
+            "         LA    R2,PAGTSWP-(PAGPFRA-PAGSTMP)+8(,R3) SWPFLAG 0",
+            "         SRL   R14,1          SET UP FOR 2ND HALF PAGE",
+            "         SLDL  R14,1          ADD 1 IF 2ND HALF OF PAGE",
+            "         SR    R1,R1          ZERO REGISTER",
+            "         IC    R1,SWPKEY1-SWPFLAG(R14,R2) VIRTUAL KEY",
+            "         SRL   R14,1          PAGE NUMBER TIMES 4",
+            "         LA    R3,0(R14,R3)   LOAD PAGE TABLE ENTRY ADDRESS",
+            "         SR    R2,R2          CLEAR FOR ISKE (OR LACK OF IT)",
+            "         TM    2(R3),PAGINV   IS THE PAGE IN STORAGE ?",
+            "         BO    GOTPART        BRANCH IF NO",
+            "         L     R14,0(,R3)     THE PTE",
+            "         N     R14,=A(PAGPFRM) REAL PAGE ADDRESS",
+            "         ISKE  R2,R14         GET THE REAL STORAGE KEY",
+        ]),
+        # DISPLAY KEY: 'addr TO addr KEY = kk'
+        ('01100000', [
+            "         MVC   BUFBUF+21(5),KEYEQ  MOVE 'KEY =' TO BUFFER",
+        ]),
+        ('01103000', '01104000', [
+            "         STH   R1,BUFBUF+27   STORE KEY IN BUFFER",
+            "         LA    R1,29          STANDARD LINE LENGTH",
+        ]),
+        ('01107000', [
+            "         MVC   BUFBUF+21(23),=C'NON-ADDRESSABLE STORAGE'",
+        ]),
+        ('01112100', '01114000', [
+            "         STCM  R0,B'1111',BUFBUF EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+4",
+            "         MVC   BUFBUF+9(2),=C'TO'",
+        ]),
+        ('01118100', '01119100', [
+            "         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+16",
+        ]),
+        # suppressed duplicate lines: 'addr TO addr SUPPRESSED ...'
+        ('01379100', '01380100', [
+            "         STCM  R0,B'1111',BUFBUF EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+4",
+        ]),
+        ('01382000', '01384000', [
+            "         MVC   BUFBUF+9(2),=C'TO'",
+            "         MVC   BUFBUF+21(L'SUPPLMSG),SUPPLMSG MESSAGE TEXT",
+            "         MVC   BFRCNT,=AL2(L'SUPPLMSG+21) SET BYTE COUNT",
+        ]),
+        ('01400100', '01401100', [
+            "         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+16",
+        ]),
+        # the ordinary line header: eight digits, data at +10 as before
+        ('01408100', '01409100', [
+            "         STCM  R0,B'1111',BUFBUF EIGHT DIGITS",
+            "         STCM  R1,B'1111',BUFBUF+4",
+        ]),
+        ('01428000', [
+            "         ISKE  R1,R2          GET THE REAL STUFF, 4 KB FRAME",
+        ]),
+        # GETKEY now names PAGTSWP, PAGPFRA, PAGSTMP, SWPKEY1 and SWPFLAG,
+        # which live in CORE COPY; DMKCDB never copied it (it wrote 16*2+8).
+        ('01669000', [
+            "         COPY  VMBLOK",
+            "         COPY  CORE",
+        ]),
+    ],
+}
+
 STORMODS = {
 
     # I-203.  DEFINE STORAGE 32M answered STORAGE MISSING OR INVALID -- not the
@@ -6166,6 +6289,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA42, 'VIRTUAL STORAGE ABOVE 16 MB: THE 256 MB CEILING')])
         print('%-8s %-9s %3d cards  %s' % (m, XA42, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(CONSMODS):
+        dk = datdeck(m, CONSMODS[m], ident=XA44)
+        path = os.path.join(HERE, '%s.%s' % (m, XA44))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA44, 'DISPLAY AND STORE: EIGHT-DIGIT HEXLOC, ABOVE 16 MB')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA44, n,
               'OK' if not verify(path) else 'BAD'))
 
     bld = dmkbld()

@@ -1,0 +1,69 @@
+./ R 00657000          $ 00657100 100                                           
+         MVC   FLDLEN(4),F8   SET MAX FIELD LENGTH, 8 DIGITS   XA0044DK         
+./ R 00982100 00983100 $ 00982200 100                                           
+         STCM  R0,B'1111',BUFBUF EIGHT DIGITS                  XA0044DK         
+         STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
+./ R 00985000 00987000 $ 00985100 100                                           
+         MVC   BUFBUF+9(2),=C'TO'                              XA0044DK         
+         MVC   BUFBUF+21(23),=C'NON-ADDRESSABLE STORAGE'       XA0044DK         
+         MVC   BFRCNT,=AL2(21+23) SET BYTE COUNT               XA0044DK         
+./ R 00993100 00994100 $ 00993200 100                                           
+         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS               XA0044DK         
+         STCM  R1,B'1111',BUFBUF+16                            XA0044DK         
+./ R 01062200 01081000 $ 01062300 100                                           
+         L     R2,0(,R3)      THE STE                          XA0044DK         
+         LR    R3,R2          ...                              XA0044DK         
+         N     R3,=A(SEGPTOM) PAGE TABLE ORIGIN                XA0044DK         
+         N     R2,=A(SEGPTLF) PTL, UNITS OF 16 ENTRIES         XA0044DK         
+         LA    R2,1(,R2)      ...                              XA0044DK         
+         SLL   R2,4           PAGES IN THIS SEGMENT            XA0044DK         
+         SR    R14,R14        ZERO WORK REGISTER               XA0044DK         
+         SLDL  R14,8          PAGE NUMBER, BITS 12-19          XA0044DK         
+         CR    R14,R2         WITHIN THE PAGE TABLE ?          XA0044DK         
+         BNL   INVDKEY        NO - THATS MORE THAN WE HAVE     XA0044DK         
+         SLL   R14,3          TIMES PAGSWPE                    XA0044DK         
+         LA    R2,PAGTSWP-(PAGPFRA-PAGSTMP)+8(,R3) SWPFLAG 0   XA0044DK         
+         SRL   R14,1          SET UP FOR 2ND HALF PAGE         XA0044DK         
+         SLDL  R14,1          ADD 1 IF 2ND HALF OF PAGE        XA0044DK         
+         SR    R1,R1          ZERO REGISTER                    XA0044DK         
+         IC    R1,SWPKEY1-SWPFLAG(R14,R2) VIRTUAL KEY          XA0044DK         
+         SRL   R14,1          PAGE NUMBER TIMES 4              XA0044DK         
+         LA    R3,0(R14,R3)   LOAD PAGE TABLE ENTRY ADDRESS    XA0044DK         
+         SR    R2,R2          CLEAR FOR ISKE (OR LACK OF IT)   XA0044DK         
+         TM    2(R3),PAGINV   IS THE PAGE IN STORAGE ?         XA0044DK         
+         BO    GOTPART        BRANCH IF NO                     XA0044DK         
+         L     R14,0(,R3)     THE PTE                          XA0044DK         
+         N     R14,=A(PAGPFRM) REAL PAGE ADDRESS               XA0044DK         
+         ISKE  R2,R14         GET THE REAL STORAGE KEY         XA0044DK         
+./ R 01100000          $ 01100100 100                                           
+         MVC   BUFBUF+21(5),KEYEQ  MOVE 'KEY =' TO BUFFER      XA0044DK         
+./ R 01103000 01104000 $ 01103100 100                                           
+         STH   R1,BUFBUF+27   STORE KEY IN BUFFER              XA0044DK         
+         LA    R1,29          STANDARD LINE LENGTH             XA0044DK         
+./ R 01107000          $ 01107100 100                                           
+         MVC   BUFBUF+21(23),=C'NON-ADDRESSABLE STORAGE'       XA0044DK         
+./ R 01112100 01114000 $ 01112200 100                                           
+         STCM  R0,B'1111',BUFBUF EIGHT DIGITS                  XA0044DK         
+         STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
+         MVC   BUFBUF+9(2),=C'TO'                              XA0044DK         
+./ R 01118100 01119100 $ 01118200 100                                           
+         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS               XA0044DK         
+         STCM  R1,B'1111',BUFBUF+16                            XA0044DK         
+./ R 01379100 01380100 $ 01379200 100                                           
+         STCM  R0,B'1111',BUFBUF EIGHT DIGITS                  XA0044DK         
+         STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
+./ R 01382000 01384000 $ 01382100 100                                           
+         MVC   BUFBUF+9(2),=C'TO'                              XA0044DK         
+         MVC   BUFBUF+21(L'SUPPLMSG),SUPPLMSG MESSAGE TEXT     XA0044DK         
+         MVC   BFRCNT,=AL2(L'SUPPLMSG+21) SET BYTE COUNT       XA0044DK         
+./ R 01400100 01401100 $ 01400200 100                                           
+         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS               XA0044DK         
+         STCM  R1,B'1111',BUFBUF+16                            XA0044DK         
+./ R 01408100 01409100 $ 01408200 100                                           
+         STCM  R0,B'1111',BUFBUF EIGHT DIGITS                  XA0044DK         
+         STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
+./ R 01428000          $ 01428100 100                                           
+         ISKE  R1,R2          GET THE REAL STUFF, 4 KB FRAME   XA0044DK         
+./ R 01669000          $ 01669100 100                                           
+         COPY  VMBLOK                                          XA0044DK         
+         COPY  CORE                                            XA0044DK         

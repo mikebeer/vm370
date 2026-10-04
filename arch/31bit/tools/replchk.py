@@ -87,6 +87,18 @@ def known_member(name):
     return False
 
 
+def copies_of(path):
+    """Members a COPY/MACRO file brings in itself (SAVE COPY copies further)."""
+    out = []
+    for _, t in records(path):
+        if iscomment(t) or not t.strip():
+            continue
+        m = COPYST.match(t)
+        if m and m.group(1) not in out:
+            out.append(m.group(1))
+    return out
+
+
 def copies(base):
     """Every member whose symbols a module can see.
 
@@ -317,7 +329,23 @@ def check(mod):
                 if m:
                     introduced.add(m.group(1))
     reach = set(defined) | set(newlabels)
-    for mem in copies(base):
+    members = list(copies(base))
+    # A deck may add a COPY of its own -- XA0044DK gives DMKCDB `COPY CORE`
+    # so that GETKEY can name PAGTSWP -- and that widens the module's scope
+    # exactly as a COPY in the base does (I-209).  Nested members follow.
+    for deck in decks:
+        for op, frm, to, lines in deck_cards(deck):
+            for l in lines:
+                m = COPYST.match(l)
+                if m and m.group(1) not in members:
+                    members.append(m.group(1))
+                    for ext in ('COPY', 'MACRO'):
+                        for d in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+                            q = os.path.join(d, '%s.%s' % (m.group(1), ext))
+                            if os.path.exists(q):
+                                members.extend(x for x in copies_of(q)
+                                               if x not in members)
+    for mem in members:
         syms = member_symbols(mem)
         if syms:
             reach |= syms
@@ -336,7 +364,7 @@ def check(mod):
                         'SCOPE', frm,
                         '%s is referenced here but is defined only where %s '
                         'cannot see it -- %s copies %s'
-                        % (cand, mod, mod, ' '.join(copies(base)) or 'nothing')))
+                        % (cand, mod, mod, ' '.join(members) or 'nothing')))
     return bad
 
 
