@@ -3982,6 +3982,41 @@ GUESTMODS = {
             "PRIVEXCP LA    R0,X'02'       PRIVILEGED-OPERATION EXCEPTION",
             "         B     ERREFLCT       REFLECT IT",
         ]),
+        # I-200 / wall 27.  The guest key simulation (ISK, SSK, RRB) finds the
+        # page's swap-table entry from the virtual address with S/370 geometry:
+        # byte 1 of the address is the 64 KB segment index, the high nibble of
+        # byte 2 the page within it.  For CMS's SSK on X'3F000' that is STE 3,
+        # which is not built, so the "swap table pointer" is loaded from -12
+        # and the key byte X'F0' lands in the PSA -- at X'7A' for the even half
+        # page and X'7B' for the odd: the I/O new PSW's bits 16-31.  The next
+        # I/O interrupt then loads 000CF0F0 00006698, an early specification
+        # exception, PRG006.  Measured at CMS's first instruction (w35): R9=F0,
+        # R14=3F000, real X'7A' already F0.
+        #
+        # 1 MB segments: segment index = address>>20; page within segment =
+        # bits 12-19; swap entries are PAGSWPE=8 bytes.  The half-page test on
+        # bit 20 (TM 2(R3),X'08') and SWPKEY1/SWPKEY2 are the software 2 KB
+        # keys and stay.  The two real key instructions on the same path are
+        # the deferred R-12 sites: ISK/SSK become ISKE/SSKE on the 4 KB frame
+        # (23-STORAGE-KEYS.md, "R-12 decided"); the SWPKEY1=SWPKEY2 detector
+        # is still to come.
+        ('00915000', '00917000', [
+            "         L     R7,0(,R3)      VIRTUAL ADDRESS",
+            "         SRL   R7,20          1 MB SEGMENT INDEX",
+            "         SLL   R7,2           SEGMENT TABLE ENTRY INDEX",
+        ]),
+        ('00924000', '00926000', [
+            "         L     R4,0(,R3)      VIRTUAL ADDRESS",
+            "         SRL   R4,12          PAGE NUMBER",
+            "         N     R4,F255        WITHIN ITS 1 MB SEGMENT",
+            "         SLL   R4,3           TIMES PAGSWPE, THE ENTRY SIZE",
+        ]),
+        ('00937000', [
+            "         ISKE  R4,R2          GET REAL KEY, 4 KB FRAME",
+        ]),
+        ('00974000', [
+            "         SSKE  R9,R2          SET REAL KEY, 4 KB FRAME",
+        ]),
     ],
 }
 

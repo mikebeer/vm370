@@ -18,3 +18,16 @@ S370PRIV TM    VMPSW+1,PROBMODE GUEST'S OWN PROBLEM STATE?     XA0041DK
          B     GETINST        SIMULATE AS A PRIVILEGED OP      XA0041DK         
 PRIVEXCP LA    R0,X'02'       PRIVILEGED-OPERATION EXCEPTION   XA0041DK         
          B     ERREFLCT       REFLECT IT                       XA0041DK         
+./ R 00915000 00917000 $ 00915100 100                                           
+         L     R7,0(,R3)      VIRTUAL ADDRESS                  XA0041DK         
+         SRL   R7,20          1 MB SEGMENT INDEX               XA0041DK         
+         SLL   R7,2           SEGMENT TABLE ENTRY INDEX        XA0041DK         
+./ R 00924000 00926000 $ 00924100 100                                           
+         L     R4,0(,R3)      VIRTUAL ADDRESS                  XA0041DK         
+         SRL   R4,12          PAGE NUMBER                      XA0041DK         
+         N     R4,F255        WITHIN ITS 1 MB SEGMENT          XA0041DK         
+         SLL   R4,3           TIMES PAGSWPE, THE ENTRY SIZE    XA0041DK         
+./ R 00937000          $ 00937100 100                                           
+         ISKE  R4,R2          GET REAL KEY, 4 KB FRAME         XA0041DK         
+./ R 00974000          $ 00974100 100                                           
+         SSKE  R9,R2          SET REAL KEY, 4 KB FRAME         XA0041DK         

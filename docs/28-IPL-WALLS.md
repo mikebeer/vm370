@@ -1027,6 +1027,17 @@ ILC 0: an early PSW specification exception — a PSW loaded with `F0F0` in bits
 (w33). And the dump failure is its own wall (`I-201`): DMKDMP cannot write to
 6A1, so from here every abend's registers must come from Hercules.
 
+**Cause found 06:00 (w35).** A breakpoint on CMS's first instruction, `F80A36`,
+showed real `X'7A'` already `F0`, the instruction `SSK 9,14` with R9 = `F0`,
+R14 = `3F000`, and guest page 0 at real `E78000` (so not a frame-0 mapping).
+`DMKPRV SEGOK` locates the swap-table entry for a key instruction with S/370
+geometry — byte 1 of the address as the segment, the high nibble of byte 2 as
+the page — so `3F000` indexes STE 3, which is not built, and the key byte is
+stored through a pointer loaded from −12: into the I/O new PSW, one half page
+per byte. `I-200`, XA0041DK: segment = address>>20, page = bits 12–19, and the
+two deferred R-12 real-key instructions on that path become ISKE/SSKE.
+Building (06:05).
+
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
 a load list fails exactly like a stale snapshot — convincingly, and late.
