@@ -900,7 +900,46 @@ with the pre-conversion `IOBLOK` and `RDEVBLOK` layouts. `HDKD58` and `HDKD7C`
 also allocate IOBLOKs 112 bytes too short for the ORB/IRB the new `DMKIOS`
 writes, a second silent corruptor from the same omission. None of the five has
 an S/370-only instruction; `build.sh full` now assembles them (`$HDKMODS`).
-Status: fix built, full build running, unverified. `I-194`.
+**CLOSED 02:33, 4 October.** The 19:42 full build was cut off at nine minutes;
+the nucleus that proved it came from `i194build.sh` — SNAP-0828, the twenty
+I-192 modules, then `stage asm:HDKD58 asm:HDKD7C asm:HDKD8C asm:HDKCQU
+asm:HDKCQA`, then `write` (25 clean assemblies). Under ESA/390, with the
+w21 dialogue:
+
+```
+/(0009) enable all            logo CCWs to 000A 001F 00C0-00C3, no abend
+/(0009) query dasd
+02:33:44 DASD 6A0 CP SYSTEM GCCBRX   000
+02:33:44 DASD 6A1 CP OWNED  VM50-1   003      ... 17 DASD listed
+/(0009) cp disc
+02:33:51 DISCONNECT AT 02:33:51 GMT SUNDAY 10/04/26
+/(0009) logon maint cpcms
+DASD 19D LINKED R/W; R/O BY OPERATOR
+DASD 19E LINKED R/W; R/O BY 002 USERS
+LOGON AT 02:34:11 GMT SUNDAY 10/04/26
+02:34:11 DMKDMP908I SYSTEM FAILURE; CODE FRE013 PROCESSOR 00
+```
+
+First typed operator command answered, first MAINT logon. `I-194` fixed. Before
+the fix was known, the same evening had also tried the two things this wall
+superficially suggested and both were correctly rejected by measurement rather
+than argument: the PSA interrupt vectors (`psa.py`: all five new-PSWs point at
+the right handlers) and the IOBLOK size (`IOBSIZE` is computed after the
+XA0003DK insertion, so correctly built IOBLOKs are 23 doublewords). The symptom
+that finally gave it away was the *size* in the traces: every freed block was
+11 doublewords, `IOERSIZE`, and no DMK module frees one on that path.
+
+## Wall 24 — FRE013 at `logon maint`
+
+`FRE013` is `DMKFRET`'s FRETRAP (`HRC035DK`): `DMKFREE` plants `X'9AC7E5D5'`
+in the doubleword past every block it hands out and `DMKFRET` checks for it. 013
+means the block being returned has lost its sentinel — overrun from inside, or
+returned with a different size than it was obtained with. After I-194 that is
+the right alarm to expect: anything else still sized to the old `IOBLOK`, or
+any `TSCH`/`STM` into an IOBLOK that was obtained short, trips exactly this.
+Open; `I-195`. The next measurement is a breakpoint on the `ABEND 13` itself
+(`DMKFRET+X'24'`, `40C2C`) during `logon maint`: R1 is the block, R0 its claimed
+size, and the storage around R1 says who owns it.
 
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
