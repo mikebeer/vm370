@@ -395,14 +395,23 @@ def dmkios():
     #    address in R1 and ignores its operand; SSCH takes the subsystem id
     #    in R1 and the ORB as its operand.  LH R1,IOBRADD upstream is left
     #    alone because IOSQTIO still needs the device address in R1.
-    d.replace('01206000', first='01206100', inc=10, limit='01207000',
+    d.replace('01206000', first='01206010', inc=10, limit='01207000',
               lines=Deck.comment(
         "SIO TOOK THE DEVICE ADDRESS IN R1 AND IGNORED ITS OPERAND. SSCH "
         "TAKES THE SUBSYSTEM ID IN R1 AND THE ORB AS ITS OPERAND -- THE TWO "
         "SWAP ROLES. THE LH R1,IOBRADD UPSTREAM IS LEFT ALONE BECAUSE "
-        "IOSQTIO STILL WANTS THE DEVICE ADDRESS THERE.") + [
+        "IOSQTIO STILL WANTS THE DEVICE ADDRESS THERE. A DEVICE DMKRIO "
+        "NAMES BUT THE CONFIGURATION LACKS HAS NO SUBCHANNEL AND RDEVSSID "
+        "ZERO; SIO ANSWERED CC3 FOR IT, SSCH WITH SID 0 IS AN OPERAND "
+        "EXCEPTION (PRG021, I-211). ANSWER CC3 OURSELVES.") + [
         "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
-        "         SSCH  IOBORB         START SUBCHANNEL",
+        "         LTR   R1,R1          IS THERE A SUBCHANNEL AT ALL?",
+        "         BNZ   IOSXDOSS       YES",
+        "         L     R1,=X'80000000' NO: CC3 NOT OPERATIONAL",
+        "         LCR   R1,R1          BY OVERFLOW",
+        "         B     IOSXDONE       AS SIO WOULD HAVE SAID",
+        "IOSXDOSS SSCH  IOBORB         START SUBCHANNEL",
+        "IOSXDONE DS    0H",
     ])
 
     # 3. cc1 no longer means "CSW stored", so route it through the shim.
@@ -490,7 +499,7 @@ def dmkios():
          "SEE IF IT'S REALLY BUSY")
     call('02627250', '02627260', 10, '02627300', 'IOSXTIO', 'IS IT BUSY ?')
 
-    d.insert('02651100', first='02651110', inc=10, limit='02652000',
+    d.insert('02651100', first='02651105', inc=5, limit='02652000',
              lines=Deck.comment(
         "ORB TEMPLATE. EVERYTHING EXCEPT THE CCW ADDRESS, WHICH IOSTCAW "
         "STORES. LPM MUST BE X'80': SSCH TESTS ORB.LPM AGAINST PMCW.PAM AND "
@@ -541,6 +550,8 @@ def dmkios():
         "         SPACE 1",
         "IOSXTIO  DS    0H             TSCH, WITH TIO'S CONDITION CODE",
         "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL",
+        "         BZ    IOSXNOP        ...",
         "         TSCH  IOBIRB         TEST SUBCHANNEL",
         "         BC    4,IOSXTIOF     CC1: NOTHING PENDING = FREE",
         "         BC    3,IOSXTIOX     CC2 AND CC3 PASS THROUGH",
@@ -561,14 +572,21 @@ def dmkios():
         "*  CONDITION CODES ALREADY AGREE CLOSELY ENOUGH THAT THE",
         "*  BC 8+2+1 MASKS AT THE CALL SITES ARE LEFT ALONE.",
         "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL",
+        "         BZ    IOSXNOP        ...",
         "         HSCH  0              HALT SUBCHANNEL",
         "         BR    R14",
+        "IOSXNOP  L     R1,=X'80000000' DEVICE NOT IN THE CONFIG:",
+        "         LCR   R1,R1          CC3 BY OVERFLOW, AS SIO DID",
+        "         BR    R14            ANSWERED FOR IT. I-211",
         "         SPACE 1",
         "IOSXSIO  DS    0H             SSCH FOR THE SENSE PATH",
         "         MVC   IOBORB,ORBTMPL BUILD THE ORB",
         "         MVC   IOBOPARM+2(2),IOBRADD  DEV ADDR -- I-174",
         "         MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET",
         "         L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER",
+        "         LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL",
+        "         BZ    IOSXNOP        ...",
         "         SSCH  IOBORB         START SUBCHANNEL",
         "         BR    R14",
     
@@ -4228,6 +4246,36 @@ SHRMODS = {
             "         B     NEXTPAGE       NOT OURS TO FREE",
         ]),
     ],
+    # A named system's DCSS (GCCLIB, segments 242-243) now lives in the same
+    # megabyte as CMS's shared pages, so LOADSYS reaches DMKBLDRT for a
+    # segment that already has a full table carrying another system's
+    # copies.  BLDTHEM "released the old page tables and built new ones" --
+    # 16-entry tables, in S/370 -- and DMKBLDRL's CHKPAGE abended (BLD002,
+    # AUTOLOG1 at CP init) on the first valid PTE copy.  A 256-entry table
+    # is already everything a segment can have: keep it.  And a PTE whose
+    # swap entry is SWPSHR is a copy, not an allocation: let it go.
+    'DMKBLD': [
+        ('00311000', [
+            "         TM    SEGPTO+3,SEGPTLF A FULL TABLE ALREADY?",
+            "         BO    SKIPBLD        YES - NOTHING TO BUILD",
+            "         CLI   SAVER2+3,OLDVMSEG+KEEPSEGS+NEWPAGES+NEWSEGS",
+        ]),
+        ('00626600', [
+            "         L     R1,SEGPTO      THE PTO",
+            "         N     R1,=A(SEGPTOM) ...",
+            "         LR    R0,R7          THIS PTE",
+            "         SR    R0,R1          ITS INDEX TIMES 4",
+            "         AR    R0,R0          TIMES 8: THE SWAP ENTRY",
+            "         AR    R0,R1          ...",
+            "         TM    SWPOFF(R0),SWPSHR A COPY OF A MODEL'S?",
+            "         BO    NXTPAGE        YES - NOT AN ALLOCATION",
+            "         ABEND 2              ERROR - PAGE NOT RELEASED",
+        ]),
+        ('00957000', [
+            "         COPY  TIMER",
+            "SWPOFF   EQU   PAGTSWP-(PAGPFRA-PAGSTMP)+(SWPFLAG-SWPVM)",
+        ]),
+    ],
     # DMKVMASH scans a user's shared pages for change bits.  SHRSEGNM holds
     # 64 KB segment numbers: the STE is the number's high nibble, the pages
     # are the low nibble's 16 within it (the XA0036DK card scanned the whole
@@ -6553,15 +6601,6 @@ def main():
         print('%-8s %-9s %3d cards  %s' % (m, XA42, n,
               'OK' if not verify(path) else 'BAD'))
 
-    for m in sorted(SHRMODS):
-        dk = datdeck(m, SHRMODS[m], ident=XA45)
-        path = os.path.join(HERE, '%s.%s' % (m, XA45))
-        n = dk.write(path)
-        aux(os.path.join(HERE, '%s.AUXLCL' % m),
-            [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
-        print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
-              'OK' if not verify(path) else 'BAD'))
-
     for m in sorted(CONSMODS):
         dk = datdeck(m, CONSMODS[m], ident=XA44)
         path = os.path.join(HERE, '%s.%s' % (m, XA44))
@@ -6577,6 +6616,18 @@ def main():
         [(XA34, 'BUILD ESA/390 SEGMENT AND PAGE TABLES, AND ALIGN THEM')])
     print('%-8s %-9s %3d cards  %s' % ('DMKBLD', XA34, n,
           'OK' if not verify(os.path.join(HERE, 'DMKBLD.%s' % XA34)) else 'BAD'))
+
+    # SHRMODS last: XA0045DK must sit ABOVE XA0034DK in DMKBLD.AUXLCL
+    # (applied after it), because it anchors on a card XA0034DK renumbered.
+    for m in sorted(SHRMODS):
+        dk = datdeck(m, SHRMODS[m], ident=XA45)
+        path = os.path.join(HERE, '%s.%s' % (m, XA45))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
+              'OK' if not verify(path) else 'BAD'))
+
 
     eq = equcopy()
     n = eq.write(os.path.join(HERE, 'EQU.%s' % XA37))

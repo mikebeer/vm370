@@ -329,13 +329,13 @@ def main():
     if '--herc' in a:
         herc = a[a.index('--herc') + 1]
         del a[a.index('--herc'):a.index('--herc') + 2]
-    if len(a) != 3:
-        print(__doc__)
-        return 2
     hold = False
     if '--hold' in a:
         hold = True
         a.remove('--hold')
+    if len(a) != 3:
+        print(__doc__)
+        return 2
     ce, name, stepfile = a
     steps = json.load(open(stepfile))
     return drive(ce, name, steps, herc, hold)

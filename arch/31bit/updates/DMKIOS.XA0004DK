@@ -7,14 +7,23 @@ IOSTCAW  ST    R2,CAW         KEPT -- SEE BELOW                XA0004DK
          MVC   IOBORB,ORBTMPL BUILD THE ORB -- IMPLICIT L'32   XA0004DK         
          MVC   IOBOPARM+2(2),IOBRADD  INT PARM = DEVICE ADDR   XA0004DK         
          ST    R2,IOBOCCW     CCW ADDRESS FOR THIS OPERATION   XA0004DK         
-./ R 01206000          $ 01206100 010                                           
+./ R 01206000          $ 01206010 010                                           
 *  SIO TOOK THE DEVICE ADDRESS IN R1 AND IGNORED ITS OPERAND.  XA0004DK         
 *  SSCH TAKES THE SUBSYSTEM ID IN R1 AND THE ORB AS ITS        XA0004DK         
 *  OPERAND -- THE TWO SWAP ROLES. THE LH R1,IOBRADD UPSTREAM   XA0004DK         
 *  IS LEFT ALONE BECAUSE IOSQTIO STILL WANTS THE DEVICE        XA0004DK         
-*  ADDRESS THERE.                                              XA0004DK         
+*  ADDRESS THERE. A DEVICE DMKRIO NAMES BUT THE CONFIGURATION  XA0004DK         
+*  LACKS HAS NO SUBCHANNEL AND RDEVSSID ZERO; SIO ANSWERED     XA0004DK         
+*  CC3 FOR IT, SSCH WITH SID 0 IS AN OPERAND EXCEPTION         XA0004DK         
+*  (PRG021, I-211). ANSWER CC3 OURSELVES.                      XA0004DK         
          L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
-         SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
+         LTR   R1,R1          IS THERE A SUBCHANNEL AT ALL?    XA0004DK         
+         BNZ   IOSXDOSS       YES                              XA0004DK         
+         L     R1,=X'80000000' NO: CC3 NOT OPERATIONAL         XA0004DK         
+         LCR   R1,R1          BY OVERFLOW                      XA0004DK         
+         B     IOSXDONE       AS SIO WOULD HAVE SAID           XA0004DK         
+IOSXDOSS SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
+IOSXDONE DS    0H                                              XA0004DK         
 ./ R 01241000          $ 01241100 010                                           
          BC    4,IOSXCC1      CC 1 = STATUS PENDING, NOT CSW   XA0004DK         
 ./ R 01263000          $ 01263100 100                                           
@@ -66,7 +75,7 @@ HIORLOOP STM   R14,R1,IOBXSAV  TRY AGAIN TO HALT IT            XA0004DK
          STM   R14,R1,IOBXSAV  IS IT BUSY ?                    XA0004DK         
          BAL   R14,IOSXTIO                                     XA0004DK         
          LM    R14,R1,IOBXSAV                                  XA0004DK         
-./ I 02651100 $ 02651110 010                                                    
+./ I 02651100 $ 02651105 005                                                    
 *  ORB TEMPLATE. EVERYTHING EXCEPT THE CCW ADDRESS, WHICH      XA0004DK         
 *  IOSTCAW STORES. LPM MUST BE X'80': SSCH TESTS ORB.LPM       XA0004DK         
 *  AGAINST PMCW.PAM AND PAM IS X'80', SO A ZERO LPM MEANS NO   XA0004DK         
@@ -118,6 +127,8 @@ IOSXCC1  DS    0H             ESA/390 CC 1: STATUS PENDING     XA0004DK
          SPACE 1                                               XA0004DK         
 IOSXTIO  DS    0H             TSCH, WITH TIO'S CONDITION CODE  XA0004DK         
          L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL   XA0004DK         
+         BZ    IOSXNOP        ...                              XA0004DK         
          TSCH  IOBIRB         TEST SUBCHANNEL                  XA0004DK         
          BC    4,IOSXTIOF     CC1: NOTHING PENDING = FREE      XA0004DK         
          BC    3,IOSXTIOX     CC2 AND CC3 PASS THROUGH         XA0004DK         
@@ -138,14 +149,21 @@ IOSXHIO  DS    0H             HSCH REPLACES HIO AND HDV ALIKE  XA0004DK
 *  CONDITION CODES ALREADY AGREE CLOSELY ENOUGH THAT THE       XA0004DK         
 *  BC 8+2+1 MASKS AT THE CALL SITES ARE LEFT ALONE.            XA0004DK         
          L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL   XA0004DK         
+         BZ    IOSXNOP        ...                              XA0004DK         
          HSCH  0              HALT SUBCHANNEL                  XA0004DK         
          BR    R14                                             XA0004DK         
+IOSXNOP  L     R1,=X'80000000' DEVICE NOT IN THE CONFIG:       XA0004DK         
+         LCR   R1,R1          CC3 BY OVERFLOW, AS SIO DID      XA0004DK         
+         BR    R14            ANSWERED FOR IT. I-211           XA0004DK         
          SPACE 1                                               XA0004DK         
 IOSXSIO  DS    0H             SSCH FOR THE SENSE PATH          XA0004DK         
          MVC   IOBORB,ORBTMPL BUILD THE ORB                    XA0004DK         
          MVC   IOBOPARM+2(2),IOBRADD  DEV ADDR -- I-174        XA0004DK         
          MVC   IOBOCCW,CAW    CCW ADDRESS THE CALLER SET       XA0004DK         
          L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
+         LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL   XA0004DK         
+         BZ    IOSXNOP        ...                              XA0004DK         
          SSCH  IOBORB         START SUBCHANNEL                 XA0004DK         
          BR    R14                                             XA0004DK         
 ./ R 02654000          $ 02654100 100                                           
