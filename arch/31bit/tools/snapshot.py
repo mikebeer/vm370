@@ -72,6 +72,9 @@ one the run itself made:
     python3 snapshot.py adopt <ce-dir> <name> <log>   manifest an existing one
     python3 snapshot.py check <ce-dir> <name>         valid?  and still current?
     python3 snapshot.py list  <ce-dir>                every snapshot and its state
+    python3 snapshot.py take  <ce-dir> <name> <log> --parent <snap>
+                               a DERIVED build snapshot: valid if the parent is and
+                               <log> proves every module whose inputs changed (I-198)
 
 `take` exits non-zero when it could not validate, and says why in the manifest
 as well as on stderr -- so a driver that ignores the exit status still leaves
@@ -122,8 +125,23 @@ def hercules_running():
         return -1
 
 
-def validate(log, updates=UPDATES, purpose='build'):
+def owners(filename):
+    """Which patched modules a changed input invalidates.  A deck or AUXLCL
+    names its module; anything else -- a COPY, a MACRO, the maclib EXEC -- is
+    shared by every assembly, so it names them all (None)."""
+    m = re.match(r'(DMK[A-Z0-9]+)\.(XA\d+DK|AUXLCL)$', filename)
+    return {m.group(1)} if m else None
+
+
+def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
     """Reasons this log does not prove the state the snapshot claims to be.
+
+    With `parent_inputs` -- the input fingerprints of a VALID parent snapshot
+    this one was built on top of -- the module check narrows to the modules
+    whose inputs changed since the parent: a sliced build (I-148) proves its
+    own slices, and the parent proves the rest.  A changed shared file (COPY,
+    MACRO, DMKLCL EXEC) invalidates every module, so it still needs a full
+    build.  I-198.
 
     Two purposes, because they are two different objects with opposite rules:
 
@@ -174,8 +192,20 @@ def validate(log, updates=UPDATES, purpose='build'):
     # Checking only one of the two is how a TXTLCL built from a superseded deck
     # would pass: `APPLYING` alone proves the deck was read, `TXTLCL CREATED`
     # alone proves something was assembled.  Together they prove this run did it.
+    need = patched_modules(updates) if purpose == 'build' else []
+    if parent_inputs is not None and purpose == 'build':
+        now = fingerprints(updates)
+        changed = set()
+        for k in set(now) | set(parent_inputs):
+            if parent_inputs.get(k) != now.get(k):
+                o = owners(k)
+                if o is None:
+                    changed = set(need)      # shared input: everything
+                    break
+                changed |= o
+        need = sorted(m for m in need if m in changed)
     noapply, notext = [], []
-    for m in (patched_modules(updates) if purpose == 'build' else []):
+    for m in need:
         if not re.search(r"APPLYING '%s XA\d+DK" % m, text):
             noapply.append(m)
         if ('%s TXTLCL CREATED' % m) not in text:
@@ -189,8 +219,21 @@ def validate(log, updates=UPDATES, purpose='build'):
     return bad
 
 
-def take(ce, name, log, purpose='build'):
+def take(ce, name, log, purpose='build', parent=None):
     disks = os.path.join(ce, 'disks')
+    parent_inputs = None
+    if parent:
+        pman = read_manifest(os.path.join(disks, parent))
+        if pman is None or pman.get('state') != 'valid':
+            print('### parent %s is not a VALID snapshot -- a derived snapshot '
+                  'inherits its proof and cannot stand on an invalid one'
+                  % parent, file=sys.stderr)
+            return 2
+        if pman.get('purpose', 'build') != 'build':
+            print('### parent %s is a %s snapshot, not build' %
+                  (parent, pman.get('purpose')), file=sys.stderr)
+            return 2
+        parent_inputs = pman.get('inputs', {})
     src, dst = os.path.join(disks, 'shadows'), os.path.join(disks, name)
     if not os.path.isdir(src):
         print('### no %s to snapshot' % src, file=sys.stderr)
@@ -207,7 +250,8 @@ def take(ce, name, log, purpose='build'):
            'taken': time.strftime('%Y-%m-%dT%H:%M:%S'),
            'log': os.path.basename(log),
            'inputs': fingerprints(),
-           'modules': patched_modules()}
+           'modules': patched_modules(),
+           'parent': parent}
     write_manifest(dst, man)
 
     for f in sorted(os.listdir(src)):
@@ -216,7 +260,7 @@ def take(ce, name, log, purpose='build'):
             shutil.copy2(s, os.path.join(dst, f))
     man['files'] = sorted(f for f in os.listdir(dst) if f != MANIFEST)
 
-    bad = validate(log, purpose=purpose)
+    bad = validate(log, purpose=purpose, parent_inputs=parent_inputs)
     if bad:
         man['reason'] = bad
         write_manifest(dst, man)
@@ -238,7 +282,7 @@ def take(ce, name, log, purpose='build'):
     return 0
 
 
-def adopt(ce, name, log):
+def adopt(ce, name, log, parent=None):
     """Write a manifest for a snapshot this tool did not take.
 
     Adopting is the one place a human assertion enters -- it says "this directory
@@ -266,8 +310,16 @@ def adopt(ce, name, log):
            'log': os.path.basename(log),
            'inputs': fingerprints(),
            'modules': patched_modules(),
-           'files': sorted(f for f in os.listdir(d) if f != MANIFEST)}
-    bad = validate(log)
+           'files': sorted(f for f in os.listdir(d) if f != MANIFEST),
+           'parent': parent}
+    parent_inputs = None
+    if parent:
+        pman = read_manifest(os.path.join(ce, 'disks', parent))
+        if pman is None or pman.get('state') != 'valid':
+            print('### parent %s is not a VALID snapshot' % parent, file=sys.stderr)
+            return 2
+        parent_inputs = pman.get('inputs', {})
+    bad = validate(log, parent_inputs=parent_inputs)
     if bad:
         man['reason'] = bad
         write_manifest(d, man)
@@ -372,11 +424,17 @@ def main():
         print(__doc__)
         return 2
     verb = a[0]
-    if verb == 'take' and len(a) in (4, 5):
+    if verb == 'take' and len(a) >= 4:
+        opts = a[4:]
+        parent = None
+        if '--parent' in opts:
+            parent = opts[opts.index('--parent') + 1]
         return take(a[1], a[2], a[3],
-                    'test' if (len(a) == 5 and a[4] == '--test') else 'build')
-    if verb == 'adopt' and len(a) == 4:
-        return adopt(a[1], a[2], a[3])
+                    'test' if '--test' in opts else 'build', parent=parent)
+    if verb == 'adopt' and len(a) >= 4:
+        opts = a[4:]
+        parent = opts[opts.index('--parent') + 1] if '--parent' in opts else None
+        return adopt(a[1], a[2], a[3], parent=parent)
     if verb == 'check' and len(a) in (3, 4):
         return check(a[1], a[2], a[3] if len(a) == 4 else None)
     if verb == 'list' and len(a) == 2:
