@@ -49,12 +49,22 @@ class Deck:
         self._last_anchor = None  # ascending-order check, see _anchor()
 
     # ---------------------------------------------------------------- cards
+    CONT = '\\'       # a source line ending in a backslash is a CONTINUED card
+
     def _card(self, text, with_id):
+        # A continued statement needs a non-blank in column 72.  R-04 is the
+        # record of what happens when that column is written by accident; this
+        # is the one way to write it on purpose, and it is spelt out at the
+        # call site rather than inferred from the text.  I-205.
+        cont = with_id and text.endswith(self.CONT)
+        if cont:
+            text = text[:-1].rstrip()
         limit = TEXT_COL if with_id else ID_COL
         if len(text) > limit:
             raise ValueError('source text is %d columns, limit is %d:\n  %s'
                              % (len(text), limit, text))
         card = text.ljust(ID_COL) + (self.ident if with_id else '')
+        card = card.ljust(ID_COL + 8) + ('X' if cont else '')
         card = card.ljust(WIDTH)
         assert len(card) == WIDTH, len(card)
         self.cards.append(card)
@@ -259,8 +269,10 @@ def verify(path):
         line = line.rstrip('\n')
         if len(line) != WIDTH:
             bad.append((n, 'length %d' % len(line)))
-        elif line[71:80].strip():
-            bad.append((n, 'columns 72-80 not blank'))
+        elif line[72:80].strip():
+            bad.append((n, 'columns 73-80 not blank'))
+        elif line[71] not in ' X':
+            bad.append((n, 'column 72 is %r, not blank or X' % line[71]))
     return bad
 
 

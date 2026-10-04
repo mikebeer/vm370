@@ -236,7 +236,14 @@ def check(mod):
                 last = max((i for i in range(len(recs))
                             if recs[i][0].isdigit()
                             and a <= int(recs[i][0]) <= b), default=None)
-                if last is not None and continued(recs[last][1]):
+                # I-205: a deck may now write a continuation card itself
+                # (mkdeck's trailing backslash puts the X in column 72).  If
+                # the deck's LAST new card is continued, the old continuation
+                # that follows is its continuation now, not an orphan.
+                deck_continues = bool(lines) and len(lines[-1]) > 71 \
+                    and lines[-1][71] != ' '
+                if last is not None and continued(recs[last][1]) \
+                        and not deck_continues:
                     nxt = last + 1
                     if nxt < len(recs) and int(recs[nxt][0] or 0) > b:
                         bad.append((
@@ -250,8 +257,14 @@ def check(mod):
                 first = min((i for i in range(len(recs))
                              if recs[i][0].isdigit()
                              and a <= int(recs[i][0]) <= b), default=None)
+                # ...and a deck whose new cards continue a surviving card are
+                # that card's continuation; only a deck of plain cards orphans
+                # it.  Comment cards do not count.
+                newfirst = next((l for l in lines if not iscomment(l)), '')
+                deck_is_cont = op == 'R' and newfirst[:15].strip() == '' \
+                    and newfirst.strip() != ''
                 if first and first - 1 >= 0 and continued(recs[first - 1][1]) \
-                        and (first - 1) not in replaced:
+                        and (first - 1) not in replaced and not deck_is_cont:
                     bad.append((
                         'CONT-ORPHAN', recs[first][0],
                         'this record CONTINUES %s, which is not replaced, so '
