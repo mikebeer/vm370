@@ -937,9 +937,23 @@ means the block being returned has lost its sentinel — overrun from inside, or
 returned with a different size than it was obtained with. After I-194 that is
 the right alarm to expect: anything else still sized to the old `IOBLOK`, or
 any `TSCH`/`STM` into an IOBLOK that was obtained short, trips exactly this.
-Open; `I-195`. The next measurement is a breakpoint on the `ABEND 13` itself
-(`DMKFRET+X'24'`, `40C2C`) during `logon maint`: R1 is the block, R0 its claimed
-size, and the storage around R1 says who owns it.
+**Cause found 02:50 (w24a).** The breakpoint on the `ABEND 13` SVC gave
+FREESAVE: R0 = 392 doublewords (`PAGBMP/8`, one page+swap table block),
+R1 = `6EEEEEA8`, R2 = R6 = `EEEEEEEE` — `DMKFRE`'s own `X'EE'` padding of a block
+nobody wrote. One site in CP frees `PAGBMP/8`: `DMKCFG SHRSLOOP`, the named-system
+IPL that MAINT's directory runs automatically at logon. It indexes the user's
+segment table with `SYSHRSEG` from `DMKSNT`, and CMS is defined as
+`SYSHRSG=(248,249,250)` — **S/370 64 KB segment numbers**. Index 248 into a
+16-entry 1 MB segment table lands a kilobyte past it, in EE; the "old STE" is
+garbage, and FRET's trap caught the free. `I-195`.
+
+This is the first time CP has physically hit the shared-segment geometry change
+that `04`/`05` analysed: CMS's three 64 KB segments are one ESA/390 segment, 15,
+and sharing it whole would expose the private top megabyte of every 15–16 MB
+machine. The fix is frame-level sharing (`05`), M3 — not a card. For the IPL
+proof the wall is bypassed, not solved: `LOGON MAINT CPCMS NOIPL` (suppresses the
+directory IPL), `DEF STOR 16M`, `IPL 190` — the CMS nucleus from the system disk,
+no named system involved.
 
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
