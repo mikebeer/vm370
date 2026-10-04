@@ -1,0 +1,8 @@
+./ R 00170000          $ 00170100 100                                           
+         C     R0,F6          PARM COUNT OVER 6 ? (000000K)    XA0042DK         
+./ R 00178000          $ 00178100 100                                           
+         CL    R1,=F'256'     ASKING FOR MORE THAN 256 MEG?    XA0042DK         
+./ R 00183000          $ 00183100 100                                           
+         CL    R1,=F'262144'  ASKING FOR MORE THAN 256 MEG?    XA0042DK         
+./ R 00244000          $ 00244100 100                                           
+         STCM  R0,B'0011',SAVEWRK4+1 SIX-DIGIT NUMBER          XA0042DK         

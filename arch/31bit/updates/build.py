@@ -84,6 +84,7 @@ XA38 = 'XA0038DK'
 XA39 = 'XA0039DK'
 XA40 = 'XA0040DK'
 XA41 = 'XA0041DK'
+XA42 = 'XA0042DK'
 
 
 def psa():
@@ -4020,6 +4021,35 @@ GUESTMODS = {
     ],
 }
 
+STORMODS = {
+
+    # I-203.  DEFINE STORAGE 32M answered STORAGE MISSING OR INVALID -- not the
+    # directory maximum (that is message 094, EXCEEDS ALLOWED MAXIMUM) but
+    # DMKDEH's own parser: CL R1,F16 for nnM and CL R1,=F'16384' for nnnnnK,
+    # and a five-character limit on the K form.  The ceiling the converted CP
+    # can actually honour today is 256 MB: DMKBLDRT takes its page range as
+    # two 16-bit page numbers (I-185), so 65,536 pages.  That is the number
+    # here -- a parameter named in one place, not a guess spread over three --
+    # and raising it further is M5 work on the DMKBLD interface, not on this
+    # module.  The STORAGE = nnnnnK message grows to six digits with it, since
+    # 262144K has six; DMKCVTBD returns eight zero-filled digits in R0:R1 and
+    # the original already showed leading zeros below 10 MB.
+    'DMKDEH': [
+        ('00170000', [
+            "         C     R0,F6          PARM COUNT OVER 6 ? (000000K)",
+        ]),
+        ('00178000', [
+            "         CL    R1,=F'256'     ASKING FOR MORE THAN 256 MEG?",
+        ]),
+        ('00183000', [
+            "         CL    R1,=F'262144'  ASKING FOR MORE THAN 256 MEG?",
+        ]),
+        ('00244000', [
+            "         STCM  R0,B'0011',SAVEWRK4+1 SIX-DIGIT NUMBER",
+        ]),
+    ],
+}
+
 DATMODS = {
 
     # One flagged site and one silent neighbour.  The silent one is the address
@@ -6102,6 +6132,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA41, 'S/370 OPCODES ESA/390 DROPPED: SIMULATE AS PRIV OPS')])
         print('%-8s %-9s %3d cards  %s' % (m, XA41, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(STORMODS):
+        dk = datdeck(m, STORMODS[m], ident=XA42)
+        path = os.path.join(HERE, '%s.%s' % (m, XA42))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA42, 'VIRTUAL STORAGE ABOVE 16 MB: THE 256 MB CEILING')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA42, n,
               'OK' if not verify(path) else 'BAD'))
 
     bld = dmkbld()
