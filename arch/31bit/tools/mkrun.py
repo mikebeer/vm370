@@ -253,8 +253,23 @@ def main():
         else:
             mod, deck = parts
             asm.append(mod)
-            files = [(deck, '%s.%s' % (mod, deck)),
-                     ('AUXLCL', '%s.AUXLCL' % mod)]
+            # I-197.  Stage EVERY XA deck the module's AUXLCL names, not only
+            # the one on the spec.  `DMKPTR:XA0038DK` used to copy XA0038DK
+            # and the AUXLCL and leave XA0036DK on the pack as whatever the
+            # snapshot held -- so the I-196 fix, regenerated into XA0036DK,
+            # was applied by name (`APPLYING 'DMKPTR XA0036DK A1'`) from the
+            # OLD copy, iochk reported no drift because it only knows staged
+            # files, and the nucleus still had SRL R2,16 at 3DF18.  A build
+            # cycle to learn that the spec names a module, not a deck.
+            files = [('AUXLCL', '%s.AUXLCL' % mod)]
+            seen = set()
+            for line in open(os.path.join(UPDATES, '%s.AUXLCL' % mod)):
+                d = line.split()[0] if line.split() else ''
+                if d.startswith('XA') and d not in seen:
+                    seen.add(d)
+                    files.insert(0, (d, '%s.%s' % (mod, d)))
+            if deck not in seen:
+                raise SystemExit('%s: %s is not in %s.AUXLCL' % (spec, deck, mod))
         for ft, src in files:
             path = os.path.join(UPDATES, src)
             if not os.path.exists(path):
