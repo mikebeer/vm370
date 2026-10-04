@@ -136,7 +136,12 @@ def card(text, src=''):
     """
     if len(text) > 80:
         raise ValueError('card over 80 columns%s: %s' % (src, text))
-    if len(text) >= 72 and text[71] != ' ':
+    # I-205: a deck may continue a statement on purpose, and mkdeck writes
+    # exactly 'X' there when told to.  Anything else in column 72 is still the
+    # accident this guard exists for (R-04: a comment box's closing '*').
+    deliberate = (len(text) >= 72 and text[71] == 'X'
+                  and not text.startswith('*') and not text.startswith('./'))
+    if len(text) >= 72 and text[71] != ' ' and not deliberate:
         raise ValueError(
             'column 72 is the continuation column and is not blank%s.  XF will '
             'read the next card as a continuation and flag IT, not this one:\n'
