@@ -8,3 +8,4 @@
  &1 &2 RDEVICE  MACRO                                                           
  &1 &2 CORE     COPY                                                            
  &1 &2 EQU      COPY                                                            
+ &1 &2 TRANS    MACRO                                                           

@@ -88,6 +88,7 @@ XA42 = 'XA0042DK'
 XA43 = 'XA0043DK'
 XA44 = 'XA0044DK'
 XA45 = 'XA0045DK'
+XA46 = 'XA0046DK'
 
 
 def psa():
@@ -3939,6 +3940,10 @@ def datdeck(module, cards, ident=None):
     """
     d = Deck(ident or XA36)
     src = os.path.join(SRC, '%s.ASSEMBLE' % module)
+    for ext in ('MACRO', 'COPY'):
+        alt = os.path.join(SRC, '%s.%s' % (module, ext))
+        if not os.path.exists(src) and os.path.exists(alt):
+            src = alt
     for item in cards:
         seq, to, lines = (item if len(item) == 3 else (item[0], None, item[1]))
         limit = next_seq(src, to or seq)
@@ -4057,6 +4062,45 @@ GUESTMODS = {
 # duration of sixteen TRANS BRING+LOCK, and stay locked (CORIOLCK) while the
 # named system is resident, so no sharer's PTE copy can go stale; they are
 # owned by SYSTEM.  The ESA/390 common-segment bit is never used.
+# M2, AMODE 31, first step (I-208): CP runs AMODE 24, and LOAD REAL ADDRESS
+# forms its operand address in the current mode, so every `TRANS` asked about
+# a virtual address above 16 MB was answered about the address modulo 16 MB
+# -- correctly, about the wrong page (README "AMODE 31 is a prerequisite").
+# The fix that does not need the 215 LA-strip sites (I-126) first: switch to
+# AMODE 31 for the LRA alone with BSM, and switch back.  R15 is the scratch
+# register, because the macro's own non-resident path -- CALL DMKPTRAN -- has
+# always returned with R15 clobbered, so no site can have depended on it.
+# OR sets the condition code but runs before the LRA; LA and BSM leave it,
+# so the BC that follows still sees LRA's.  In AMODE 31 LA yields bit 0 = 0,
+# which is exactly what BSM needs to return to AMODE 24.  While real storage
+# stays below 16 MB every CP address is a 24-bit address, so nothing else in
+# CP notices; this unlocks VIRTUAL storage above the line.
+AMODEMODS = {
+    'TRANS': [
+        ('00062100', [
+            "         LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31",
+            "         O     R15,=X'80000000' (CP ITSELF RUNS AMODE 24)",
+            "         BSM   0,R15          ...",
+            "TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE",
+            "         LA    R15,TR&NL.B    BIT 0 OFF: BACK TO AMODE 24",
+            "         BSM   0,R15          CC STILL LRA'S",
+            "TR&NL.B  DS    0H",
+        ]),
+    ],
+    # DMKPTRAN's own LRA, and DMKPRV's three on guest addresses.
+    'DMKPTR': [
+        ('00307000', [
+            "         LA    R15,PTRLRA     THE LRA, IN AMODE 31 (I-208)",
+            "         O     R15,=X'80000000' ...",
+            "         BSM   0,R15          ...",
+            "PTRLRA   LRA   R7,0(,R1)      DO HARDWARE TRANSLATE",
+            "         LA    R15,PTRLRAB    BACK TO AMODE 24",
+            "         BSM   0,R15          ...",
+            "PTRLRAB  DS    0H",
+        ]),
+    ],
+}
+
 SHRMODS = {
     'DMKCFG': [
         # PAGBLDTB extends a small machine's tables to reach the saved
@@ -6545,7 +6589,8 @@ def main():
                           ('IOBLOKS', 'COPY'), ('XABLOKS', 'COPY'),
                           ('XAOPS', 'MACRO'), ('XAIO', 'MACRO'),
                           ('XAIOB', 'MACRO'), ('RDEVICE', 'MACRO'),
-                          ('CORE', 'COPY'), ('EQU', 'COPY')):
+                          ('CORE', 'COPY'), ('EQU', 'COPY'),
+                          ('TRANS', 'MACRO')):
             f.write((' &1 &2 %-8s %s' % (name, typ)).ljust(80) + '\n')
 
     ok = True
@@ -6658,6 +6703,15 @@ def main():
 
     # SHRMODS last: XA0045DK must sit ABOVE XA0034DK in DMKBLD.AUXLCL
     # (applied after it), because it anchors on a card XA0034DK renumbered.
+    for m in sorted(AMODEMODS):
+        dk = datdeck(m, AMODEMODS[m], ident=XA46)
+        path = os.path.join(HERE, '%s.%s' % (m, XA46))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA46, 'LRA IN AMODE 31: VIRTUAL STORAGE ABOVE 16 MB')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA46, n,
+              'OK' if not verify(path) else 'BAD'))
+
     for m in sorted(SHRMODS):
         dk = datdeck(m, SHRMODS[m], ident=XA45)
         path = os.path.join(HERE, '%s.%s' % (m, XA45))

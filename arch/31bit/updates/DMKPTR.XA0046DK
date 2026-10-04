@@ -1,0 +1,8 @@
+./ R 00307000          $ 00307100 100                                           
+         LA    R15,PTRLRA     THE LRA, IN AMODE 31 (I-208)     XA0046DK         
+         O     R15,=X'80000000' ...                            XA0046DK         
+         BSM   0,R15          ...                              XA0046DK         
+PTRLRA   LRA   R7,0(,R1)      DO HARDWARE TRANSLATE            XA0046DK         
+         LA    R15,PTRLRAB    BACK TO AMODE 24                 XA0046DK         
+         BSM   0,R15          ...                              XA0046DK         
+PTRLRAB  DS    0H                                              XA0046DK         
