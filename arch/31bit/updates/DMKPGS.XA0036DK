@@ -302,6 +302,13 @@ B2       TM    SEGPTO+3,SEGINVAL VALID ADDR, INVALID           XA0036DK
          N     R14,=A(SEGPTLF) PTL                             XA0036DK         
          LA    R14,1(,R14)    UNITS OF 16 ENTRIES              XA0036DK         
          SLL   R14,4+12       THE SEGMENT'S LENGTH IN BYTES    XA0036DK         
+*  THE CLM TESTED PAGE >= PAGES-1, I.E. 'THIS IS THE LAST      XA0036DK         
+*  PAGE'. LENGTH ALONE TESTED PAGE >= PAGES, NEVER TRUE,       XA0036DK         
+*  SO THE LOOP RAN OFF THE END OF EVERY PAGE AND SWAP TABLE    XA0036DK         
+*  INTO FREE STORAGE: SWPFLAG READ FROM DMKFRE'S PADDING,      XA0036DK         
+*  AND A ZERO SWPCYL REACHED DMKPGTPR -- PGT005 AT LOGOFF      XA0036DK         
+*  AND AT DEF STOR AFTER IPL (WALL 29, I-206).                 XA0036DK         
+         S     R14,F4096      THE LAST PAGE'S OFFSET           XA0036DK         
          ST    R14,TEMPR6     ...                              XA0036DK         
          LR    R14,R1         THE CURRENT VIRTUAL ADDRESS      XA0036DK         
          N     R14,=A(X'000FF000') PAGE WITHIN SEGMENT         XA0036DK         

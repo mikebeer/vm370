@@ -1071,6 +1071,54 @@ The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
 a load list fails exactly like a stale snapshot — convincingly, and late.
 
+## Wall 29 — `PGT005` at LOGOFF and at `DEF STOR` after IPL — CLOSED
+
+The first LOGOFF ever taken under this CP (w42) and every `DEF STOR` typed
+after `IPL 190` (w47–w49) ended in `DMKPGT005` — ABEND 5 in FINDREC, the
+paging-slot release. At the breakpoint the swap-table entry being released
+was all zeros (R5 = `FF3248`), the DASD address zero (R3 = R4 = 0), the
+virtual address `00108000` — eight pages past the end of segment 0 — and the
+caller DMKPGS (`00063000`, pageable) through `DMKPGTPR`.
+
+The cause is one comparison in DMKPGS's CKSEG, rewritten for the new STE
+format by XA0036DK. VM/370's `CLM R1,B'0010',SEGPAGE` compared byte 2 of the
+virtual address with byte 0 of the STE: *page number ≥ pages − 1*, i.e. "this
+is the segment's last page, stop". The rewrite compared the page's offset with
+the segment's length, *page ≥ pages* — never true. The release loop walked
+past every page table and swap table into free storage. DMKFRE pads with
+X'EE', whose X'40' bit is SWPRECMP, so the first stretch was "released" as
+permanently-assigned zero pages and did no harm; at the first zero word a
+swap entry with SWPCYL = 0 reached DMKPGTPR, FINDEVIC found device 0, and
+FINDREC abended.
+
+Fix: `S R14,F4096 THE LAST PAGE'S OFFSET` before the compare (SNAP-I208,
+10:08 UTC). w29, 10:13:
+
+```
+/(0009) def stor 32m
+STORAGE =032768K
+CP ENTERED; DISABLED WAIT PSW '00020000 00000000'
+/(0009) ipl 190
+VM Community Edition V1 R1.2
+...
+CMS
+/(0009) query storage
+STORAGE = 16384K
+Ready; T=0.06/0.11 10:13:15
+/(0009) def stor 64m
+STORAGE =065536K
+...
+/(0009) cp logoff
+CONNECT= 00:00:11 VIRTCPU= 000:00.17 TOTCPU= 000:00.40
+LOGOFF AT 10:13:23 GMT SUNDAY 10/04/26
+```
+
+`cp q v stor` answers `32768K` (w29b): CP's bookkeeping of a 32M virtual
+machine is right. CMS reports 16384K because CE's CMS is a 24-bit program.
+The CP console cannot yet look above 16 MB either (`I-207`), and a guest
+cannot run there until CP admits a 31-bit-mode PSW — the M-level work of
+docs/27. `I-206`.
+
 ## Wall 13 — SUPERSEDED heading, kept for the diff: it is no longer where CP
 stops, and it was never a wall (see the downgrade above)
 

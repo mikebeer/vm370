@@ -1,6 +1,6 @@
 # cREXX on VM/370 CE — where things stand
 
-Last updated **4 October 2026, 06:45 UTC**. **Read this first in a new session.**
+Last updated **4 October 2026, 10:20 UTC**. **Read this first in a new session.**
 
 ---
 
@@ -36,6 +36,17 @@ takes a typed command and answers it from the file system.
 | 26 | `SIO`/`TIO`/`SSK`… are *operation* exceptions on ESA/390, not privileged-op; DMKPRV reflected them | **closed** `I-199` |
 | 27 | DMKPRV's key simulation located the swap entry with 64 KB geometry and stored guest keys into the I/O new PSW → `PRG006` | **closed** `I-200` |
 | 28 | `DMSITP141T PROTECTION EXCEPTION` in `DMSREX` during the profile EXEC; CMS survives to `Ready;` | **open** `I-202`, R-12 candidate |
+| 29 | DMKPGS CKSEG's end-of-segment test was off by one page (XA0036DK); the release loop ran off every page/swap table into free storage → `PGT005` at LOGOFF and at `DEF STOR` after IPL | **closed** `I-206` |
+
+**V0.1 saved** (tag `v0.1`, `32-V0.1.md`). Since then: `DEF STOR 32M` and
+`64M` work — CP (`DMKDEH`) and `DIRECT` (`DMKDIR`) raised from 16 MB to 256 MB
+(`I-203`), `USER MAINT CPCMS 16M 64M ABCDEFGH` compiled with `DIRECT USER
+DIRECT A` → `EOJ DIRECTORY UPDATED AND ON LINE`; `q v stor` = `32768K`, CMS
+IPLs and reaches `Ready;` in the 32M and 64M machine. CMS itself still says
+`16384K` (CE's CMS is 24-bit), the CP console cannot `DISPLAY`/`STORE` above
+16 MB (`I-207`), and a guest cannot run there until CP admits a 31-bit PSW
+(docs/27, M-level). EXEC2 works, REXX fails (wall 28). Hercules 3.13 and 4.9.1
+behave identically (`I-204`). `drive.py` runs a full dialogue in 15–25 s.
 
 Side items opened: `I-201` DMKDMP cannot write its dump under ESA/390 (abend
 registers come from Hercules until fixed); `I-197`/`I-198` build-tool gaps
@@ -45,14 +56,15 @@ snapshots so a sliced build is restorable in minutes).
 ### How to reproduce tonight's state
 
 ```
-build.sh reset SNAP-I200           # DMKPTR I-196, DMKPRV I-199/I-200, HDK modules
+build.sh reset SNAP-I208           # V0.1 + DMKDEH/DMKDIR (I-203) + DIRECT MODULE + DMKPGS (I-206)
 build.sh write
 # ESA/390: ipl 6A1 / cold / enable all / cp disc
-#          logon maint cpcms noipl / def stor 16m / ipl 190
+#          logon maint cpcms noipl / def stor 32m / ipl 190 ... cp logoff / shutdown / exit
+# or:      esa390.sh w29 w29.json   (drive.py steps; ~20 s)
 ```
 
 `28-IPL-WALLS.md` has every wall with its trace; `13-ISSUES.md` rows
-I-194–I-202.
+I-194–I-207.
 
 ---
 
