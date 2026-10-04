@@ -83,6 +83,7 @@ XA37 = 'XA0037DK'
 XA38 = 'XA0038DK'
 XA39 = 'XA0039DK'
 XA40 = 'XA0040DK'
+XA41 = 'XA0041DK'
 
 
 def psa():
@@ -3934,6 +3935,56 @@ def datdeck(module, cards, ident=None):
 # The small modules, read with block.py and converted by the same rules DMKBLD
 # established.  Each entry carries only what it needs; the reasoning common to
 # all of them is in docs/27-STE-DESIGN.md.
+GUESTMODS = {
+
+    # I-199 / wall 26.  The guest's first instruction under this CP was CMS's
+    # IPL text issuing SIO, and it looped on program interrupts.  On S/370 a
+    # problem-state SIO is a PRIVILEGED-OPERATION exception (code 2); DMKPRG
+    # sends code 2 to DMKPRVLG, GETINST sees opcode 9C-9F and hands it to the
+    # virtual I/O executive.  ESA/390 has no SIO: the opcode is undefined and
+    # the exception is OPERATION (code 1).  DMKPRG sends code 1 to DMKPRV too,
+    # but there `BCT R3,GETINST` routes it to OPSIM, which simulates CS, CDS
+    # and EX and otherwise reflects an operation exception to the guest -- whose
+    # program-new PSW is zero at IPL time, so PSW 0, opcode 00, and the loop.
+    #
+    # IBM left the pattern for this at CHEKPROB: SPKA and IPK, which an older
+    # machine reports as operation exceptions, are taken "AS IF PRIV OP".  The
+    # same door, wider: every S/370 privileged opcode ESA/390 dropped goes the
+    # way a privileged-operation exception went, with S/370's semantics kept
+    # exactly -- a guest in ITS OWN problem state gets code 2 reflected, not
+    # code 1, because that is what the real machine told it.  The set:
+    #     08 SSK   09 ISK   B213 RRB   9C SIO/SIOF   9D TIO/CLRIO
+    #     9E HIO/HDV   9F TCH/CLRCH
+    # INTPR is rewritten to 2 so anything downstream that re-reads the code
+    # agrees with the path it is on.  DMKVSIEX and the key simulation then run
+    # unchanged; SSK/ISK simulation is the software-key path (R-12), not the
+    # real-key one.
+    'DMKPRV': [
+        ('00535000', [
+            "CHEKPROB CLI   VMINST,X'9C'   S/370 I/O OPCODE, 9C-9F?",
+            "         BL    CHEKPRB1       NO",
+            "         CLI   VMINST,X'9F'   ...",
+            "         BNH   S370PRIV       YES, ESA/390 CALLS IT OPERATION",
+            "CHEKPRB1 CLI   VMINST,X'08'   SSK?",
+            "         BE    S370PRIV       PRIVILEGED ON S/370",
+            "         CLI   VMINST,X'09'   ISK?",
+            "         BE    S370PRIV       PRIVILEGED ON S/370",
+            "         CLC   =X'B213',VMINST RRB?",
+            "         BE    S370PRIV       PRIVILEGED ON S/370",
+            "         TM    VMPSW+1,PROBMODE VIRTUAL PROBLEM STATE?",
+        ]),
+        ('00541000', [
+            "         B     OPEREXCP       REFLECT OPERATION EXCEPTION",
+            "S370PRIV TM    VMPSW+1,PROBMODE GUEST'S OWN PROBLEM STATE?",
+            "         BO    PRIVEXCP       YES: S/370 SAID PRIVILEGED OP",
+            "         MVI   INTPR+1,X'02'  SO DOES THE REST OF CP, NOW",
+            "         B     GETINST        SIMULATE AS A PRIVILEGED OP",
+            "PRIVEXCP LA    R0,X'02'       PRIVILEGED-OPERATION EXCEPTION",
+            "         B     ERREFLCT       REFLECT IT",
+        ]),
+    ],
+}
+
 DATMODS = {
 
     # One flagged site and one silent neighbour.  The silent one is the address
@@ -6007,6 +6058,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA40, 'NO TCH: A CHANNEL SUBSYSTEM HAS NO CHANNEL TO TEST')])
         print('%-8s %-9s %3d cards  %s' % (m, XA40, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(GUESTMODS):
+        dk = datdeck(m, GUESTMODS[m], ident=XA41)
+        path = os.path.join(HERE, '%s.%s' % (m, XA41))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA41, 'S/370 OPCODES ESA/390 DROPPED: SIMULATE AS PRIV OPS')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA41, n,
               'OK' if not verify(path) else 'BAD'))
 
     bld = dmkbld()

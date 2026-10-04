@@ -987,6 +987,22 @@ PSW. The expected cause is `I-79`'s third axis arriving where it was always goin
 to: CMS is a **BC-mode** virtual machine, CP dispatches it with its own PSW
 format, and ESA/390 has no BC mode (bit 12 must be one). Under test (w31).
 
+**Measured 05:16 (w31): not BC mode.** The guest PSW is EC (`070D0000`), and
+the first guest program check is
+
+```
+Operation exception  PSW=070D0000 000203F4  INST=9C00D000  SIO 0(13)
+```
+
+CMS's IPL text issues `SIO`. S/370 made that a privileged-operation exception
+in problem state, which CP intercepts and simulates; ESA/390 has no `SIO`, so it
+is an **operation** exception, and DMKPRV's `OPSIM` reflects those to the guest
+— whose program-new PSW is still zero. So the wall is the dropped S/370 opcodes
+(SIO/SIOF, TIO/CLRIO, HIO/HDV, TCH/CLRCH, SSK, ISK, RRB) arriving as code 1
+instead of code 2. `I-199`: DMKPRV's `CHEKPROB`, where IBM already takes SPKA
+and IPK "as if priv op", now takes these seven the same way, with S/370's
+problem-state semantics kept (code 2 reflected). Building.
+
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
 a load list fails exactly like a stale snapshot — convincingly, and late.

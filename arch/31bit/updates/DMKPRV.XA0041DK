@@ -1,0 +1,20 @@
+./ R 00535000          $ 00535010 010                                           
+CHEKPROB CLI   VMINST,X'9C'   S/370 I/O OPCODE, 9C-9F?         XA0041DK         
+         BL    CHEKPRB1       NO                               XA0041DK         
+         CLI   VMINST,X'9F'   ...                              XA0041DK         
+         BNH   S370PRIV       YES, ESA/390 CALLS IT OPERATION  XA0041DK         
+CHEKPRB1 CLI   VMINST,X'08'   SSK?                             XA0041DK         
+         BE    S370PRIV       PRIVILEGED ON S/370              XA0041DK         
+         CLI   VMINST,X'09'   ISK?                             XA0041DK         
+         BE    S370PRIV       PRIVILEGED ON S/370              XA0041DK         
+         CLC   =X'B213',VMINST RRB?                            XA0041DK         
+         BE    S370PRIV       PRIVILEGED ON S/370              XA0041DK         
+         TM    VMPSW+1,PROBMODE VIRTUAL PROBLEM STATE?         XA0041DK         
+./ R 00541000          $ 00541100 100                                           
+         B     OPEREXCP       REFLECT OPERATION EXCEPTION      XA0041DK         
+S370PRIV TM    VMPSW+1,PROBMODE GUEST'S OWN PROBLEM STATE?     XA0041DK         
+         BO    PRIVEXCP       YES: S/370 SAID PRIVILEGED OP    XA0041DK         
+         MVI   INTPR+1,X'02'  SO DOES THE REST OF CP, NOW      XA0041DK         
+         B     GETINST        SIMULATE AS A PRIVILEGED OP      XA0041DK         
+PRIVEXCP LA    R0,X'02'       PRIVILEGED-OPERATION EXCEPTION   XA0041DK         
+         B     ERREFLCT       REFLECT IT                       XA0041DK         
