@@ -1001,7 +1001,31 @@ is an **operation** exception, and DMKPRV's `OPSIM` reflects those to the guest
 (SIO/SIOF, TIO/CLRIO, HIO/HDV, TCH/CLRCH, SSK, ISK, RRB) arriving as code 1
 instead of code 2. `I-199`: DMKPRV's `CHEKPROB`, where IBM already takes SPKA
 and IPK "as if priv op", now takes these seven the same way, with S/370's
-problem-state semantics kept (code 2 reflected). Building.
+problem-state semantics kept (code 2 reflected).
+
+**CLOSED 05:40 (w32).** With I-199 the trace reads: `SIO` simulated, `TIO`
+polled and simulated, six times as the IPL text reads the nucleus, then
+
+```
+Operation exception  PSW=070D0000 00F80A36  INST=089E  SSK 9,14
+```
+
+— **CMS's nucleus, DMSINS, executing at F80A36** under this CP, its `SSK`
+simulated as well. The first CMS instructions on a 31-bit CP.
+
+## Wall 27 — PRG006 in CP as CMS initialises
+
+```
+Specification exception CODE=0006 ILC=0
+PSW=000CF0F0 00006698
+05:40:24 DMKDMP908I SYSTEM FAILURE; CODE PRG006 PROCESSOR 00
+DMKDMP907W SYSTEM DUMP FAILURE; FATAL I/O ERROR
+```
+
+ILC 0: an early PSW specification exception — a PSW loaded with `F0F0` in bits
+16–31. Registers are DMKDSP's; `6698` is DMKIOTIN+64. Under measurement
+(w33). And the dump failure is its own wall (`I-201`): DMKDMP cannot write to
+6A1, so from here every abend's registers must come from Hercules.
 
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
