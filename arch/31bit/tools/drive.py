@@ -138,7 +138,7 @@ class Terminal:
             pass
 
 
-def drive(ce, name, steps, herc='hercules'):
+def drive(ce, name, steps, herc='hercules', hold=False):
     log = os.path.join(ce, name + '.log')
     if os.path.exists(log):
         os.remove(log)
@@ -269,6 +269,36 @@ def drive(ce, name, steps, herc='hercules'):
         else:
             time.sleep(st.get('settle', 2))
             print('%s %-42s settled %ss' % (stamp(), line[:42], st.get('settle', 2)))
+    if hold:
+        # Keep the system up for an interactive relay: Mike types CP/CMS
+        # lines in the chat, they land here as files in <ce>/relay/, and the
+        # consoles' logs carry the answers.  `op:` prefixes go to the
+        # operator's 0009 via Hercules; everything else to the terminal.
+        # A file named `stop` ends the hold; CP is then shut down and
+        # Hercules exits as in every run.
+        rdir = os.path.join(ce, 'relay')
+        os.makedirs(rdir, exist_ok=True)
+        for f in os.listdir(rdir):
+            os.remove(os.path.join(rdir, f))
+        print('--- %s holding; relay dir %s' % (name, rdir), flush=True)
+        n = 0
+        while True:
+            if os.path.exists(os.path.join(rdir, 'stop')):
+                break
+            files = sorted(f for f in os.listdir(rdir) if f.endswith('.cmd'))
+            for f in files:
+                path = os.path.join(rdir, f)
+                text = open(path).read().rstrip('\n')
+                os.remove(path)
+                for cmdline in text.split('\n'):
+                    n += 1
+                    if cmdline.startswith('op:'):
+                        send(cmdline[3:])
+                    elif term:
+                        term.send(cmdline)
+                    print('%s relay %d: %s' % (stamp(), n, cmdline), flush=True)
+                    time.sleep(1)
+            time.sleep(1)
     if term:
         term.close()
     if line != 'exit':
@@ -302,9 +332,13 @@ def main():
     if len(a) != 3:
         print(__doc__)
         return 2
+    hold = False
+    if '--hold' in a:
+        hold = True
+        a.remove('--hold')
     ce, name, stepfile = a
     steps = json.load(open(stepfile))
-    return drive(ce, name, steps, herc)
+    return drive(ce, name, steps, herc, hold)
 
 
 if __name__ == '__main__':

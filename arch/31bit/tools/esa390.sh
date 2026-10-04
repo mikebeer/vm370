@@ -9,7 +9,7 @@ pgrep -x hercules >/dev/null && { echo "### hercules already running (I-63)"; ex
 python3 -c "
 import sys; sys.path.insert(0,'$R/arch/31bit/tools')
 import mkrun; mkrun.archmode('$C/vm370ce.conf','ESA/390')"
-python3 $R/arch/31bit/tools/drive.py "$C" "$N" "$STEPS" ${HERC:+--herc $HERC}
+python3 $R/arch/31bit/tools/drive.py "$C" "$N" "$STEPS" ${HERC:+--herc $HERC} ${HOLD:+--hold}
 rc=$?
 bad=$(python3 -c "
 import sys; sys.path.insert(0,'$R/arch/31bit/tools')
