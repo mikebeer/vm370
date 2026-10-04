@@ -55,6 +55,89 @@ def tail(path, n=25):
         return ''
 
 
+class Terminal:
+    """A line-mode console on Hercules' console port: telnet with every
+    option declined, so Hercules attaches it to a 1052/3215 device rather
+    than treating it as a 3270.  Output is appended to a log file as it
+    arrives, so the same poll-the-file wait works for both consoles."""
+    IAC, DONT, DO, WONT, WILL = 255, 254, 253, 252, 251
+    SB, SE, TTYPE = 250, 240, 24
+
+    def __init__(self, path):
+        self.path = path
+        self.sock = None
+        self.buf = b''
+        open(path, 'w').close()
+
+    def connect(self, port):
+        import socket, threading
+        self.sock = socket.create_connection(('127.0.0.1', port), timeout=10)
+        self.sock.settimeout(0.5)
+        t = threading.Thread(target=self._reader, daemon=True)
+        t.start()
+
+    def _reader(self):
+        while self.sock:
+            try:
+                data = self.sock.recv(4096)
+            except Exception:
+                continue
+            if not data:
+                break
+            out = bytearray()
+            data = self.buf + data
+            self.buf = b''
+            i = 0
+            while i < len(data):
+                c = data[i]
+                if c == self.IAC and i + 1 < len(data) and data[i + 1] == self.SB:
+                    # subnegotiation: IAC SB ... IAC SE.  Hercules 3.13 asks
+                    # TERMINAL-TYPE SEND and takes `DEC-VT100` as a line-mode
+                    # console (Mike's note); anything 327x would make it a 3270.
+                    j = data.find(bytes([self.IAC, self.SE]), i + 2)
+                    if j < 0:
+                        self.buf = data[i:]
+                        break
+                    sub = data[i + 2:j]
+                    if sub[:2] == bytes([self.TTYPE, 1]):   # TERMINAL-TYPE SEND
+                        self._send_raw(bytes([self.IAC, self.SB, self.TTYPE, 0]) +
+                                       b'DEC-VT100' + bytes([self.IAC, self.SE]))
+                    i = j + 2
+                    continue
+                if c == self.IAC and i + 2 < len(data):
+                    cmd, opt = data[i + 1], data[i + 2]
+                    if cmd == self.DO:
+                        rep = self.WILL if opt == self.TTYPE else self.WONT
+                        self._send_raw(bytes([self.IAC, rep, opt]))
+                    elif cmd == self.WILL:
+                        self._send_raw(bytes([self.IAC, self.DONT, opt]))
+                    i += 3
+                    continue
+                if c == self.IAC and i + 1 < len(data):
+                    i += 2
+                    continue
+                out.append(c)
+                i += 1
+            with open(self.path, 'ab') as f:
+                f.write(bytes(out))
+
+    def _send_raw(self, b):
+        try:
+            self.sock.sendall(b)
+        except Exception:
+            pass
+
+    def send(self, line):
+        self.sock.sendall(line.encode('latin-1') + b'\r\n')
+
+    def close(self):
+        try:
+            s, self.sock = self.sock, None
+            s.close()
+        except Exception:
+            pass
+
+
 def drive(ce, name, steps, herc='hercules'):
     log = os.path.join(ce, name + '.log')
     if os.path.exists(log):
@@ -79,16 +162,22 @@ def drive(ce, name, steps, herc='hercules'):
     t0 = time.time()
     stamp = lambda: '%6.1fs' % (time.time() - t0)
 
-    def wait_for(pattern, start, timeout):
+    def wait_file(path, pattern, start, timeout):
         rx = re.compile(pattern, re.M)
         deadline = time.time() + timeout
         while time.time() < deadline:
-            with open(log, errors='replace') as f:
-                f.seek(start)
-                if rx.search(f.read()):
-                    return True
+            try:
+                with open(path, errors='replace') as f:
+                    f.seek(start)
+                    if rx.search(f.read()):
+                        return True
+            except OSError:
+                pass
             time.sleep(1)
         return False
+
+    def wait_for(pattern, start, timeout):
+        return wait_file(log, pattern, start, timeout)
 
     def send(line):
         url = 'http://127.0.0.1:%d/cgi-bin/tasks/syslog?' % PORT + \
@@ -109,8 +198,42 @@ def drive(ce, name, steps, herc='hercules'):
         return 2
     print('--- %s hercules up %s' % (name, stamp()))
 
+    # The second terminal.  Mike: "only operator can issue shutdown. you
+    # should do the tests on the other terminal".  The config has `000A 1052`:
+    # a plain telnet connection to CNSLPORT that declines every TN3270
+    # negotiation is attached to it as a line-mode console.  The operator
+    # stays on 0009; the test user logs on here; `shutdown` is typed on 0009.
+    # Steps with "term" instead of "send" go to this terminal and their
+    # `expect` is matched against what it printed (<name>.term.log).
+    term = None
+    tlog = os.path.join(ce, name + '.term.log')
+    if any('term' in st for st in steps):
+        term = Terminal(tlog)
+        term.connect(3270)
+        time.sleep(1)
+
     ok = True
     for st in steps:
+        if 'term' in st:
+            st = dict(st, send=st['term'])
+            tpos = os.path.getsize(tlog)
+            term.send(st['term'])
+            if 'expect' in st:
+                hit = wait_file(tlog, st['expect'], tpos, st.get('timeout', 90))
+                print('%s T %-40s %s %s' % (stamp(), st['term'][:40],
+                                            'ok' if hit else '### TIMEOUT',
+                                            st['expect'] if not hit else ''))
+                if not hit:
+                    ok = False
+                    if st.get('cont'):
+                        continue
+                    print(tail(tlog))
+                    break
+            else:
+                time.sleep(st.get('settle', 2))
+                print('%s T %-40s settled %ss' % (stamp(), st['term'][:40], st.get('settle', 2)))
+            line = st['term']
+            continue
         pos = os.path.getsize(log)
         if 'rreg' in st:
             # Dump storage at an address held in a register: take the LAST
@@ -137,11 +260,17 @@ def drive(ce, name, steps, herc='hercules'):
                                       st['expect'] if not hit else ''))
             if not hit:
                 ok = False
+                if st.get('cont'):
+                    # A measurement step: the pattern not appearing IS the
+                    # finding, and the steps that follow take the readings.
+                    continue
                 print(tail(log))
                 break
         else:
             time.sleep(st.get('settle', 2))
             print('%s %-42s settled %ss' % (stamp(), line[:42], st.get('settle', 2)))
+    if term:
+        term.close()
     if line != 'exit':
         # Mike: "/shutdown and exit is the proper way to end a VM Hercules
         # session".  A run that stopped short still shuts CP down before

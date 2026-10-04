@@ -1,0 +1,28 @@
+./ R 00192000 00203000 $ 00192100 100                                           
+         SLR   R8,R8          ...                              XA0045DK         
+         IC    R8,SHRSEGNM(R3) 64 KB SEGMENT NUMBER            XA0045DK         
+         LR    R4,R8          ...                              XA0045DK         
+         SRL   R8,4           ITS 1 MB SEGMENT                 XA0045DK         
+         SLL   R8,2           STE INDEX                        XA0045DK         
+         L     R6,VMSEG       THE DESIGNATION                  XA0045DK         
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0045DK         
+         ALR   R8,R6          THE STE                          XA0045DK         
+         TM    SEGPTO+3,SEGINVAL SEGMENT INVALID               XA0045DK         
+         BO    NXTSEG1        YES, SKIP SCANNING               XA0045DK         
+         L     R6,SEGPTO      THE PTO                          XA0045DK         
+         N     R6,=A(SEGPTOM) WITHOUT THE FLAGS                XA0045DK         
+         N     R4,F15         GROUP WITHIN THE MEGABYTE        XA0045DK         
+         SLL   R4,6           TIMES 16 PTES OF 4               XA0045DK         
+         ALR   R6,R4          THE GROUP'S FIRST PTE            XA0045DK         
+         LA    R4,16          ITS 16 PAGES                     XA0045DK         
+         CNOP  0,8            ALIGN                            XA0045DK         
+./ R 00207000          $ 00207100 100                                           
+         N     R2,=A(PAGPFRM) THE FRAME ADDRESS, NO FLAGS      XA0045DK         
+./ R 00465000          $ 00465100 100                                           
+         TM    CORFLAG,CORCFLCK+CORIOLCK FRAME LOCKED?         XA0045DK         
+./ R 00489000          $ 00489100 100                                           
+         L     R15,CORPGPNT   THE MODEL'S PTE                  XA0045DK         
+         LTR   R15,R15        ...                              XA0045DK         
+         BZ    *+10           NONE                             XA0045DK         
+         MVC   0(4,R15),=A(PAGINVW) INVALIDATE IT TOO          XA0045DK         
+         SLR   R15,R15        ZIP REG                          XA0045DK         

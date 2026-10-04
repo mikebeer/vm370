@@ -1,0 +1,146 @@
+./ R 00665000          $ 00665100 100                                           
+         N     R1,=X'FF00FFFF' FIRST PAGE TO ITS SEGMENT       XA0045DK         
+         O     R1,F255        LAST PAGE TO ITS SEGMENT'S END   XA0045DK         
+./ R 00878000 00916000 $ 00878100 100                                           
+SHRCOPY  DS    0H             R8 -> SHRPAGE, R9 GROUP INDEX    XA0045DK         
+         L     R2,0(,R8)      THE MODEL'S STE-FORM ENTRY       XA0045DK         
+         N     R2,=A(SEGPTOM) THE MODEL'S PTO                  XA0045DK         
+         SR    R7,R7          ...                              XA0045DK         
+         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER            XA0045DK         
+         LR    R1,R7          ...                              XA0045DK         
+         SRL   R1,4           ITS 1 MB SEGMENT                 XA0045DK         
+         SLL   R1,2           STE INDEX                        XA0045DK         
+         L     R10,VMSEG      THE DESIGNATION                  XA0045DK         
+         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH              XA0045DK         
+         L     R10,0(R1,R10)  THE USER'S STE                   XA0045DK         
+         N     R10,=A(SEGPTOM) THE USER'S PTO                  XA0045DK         
+         BZ    MODERR0        NONE -- PAGLOOP BUILT ONE        XA0045DK         
+         N     R7,F15         GROUP WITHIN THE MEGABYTE        XA0045DK         
+         SLL   R7,6           TIMES 16 PTES OF 4               XA0045DK         
+         LA    R1,0(R7,R10)   THE USER'S FIRST PTE             XA0045DK         
+         LA    R14,0(R7,R2)   THE MODEL'S FIRST PTE            XA0045DK         
+         MVC   0(64,R1),0(R14) THE 16 FRAMES                   XA0045DK         
+         SLL   R7,1           TIMES 16 SWAP ENTRIES OF 8       XA0045DK         
+         LA    R1,SWPOFF(R7,R10) THE USER'S SWAP ENTRIES       XA0045DK         
+         LA    R14,SWPOFF(R7,R2) THE MODEL'S                   XA0045DK         
+         MVC   0(128,R1),0(R14) 16 SWAP ENTRIES, SWPSHR ON     XA0045DK         
+         LA    R8,L'SHRPAGE(,R8) NEXT GROUP                    XA0045DK         
+         LA    R9,1(,R9)      ...                              XA0045DK         
+         BCT   R3,SHRCOPY     ALL OF THEM                      XA0045DK         
+         OI    VMESTAT,VMINVPAG THE TLB HELD THE OLD ENTRIES   XA0045DK         
+         OI    APSTAT2,CPPTLBR ...                             XA0045DK         
+         PTLB  ,              ...                              XA0045DK         
+         B     SETVMSHR       GO CLEAN UP AND GET OUT          XA0045DK         
+SHRCOPY1 L     R3,SAVEWRK8    GROUPS IN THE SYSTEM             XA0045DK         
+         LR    R14,R3         FIRST SHRPAGE, AS FNDSHRPG       XA0045DK         
+         LA    R8,SHRSEGNM    ...                              XA0045DK         
+FNDSHRP1 LA    R8,L'SHRPAGE(,R8) ...                           XA0045DK         
+         S     R14,F4         ...                              XA0045DK         
+         BP    FNDSHRP1       ...                              XA0045DK         
+         SR    R9,R9          FIRST GROUP                      XA0045DK         
+         B     SHRCOPY        COPY THE MODELS TO THIS USER     XA0045DK         
+./ R 00958000 01064000 $ 00958100 100                                           
+         LA    R14,SHRSEGNM(R7) LOAD ADDRESS OF FIRST SHRPAGE  XA0045DK         
+         ST    R14,SAVEWRK7   ...                              XA0045DK         
+         ST    R3,SAVEWRK8    GROUPS IN THE SYSTEM             XA0045DK         
+         SR    R9,R9          FIRST GROUP                      XA0045DK         
+MODLOOP  DS    0H             ONE MODEL TABLE PER GROUP        XA0045DK         
+         SR    R7,R7          ...                              XA0045DK         
+         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER            XA0045DK         
+         SRL   R7,4           ITS 1 MB SEGMENT                 XA0045DK         
+         LR    R1,R7          ...                              XA0045DK         
+         SLL   R1,24          FIRST PAGE, HIGH HALFWORD        XA0045DK         
+         LR    R2,R7          ...                              XA0045DK         
+         SLL   R2,8           ...                              XA0045DK         
+         LA    R2,255(,R2)    LAST PAGE OF THE SEGMENT         XA0045DK         
+         OR    R1,R2          DMKBLDRT'S RANGE                 XA0045DK         
+         CALL  DMKBLDRT,PARM=PAGTONLY+NEWPAGES R2 = STE        XA0045DK         
+         N     R2,=A(X'FFFFFFFF'-SEGINVAL) VALID FORM          XA0045DK         
+         L     R8,SAVEWRK7    ...                              XA0045DK         
+         ST    R2,0(,R8)      SHRPAGE: THE MODEL               XA0045DK         
+         N     R2,=A(SEGPTOM) THE MODEL'S PTO                  XA0045DK         
+         LR    R10,R2         ...                              XA0045DK         
+         SL    R10,=A(PAGPFRA-PAGSTMP) ITS HEADER              XA0045DK         
+         MVC   PAGACT-PAGTABLE(4,R10),F1 ACTIVE 0, TOTAL 1     XA0045DK         
+         ST    R5,PAGSHR-PAGTABLE(,R10) THE NAMED SYSTEM       XA0045DK         
+         MVC   PAGTSWP+SWPVM-SWPTABLE(4,R10),ASYSVM SYSTEM     XA0045DK         
+*  THE USER'S TABLE HOLDS THE SAVED COPY'S DASD SLOTS AND      XA0045DK         
+*  KEYS (PAGLOOP): COPY THE GROUP'S 16 SWAP ENTRIES OVER.      XA0045DK         
+         SR    R7,R7          ...                              XA0045DK         
+         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER            XA0045DK         
+         LR    R1,R7          ...                              XA0045DK         
+         SRL   R1,4           ...                              XA0045DK         
+         SLL   R1,2           STE INDEX                        XA0045DK         
+         L     R14,VMSEG      THE DESIGNATION                  XA0045DK         
+         N     R14,=A(SEGSTOM) WITHOUT THE LENGTH              XA0045DK         
+         LA    R14,0(R1,R14)  THE USER'S STE                   XA0045DK         
+         ST    R14,SAVEWRK2   ...                              XA0045DK         
+         L     R14,0(,R14)    ...                              XA0045DK         
+         N     R14,=A(SEGPTOM) THE USER'S PTO                  XA0045DK         
+         BZ    MODERR0        NONE -- PAGLOOP BUILT ONE        XA0045DK         
+         N     R7,F15         GROUP WITHIN THE MEGABYTE        XA0045DK         
+         SLL   R7,7           TIMES 16 ENTRIES OF 8            XA0045DK         
+         LA    R14,SWPOFF(R7,R14) THE USER'S SWAP ENTRIES      XA0045DK         
+         LA    R10,SWPOFF(R7,R2) THE MODEL'S                   XA0045DK         
+         MVC   0(128,R10),0(R14) 16 SWAP ENTRIES               XA0045DK         
+         LA    R1,16          ...                              XA0045DK         
+MODFLAG  OI    0(R10),SWPSHR  SHARED                           XA0045DK         
+         LA    R10,8(,R10)    ...                              XA0045DK         
+         BCT   R1,MODFLAG     ...                              XA0045DK         
+*  BRING THE GROUP IN THROUGH THIS USER'S ADDRESS SPACE WITH   XA0045DK         
+*  THE MODEL IN THE STE, LOCKED; THE FRAMES GO TO SYSTEM.      XA0045DK         
+         L     R14,SAVEWRK2   THE USER'S STE                   XA0045DK         
+         L     R1,0(,R14)     ...                              XA0045DK         
+         ST    R1,SAVEWRK4    TO RESTORE                       XA0045DK         
+         L     R2,0(,R8)      THE MODEL                        XA0045DK         
+         ST    R2,0(,R14)     IN THE STE FOR NOW               XA0045DK         
+         PTLB  ,              ...                              XA0045DK         
+         SR    R7,R7          ...                              XA0045DK         
+         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER            XA0045DK         
+         SLL   R7,16          ITS VIRTUAL ADDRESS              XA0045DK         
+         LA    R1,16          ...                              XA0045DK         
+         ST    R1,SAVEWRK3    PAGES TO GO                      XA0045DK         
+BRINGLP  LR    R1,R7          THE PAGE                         XA0045DK         
+         TRANS 2,1,OPT=(BRING,DEFER,LOCK)                      XA0045DK         
+         BNZ   MODERR         CANNOT READ THE SAVED SYSTEM     XA0045DK         
+         LR    R1,R2          THE FRAME                        XA0045DK         
+         SRL   R1,8           A CORTABLE ENTRY IS 16 A PAGE    XA0045DK         
+         AL    R1,ACORETBL    ...                              XA0045DK         
+         L     R14,CORFPNT-CORTABLE(,R1) THE OWNER SO FAR      XA0045DK         
+         LH    R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
+         BCTR  R0,0           ONE LESS FOR HIM                 XA0045DK         
+         STH   R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
+         L     R14,ASYSVM     SYSTEM OWNS SHARED FRAMES        XA0045DK         
+         ST    R14,CORFPNT-CORTABLE(,R1) ...                   XA0045DK         
+         LH    R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
+         LA    R0,1(,R0)      ONE MORE FOR IT                  XA0045DK         
+         STH   R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
+         A     R7,F4096       NEXT PAGE                        XA0045DK         
+         L     R1,SAVEWRK3    ...                              XA0045DK         
+         BCTR  R1,0           ...                              XA0045DK         
+         ST    R1,SAVEWRK3    ...                              XA0045DK         
+         LTR   R1,R1          ...                              XA0045DK         
+         BNZ   BRINGLP        ALL 16                           XA0045DK         
+         L     R14,SAVEWRK2   THE USER'S STE                   XA0045DK         
+         L     R1,SAVEWRK4    ...                              XA0045DK         
+         ST    R1,0(,R14)     HIS OWN TABLE AGAIN              XA0045DK         
+         PTLB  ,              ...                              XA0045DK         
+         LA    R9,1(,R9)      NEXT GROUP                       XA0045DK         
+         L     R8,SAVEWRK7    ...                              XA0045DK         
+         LA    R8,L'SHRPAGE(,R8) ...                           XA0045DK         
+         ST    R8,SAVEWRK7    ...                              XA0045DK         
+         BCT   R3,MODLOOP     ALL GROUPS                       XA0045DK         
+         B     COMMON         CHAIN THE SHRTABLE               XA0045DK         
+MODERR   L     R14,SAVEWRK2   THE USER'S STE                   XA0045DK         
+         L     R1,SAVEWRK4    ...                              XA0045DK         
+         ST    R1,0(,R14)     HIS OWN TABLE AGAIN              XA0045DK         
+         PTLB  ,              ...                              XA0045DK         
+MODERR0  LH    R10,SYSPAGNM   FIRST SAVED PAGE, FOR NAMPERR1   XA0045DK         
+         SLL   R10,12         ...                              XA0045DK         
+         B     NAMPERR1       CLEAR UP TABLES AND EXIT         XA0045DK         
+./ R 01076000          $ 01076100 100                                           
+         ST    R5,SHRBPNT-SHRTABLE(,R7) CHANGE BKWD POINTER    XA0045DK         
+         B     SHRCOPY1       NOW THIS USER'S OWN COPIES       XA0045DK         
+./ R 01591000          $ 01591100 100                                           
+         COPY  VMBLOK                                          XA0045DK         
+SWPOFF   EQU   PAGTSWP-(PAGPFRA-PAGSTMP)+(SWPFLAG-SWPVM)       XA0045DK         

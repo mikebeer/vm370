@@ -87,6 +87,7 @@ XA41 = 'XA0041DK'
 XA42 = 'XA0042DK'
 XA43 = 'XA0043DK'
 XA44 = 'XA0044DK'
+XA45 = 'XA0045DK'
 
 
 def psa():
@@ -4023,6 +4024,259 @@ GUESTMODS = {
     ],
 }
 
+# M3: named systems shared at FRAME granularity (docs/05 section 3, CP-67's
+# way).  VM/370 shared the PAGE TABLE: at the first IPL of a named system
+# DMKCFG adopted the user's own page table for each shared 64 KB segment as
+# the shared one, later users swapped theirs for it, and the segment table
+# entry was the unit of sharing.  With 1 MB segments that would make the
+# whole megabyte common -- CMS keeps private nucleus pages in the same
+# megabyte as its shared ones (F00000-F7FFFF private, F80000-FAFFFF shared)
+# -- which is wall 24, I-195.  Here the SHRTABLE's page tables are MODELS,
+# never placed in a user's STE: each user keeps a private 256-entry table
+# for the segment, and DMKCFG copies the model's 16 PTEs and 16 swap entries
+# per shared 64 KB group into it.  The model's frames are brought in once,
+# through the first user's address space with the model in the STE for the
+# duration of sixteen TRANS BRING+LOCK, and stay locked (CORIOLCK) while the
+# named system is resident, so no sharer's PTE copy can go stale; they are
+# owned by SYSTEM.  The ESA/390 common-segment bit is never used.
+SHRMODS = {
+    'DMKCFG': [
+        # PAGBLDTB extends a small machine's tables to reach the saved
+        # pages.  `N R1,=X'FFF0FFFF'` rounded the first page to a 64 KB
+        # segment, so a 2 MB AUTOLOG1 got a 48-entry table for segment 15
+        # (PTL 2) while the saved pages are its pages 128-175: LRA took a
+        # segment-translation exception, TRANS answered CC2, and the model
+        # could not be loaded (the stage-A failure, I-195, seen again).
+        # Round to the megabyte: 256-page tables, whole segments.
+        ('00665000', [
+            "         N     R1,=X'FF00FFFF' FIRST PAGE TO ITS SEGMENT",
+            "         O     R1,F255        LAST PAGE TO ITS SEGMENT'S END",
+        ]),
+        # SHRTFND falls into SHRCOPY; SHRTBLD reaches SHRCOPY1 after it has
+        # built and chained the SHRTABLE (replaces the SHRSLOOP block that
+        # stored the shared page table into the user's STE).
+        ('00878000', '00916000', [
+            "SHRCOPY  DS    0H             R8 -> SHRPAGE, R9 GROUP INDEX",
+            "         L     R2,0(,R8)      THE MODEL'S STE-FORM ENTRY",
+            "         N     R2,=A(SEGPTOM) THE MODEL'S PTO",
+            "         SR    R7,R7          ...",
+            "         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER",
+            "         LR    R1,R7          ...",
+            "         SRL   R1,4           ITS 1 MB SEGMENT",
+            "         SLL   R1,2           STE INDEX",
+            "         L     R10,VMSEG      THE DESIGNATION",
+            "         N     R10,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         L     R10,0(R1,R10)  THE USER'S STE",
+            "         N     R10,=A(SEGPTOM) THE USER'S PTO",
+            "         BZ    MODERR0        NONE -- PAGLOOP BUILT ONE",
+            "         N     R7,F15         GROUP WITHIN THE MEGABYTE",
+            "         SLL   R7,6           TIMES 16 PTES OF 4",
+            "         LA    R1,0(R7,R10)   THE USER'S FIRST PTE",
+            "         LA    R14,0(R7,R2)   THE MODEL'S FIRST PTE",
+            "         MVC   0(64,R1),0(R14) THE 16 FRAMES",
+            "         SLL   R7,1           TIMES 16 SWAP ENTRIES OF 8",
+            "         LA    R1,SWPOFF(R7,R10) THE USER'S SWAP ENTRIES",
+            "         LA    R14,SWPOFF(R7,R2) THE MODEL'S",
+            "         MVC   0(128,R1),0(R14) 16 SWAP ENTRIES, SWPSHR ON",
+            "         LA    R8,L'SHRPAGE(,R8) NEXT GROUP",
+            "         LA    R9,1(,R9)      ...",
+            "         BCT   R3,SHRCOPY     ALL OF THEM",
+            "         OI    VMESTAT,VMINVPAG THE TLB HELD THE OLD ENTRIES",
+            "         OI    APSTAT2,CPPTLBR ...",
+            "         PTLB  ,              ...",
+            "         B     SETVMSHR       GO CLEAN UP AND GET OUT",
+            "SHRCOPY1 L     R3,SAVEWRK8    GROUPS IN THE SYSTEM",
+            "         LR    R14,R3         FIRST SHRPAGE, AS FNDSHRPG",
+            "         LA    R8,SHRSEGNM    ...",
+            "FNDSHRP1 LA    R8,L'SHRPAGE(,R8) ...",
+            "         S     R14,F4         ...",
+            "         BP    FNDSHRP1       ...",
+            "         SR    R9,R9          FIRST GROUP",
+            "         B     SHRCOPY        COPY THE MODELS TO THIS USER",
+        ]),
+        # SHRTBLD: build the models (replaces SEGLOOP/APSEGLP, which adopted
+        # the user's tables).  Falls into the USING pair and COMMON, which
+        # chains the SHRTABLE.
+        ('00958000', '01064000', [
+            "         LA    R14,SHRSEGNM(R7) LOAD ADDRESS OF FIRST SHRPAGE",
+            "         ST    R14,SAVEWRK7   ...",
+            "         ST    R3,SAVEWRK8    GROUPS IN THE SYSTEM",
+            "         SR    R9,R9          FIRST GROUP",
+            "MODLOOP  DS    0H             ONE MODEL TABLE PER GROUP",
+            "         SR    R7,R7          ...",
+            "         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER",
+            "         SRL   R7,4           ITS 1 MB SEGMENT",
+            "         LR    R1,R7          ...",
+            "         SLL   R1,24          FIRST PAGE, HIGH HALFWORD",
+            "         LR    R2,R7          ...",
+            "         SLL   R2,8           ...",
+            "         LA    R2,255(,R2)    LAST PAGE OF THE SEGMENT",
+            "         OR    R1,R2          DMKBLDRT'S RANGE",
+            "         CALL  DMKBLDRT,PARM=PAGTONLY+NEWPAGES R2 = STE",
+            "         N     R2,=A(X'FFFFFFFF'-SEGINVAL) VALID FORM",
+            "         L     R8,SAVEWRK7    ...",
+            "         ST    R2,0(,R8)      SHRPAGE: THE MODEL",
+            "         N     R2,=A(SEGPTOM) THE MODEL'S PTO",
+            "         LR    R10,R2         ...",
+            "         SL    R10,=A(PAGPFRA-PAGSTMP) ITS HEADER",
+            "         MVC   PAGACT-PAGTABLE(4,R10),F1 ACTIVE 0, TOTAL 1",
+            "         ST    R5,PAGSHR-PAGTABLE(,R10) THE NAMED SYSTEM",
+            "         MVC   PAGTSWP+SWPVM-SWPTABLE(4,R10),ASYSVM SYSTEM",
+            "*  THE USER'S TABLE HOLDS THE SAVED COPY'S DASD SLOTS AND",
+            "*  KEYS (PAGLOOP): COPY THE GROUP'S 16 SWAP ENTRIES OVER.",
+            "         SR    R7,R7          ...",
+            "         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER",
+            "         LR    R1,R7          ...",
+            "         SRL   R1,4           ...",
+            "         SLL   R1,2           STE INDEX",
+            "         L     R14,VMSEG      THE DESIGNATION",
+            "         N     R14,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         LA    R14,0(R1,R14)  THE USER'S STE",
+            "         ST    R14,SAVEWRK2   ...",
+            "         L     R14,0(,R14)    ...",
+            "         N     R14,=A(SEGPTOM) THE USER'S PTO",
+            "         BZ    MODERR0        NONE -- PAGLOOP BUILT ONE",
+            "         N     R7,F15         GROUP WITHIN THE MEGABYTE",
+            "         SLL   R7,7           TIMES 16 ENTRIES OF 8",
+            "         LA    R14,SWPOFF(R7,R14) THE USER'S SWAP ENTRIES",
+            "         LA    R10,SWPOFF(R7,R2) THE MODEL'S",
+            "         MVC   0(128,R10),0(R14) 16 SWAP ENTRIES",
+            "         LA    R1,16          ...",
+            "MODFLAG  OI    0(R10),SWPSHR  SHARED",
+            "         LA    R10,8(,R10)    ...",
+            "         BCT   R1,MODFLAG     ...",
+            "*  BRING THE GROUP IN THROUGH THIS USER'S ADDRESS SPACE WITH",
+            "*  THE MODEL IN THE STE, LOCKED; THE FRAMES GO TO SYSTEM.",
+            "         L     R14,SAVEWRK2   THE USER'S STE",
+            "         L     R1,0(,R14)     ...",
+            "         ST    R1,SAVEWRK4    TO RESTORE",
+            "         L     R2,0(,R8)      THE MODEL",
+            "         ST    R2,0(,R14)     IN THE STE FOR NOW",
+            "         PTLB  ,              ...",
+            "         SR    R7,R7          ...",
+            "         IC    R7,SYSHRSEG(R9) 64 KB SEGMENT NUMBER",
+            "         SLL   R7,16          ITS VIRTUAL ADDRESS",
+            "         LA    R1,16          ...",
+            "         ST    R1,SAVEWRK3    PAGES TO GO",
+            "BRINGLP  LR    R1,R7          THE PAGE",
+            "         TRANS 2,1,OPT=(BRING,DEFER,LOCK)",
+            "         BNZ   MODERR         CANNOT READ THE SAVED SYSTEM",
+            "         LR    R1,R2          THE FRAME",
+            "         SRL   R1,8           A CORTABLE ENTRY IS 16 A PAGE",
+            "         AL    R1,ACORETBL    ...",
+            "         L     R14,CORFPNT-CORTABLE(,R1) THE OWNER SO FAR",
+            "         LH    R0,VMPAGES-VMBLOK(,R14) ...",
+            "         BCTR  R0,0           ONE LESS FOR HIM",
+            "         STH   R0,VMPAGES-VMBLOK(,R14) ...",
+            "         L     R14,ASYSVM     SYSTEM OWNS SHARED FRAMES",
+            "         ST    R14,CORFPNT-CORTABLE(,R1) ...",
+            "         LH    R0,VMPAGES-VMBLOK(,R14) ...",
+            "         LA    R0,1(,R0)      ONE MORE FOR IT",
+            "         STH   R0,VMPAGES-VMBLOK(,R14) ...",
+            "         A     R7,F4096       NEXT PAGE",
+            "         L     R1,SAVEWRK3    ...",
+            "         BCTR  R1,0           ...",
+            "         ST    R1,SAVEWRK3    ...",
+            "         LTR   R1,R1          ...",
+            "         BNZ   BRINGLP        ALL 16",
+            "         L     R14,SAVEWRK2   THE USER'S STE",
+            "         L     R1,SAVEWRK4    ...",
+            "         ST    R1,0(,R14)     HIS OWN TABLE AGAIN",
+            "         PTLB  ,              ...",
+            "         LA    R9,1(,R9)      NEXT GROUP",
+            "         L     R8,SAVEWRK7    ...",
+            "         LA    R8,L'SHRPAGE(,R8) ...",
+            "         ST    R8,SAVEWRK7    ...",
+            "         BCT   R3,MODLOOP     ALL GROUPS",
+            "         B     COMMON         CHAIN THE SHRTABLE",
+            "MODERR   L     R14,SAVEWRK2   THE USER'S STE",
+            "         L     R1,SAVEWRK4    ...",
+            "         ST    R1,0(,R14)     HIS OWN TABLE AGAIN",
+            "         PTLB  ,              ...",
+            "MODERR0  LH    R10,SYSPAGNM   FIRST SAVED PAGE, FOR NAMPERR1",
+            "         SLL   R10,12         ...",
+            "         B     NAMPERR1       CLEAR UP TABLES AND EXIT",
+        ]),
+        # COMMON's last card: after chaining, copy the models to this user.
+        ('01076000', [
+            "         ST    R5,SHRBPNT-SHRTABLE(,R7) CHANGE BKWD POINTER",
+            "         B     SHRCOPY1       NOW THIS USER'S OWN COPIES",
+        ]),
+        # The offset of swap entry 0 from the PTO.  An EQU must follow the
+        # DSECTs it names (IFO231 otherwise), so it sits after the COPYs.
+        ('01591000', [
+            "         COPY  VMBLOK",
+            "SWPOFF   EQU   PAGTSWP-(PAGPFRA-PAGSTMP)+(SWPFLAG-SWPVM)",
+        ]),
+    ],
+    # A user's copies of a model are DROPPED on release, not skipped: the
+    # frame is SYSTEM's and locked, the DASD slot is the saved system's, but
+    # the PTE copy is valid and DMKBLDRL's CHKPAGE abends (BLD002) on any
+    # valid PTE when it frees the table at logoff.  PARTIAL keeps them.
+    'DMKPGS': [
+        ('01066000', [
+            "         BO    SHRDROP        YES -- DROP OUR COPY OF IT",
+        ]),
+        ('01248000', [
+            "         B     RELEXIT        RETURN TO CALLER",
+            "SHRDROP  TM    SAVEWRK1,PARTIAL KEEP THE NAMED SYSTEM?",
+            "         BO    NEXTPAGE       YES",
+            "         MVC   PAGPFRA,=A(PAGINVW) OUR COPY OF THE MODEL PTE",
+            "         XC    SWPFLAG(8),SWPFLAG AND OF ITS SWAP ENTRY",
+            "         OI    VMESTAT,VMINVPAG THE TLB MAY HOLD IT",
+            "         OI    APSTAT2,CPPTLBR ...",
+            "         B     NEXTPAGE       NOT OURS TO FREE",
+        ]),
+    ],
+    # DMKVMASH scans a user's shared pages for change bits.  SHRSEGNM holds
+    # 64 KB segment numbers: the STE is the number's high nibble, the pages
+    # are the low nibble's 16 within it (the XA0036DK card scanned the whole
+    # megabyte -- private pages too -- and one PTE past it).  A model frame
+    # is CORIOLCK'd: unlock it before it is freed, and invalidate the
+    # model's PTE (CORPGPNT) as well as this user's copy.  Other sharers'
+    # copies are M3's next increment.
+    'DMKVMA': [
+        ('00192000', '00203000', [
+            "         SLR   R8,R8          ...",
+            "         IC    R8,SHRSEGNM(R3) 64 KB SEGMENT NUMBER",
+            "         LR    R4,R8          ...",
+            "         SRL   R8,4           ITS 1 MB SEGMENT",
+            "         SLL   R8,2           STE INDEX",
+            "         L     R6,VMSEG       THE DESIGNATION",
+            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R8,R6          THE STE",
+            "         TM    SEGPTO+3,SEGINVAL SEGMENT INVALID",
+            "         BO    NXTSEG1        YES, SKIP SCANNING",
+            "         L     R6,SEGPTO      THE PTO",
+            "         N     R6,=A(SEGPTOM) WITHOUT THE FLAGS",
+            "         N     R4,F15         GROUP WITHIN THE MEGABYTE",
+            "         SLL   R4,6           TIMES 16 PTES OF 4",
+            "         ALR   R6,R4          THE GROUP'S FIRST PTE",
+            "         LA    R4,16          ITS 16 PAGES",
+            "         CNOP  0,8            ALIGN",
+        ]),
+        # XA0036DK made 00206000 load the fullword PTE but left the S/370
+        # `SLL R2,8` that turned a halfword PAGCORE into an address: the frame
+        # address was shifted off the top, ISKE read some other frame's key,
+        # and a stray change bit made DMKVMASH free a frame CMS was using --
+        # the first IPL CMS under frame sharing looped on page faults.  Never
+        # exercised before because no shared system had ever IPLed here.
+        ('00207000', [
+            "         N     R2,=A(PAGPFRM) THE FRAME ADDRESS, NO FLAGS",
+        ]),
+        ('00465000', [
+            "         TM    CORFLAG,CORCFLCK+CORIOLCK FRAME LOCKED?",
+        ]),
+        ('00489000', [
+            "         L     R15,CORPGPNT   THE MODEL'S PTE",
+            "         LTR   R15,R15        ...",
+            "         BZ    *+10           NONE",
+            "         MVC   0(4,R15),=A(PAGINVW) INVALIDATE IT TOO",
+            "         SLR   R15,R15        ZIP REG",
+        ]),
+    ],
+}
+
 CONSMODS = {
 
     # I-207.  The console could not look above 16 MB in a 32M machine: DISPLAY
@@ -6297,6 +6551,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA42, 'VIRTUAL STORAGE ABOVE 16 MB: THE 256 MB CEILING')])
         print('%-8s %-9s %3d cards  %s' % (m, XA42, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(SHRMODS):
+        dk = datdeck(m, SHRMODS[m], ident=XA45)
+        path = os.path.join(HERE, '%s.%s' % (m, XA45))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
               'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(CONSMODS):

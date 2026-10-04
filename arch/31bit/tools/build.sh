@@ -296,6 +296,11 @@ stage)
   arch S/370
   mk s1 "$@" || exit 1
   run s1 || exit 1; chk s1 S/370 || exit 1
+  # I-210: a slice ran asmchk on nothing.  DMKCFG's XA0045DK failed with five
+  # IFO231s, VMFASM still wrote a TXTLCL, the slice was "staged", the snapshot
+  # "VALID", and the nucleus carried the OLD module -- a test of code that was
+  # never there.  The assembler's own verdict is the gate, here as everywhere.
+  asmchk s1 || exit 1
   echo "--- slice staged $# spec(s)"
   ;;
 asmonly)
