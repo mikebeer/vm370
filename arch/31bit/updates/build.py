@@ -4061,27 +4061,12 @@ STORMODS = {
     ],
 }
 
-SAVEDMODS = {
-
-    # I-195 stage A.  CMS's saved system declares SYSHRSG=(248,249,250) --
-    # 64 KB segment numbers that DMKCFG SHRSLOOP uses to index a 1 MB segment
-    # table, a kilobyte past its end (wall 24, FRE013).  The real fix is
-    # frame-level sharing (05-CP67-PRIOR-ART.md, M3).  Until then the named
-    # system is loaded UNSHARED: with no SYSHRSG the NAMESYS macro emits
-    # SYSHRCNT=0, DMKCFG reads every saved page into the user's own storage
-    # and the shared-segment path is never entered.  Each CMS user carries a
-    # private 192 KB copy of the nucleus pages; nothing is common between
-    # machines, so the 04 isolation question does not arise either.  The user's
-    # storage must now reach the pages at 15.5 MB -- 16 MB, where CE's
-    # directory gave MAINT 15 -- because only SHARED segments were allowed to
-    # lie outside the virtual machine.  The SYSPGNM card is a continuation
-    # card: the trailing backslash puts the X in column 72 (I-205).
-    'DMKSNT': [
-        ('00660000', [
-            "               SYSPGNM=(0-15,32,3968-4015),   UNSHARED, I-195 \\",
-        ]),
-    ],
-}
+# SAVEDMODS -- the unshared-CMS stage A for wall 24 -- was built and RETRACTED
+# on 4 October (I-195): with SYSHRSG removed, every autologged CMS user whose
+# machine is smaller than 16 MB (AUTOLOG1 first) must load pages at 15.5 MB it
+# cannot address, and CP initialisation stops after AUTO LOGON AUTOLOG1 with no
+# DMKCPI966I.  Only SHARED segments were ever allowed outside the virtual
+# machine; the frame-level design in 05 is the fix, not a DMKSNT edit.
 
 DATMODS = {
 
@@ -6174,15 +6159,6 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA42, 'VIRTUAL STORAGE ABOVE 16 MB: THE 256 MB CEILING')])
         print('%-8s %-9s %3d cards  %s' % (m, XA42, n,
-              'OK' if not verify(path) else 'BAD'))
-
-    for m in sorted(SAVEDMODS):
-        dk = datdeck(m, SAVEDMODS[m], ident=XA43)
-        path = os.path.join(HERE, '%s.%s' % (m, XA43))
-        n = dk.write(path)
-        aux(os.path.join(HERE, '%s.AUXLCL' % m),
-            [(XA43, 'NAMED SYSTEMS LOADED UNSHARED UNTIL FRAME-LEVEL SHARING')])
-        print('%-8s %-9s %3d cards  %s' % (m, XA43, n,
               'OK' if not verify(path) else 'BAD'))
 
     bld = dmkbld()
