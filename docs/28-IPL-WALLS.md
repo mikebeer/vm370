@@ -1036,7 +1036,36 @@ the page — so `3F000` indexes STE 3, which is not built, and the key byte is
 stored through a pointer loaded from −12: into the I/O new PSW, one half page
 per byte. `I-200`, XA0041DK: segment = address>>20, page = bits 12–19, and the
 two deferred R-12 real-key instructions on that path become ISKE/SSKE.
-Building (06:05).
+
+**CLOSED 06:33 (w37).** And with it, the IPL walls end where they were always
+meant to:
+
+```
+/(0009) ipl 190
+VM Community Edition V1 R1.2
+Y (19E) R/O
+Segment GCCLIB is not loaded because virtual machine memory is in use.
+DMSITP141T PROTECTION EXCEPTION OCCURRED AT F30CB6 IN ROUTINE DMSREX.
+CMS
+/(0009) query disk
+Label  CUU M  Stat  Cyl Type Blksize   Files  Blks Used-(%) Blks Left  Blk Total
+MNT191 191 A   R/W   30 3350  800        334       3681-22      13419      17100
+CMSDSK 190 S   R/O   59 3350  800        172      19537-58      14093      33630
+MNT19E 19E Y/S R/O   70 3350  800        710      28263-71      11637      39900
+Ready; T=0.01/0.01 06:33:42
+```
+
+**CMS reaches `Ready;` under VM/370+ running in ESA/390 mode**, 4 October
+2026, 06:33 UTC, Hercules 3.13. MAINT, `LOGON … NOIPL`, `DEF STOR 16M`,
+`IPL 190`. The minidisks are accessed through CP's SSCH path, the system
+profile runs, a typed command is read and answered from the file system.
+
+## Wall 28 — `DMSITP141T PROTECTION EXCEPTION` in the profile EXEC
+
+CMS survives it and reaches `Ready;`, but the profile does not complete.
+`DMSREX` at `F30CB6`. The first thing to test is R-12: CMS sets its 2 KB
+half-page keys independently (16,104 SSKs simulated during this IPL) and the
+new `SSKE` sets the 4 KB frame from one half. `I-202`.
 
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
