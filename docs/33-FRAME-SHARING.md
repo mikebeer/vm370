@@ -92,8 +92,10 @@ autologs CPWATCH), which it never had before on this CP.
   last one leaves. Today the models stay resident until CP is re-IPLed.
 - When DMKVMASH finds an altered shared page, other sharers' copies are not
   yet invalidated (only the model's PTE and the finder's copy).
-- LOADSYS/FINDSYS/PURGESYS (`DIAG 64`, DCSS such as GCCLIB) with the copy
-  logic; today CMS is told "memory in use", as before.
+- ~~LOADSYS (`DIAG 64`, DCSS such as GCCLIB)~~ — done 19:15: a shared group may
+  end short (GCCLIB is 13 of 16 pages in its second group); unsaved pages are
+  private zero pages (`I-214`), and DMKBLDRL lets copies go (`I-215`, the
+  base-register-0 trap). PURGESYS by name still uses VM/370's path.
 - A small machine whose VMSIZE is extended to reach a shared segment can
   address the rest of that megabyte as zero pages (VM/370 exposed only the
   64 KB segments).
