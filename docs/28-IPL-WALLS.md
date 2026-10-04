@@ -955,6 +955,21 @@ proof the wall is bypassed, not solved: `LOGON MAINT CPCMS NOIPL` (suppresses th
 directory IPL), `DEF STOR 16M`, `IPL 190` — the CMS nucleus from the system disk,
 no named system involved.
 
+Measured 03:00 (w25b): `LOGON … NOIPL` logs on in 16 s, `DEF STOR 16M` answers
+`STORAGE = 16384K`, and `IPL 190` runs about seventy seconds before `RPA001`.
+
+## Wall 25 — RPA001 at `IPL 190`: DMKPTRAN builds 16-page tables for 1 MB segments
+
+`DMKRPAGT` asked `DMKPTRAN` for virtual `X'20000'` and was told "addressing
+exception" in a 16 MB machine (w26). The segment-fault path, traced (w27), shows
+why: on the first fault in a segment `SEGEXA` computes the page range for
+`DMKBLDRT,PARM=PAGTONLY` with IBM's 64 KB arithmetic — `SRL R2,16`, `SLL R1,16`,
+`SLL R2,20` — so for `X'20000'` it asks for pages 32–47, sixteen of them, and
+stores the resulting STE, PTL 0, into 1 MB segment 0. Page 32 is then past the
+table: LRA CC3, `ADDEX`, CC2, `RPA001`. Three shifts fix it (`I-196`, in
+XA0036DK): segment = address>>20, end = (seg+1)<<20, start page = seg<<24.
+Building (03:26); the proof run is the w25b dialogue again.
+
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
 a load list fails exactly like a stale snapshot — convincingly, and late.

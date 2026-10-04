@@ -47,6 +47,12 @@
          L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
          N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
          CR    R7,R6          FOR SEGMENT 0?                   XA0036DK         
+./ R 00793000          $ 00793100 100                                           
+         SRL   R2,20          STE NO. -- 1 MB SEGMENTS         XA0036DK         
+./ R 00796000          $ 00796100 100                                           
+         SLL   R1,20          ENDING SEGMENT ADDRESS + 1       XA0036DK         
+./ R 00802000          $ 00802100 100                                           
+         SLL   R2,24          START PAGE = SEG*256, HIGH HALF  XA0036DK         
 ./ R 00827150          $ 00827160 010                                           
          MVC   PAGPFRA,INVLPTE INVALIDATE PTE                  XA0036DK         
 ./ R 00827550          $ 00827560 010                                           

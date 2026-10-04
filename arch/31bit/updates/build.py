@@ -4324,6 +4324,29 @@ DATMODS = {
             "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
             "         CR    R7,R6          FOR SEGMENT 0?",
         ]),
+        # I-196 / wall 25.  SEGEXA is DMKPTRAN's lazy page-table build: on the
+        # first fault in a segment it computes the segment's page range and
+        # CALLs DMKBLDRT,PARM=PAGTONLY to build the table, then stores the STE
+        # it gets back.  The range arithmetic was IBM's 64 KB one, untouched:
+        # STE number = address>>16, end = (STE+1)<<16, start page = STE<<20
+        # (16 pages per segment into the high halfword).  Measured on IPL 190
+        # for virtual X'20000': R1 = X'0020002F', pages 32-47, SIXTEEN pages,
+        # built and stored into the STE of 1 MB segment 0 -- PTL 0.  The next
+        # touch at page 32 then takes LRA CC3 (page index past PTL), ADDEX
+        # turns that into CC2, and DMKRPAGT dies RPA001.  Three shifts: the
+        # segment is address>>20, its end (seg+1)<<20, and its first page
+        # seg*256 goes to the high halfword as seg<<24.  Nothing else in the
+        # block changes -- the clamp to VMSTOR and the >>12/BCTR last-page
+        # arithmetic are geometry-free.
+        ('00793000', [
+            "         SRL   R2,20          STE NO. -- 1 MB SEGMENTS",
+        ]),
+        ('00796000', [
+            "         SLL   R1,20          ENDING SEGMENT ADDRESS + 1",
+        ]),
+        ('00802000', [
+            "         SLL   R2,24          START PAGE = SEG*256, HIGH HALF",
+        ]),
         ('00827150', ["         MVC   PAGPFRA,INVLPTE INVALIDATE PTE"]),
         ('00827550', [
             "INVLPTE  DC    A(PAGINVW)     INVALID PTE CONSTANT",
