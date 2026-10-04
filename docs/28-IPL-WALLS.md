@@ -968,7 +968,24 @@ why: on the first fault in a segment `SEGEXA` computes the page range for
 stores the resulting STE, PTL 0, into 1 MB segment 0. Page 32 is then past the
 table: LRA CC3, `ADDEX`, CC2, `RPA001`. Three shifts fix it (`I-196`, in
 XA0036DK): segment = address>>20, end = (seg+1)<<20, start page = seg<<24.
-Building (03:26); the proof run is the w25b dialogue again.
+**CLOSED 05:06.** The first build did not carry the fix — `stage DMKPTR:XA0038DK`
+copies only the deck it names, and the fix was in XA0036DK (`I-197`; `mkrun`
+now stages every deck the AUXLCL lists). Rebuilt from the new derived snapshot
+`SNAP-I196` (`I-198`) in ten minutes; `r 3DF16` reads `88200014 … 89100014`
+and `IPL 190` runs on into the guest.
+
+## Wall 26 — the guest's first instruction: `CP ENTERED; PROGRAM INTERRUPT LOOP`
+
+```
+/(0009) ipl 190
+CP ENTERED; PROGRAM INTERRUPT LOOP
+```
+
+The IPL text was read into the virtual machine and dispatched — the first guest
+instruction under this CP — and the guest program-checked at its own program-new
+PSW. The expected cause is `I-79`'s third axis arriving where it was always going
+to: CMS is a **BC-mode** virtual machine, CP dispatches it with its own PSW
+format, and ESA/390 has no BC mode (bit 12 must be one). Under test (w31).
 
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in
