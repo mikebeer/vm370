@@ -26,7 +26,8 @@ PAGEISK  TM    0(R5),SWPSHR   A SHARED PAGE AT ALL? (A GROUP   XA0045DK
          BO    INVAL          NO - GET NEXT PAGE ENTRY         XA0045DK         
 ./ R 00207000          $ 00207100 100                                           
          N     R2,=A(PAGPFRM) THE FRAME ADDRESS, NO FLAGS      XA0045DK         
-./ R 00215000 00216000 $ 00215100 100                                           
+./ R 00214000 00216000 $ 00214100 100                                           
+         BNZ   PROTVIOL       IF SO - USER BECOMES NON-SHARED  XA0045DK         
 INVAL    LA    R6,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY      XA0045DK         
          LA    R5,8(,R5)      AND ITS SWAP ENTRY               XA0045DK         
          BCT   R4,PAGEISK     IF MORE PAGES, PROCESS ALL       XA0045DK         

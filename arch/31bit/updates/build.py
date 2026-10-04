@@ -4285,8 +4285,8 @@ SHRMODS = {
             "         LR    R0,R7          THIS PTE",
             "         SR    R0,R1          ITS INDEX TIMES 4",
             "         AR    R0,R0          TIMES 8: THE SWAP ENTRY",
-            "         AR    R0,R1          ...",
-            "         TM    SWPOFF(R0),SWPSHR A COPY OF A MODEL'S?",
+            "         AR    R1,R0          IN R1: BASE R0 MEANS NO BASE",
+            "         TM    SWPOFF(R1),SWPSHR A COPY OF A MODEL'S?",
             "         BO    NXTPAGE        YES - NOT AN ALLOCATION",
             "         ABEND 2              ERROR - PAGE NOT RELEASED",
         ]),
@@ -4339,7 +4339,10 @@ SHRMODS = {
         ('00207000', [
             "         N     R2,=A(PAGPFRM) THE FRAME ADDRESS, NO FLAGS",
         ]),
-        ('00215000', '00216000', [
+        # 00215000 itself was renumbered by XA0036DK, and UPDATE needs the
+        # start of a range to exist: anchor one card earlier.
+        ('00214000', '00216000', [
+            "         BNZ   PROTVIOL       IF SO - USER BECOMES NON-SHARED",
             "INVAL    LA    R6,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY",
             "         LA    R5,8(,R5)      AND ITS SWAP ENTRY",
             "         BCT   R4,PAGEISK     IF MORE PAGES, PROCESS ALL",

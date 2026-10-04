@@ -8,8 +8,8 @@
          LR    R0,R7          THIS PTE                         XA0045DK         
          SR    R0,R1          ITS INDEX TIMES 4                XA0045DK         
          AR    R0,R0          TIMES 8: THE SWAP ENTRY          XA0045DK         
-         AR    R0,R1          ...                              XA0045DK         
-         TM    SWPOFF(R0),SWPSHR A COPY OF A MODEL'S?          XA0045DK         
+         AR    R1,R0          IN R1: BASE R0 MEANS NO BASE     XA0045DK         
+         TM    SWPOFF(R1),SWPSHR A COPY OF A MODEL'S?          XA0045DK         
          BO    NXTPAGE        YES - NOT AN ALLOCATION          XA0045DK         
          ABEND 2              ERROR - PAGE NOT RELEASED        XA0045DK         
 ./ R 00957000          $ 00957100 100                                           
