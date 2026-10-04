@@ -29,6 +29,15 @@ processor can print symbols.  It is in the nucleus, so it is in any `savecore`
 image, and it names ENTRY POINTS, not just CSECTs -- `DMKPSAEX`, `DMKSVCIN`,
 `DMKPRGCT` and the rest -- which is finer than module granularity.
 
+Names that do not start with DMK are not noise.  On 3 October I wrote off
+`HDKD58` and `HDKD7C` as APAR-id strings the scan had swallowed; they are
+Community Edition modules, added to DMKSYM by HRC067DK, and the nucleus holds
+five of them (`HDKD58 HDKD7C HDKD8C HDKCQU HDKCQA`, per CPLOAD EXEC).  Only
+`HDKD58` and `HDKD7C` have SYM entries, so an address between `HDKD7C` and
+`DMKPTRAN` can be in `HDKD8C`, which this table cannot name -- that gap is
+where wall 23's `BR R5` lived (I-194).  When the nearest symbol below is an
+HDK module, read CPLOAD EXEC for what follows it before trusting the "+N".
+
 So this reads the real thing.  Nothing here is inferred: an entry is accepted
 only if its name is plausible EBCDIC and its address is inside the image, and
 the table is accepted only as the longest unbroken run of such entries, which
