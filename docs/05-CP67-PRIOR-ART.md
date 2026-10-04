@@ -1,5 +1,19 @@
 # CP-67 as prior art: 1 MB segments with page-granular sharing
 
+> **Status, 4 October 2026.** The mechanism of §3 is now implemented in
+> VM/370's own modules and measured: the `SHRTABLE`'s page tables are models
+> that are never placed in a user's STE, each sharer gets a private 256-entry
+> table populated from the model, and two users `IPL CMS` concurrently with the
+> shared pages in one set of frames ([33-FRAME-SHARING.md](33-FRAME-SHARING.md),
+> `XA0045DK`, M3c done 4 October, `I-195`). The ESA/390 common-segment bit is
+> not used anywhere, as §5 said it need not be. §5's prediction of where the
+> work would land was partly wrong: it went into `DMKCFG` (`SHRTBLD`,
+> `SHRCOPY`), `DMKPGS` (`SHRDROP`), `DMKVMA` and `DMKBLD`, not `DMKATS`, so the
+> question "is the `DMKATS` reading right?" is moot. The image-segment-table
+> trick of §6 has not been needed. Current position in
+> [30-STATE.md](30-STATE.md); issues in [13-ISSUES.md](13-ISSUES.md). The
+> history, the quotations and the three-way table in §5 stand.
+
 26 September 2026. **This corrects the conclusion of 04-SHARED-SEGMENTS.md.**
 That document found that `CMSOLD`'s shared segment forces the entire first
 megabyte common under ESA/390, and called it the one real blocker. The

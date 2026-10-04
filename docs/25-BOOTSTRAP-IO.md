@@ -1,5 +1,7 @@
 # The bootstrap chain's channel I/O
 
+> **Status, 4 October 2026.** Done and proven by execution: `DMKCKP` and `DMKSAV`'s IPL-side entries write and read the nucleus (`IPL 6A1` → `Start ((Warm…`, M3a, 3 October), `LOGOFF` and `SHUTDOWN` checkpoint cleanly, and CP IPLs and runs CMS on both Hercules 3.13 and 4.9.1 (`I-204`; [30-STATE.md](30-STATE.md), [28-IPL-WALLS.md](28-IPL-WALLS.md)). `DMKLD00E` was left S/370 on purpose and stays so — it runs only on the build machine ([26-BUILDING-CMS.md](26-BUILDING-CMS.md)); the "19 sites, 7 branches" work in its last section was never done and is not planned. `DMKDMP`'s conversion assembles and the `STSCH` lookup is in place, but the first real abend dump under ESA/390 failed (`DMKDMP907W`, `I-201`, open — [13-ISSUES.md](13-ISSUES.md)), so abend registers come from Hercules for now. The shim design, the condition-code table, the R0 rule and the self-relative-branch finding (`I-67`, `coverage.py`, `deckscan.py`) all stand.
+
 `DMKCKP`, `DMKDMP`, `DMKLD00E` and `DMKSAV` drive the channel themselves rather
 than through `DMKIOS`, because they run before the scheduler exists or after it
 has stopped. Between them they hold **77 of CP's 133 channel sites**, and they
@@ -184,7 +186,8 @@ of the four bootstrap modules defines them locally; all four get them from
 exactly as `XASIO R2` does. `DMKLD00E`'s `0(2)`, `0(8)` and `0(1)` need only the
 register number carried across.
 
-**What is left** is ordinary work: 19 sites, 7 backward branches to label, and
+**What is left** is ordinary work *(superseded — see status note; the loader
+stays S/370)*: 19 sites, 7 backward branches to label, and
 two oddities to leave alone deliberately — `BC 1,*-8` at 00421000, which spans
 back over a `TM ZCSW+4,X'10'` onto the `TIO` and so does need a label; and
 `LPSW *-8` at 02090000, which loads a PSW from eight bytes before itself. That

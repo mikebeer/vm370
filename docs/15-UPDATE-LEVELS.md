@@ -1,5 +1,20 @@
 # CE's update levels — and a retracted claim about baselines
 
+> **Status, 4 October 2026.** The decision this document argued for was taken
+> and has carried the whole conversion: every change is an `AUXLCL` update
+> level, `XA0001DK` through `XA0045DK` in `../arch/31bit/updates/`, generated
+> by `tools/mkdeck.py` with enforced column discipline and merged `AUXLCL`s
+> (`I-138`), applied by `VMFASM … DMKLCL`, and the resulting `TXTLCL` decks
+> are what the IPLing nucleus is built from
+> ([29-DAT-CONVERSION.md](29-DAT-CONVERSION.md), `claude/BUILD-CYCLE.md`).
+> `R-04` was retired by M1; `R-22` fired once in the form the register
+> predicted — a sequence-number overflow reaching the next surviving record,
+> refused by `mkdeck` — and `tools/replchk.py`'s four invariants now gate
+> every build against the same class. The one surprise of the same kind was that CE's five
+> `HDK` modules had never been reassembled at all (wall 23, `I-194`). Current
+> position in [30-STATE.md](30-STATE.md); issues in [13-ISSUES.md](13-ISSUES.md).
+> The retraction and the disk map stand.
+
 27 September 2026. This document replaces an earlier version whose central
 claim was wrong. The correction is kept in full, because the mistake is
 instructive and because a register that quietly rewrites its own errors is worth

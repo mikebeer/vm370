@@ -1,5 +1,21 @@
 # CP architecture-dependency inventory
 
+> **Status, 4 October 2026.** The surface counted here has been converted. The
+> 358 format-sensitive DAT references are done as `XA0033`–`0037DK`
+> ([29-DAT-CONVERSION.md](29-DAT-CONVERSION.md)); the I/O instruction sites in
+> the nucleus run on the channel subsystem (M1 done 3 October); and the
+> "compatibility question deserving Adrian's judgement" under §1 never had to be
+> asked, because named systems are shared by frame rather than by segment
+> ([33-FRAME-SHARING.md](33-FRAME-SHARING.md), M3c done 4 October). The 2 KB
+> storage-key question of §2 was decided as one key per frame
+> ([23-STORAGE-KEYS.md](23-STORAGE-KEYS.md), `R-12`; `DMKPRV` on `ISKE`/`SSKE`,
+> `XA0041DK`). Of the stand-alone utilities, `DMKDMP` still cannot write its
+> dump under ESA/390 (`I-201`, open). What remains on the 24-bit axis is that
+> CP runs AMODE 24 (`I-208`, the open M2 work). Current position in
+> [30-STATE.md](30-STATE.md); issues in [13-ISSUES.md](13-ISSUES.md). The
+> counts stand as the measurement they were, and the module ranking in "The DAT
+> table surface has different owners" proved right.
+
 Measured 26 September 2026 against Adrian's maintained CE source
 (`systems/vmce/source/cp`, 201 `.ASSEMBLE` + 59 `.MACRO` + 56 `.COPY`),
 with a statement parser that skips comment lines and takes the opcode from
@@ -45,6 +61,7 @@ Every existing saved-system definition changes granularity by 16×, and
 anything that shares less than a megabyte has to over-share or be
 redesigned. This is a compatibility question, not just an engineering one,
 and it deserves Adrian's judgement before anything else in the DAT work.
+*(superseded — see status note)*
 
 ### 2. Storage key granularity goes from 2 KB to 4 KB
 

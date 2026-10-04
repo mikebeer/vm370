@@ -1,5 +1,24 @@
 # VM/370 CE 31-bit — what is proven, and a proposed staged plan
 
+> **Status, 4 October 2026.** The plan in §6 has largely been carried out, and
+> this document is kept as the record of what was proposed. M0, M1, M3a, M3b
+> and M3c are done: the converted CP IPLs from DASD in ESA/390 mode, CMS reaches
+> `Ready;` by `IPL 190` and by `IPL CMS` with two concurrent sharers, EXEC2 and
+> REXX run, and `DEF STOR 32M`/`64M` is accepted. M2's DAT tables are done but
+> CP still runs AMODE 24, so guest storage above 16 MB aliases onto the low
+> 16 MB (`I-208`) — that is the open M2 work; M4 is largely done by M3c; M5 is
+> not started. §2's three /380 measurements were never taken and are moot; the
+> `CMSOLD` decision asked for in §3a was never needed, because named systems
+> are shared by frame ([33-FRAME-SHARING.md](33-FRAME-SHARING.md)); the
+> `DMKBLDRT` ABI change in §6 was not needed either (the packed halfword was
+> re-split and the ceiling raised to 256 MB, `I-185`, `I-203`); and the asks of
+> Adrian in §7 are overtaken. Current position in
+> [30-STATE.md](30-STATE.md), the milestone table in
+> [../arch/31bit/README.md](../arch/31bit/README.md), walls in
+> [28-IPL-WALLS.md](28-IPL-WALLS.md), issues in [13-ISSUES.md](13-ISSUES.md).
+> What still stands: the hardware demonstration in §1 and the §3–§4 account of
+> what had to change in CP, which the conversion confirmed.
+
 For Adrian, from Mike. 26 September 2026.
 
 Asking for comments and, if you agree with the shape, approval to start on
@@ -126,6 +145,7 @@ three 1 MB segments, and what matters is only whether any saved system's
 **So the decision I am actually asking for is what happens to `CMSOLD`** —
 retire it under 31-bit CP, relocate its shared segment above 1 MB and break
 its "never updated" intent, or keep it 24-bit only and refuse to attach it.
+*(superseded — see status note)*
 That is a question about what CE promises its users, which is yours and not
 mine. The rest is a layout edit.
 
@@ -410,7 +430,7 @@ need them to run with DAT on — CMS needs them, being IPL'd by name.
   virtual machine. ESA/390 needs 19 bits per address, so two do not fit, and it
   is reached by SVC, so this is an ABI change across 24 callers
   (`DMKBLDRT` 8, `DMKBLDRL` 5, `DMKBLDVM` 8, `DMKBLDEC` 3). No replacement
-  format is proposed anywhere yet.
+  format is proposed anywhere yet. *(superseded — see status note)*
 
 **M3 — one S/370-mode guest logs on and runs CMS.** `DMKVAT` plus `DMKPRV`,
 now also the frame-level shared-segment rework in `DMKATS` and the `NAMESYS`

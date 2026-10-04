@@ -1,5 +1,17 @@
 # The macro undercount, quantified — and what it turned up instead
 
+> **Status, 4 October 2026.** The measurement stands and was borne out:
+> `TRANS` was converted once and its sites followed, in the DAT conversion of
+> [29-DAT-CONVERSION.md](29-DAT-CONVERSION.md). Of the seven `PSA` constants,
+> `CPCREG0` was changed to the ESA/390 translation format (`X'81B00CC0'`,
+> `PSA.XA0001DK`) and the rest are as they were: the 24-bit masks `XPAGNUM`,
+> `X2048BND` and `XRIGHT24` have not been widened, because CP still runs
+> AMODE 24 — guest storage above 16 MB aliases onto the low 16 MB (`I-208`) —
+> and their widening belongs with the 215 `LA` strip sites (`I-126`) in the
+> open M2 work. The class-D flag relocation has likewise not been started.
+> Current position in [30-STATE.md](30-STATE.md); issues in
+> [13-ISSUES.md](13-ISSUES.md).
+
 26 September 2026. `06-LEDGER.md` named this the largest unquantified risk in
 the inventory: every instruction count is a floor, because a statement parser
 cannot see what a macro emits. `TRANS` was found by accident and hides an

@@ -1,5 +1,17 @@
 # M0 closed: the assembly chapter, measured shut
 
+> **Status, 4 October 2026.** Still true, and since used throughout: every
+> deck in `../arch/31bit/updates/` assembles against `XALIB`, and the converted
+> CP built with it IPLs in ESA/390 mode and runs CMS (M0, M1, M3a, M3b, M3c
+> done; [30-STATE.md](30-STATE.md)). The two "next steps" at the end are long
+> done — `PSA.XA0001DK` ([19-M1-STEP2.md](19-M1-STEP2.md)) and the clean
+> native baseline ([16-NATIVE-BASELINE.md](16-NATIVE-BASELINE.md)). The card
+> import recipe is now inside `tools/build.sh` rather than typed; `MVPG` and
+> friends remain unused. One correction of scale: the five `HDK` modules CE
+> never reassembled became wall 23 (`I-194`), a reminder that a macro library
+> accepted by the assembler is not the same as every module having been built
+> with it. Milestone table in [../arch/31bit/README.md](../arch/31bit/README.md).
+
 27 September 2026. `12-RISKS.md` opened with **R-17 — CE's assembler rejects
 `XAOPS`** — at probability Low, impact High, because the macros had only ever
 been validated under z390, and z390 is not the assembler that has to accept

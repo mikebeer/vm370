@@ -1,5 +1,18 @@
 # Shared segments at 1 MB: the collision is two items, not nineteen
 
+> **Status, 4 October 2026.** The frame-level route that the note below points
+> to has been built and measured: named systems are shared by frame on the
+> converted CP, `IPL CMS` works for two concurrent users with their private
+> pages private, and M3c is done ([33-FRAME-SHARING.md](33-FRAME-SHARING.md),
+> `XA0045DK`, `I-195`). None of the three options for `CMSOLD` was taken and no
+> `DMKSNT` layout edit was made — `CMSVSAM` and `CMSAMS` were never separated,
+> because no megabyte is ever made common. Still open from the same work:
+> `LOADSYS`/`FINDSYS` for DCSS such as `GCCLIB` (CMS is still told "memory in
+> use"), and the sharer bookkeeping when the last user leaves (increment 2 in
+> `33`). Current position in [30-STATE.md](30-STATE.md). The collision table
+> below still stands, as the measurement of what segment-granular sharing at
+> 1 MB would have cost.
+
 > **Superseded in its conclusion, and its one open caveat has now come back
 > POSITIVE. Read [05-CP67-PRIOR-ART.md](05-CP67-PRIOR-ART.md) with it.**
 >

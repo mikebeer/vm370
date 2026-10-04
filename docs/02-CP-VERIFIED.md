@@ -1,5 +1,20 @@
 # Two design hypotheses, checked against CP's source
 
+> **Status, 4 October 2026.** Both hypotheses have since been tested by
+> building, and both held. The `DMKIOS` shim of §2 is the converted I/O
+> supervisor that IPLs today (`XAIO`, `XA0004DK`; M1 done 3 October), and the
+> DAT work of §1 is done as `XA0033`–`0037DK` with 1 MB segments and fullword
+> PTEs ([29-DAT-CONVERSION.md](29-DAT-CONVERSION.md)); `DMKVAT` was indeed not
+> where the work was. The closing claim that "the next useful step is Adrian's
+> judgement" is overtaken: the shared-segment question was settled without a
+> compatibility decision, by sharing named systems at frame granularity
+> ([33-FRAME-SHARING.md](33-FRAME-SHARING.md), M3c done 4 October), and
+> channel logout and the `SIO` condition-code contract were worked through in
+> the walls of [28-IPL-WALLS.md](28-IPL-WALLS.md). Current position in
+> [30-STATE.md](30-STATE.md); issues in [13-ISSUES.md](13-ISSUES.md). The
+> source reading itself — `ARCHTECT`, the ten `DMKIOS` sites, the 1,917-reference
+> status surface — still stands.
+
 26 September 2026. The proposal asserted two things from counting rather
 than reading. Both have now been checked, and **both were wrong in the
 direction of being too pessimistic.** Companion to 03-CP-INVENTORY.md, which
@@ -317,4 +332,4 @@ logout.
 
 Three of those four are design decisions rather than code volume. That is a
 better problem to have, but it means the next useful step is Adrian's
-judgement rather than more counting.
+judgement rather than more counting. *(superseded — see status note)*

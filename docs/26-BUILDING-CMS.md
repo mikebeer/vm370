@@ -1,5 +1,7 @@
 # Building CMS, and why the loader must stay S/370
 
+> **Status, 4 October 2026.** Confirmed in practice: CE's unmodified CMS IPLs and reaches `Ready;` under the converted CP, by `IPL 190` (M3b) and by `IPL CMS` with two concurrent sharers (M3c), EXEC2 and REXX running ([30-STATE.md](30-STATE.md), [33-FRAME-SHARING.md](33-FRAME-SHARING.md)). CMS needed no conversion, as predicted; what it did need was CP-side simulation that this note did not foresee — guest `SIO`/`TIO`/`SSK`/`ISK` are *operation* exceptions on ESA/390, not privileged-op, so `DMKPRV` had to be taught to route them (`I-199`), and its key simulation needed the ESA/390 table geometry (`I-200`, `I-202`; [28-IPL-WALLS.md](28-IPL-WALLS.md) walls 26–28). The loader stays S/370 and `DMKSAVNC`'s five sites stay `SIO`/`TIO`, exactly as argued. The build sequence shown is what `build.sh write` does. "M5 would need" stands, with one correction: M5 needs M2's AMODE 31 first, because CP at AMODE 24 aliases guest storage above 16 MB onto the low 16 MB (`I-208`); `DEF STOR 32M/64M` is accepted but only as bookkeeping.
+
 Mike's question — what does creating CMS need, when CP and CMS are built at the
 same time — has a short answer and a consequence that decides a piece of scope.
 

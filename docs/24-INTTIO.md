@@ -1,5 +1,7 @@
 # The INTTIO group: one symbol, two unrelated jobs
 
+> **Status, 4 October 2026.** All three increments are done and in use: `DMKVMI` reads `SYSIPLDV`, `DMKIOT` reads `IOINTPRM+2` (XA0012DK) with `DMKCPI XA0013DK` setting each subchannel's enable bit and interruption parameter together, and `DMKCKP`/`DMKDMP` were converted in one pass each with their channel I/O ([25-BOOTSTRAP-IO.md](25-BOOTSTRAP-IO.md)). The interrupt path is proven, not merely assembled: CP IPLs from DASD and CMS runs through it, M1 and M3a–M3c closed ([30-STATE.md](30-STATE.md), [28-IPL-WALLS.md](28-IPL-WALLS.md)). The "middle" recommendation — device address in the low halfword — is what was built; the high halfword is still unused and the pointer design still unimplemented, as recommended. One consequence found later: a device `DMKRIO` names but Hercules lacks never gets `MSCH`ed and has `RDEVSSID` 0, so `TSCH` faults; `DMKIOS` answers CC3 for it (`I-211`, [13-ISSUES.md](13-ISSUES.md)). `DMKDMP`'s dump write still fails under ESA/390 (`I-201`, open).
+
 `INTTIO EQU INTKFLIN+2` is the S/370 I/O interruption code at X'BA', the
 interrupting device address. Eighteen sites in four nucleus modules reference
 it, and the reason a blind rename was refused is now precise rather than

@@ -1,5 +1,7 @@
 # Installing this in your own environment
 
+> **Status, 4 October 2026.** The headline below is a day old and the result has moved past it: wall 20 is closed along with walls 21–29, CP takes console input, and CMS reaches `Ready;` by `IPL 190` and by `IPL CMS` with two concurrent users, EXEC2 and REXX running ([30-STATE.md](30-STATE.md), [32-V0.1.md](32-V0.1.md), [28-IPL-WALLS.md](28-IPL-WALLS.md)). Hercules 3.13 and 4.9.1 behave identically (`I-204`). The procedure stands, with these changes: `build.sh reset SNAP-I217` restores the current nucleus build; `build.sh stage` is now gated on the assembler's verdict (`I-210`); and the interactive test is `esa390.sh w29 w29.json`, which runs `drive.py` — step-driven, a second line-mode terminal on 000A for the user while the operator stays on 0009 and issues `shutdown` — in about 20 s rather than a fixed-pause `.rc`. `DEF STOR 32M`/`64M` are accepted (`I-203`) but storage above 16 MB is bookkeeping only until M2's AMODE 31 (`I-208`). "What you get" and the last paragraph are superseded by the status above; the CMS section promised there is 30-STATE.md.
+
 Asked on 3 October and owed since: *"how can I install the current version in my
 environment?"*
 
@@ -11,7 +13,7 @@ result IPLs, initialises, prints its banner, accepts `cold`, auto-logs on
 OPERATOR and reports its storage sizes — and then does not yet take console
 input, because of wall 20 (`I-183`/`I-184`). So the procedure below is
 reproducible and the artifact is real, but it is a development checkpoint, not
-something to run work on.
+something to run work on. *(superseded — see status note)*
 
 ## What you need
 
@@ -135,8 +137,10 @@ A CP that, in ESA/390 mode on either engine:
 - starts the monitor
 
 and then does not accept a typed command, for the reason recorded in
-`I-183`/`I-184`. Hercules 3.13 reaches the prompt in about 200 seconds; 4.9.1 in
-about 16. They agree on everything that has been compared.
+`I-183`/`I-184`. *(superseded — see status note)* Hercules 3.13 reaches the
+prompt in about 200 seconds; 4.9.1 in about 16. They agree on everything that
+has been compared.
 
 `CMS` does not run yet, so there is nothing to log on to and do work in. When
 that changes this document gets a section on it rather than a promise here.
+*(superseded — see status note)*

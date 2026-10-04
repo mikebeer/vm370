@@ -1,5 +1,7 @@
 # The storage-key family: not low-hanging fruit
 
+> **Status, 4 October 2026.** The family is converted on every path CMS exercises and `R-12` is settled by measurement, not by the plan in "R-12 decided" below. Hercules `pgmtrace +1` decoded all 16,305 guest `SSK`s during a CMS IPL and profile: CMS sets both 2 KB halves of a page alike, so one ESA/390 key per 4 KB frame reproduces what the guest asked for; the `SWPKEY1 ≠ SWPKEY2` counter was never needed (`I-202`, [13-ISSUES.md](13-ISSUES.md)). Wall 28 — the REXX `DMSITP141T` protection exception — looked like this family and was not: `DMKPRV SEGOK` (XA0036DK) computed the STO in R6, the guest address the two `LRA`s needed, so `ISK`/`SSK` worked the wrong frame ([28-IPL-WALLS.md](28-IPL-WALLS.md)). Guest `ISK`/`SSK` are simulated with `ISKE`/`SSKE` in `DMKPRV` (XA0041DK); `DISPLAY K` was converted (XA0044DK, `I-209`). `privchk.py` reports 6 key sites left, in `DMKCDM` and `DMKPTR`, none on a path reached so far. `DMKPRV`'s missing `ISKE`/`SSKE`/`RRBE` simulation (`I-46`) is still M5 work. The analysis of what the instructions differ in, the 4 KB verification and the three site classes stand; see [30-STATE.md](30-STATE.md) for position.
+
 I proposed this as the cheap win — 67 sites, `ISK`→`ISKE`, `SSK`→`SSKE`,
 `RRB`→`RRBE`, all three replacements valid in S/370 as well as ESA/390, so
 convertible and testable on the system as it runs today. Reading Hercules's
@@ -332,7 +334,8 @@ choice of single byte avoids it: access keys are not ordered, so there is no
 
 **So the decision is to measure rather than guess.** The cases where it matters
 are exactly those where a guest sets `SWPKEY1 ≠ SWPKEY2` on a page, and that is
-a condition CP can test at the moment it sets them. The plan:
+a condition CP can test at the moment it sets them. The plan: *(superseded — see
+status note: measured by tracing the guest's `SSK`s instead)*
 
 1. Keep the `SWPKEY1`/`SWPKEY2` pair and `DMKPRV`'s per-half indexing exactly
    as they are. The guest's view of its access keys does not change.

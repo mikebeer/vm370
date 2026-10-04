@@ -1,5 +1,20 @@
 # The real shape of the DAT conversion
 
+> **Status, 4 October 2026.** The DAT conversion this document shaped is done
+> — `XA0033`–`0037DK`, 1 MB segments, fullword PTEs, the shift sites named
+> and changed ([29-DAT-CONVERSION.md](29-DAT-CONVERSION.md),
+> [27-STE-DESIGN.md](27-STE-DESIGN.md)) — and CP runs on the result. §1 was
+> wrong in its conclusion: `DMKBLDRT`'s packed halfword was kept and re-split
+> 4+8 for 1 MB segments, no ABI change and no caller touched; `I-185` then
+> widened the page numbers to 16 bits, which is why `DEF STOR` tops out at
+> 256 MB (`I-203`). §3's frame-sharing work landed in `DMKCFG`, `DMKPGS`,
+> `DMKVMA` and `DMKBLD`, not `DMKATS`
+> ([33-FRAME-SHARING.md](33-FRAME-SHARING.md), M3c done). The one M2 item
+> still open is AMODE 31: CP runs 24-bit, so guest storage above 16 MB aliases
+> onto the low 16 MB (`I-208`). Current position in [30-STATE.md](30-STATE.md);
+> issues in [13-ISSUES.md](13-ISSUES.md). The shift inventory and the `DMKPTR`
+> `CORSHARE` finding stand.
+
 26 September 2026. `03-CP-INVENTORY.md` counted 492 DAT-table field
 references and named `DMKPGS`, `DMKATS` and `DMKBLD` as the top consumers,
 none of which had been read. Two of them have now been read, and the field
@@ -34,7 +49,7 @@ bits, 4 page bits*. That is 256 segments of 16 pages of 4 KB — **exactly
 Under ESA/390 an address needs 11 segment bits and 8 page bits. Nineteen bits
 per address, so two of them do not fit in a fullword at all. **This is not a
 field widening, it is an ABI change** — and `DMKBLDRT` is called via SVC, so
-every caller is affected.
+every caller is affected. *(superseded — see status note)*
 
 **Eight callers**, which is the good news:
 

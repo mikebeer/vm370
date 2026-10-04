@@ -1,5 +1,21 @@
 # Ledger: what is answered, how firmly, and what is open
 
+> **Status, 4 October 2026.** The one-line summary below is out of date in its
+> last clause: CP code has been written — 43 update levels
+> (`XA0001`–`XA0045DK`, `../arch/31bit/updates/`) — and the converted CP IPLs
+> from DASD in ESA/390 mode, runs CMS to `Ready;` by `IPL 190` and by
+> `IPL CMS` with two concurrent sharers, and runs EXEC2 and REXX (M0, M1, M3a,
+> M3b, M3c done; [30-STATE.md](30-STATE.md)). Of the open items: §4.6 was
+> decided ([23-STORAGE-KEYS.md](23-STORAGE-KEYS.md), `R-12`); §5.2 is moot,
+> the frame-sharing work having landed in `DMKCFG`/`DMKPGS`/`DMKVMA`/`DMKBLD`
+> rather than `DMKATS` ([33-FRAME-SHARING.md](33-FRAME-SHARING.md)); §6's /380
+> measurements were never taken and no longer matter; §7.2's `DMKBLDRT` ABI
+> change was not needed (`I-185`). §8 is superseded entirely. Test 8's
+> consequence is the one thing here that is still live: CP runs AMODE 24, so
+> guest storage above 16 MB aliases onto the low 16 MB (`I-208`), the open M2
+> work. Issues in [13-ISSUES.md](13-ISSUES.md), walls in
+> [28-IPL-WALLS.md](28-IPL-WALLS.md). §1–§3, the evidence by category, stand.
+
 26 September 2026. A status account for the 31-bit CP question, sorted by
 **strength of evidence** rather than by topic — because "we checked" means
 very different things depending on whether something was executed, read, or
@@ -7,6 +23,7 @@ counted.
 
 The one-line summary: **the hardware question is closed, the software is
 mapped, M0 is verified on CE itself, and no CP code has been written.**
+*(superseded — see status note)*
 
 ---
 
@@ -313,6 +330,7 @@ CP defects. `16-NATIVE-BASELINE.md`.
 ## 8. And the thing no amount of reading settles
 
 **No CP code has been written** — but the reason is no longer build access.
+*(superseded — see status note)*
 `10-BUILD-ENVIRONMENT.md` measured it: **132 of 201 CP modules assemble today
 under z390 on Linux**, including `DMKIOS`, `DMKPSA`, `DMKVAT` and `DMKATS`, and
 seven of the M1 nine. Development needs no mainframe environment; only

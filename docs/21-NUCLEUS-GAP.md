@@ -1,5 +1,7 @@
 # What stands between here and a CP nucleus
 
+> **Status, 4 October 2026.** All four gap items are closed. The nucleus links, IPLs from DASD (M3a, 3 October) and runs CMS for two concurrent users (M3b, M3c, 4 October) — [30-STATE.md](30-STATE.md), [28-IPL-WALLS.md](28-IPL-WALLS.md) walls 1–29. The nine modules broken by the `PSA` rename all assemble and run; `VMFLOAD`, `LDFASM` and the configuration modules are driven by `build.sh` (`I-194` found that CE's `HDK` modules had never been reassembled, hence the `LDFASM` step). `DMKBTS` is `R-24`, not realised: the sourceless `TEXT` IPLs and runs CMS ([12-RISKS.md](12-RISKS.md)). The load list measured here was the wrong one — `094/CPLOAD.EXEC` (183 modules) is what `VMFLOAD` reads, not `194`'s 172 (`I-66`, [13-ISSUES.md](13-ISSUES.md)). The `ASMDMK` baseline and the pause lesson (`I-33`) stand; fixed-pause runs have since been replaced by `drive.py`, which polls the log.
+
 27 September 2026. Measured, not estimated — by running CE's own `ASMDMK` across
 every module it lists and reading `CPLOAD.EXEC`, the nucleus load list.
 

@@ -1,5 +1,7 @@
 # M1 step 4: what DMKIOS's ten I/O sites actually become
 
+> **Status, 4 October 2026.** Implemented and exercised: `DMKIOS XA0004DK`, `RDEVSSID` filled by `DMKCPI XA0013DK`, the CSW shim in `XAIO.MACRO`. M1 closed on 3 October and CMS now does all its minidisk I/O through this path (M3b/M3c, [30-STATE.md](30-STATE.md); walls 1–22 in [28-IPL-WALLS.md](28-IPL-WALLS.md)). Two things changed after the design: the standalone paths (`DMKDMP`, `DMKCKP`) look subchannels up by `STSCH` scan rather than reading `RDEVSSID`, because a dump cannot trust control blocks ([25-BOOTSTRAP-IO.md](25-BOOTSTRAP-IO.md)); and a device `DMKRIO` names but the Hercules configuration lacks has `RDEVSSID` 0, on which `TSCH` takes an operand exception — the four `L R1,RDEVSSID` sites now answer CC3 as `SIO` did (`I-211`, [13-ISSUES.md](13-ISSUES.md)). The "What step 4 needs" list is complete. The reading of the ten sites and the correction to the inventory's framing stand as the record.
+
 27 September 2026. `03-CP-INVENTORY.md` and the `arch/31bit` README both say
 **"I/O is ten instruction sites, not 1,493 references"** — every S/370 I/O
 instruction in `DMKIOS` is a single instruction with the same `0(R1)` operand, so

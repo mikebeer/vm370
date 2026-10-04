@@ -1,5 +1,7 @@
 # The DAT conversion: what it took, and how the sites were found
 
+> **Status, 4 October 2026.** It worked: the converted tables take CP from the `PRG018` of 30 September through IPL from DASD, two concurrent CMS users and `DEF STOR 64M` ([30-STATE.md](30-STATE.md)). The instruments did not find everything — four geometry sites survived the sweep and became walls 24, 25, 28 and 29 (`DMKCFG SHRSLOOP`, `DMKPTR SEGEXA`, `DMKPRV SEGOK`'s register, `DMKPGS CKSEG`; `I-195`, `I-196`, `I-202`, `I-206` in [13-ISSUES.md](13-ISSUES.md), traces in [28-IPL-WALLS.md](28-IPL-WALLS.md)), and `codeb0.py` (§6) was written after `I-188` for exactly that class. §6's "deliberately not converted" table is current: `I-126`'s 215 strip sites are M2's open AMODE 31 work, now measured as `I-208` (guest storage above 16 MB aliases onto the low 16 MB); `I-132`'s three-byte fields are M5. The `DMKCFG` AP copy stayed unconverted; shared segments were redone at frame granularity instead ([33-FRAME-SHARING.md](33-FRAME-SHARING.md)). `build.sh stage` is now gated on `asmchk` like the other stages (`I-210`). The method, the idiom classes and the guard list stand.
+
 1 October 2026. Companion to `27-STE-DESIGN.md`, which is the design. This is
 the **method and the measurements** — written while the verification build runs,
 so it records what was done and not whether it worked.

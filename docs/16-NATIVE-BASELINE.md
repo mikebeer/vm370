@@ -1,5 +1,19 @@
 # The native baseline: 18 CP modules assemble clean, and z390's error list was never CP's
 
+> **Status, 4 October 2026.** The baseline did its job: every assembler
+> diagnostic since has been ours, and `tools/asmerr.py` reconciles each
+> build's diagnostics against the predicted sweep (CONFIRMED / MISSED /
+> COLLIDED / SILENT) on that footing. The "what this means for the milestones"
+> table is long overtaken — M1 is done (3 October), M2's tables are done, M3a,
+> M3b and M3c are done, CMS reaches `Ready;` under the converted CP
+> ([30-STATE.md](30-STATE.md), [../arch/31bit/README.md](../arch/31bit/README.md)).
+> The `TXTLCL` note proved load-bearing: the nucleus build does pick the
+> level up, and the related trap — five `HDK` modules that CE itself had never
+> reassembled — became wall 23 (`I-194`). The operational notes at the end are now built into
+> `tools/build.sh`, which refuses to start on a stale stage and snapshots before
+> the nucleus write (`claude/BUILD-CYCLE.md`). `R-14` closed and the
+> 186-module result stand.
+
 27 September 2026. The question was "do we need to check anything for assembly
 before going further?" The answer was yes, one thing: **no real CP module had
 ever been assembled by CE's own assembler.** Everything known about CP's

@@ -1,8 +1,10 @@
 # The DAT table conversion for a clean IPL — design
 
+> **Status, 4 October 2026.** Built, and past wall 11 by a long way: the tables designed here (CORE XA0033DK, EQU XA0037DK, DMKBLD XA0034DK, the XA0036DK sweep) carry CP through IPL from DASD and CMS to `Ready;`, with named systems shared at frame granularity (M3c, [33-FRAME-SHARING.md](33-FRAME-SHARING.md)); walls 11–29 are closed in [28-IPL-WALLS.md](28-IPL-WALLS.md). Three things the design did not have: `DMKBLDRT`'s packed R1 is two 16-bit page numbers, so the ceiling is 256 MB and `DEF STOR 32M`/`64M` now work (`I-185`, `I-203`); `DMKPTR SEGEXA` and `DMKPGS CKSEG` still carried 64 KB arithmetic after the sweep (`I-196`, `I-206`); and `DMKCFG`'s shared-segment path indexed the new table with 64 KB segment numbers (`I-195`). §1's "milestone B" is M2's open half: ledger test 8 has now been measured — a store at `s1ff0000` lands at `ff0000` because CP runs AMODE 24 (`I-208`, [13-ISSUES.md](13-ISSUES.md)) — and §6's 215 strip sites (`I-126`) are that work. The bit layouts, the flag analysis, the alignment idiom and the order of work stand; [30-STATE.md](30-STATE.md) has the position.
+
 1 October 2026. This is **wall 11** of `IPL-WALLS.md`, where CP stops today:
 `PRG018`, a translation-specification exception, raised by `TRANS`'s `LRA`
-against a System/370 segment table.
+against a System/370 segment table. *(superseded — see status note)*
 
 Every bit position below is quoted from **SA22-7201-08**, not recalled. That
 matters more here than anywhere else in the conversion, because a wrong bit

@@ -1,5 +1,19 @@
 # M1: the work list
 
+> **Status, 4 October 2026.** M1 is done (3 October): CP IPLs in ESA/390 mode
+> and answers a typed command, against the tightened criterion in
+> [../arch/31bit/README.md](../arch/31bit/README.md), not the "one console
+> message" this list opens with. It was done by **strategy A** — IPL from DASD,
+> as CE does — not the strategy B chosen below; the choice was never recorded
+> at the time and is accounted for in `01-PROPOSAL.md` §6 and
+> [30-STATE.md](30-STATE.md). Steps 4–6 became the twenty-two walls of
+> [28-IPL-WALLS.md](28-IPL-WALLS.md) (`DMKIOS XA0004DK`, `DMKCNS XA0021DK`,
+> `DMKCPI XA0013DK`, `DMKCKP`, `DMKSAV`, …). Everything in "What M1 explicitly
+> defers" has since been done except AMODE 31: CP still runs 24-bit, so guest
+> storage above 16 MB aliases onto the low 16 MB (`I-208`, the open M2 work;
+> [13-ISSUES.md](13-ISSUES.md)). The lowcore analysis and the per-module
+> table stand as the measurement they were.
+
 26 September 2026. M1 is *CP IPLs in ESA/390 mode and writes one console
 message* — DAT off, no paging, no guests. This turns that sentence into an
 ordered work list with measured quantities, because nothing else in the plan
@@ -39,7 +53,7 @@ method every test in this repository already uses, and the one Adrian's
 | All of CP | 201 | 157,498 | 179 | 538 | 492 | 1,917 |
 
 **Strategy B is the right first move**, and the DAT column is why: 12
-references against 82. `DMKCKP`, `DMKSAV` and `DMKBLD` carry 70 of the 82,
+references against 82. *(superseded — see status note)* `DMKCKP`, `DMKSAV` and `DMKBLD` carry 70 of the 82,
 and `DMKBLD`'s are all about building the system's segment and page tables —
 which M1 does not need, because DAT is off. Deferring those three modules
 keeps M1 to the PSW, lowcore, control-register and console questions, which

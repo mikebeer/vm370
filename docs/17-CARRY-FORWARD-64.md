@@ -1,5 +1,20 @@
 # What the 31-bit work hands to 64-bit
 
+> **Status, 4 October 2026.** The ledger is still the forward-looking view
+> and nothing in it has been contradicted; what has changed is that the
+> "unchanged" rows are now built code rather than plans — the channel subsystem
+> conversion, the 4 KB keys in `DMKPRV` (`XA0041DK`), frame-level sharing
+> ([33-FRAME-SHARING.md](33-FRAME-SHARING.md)), and the 1 MB / 4 KB geometry
+> ([29-DAT-CONVERSION.md](29-DAT-CONVERSION.md)), all running under an IPLed
+> CP ([30-STATE.md](30-STATE.md)). The "one thing that follows for this week"
+> was done as `PSA.XA0001DK`. Two facts were not known when this was written:
+> `SIO`/`TIO`/`ISK`/`SSK` are *operation* exceptions on ESA/390, not privileged
+> ops (`I-199`), and the format-0 ceiling is live — `DEF STOR 32M`/`64M` is
+> accepted but CP runs AMODE 24, so the three gates in "What that means for the
+> order of work" are joined by a fourth, AMODE 31 itself (`I-208`, the open M2
+> work; `I-126`). `DMKDMP` cannot yet write its dump under ESA/390 (`I-201`).
+> `I-28` remains open. Issues in [13-ISSUES.md](13-ISSUES.md).
+
 27 September 2026. The root README argues the 31-bit stage is not a detour,
 because "the two most expensive pieces of the 31-bit conversion carry forward to
 64-bit unchanged". That was an argument. This is the ledger, item by item, with
