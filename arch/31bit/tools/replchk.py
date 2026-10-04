@@ -319,14 +319,28 @@ def check(mod):
     # and `DMKCDB`, `DMKCDM` and `DMKDRD` do not copy `CORE` -- seven of the
     # build's twelve diagnostics, from one mistake.  So resolve only the
     # introduced names, where every miss is real.
+    # A label a deck writes because the record it replaces carried it --
+    # DMKPTRAN on XA0046DK's new entry card -- is carried forward, not
+    # introduced: it was an ENTRY every module could already CALL.  Only a
+    # label the base of its own module does not define counts.
     introduced = set()
     for d in glob.glob(os.path.join(UPDATES, '*.XA*DK')):
+        own = set()
+        dmod = os.path.basename(d).split('.')[0]
+        for cand in ('%s.ASSEMBLE' % dmod, '%s.COPY' % dmod, '%s.MACRO' % dmod):
+            for sd in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+                q = os.path.join(sd, cand)
+                if os.path.exists(q):
+                    for _, txt in records(q):
+                        mm = LABEL.match(txt) if not iscomment(txt) else None
+                        if mm:
+                            own.add(mm.group(1))
         for _, _, _, lines in deck_cards(d):
             for l in lines:
                 if iscomment(l):
                     continue
                 m = LABEL.match(l)
-                if m:
+                if m and m.group(1) not in own:
                     introduced.add(m.group(1))
     reach = set(defined) | set(newlabels)
     members = list(copies(base))

@@ -256,10 +256,12 @@ def psa():
     d.replace('00255600', first='00255610', inc=10, limit='00256000', lines=[
         "*  AMODE 31 STUB FOR THE TRANS MACRO. DOCS/34-AMODE31.",
         "ATRL31   DC    X'80',AL3(TRL31) 31-BIT ENTRY, FOR BASSM",
-        "TRL31    LRA   R2,0(0,R1)     TRANSLATE, IN AMODE 31",
+        "TRL31    LR    R2,R1          24-BIT GUEST: THE ADDRESS IS",
+        "         N     R2,XRIGHT24    BITS 8-31, WHATEVER BYTE 0 IS",
+        "         LRA   R2,0(0,R2)     TRANSLATE, IN AMODE 31",
         "         BSM   0,R15          BACK TO THE CALLER'S MODE",
         "         DS    0F -           RESERVED (WAS 5F)",
-        "         DS    2F -           RESERVED (WAS 5F)",
+        "         DS    1F -           RESERVED (WAS 5F)",
     ])
 
     return d
@@ -4100,9 +4102,30 @@ GUESTMODS = {
 # CP notices; this unlocks VIRTUAL storage above the line.
 AMODEMODS = {
     'TRANS': [
-        # The common form goes through the PSA stub (+2 bytes a site, I-216);
-        # the other register forms keep the inline wrapper (+16).
+        # The common form goes through the PSA stub (+2 bytes a site, I-216),
+        # which masks the address to 24 bits first: every guest is a 24-bit
+        # machine today and CP's callers hand TRANS CCW and CAW words with
+        # the command code or key still in byte 0 (DMKDGD 'L R1,RCWADDR',
+        # DMKVSP 'L R1,VSPCAW', ...) -- w53 lost every CMS minidisk to that.
+        # OPT=AMODE31 says the address is a clean 31-bit one -- the console
+        # ST/D path -- and takes the inline wrapper, unmasked, and passes
+        # the flag on to DMKPTRAN.  The other register forms also stay
+        # inline (+16), masked by nothing, as the original macro left them.
+        ('00004110', [
+            "         LCLB  &IERR,&SYST,&LOCK,&BRNG,&DEFR,&VFLT,&A31",
+        ]),
+        ('00028300', [
+            "         AIF   ('&OP(&X)' EQ 'VFAULT').VFT",
+            "         AIF   ('&OP(&X)' EQ 'AMODE31').A31",
+        ]),
+        ('00030860', [
+            "         AGO   .ADDOP",
+            ".A31     AIF   (&A31).OPERR",
+            "&A31     SETB  1              CLEAN 31-BIT ADDRESS (I-208)",
+            "         AGO   .ADDOP",
+        ]),
         ('00062100', [
+            "         AIF   (&A31).TRINL   31-BIT: INLINE, NO MASK",
             "         AIF   ('&RV' NE 'R2' OR '&UR' NE 'R1').TRINL",
             "         L     R15,ATRL31     THE LRA IN AMODE 31: PSA STUB",
             "         BASSM R15,R15        LRA R2,0(0,R1), AND BACK",
@@ -4117,8 +4140,26 @@ AMODEMODS = {
             ".TRDONE  ANOP",
         ]),
     ],
-    # DMKPTRAN's own LRA, and DMKPRV's three on guest addresses.
+    # DMKPTRAN's own LRA -- and its FIRST instruction, which is the I-208
+    # alias itself: 'LA R1,0(,R1)  STRIP HIGH BYTE - 24 BIT ADDRESSING
+    # ONLY' took every virtual address modulo 16 MB before the TRANS stub
+    # had a chance (w51: st s1ff0000 landed at ff0000 with the stub in).
+    # Bit 0 is stripped, nothing else; a caller that still hands over a
+    # byte of flags in bits 0-7 now gets CC2 from the VMSIZE compare -- a
+    # visible failure, not a silent alias -- and that is the I-126 audit.
+    # No literal here: this is the entry instruction, before ENTER sets up
+    # R10, and the literal pool sits in R10's half of the module -- the
+    # first try, N R1,=X'7FFFFFFF', was assembled off a base register the
+    # caller owned and IPL died in a program-interrupt loop at 1FC8 (w52).
+    # Two shifts need no base at all.
     'DMKPTR': [
+        ('00285000', [
+            "DMKPTRAN TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)",
+            "         BO    PTRA31         YES: KEEP BITS 1-7",
+            "         LA    R1,0(,R1)      24-BIT CALLER: STRIP BYTE 0",
+            "PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE",
+            "         SRL   R1,1           ENTER (I-218)",
+        ]),
         ('00307000', [
             "         LA    R15,PTRLRA     THE LRA, IN AMODE 31 (I-208)",
             "         O     R15,=X'80000000' ...",
@@ -4450,6 +4491,10 @@ CONSMODS = {
     # two: TO at +9, the second address at +12, text at +21 (was +19) or +20
     # their byte counts follow; the KEY = line keeps its two blanks (+21, +27, 29).  DMKCVTHB itself takes any
     # length.  I-207.
+    # I-208.  The console's hexloc is a clean 31-bit address whatever mode
+    # the guest is in, so STORE's and DISPLAY's TRANS say so (OPT=AMODE31)
+    # and reach storage above 16 MB; every other TRANS in CP still masks to
+    # 24 bits (34-AMODE31).  Two LA address sums on the way become adds.
     'DMKCDS': [
         ('00408000', [
             "         CL    R0,F8          FIELD LONGER THAN EIGHT CHARS ?",
@@ -4457,10 +4502,16 @@ CONSMODS = {
         ('00459000', [
             "         C     R0,F8          ADDRESS FIELD LONGER THAN 8 ?",
         ]),
+        ('00511000', [
+            "         TRANS 2,1,OPT=(BRING,DEFER,AMODE31),ADEX=CDS164",
+        ]),
     ],
     'DMKCDB': [
         ('00657000', [
             "         MVC   FLDLEN(4),F8   SET MAX FIELD LENGTH, 8 DIGITS",
+        ]),
+        ('00975000', [
+            "         TRANS 2,1,OPT=(BRING,DEFER,AMODE31) USER PAGE (31)",
         ]),
         # non-addressable page, 'addr TO addr NON-ADDRESSABLE STORAGE'
         ('00982100', '00983100', [
@@ -4476,6 +4527,9 @@ CONSMODS = {
             "         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS",
             "         STCM  R1,B'1111',BUFBUF+16",
         ]),
+        ('01000300', [
+            "         CALL  DMKPTRAN,PARM=DEFER+AMODE31 LET PTRAN HANDLE",
+        ]),
         # I-209.  DISPLAY K (GETKEY) was converted only as far as the STE
         # (XA0036DK); the page half still read a 2-byte PTE, a 16-entry swap
         # table at PTO+40, and ISK -- an operation exception on ESA/390, so
@@ -4483,6 +4537,9 @@ CONSMODS = {
         # at 12-19, the swap entry is PAGSWPE bytes at PAGTSWP from the table
         # header, the PTE is a fullword with PAGINV in byte 2, and the real
         # key comes from ISKE on the 4 KB frame (R-12: one key per frame).
+        ('01056900', [
+            "         TRANS 2,1,OPT=(DEFER,AMODE31) LET PTR CHECK SEGMENT",
+        ]),
         ('01062200', '01081000', [
             "         L     R2,0(,R3)      THE STE",
             "         LR    R3,R2          ...",
@@ -4525,6 +4582,11 @@ CONSMODS = {
             "         STCM  R1,B'1111',BUFBUF+4",
             "         MVC   BUFBUF+9(2),=C'TO'",
         ]),
+        # I-208: 'LA R1,2047(R1)' in AMODE 24 drops bits 0-7, so the end of a
+        # key line above 16 MB printed as 00FF07FF.  Add, do not LA.
+        ('01116000', [
+            "         A     R1,=F'2047'    ADD 2047 (NOT LA) I-208",
+        ]),
         ('01118100', '01119100', [
             "         STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS",
             "         STCM  R1,B'1111',BUFBUF+16",
@@ -4550,6 +4612,17 @@ CONSMODS = {
         ]),
         ('01428000', [
             "         ISKE  R1,R2          GET THE REAL STUFF, 4 KB FRAME",
+        ]),
+        ('01454000', [
+            "         TRANS 2,1,OPT=(BRING,DEFER,AMODE31) ADDRESS OK?",
+        ]),
+        # 'LA R1,1(R14,R1)' summed the second page's address in 24 bits
+        ('01471100', [
+            "         ALR   R1,R14         2ND PAGE ADDRESS: ADD, NOT LA",
+            "         AL    R1,F1          (31-BIT, I-208)",
+        ]),
+        ('01471110', [
+            "         TRANS 2,1,OPT=(BRING,DEFER,AMODE31)",
         ]),
         # GETKEY now names PAGTSWP, PAGPFRA, PAGSTMP, SWPKEY1 and SWPFLAG,
         # which live in CORE COPY; DMKCDB never copied it (it wrote 16*2+8).
@@ -6243,6 +6316,13 @@ def equcopy():
     after.
     """
     d = Deck(XA37)
+    # I-208: a DMKPTRAN PARM flag that says "R1 is a clean 31-bit virtual
+    # address, do not strip it to 24 bits".  Set by TRANS OPT=(...,AMODE31)
+    # and by CALL DMKPTRAN,PARM=...+AMODE31.  X'02' and X'01' were free.
+    d.insert('00110060', first='00110070', inc=10, limit='00110100', lines=[
+        "AMODE31  EQU   X'02'          R1 IS A CLEAN 31-BIT VIRTUAL",
+        "*                             ADDRESS; STRIP BIT 0 ONLY",
+    ])
     d.insert('00168000', first='00168100', inc=10,
              limit=next_seq(SRC + '/EQU.COPY', '00168000'),
              lines=Deck.comment(

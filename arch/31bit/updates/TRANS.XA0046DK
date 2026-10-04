@@ -1,4 +1,15 @@
+./ R 00004110          $ 00004210 100                                           
+         LCLB  &IERR,&SYST,&LOCK,&BRNG,&DEFR,&VFLT,&A31        XA0046DK         
+./ R 00028300          $ 00028310 010                                           
+         AIF   ('&OP(&X)' EQ 'VFAULT').VFT                     XA0046DK         
+         AIF   ('&OP(&X)' EQ 'AMODE31').A31                    XA0046DK         
+./ R 00030860          $ 00030870 010                                           
+         AGO   .ADDOP                                          XA0046DK         
+.A31     AIF   (&A31).OPERR                                    XA0046DK         
+&A31     SETB  1              CLEAN 31-BIT ADDRESS (I-208)     XA0046DK         
+         AGO   .ADDOP                                          XA0046DK         
 ./ R 00062100          $ 00062110 010                                           
+         AIF   (&A31).TRINL   31-BIT: INLINE, NO MASK          XA0046DK         
          AIF   ('&RV' NE 'R2' OR '&UR' NE 'R1').TRINL          XA0046DK         
          L     R15,ATRL31     THE LRA IN AMODE 31: PSA STUB    XA0046DK         
          BASSM R15,R15        LRA R2,0(0,R1), AND BACK         XA0046DK         

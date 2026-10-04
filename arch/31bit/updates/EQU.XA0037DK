@@ -1,3 +1,6 @@
+./ I 00110060 $ 00110070 010                                                    
+AMODE31  EQU   X'02'          R1 IS A CLEAN 31-BIT VIRTUAL     XA0037DK         
+*                             ADDRESS; STRIP BIT 0 ONLY        XA0037DK         
 ./ I 00168000 $ 00168100 010                                                    
 *  ESA/390 DAT CONSTANTS. S/370 PACKS LENGTHS AND FLAGS INTO   XA0037DK         
 *  THE HIGH BYTE OF A POINTER, WHICH 24-BIT ADDRESS FORMATION  XA0037DK         

@@ -1,5 +1,7 @@
 ./ R 00657000          $ 00657100 100                                           
          MVC   FLDLEN(4),F8   SET MAX FIELD LENGTH, 8 DIGITS   XA0044DK         
+./ R 00975000          $ 00975100 100                                           
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31) USER PAGE (31)    XA0044DK         
 ./ R 00982100 00983100 $ 00982200 100                                           
          STCM  R0,B'1111',BUFBUF EIGHT DIGITS                  XA0044DK         
          STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
@@ -10,6 +12,10 @@
 ./ R 00993100 00994100 $ 00993200 100                                           
          STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS               XA0044DK         
          STCM  R1,B'1111',BUFBUF+16                            XA0044DK         
+./ R 01000300          $ 01000400 100                                           
+         CALL  DMKPTRAN,PARM=DEFER+AMODE31 LET PTRAN HANDLE    XA0044DK         
+./ R 01056900          $ 01057000 100                                           
+         TRANS 2,1,OPT=(DEFER,AMODE31) LET PTR CHECK SEGMENT   XA0044DK         
 ./ R 01062200 01081000 $ 01062300 100                                           
          L     R2,0(,R3)      THE STE                          XA0044DK         
          LR    R3,R2          ...                              XA0044DK         
@@ -46,6 +52,8 @@
          STCM  R0,B'1111',BUFBUF EIGHT DIGITS                  XA0044DK         
          STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
          MVC   BUFBUF+9(2),=C'TO'                              XA0044DK         
+./ R 01116000          $ 01116100 100                                           
+         A     R1,=F'2047'    ADD 2047 (NOT LA) I-208          XA0044DK         
 ./ R 01118100 01119100 $ 01118200 100                                           
          STCM  R0,B'1111',BUFBUF+12 EIGHT DIGITS               XA0044DK         
          STCM  R1,B'1111',BUFBUF+16                            XA0044DK         
@@ -64,6 +72,13 @@
          STCM  R1,B'1111',BUFBUF+4                             XA0044DK         
 ./ R 01428000          $ 01428100 100                                           
          ISKE  R1,R2          GET THE REAL STUFF, 4 KB FRAME   XA0044DK         
+./ R 01454000          $ 01454100 100                                           
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31) ADDRESS OK?       XA0044DK         
+./ R 01471100          $ 01471101 001                                           
+         ALR   R1,R14         2ND PAGE ADDRESS: ADD, NOT LA    XA0044DK         
+         AL    R1,F1          (31-BIT, I-208)                  XA0044DK         
+./ R 01471110          $ 01471111 001                                           
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31)                   XA0044DK         
 ./ R 01669000          $ 01669100 100                                           
          COPY  VMBLOK                                          XA0044DK         
          COPY  CORE                                            XA0044DK         

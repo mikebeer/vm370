@@ -74,7 +74,9 @@ CPCREG6  DS    0F             FULLWORD ALIGNED                 XA0001DK
 ./ R 00255600          $ 00255610 010                                           
 *  AMODE 31 STUB FOR THE TRANS MACRO. DOCS/34-AMODE31.         XA0001DK         
 ATRL31   DC    X'80',AL3(TRL31) 31-BIT ENTRY, FOR BASSM        XA0001DK         
-TRL31    LRA   R2,0(0,R1)     TRANSLATE, IN AMODE 31           XA0001DK         
+TRL31    LR    R2,R1          24-BIT GUEST: THE ADDRESS IS     XA0001DK         
+         N     R2,XRIGHT24    BITS 8-31, WHATEVER BYTE 0 IS    XA0001DK         
+         LRA   R2,0(0,R2)     TRANSLATE, IN AMODE 31           XA0001DK         
          BSM   0,R15          BACK TO THE CALLER'S MODE        XA0001DK         
          DS    0F -           RESERVED (WAS 5F)                XA0001DK         
-         DS    2F -           RESERVED (WAS 5F)                XA0001DK         
+         DS    1F -           RESERVED (WAS 5F)                XA0001DK         

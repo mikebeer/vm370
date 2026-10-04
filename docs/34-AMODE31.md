@@ -16,10 +16,26 @@ the LRA is register arithmetic on the full 32-bit value (`SRL 20`, `N
 X'000FF000'`), and every CP control block lives below 16 MB, so the
 truncation is the whole fault.
 
-## Step 1 (built 4 October, XA0046DK + PSA XA0001DK): the LRA alone runs in AMODE 31
+## Step 1 (built 4 October, XA0046DK + PSA XA0001DK + EQU XA0037DK): the LRA alone runs in AMODE 31
 
-The LRA runs in AMODE 31 and CP returns to AMODE 24 straight after it. Two
-shapes, chosen by the macro at expansion time:
+Three findings shaped this, each from a failed build (I-216, I-218 and w53):
+
+1. **Every guest is a 24-bit machine today**, and CP's own callers know it:
+   DMKDGD hands TRANS `L R1,RCWADDR` — the CCW with the command code still
+   in byte 0 — DMKVSP hands it the CAW with the key in byte 0, DMKVCN,
+   DMKVIO and others likewise; a scan of all 211 TRANS/DMKPTRAN sites shows
+   it is the rule, not the exception. They relied on `LRA` in AMODE 24
+   ignoring byte 0 and on DMKPTRAN's first instruction, `LA R1,0(,R1)
+   STRIP HIGH BYTE`. Removing that strip (i225) cost every CMS minidisk:
+   `DMSACC112S DEVICE ERROR`, then BLD002 (w53). So **masking a guest
+   address to 24 bits is correct for a 24-bit guest**, and only a caller
+   that knows it holds a clean 31-bit address may say otherwise.
+2. **Call-site size is a hard constraint** (I-56 again): the first inline
+   wrapper, +16 bytes a site, pushed DMKMON (X'FF8' on one base register)
+   past its literal pool (I-216). Hence a shared stub.
+3. **No literal before ENTER** in a two-base module (I-218).
+
+The design that came out:
 
 **The common form, `TRANS 2,1` (139 of CP's 151 sites)** calls a stub in the
 PSA:
@@ -35,7 +51,9 @@ DSECT everywhere else):
 
 ```
 ATRL31   DC    X'80',AL3(TRL31) 31-BIT ENTRY, FOR BASSM
-TRL31    LRA   R2,0(0,R1)     TRANSLATE, IN AMODE 31
+TRL31    LR    R2,R1          24-BIT GUEST: THE ADDRESS IS
+         N     R2,XRIGHT24    BITS 8-31, WHATEVER BYTE 0 IS
+         LRA   R2,0(0,R2)     TRANSLATE, IN AMODE 31
          BSM   0,R15          BACK TO THE CALLER'S MODE
 ```
 
@@ -45,10 +63,13 @@ with bit 0 off because the caller is in AMODE 24 — into R15. `BSM 0,R15`
 goes back and restores AMODE 24. The PSA is at real 0 and every module
 addresses it from base register 0, so the stub needs no base register, and
 `ATRL31` is a 3-byte adcon behind an `X'80'`, so the loader relocates bytes
-1-3 only and there is no question of an RLD on bit 0. +2 bytes a site.
+1-3 only. +2 bytes a site. Today the stub always masks to 24 bits, so every
+guest translation behaves exactly as it did; when 31-bit guests arrive (step
+3) the stub will test the VMBLOK mode flag and skip the mask for them.
 
-**The other register forms** (`TRANS 9,1`, `7,1`, `2,8`, `2,5`, `8,1`, …;
-twelve sites) keep the LRA inline:
+**`OPT=(...,AMODE31)` — the caller holds a clean 31-bit address.** A new
+TRANS option, and a new DMKPTRAN PARM flag `AMODE31 EQU X'02'` (EQU COPY;
+X'02' and X'01' were free). The macro then expands the LRA inline, unmasked:
 
 ```
          LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31
@@ -60,12 +81,27 @@ TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE
 TR&NL.B  DS    0H
 ```
 
-+16 bytes a site; DMKPTRAN's own `LRA R7,0(,R1)` uses the same seven cards.
-The first build of step 1 (i221) used this shape everywhere, and **DMKMON —
-X'FF8' bytes long on a single 4 KB base — lost its last four literals to
-the 16 bytes its one TRANS grew by** (`IFO209` ×4, `I-216`). The stub is
-the answer to that, not an optimisation: call-site size is a hard
-constraint in these modules (`I-56` found the same wall in DMKDMP).
+and `LA R2,BRING+DEFER+AMODE31` passes the flag to DMKPTRAN, whose entry is
+now
+
+```
+DMKPTRAN TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)
+         BO    PTRA31         YES: KEEP BITS 1-7
+         LA    R1,0(,R1)      24-BIT CALLER: STRIP BYTE 0
+PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE
+         SRL   R1,1           ENTER (I-218)
+```
+
+(SAVER2 is the caller's R2 as the SVC handler saved it, so the flag is
+readable before ENTER.) The users today are the console: DMKCDS's STORE
+TRANS (00511000) and DMKCDB's DISPLAY TRANS/DMKPTRAN sites (00975000,
+01000300, 01056900, 01454000, 01471110), whose hexloc is a 31-bit number
+whatever mode the guest is in; two `LA` address sums on that path
+(`LA R1,2047(R1)`, `LA R1,1(R14,R1)`) became adds. The other register forms
+(`TRANS 9,1`, `7,1`, `2,8`, `2,5`, `8,1`, …; twelve sites) also take the
+inline wrapper, unmasked, exactly as the original macro left their operands;
+DMKPTRAN's own `LRA R7,0(,R1)` uses the same seven cards after the entry
+has masked R1.
 
 Why this is sound:
 
@@ -75,8 +111,11 @@ Why this is sound:
   R15). No site can have depended on R15 surviving a TRANS. The two bare
   `TRANS` sites with no options (DMKCCW `CCWNXT9`, DMKISM) were read: R15 is
   dead at both.
-- **The condition code** the following `BC` tests is LRA's: `L`, `LA`,
-  `BASSM` and `BSM` leave it alone; `O` sets it but runs before the LRA.
+- **R2** is the result register in the stub form, so masking into it costs
+  nothing: LRA writes R2 on every condition code.
+- **The condition code** the following `BC` tests is LRA's: `L`, `LR`,
+  `LA`, `BASSM` and `BSM` leave it alone; `N` and `O` set it but run before
+  the LRA.
 - **Returning to AMODE 24**: BASSM saves the caller's mode in bit 0 of R15,
   and in the inline form `LA` in AMODE 31 yields bit 0 zero; `BSM 0,R15`
   takes either as "set AMODE 24".
@@ -85,7 +124,8 @@ Why this is sound:
   sites (`I-126`) and the longhand `X'00FFFFFF'` masks keep working. They
   become work only when CP itself goes AMODE 31 (step 2).
 
-Cost: about 300 bytes of nucleus. A macro change, so a full rebuild.
+Cost: about 300 bytes of nucleus. A macro, EQU and PSA change, so a full
+rebuild.
 
 ## What step 1 does not do
 

@@ -2,3 +2,5 @@
          CL    R0,F8          FIELD LONGER THAN EIGHT CHARS ?  XA0044DK         
 ./ R 00459000          $ 00459100 100                                           
          C     R0,F8          ADDRESS FIELD LONGER THAN 8 ?    XA0044DK         
+./ R 00511000          $ 00511100 100                                           
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31),ADEX=CDS164       XA0044DK         
