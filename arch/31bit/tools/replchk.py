@@ -330,6 +330,13 @@ def check(mod):
                     introduced.add(m.group(1))
     reach = set(defined) | set(newlabels)
     members = list(copies(base))
+    # A MACRO has no scope of its own: it expands inside the module that
+    # invokes it, and every CP module invokes PSA.  TRANS already names
+    # ASYSVM and VMSEG that way; XA0046DK's ATRL31 (I-216) is the first such
+    # reference to a symbol a deck INTRODUCED, which is what this check
+    # looks at, so the PSA is the one member a macro is given.
+    if base.endswith('.MACRO') and 'PSA' not in members:
+        members.append('PSA')
     # A deck may add a COPY of its own -- XA0044DK gives DMKCDB `COPY CORE`
     # so that GETKEY can name PAGTSWP -- and that widens the module's scope
     # exactly as a COPY in the base does (I-209).  Nested members follow.

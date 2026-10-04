@@ -239,6 +239,29 @@ def psa():
         "         DC    X'FF000000'    CR6 -- IO SUBCLASS MASK",
     ])
 
+    # --- X'41C': the TRANS macro's AMODE 31 LRA, as a stub every module can
+    #     reach with base register 0.  The first design (I-208) put six
+    #     instructions around every LRA, +16 bytes a site, and DMKMON -- 8
+    #     bytes short of its single 4 KB base -- lost its literal pool
+    #     (I-216).  A stub here costs a site L + BASSM, +2 bytes.  The PSA is
+    #     at real 0 and addressed from R0, so the stub needs no base, and it
+    #     is entered in AMODE 31 through ATRL31's bit 0: a 3-byte adcon with
+    #     X'80' in front, so the loader relocates only bytes 1-3 and no
+    #     question about a bit-0 RLD arises.  TRL31 runs LRA R2,0(0,R1) --
+    #     the operands of 139 of CP's 151 TRANS sites -- and BSM 0,R15 goes
+    #     back in the caller's mode with LRA's condition code intact.  The
+    #     other twelve forms keep the inline wrapper.  Only in DMKPSA is
+    #     this storage; everywhere else PSA is a DSECT.  Carved from the 5F
+    #     reserved before INSTWRD1, so no later offset moves.
+    d.replace('00255600', first='00255610', inc=10, limit='00256000', lines=[
+        "*  AMODE 31 STUB FOR THE TRANS MACRO. DOCS/34-AMODE31.",
+        "ATRL31   DC    X'80',AL3(TRL31) 31-BIT ENTRY, FOR BASSM",
+        "TRL31    LRA   R2,0(0,R1)     TRANSLATE, IN AMODE 31",
+        "         BSM   0,R15          BACK TO THE CALLER'S MODE",
+        "         DS    0F -           RESERVED (WAS 5F)",
+        "         DS    2F -           RESERVED (WAS 5F)",
+    ])
+
     return d
 
 
@@ -4077,14 +4100,21 @@ GUESTMODS = {
 # CP notices; this unlocks VIRTUAL storage above the line.
 AMODEMODS = {
     'TRANS': [
+        # The common form goes through the PSA stub (+2 bytes a site, I-216);
+        # the other register forms keep the inline wrapper (+16).
         ('00062100', [
-            "         LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31",
+            "         AIF   ('&RV' NE 'R2' OR '&UR' NE 'R1').TRINL",
+            "         L     R15,ATRL31     THE LRA IN AMODE 31: PSA STUB",
+            "         BASSM R15,R15        LRA R2,0(0,R1), AND BACK",
+            "         AGO   .TRDONE",
+            ".TRINL   LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31",
             "         O     R15,=X'80000000' (CP ITSELF RUNS AMODE 24)",
             "         BSM   0,R15          ...",
             "TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE",
             "         LA    R15,TR&NL.B    BIT 0 OFF: BACK TO AMODE 24",
             "         BSM   0,R15          CC STILL LRA'S",
             "TR&NL.B  DS    0H",
+            ".TRDONE  ANOP",
         ]),
     ],
     # DMKPTRAN's own LRA, and DMKPRV's three on guest addresses.
@@ -4484,7 +4514,7 @@ CONSMODS = {
             "         MVC   BUFBUF+21(5),KEYEQ  MOVE 'KEY =' TO BUFFER",
         ]),
         ('01103000', '01104000', [
-            "         STH   R1,BUFBUF+27   STORE KEY IN BUFFER",
+            "         STCM  R1,B'0011',BUFBUF+27 KEY, ODD OFFSET (I-217)",
             "         LA    R1,29          STANDARD LINE LENGTH",
         ]),
         ('01107000', [

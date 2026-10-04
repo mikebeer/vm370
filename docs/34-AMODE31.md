@@ -16,7 +16,39 @@ the LRA is register arithmetic on the full 32-bit value (`SRL 20`, `N
 X'000FF000'`), and every CP control block lives below 16 MB, so the
 truncation is the whole fault.
 
-## Step 1 (built 4 October, XA0046DK): the LRA alone runs in AMODE 31
+## Step 1 (built 4 October, XA0046DK + PSA XA0001DK): the LRA alone runs in AMODE 31
+
+The LRA runs in AMODE 31 and CP returns to AMODE 24 straight after it. Two
+shapes, chosen by the macro at expansion time:
+
+**The common form, `TRANS 2,1` (139 of CP's 151 sites)** calls a stub in the
+PSA:
+
+```
+         L     R15,ATRL31     THE LRA IN AMODE 31: PSA STUB
+         BASSM R15,R15        LRA R2,0(0,R1), AND BACK
+```
+
+and the stub, at real X'41C' in `PSA.MACRO` (carved from the reserved `DS 5F`
+before `INSTWRD1`, so no other PSA offset moves; storage only in DMKPSA, a
+DSECT everywhere else):
+
+```
+ATRL31   DC    X'80',AL3(TRL31) 31-BIT ENTRY, FOR BASSM
+TRL31    LRA   R2,0(0,R1)     TRANSLATE, IN AMODE 31
+         BSM   0,R15          BACK TO THE CALLER'S MODE
+```
+
+`BASSM R15,R15` takes the branch target from R15 (bit 0 on: AMODE 31,
+address X'420') before it stores the return address — the next instruction,
+with bit 0 off because the caller is in AMODE 24 — into R15. `BSM 0,R15`
+goes back and restores AMODE 24. The PSA is at real 0 and every module
+addresses it from base register 0, so the stub needs no base register, and
+`ATRL31` is a 3-byte adcon behind an `X'80'`, so the loader relocates bytes
+1-3 only and there is no question of an RLD on bit 0. +2 bytes a site.
+
+**The other register forms** (`TRANS 9,1`, `7,1`, `2,8`, `2,5`, `8,1`, …;
+twelve sites) keep the LRA inline:
 
 ```
          LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31
@@ -28,24 +60,32 @@ TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE
 TR&NL.B  DS    0H
 ```
 
-in `TRANS.MACRO`, and the same seven cards around DMKPTRAN's LRA. Why this
-is sound:
++16 bytes a site; DMKPTRAN's own `LRA R7,0(,R1)` uses the same seven cards.
+The first build of step 1 (i221) used this shape everywhere, and **DMKMON —
+X'FF8' bytes long on a single 4 KB base — lost its last four literals to
+the 16 bytes its one TRANS grew by** (`IFO209` ×4, `I-216`). The stub is
+the answer to that, not an optimisation: call-site size is a hard
+constraint in these modules (`I-56` found the same wall in DMKDMP).
+
+Why this is sound:
 
 - **R15** is the scratch register because the macro's non-resident path,
   `CALL DMKPTRAN`, has always returned with R15 = DMKPTRAN's entry address
   (SVC 12 restores R14/R15 from their values at the SVC, and CALL loads
-  R15). No site can have depended on R15 surviving a TRANS.
-- **The condition code** the following `BC` tests is LRA's: `O` sets it but
-  runs first; `LA` and `BSM` leave it alone.
-- **Returning to AMODE 24**: in AMODE 31 `LA` yields a 31-bit address with bit
-  0 zero, which is what `BSM 0,R15` takes as "set AMODE 24".
+  R15). No site can have depended on R15 surviving a TRANS. The two bare
+  `TRANS` sites with no options (DMKCCW `CCWNXT9`, DMKISM) were read: R15 is
+  dead at both.
+- **The condition code** the following `BC` tests is LRA's: `L`, `LA`,
+  `BASSM` and `BSM` leave it alone; `O` sets it but runs before the LRA.
+- **Returning to AMODE 24**: BASSM saves the caller's mode in bit 0 of R15,
+  and in the inline form `LA` in AMODE 31 yields bit 0 zero; `BSM 0,R15`
+  takes either as "set AMODE 24".
 - **Nothing else in CP notices** while real storage stays below 16 MB: every
   real address CP computes fits 24 bits, so the 215 `LA Rn,0(,Rn)` strip
   sites (`I-126`) and the longhand `X'00FFFFFF'` masks keep working. They
   become work only when CP itself goes AMODE 31 (step 2).
 
-Cost: six instructions per site, about 3.5 KB of nucleus. A macro change,
-so a full rebuild.
+Cost: about 300 bytes of nucleus. A macro change, so a full rebuild.
 
 ## What step 1 does not do
 

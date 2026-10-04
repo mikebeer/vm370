@@ -1,8 +1,13 @@
-./ R 00062100          $ 00062200 100                                           
-         LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31      XA0046DK         
+./ R 00062100          $ 00062110 010                                           
+         AIF   ('&RV' NE 'R2' OR '&UR' NE 'R1').TRINL          XA0046DK         
+         L     R15,ATRL31     THE LRA IN AMODE 31: PSA STUB    XA0046DK         
+         BASSM R15,R15        LRA R2,0(0,R1), AND BACK         XA0046DK         
+         AGO   .TRDONE                                         XA0046DK         
+.TRINL   LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31      XA0046DK         
          O     R15,=X'80000000' (CP ITSELF RUNS AMODE 24)      XA0046DK         
          BSM   0,R15          ...                              XA0046DK         
 TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE        XA0046DK         
          LA    R15,TR&NL.B    BIT 0 OFF: BACK TO AMODE 24      XA0046DK         
          BSM   0,R15          CC STILL LRA'S                   XA0046DK         
 TR&NL.B  DS    0H                                              XA0046DK         
+.TRDONE  ANOP                                                  XA0046DK         

@@ -250,22 +250,37 @@ retracted and corrected).
 | **I-213** | **AUXLCL order followed generator order, not deck order.** VMFASM applies the last line first; `aux()` prepended whichever generator ran last, so DMKVMA's AUXLCL had XA0045DK at the bottom — applied *before* XA0036DK, whose anchors (00195000…) it had just deleted. `applied.py` reproduces VMFASM's order and showed XA0036DK's cards surviving inside XA0045DK's range. `aux()` now sorts XA decks highest-first (they are numbered in writing order and each anchors on what earlier ones left). SNAP-I217's DMKVMA was built in the wrong order (worked by luck: the old whole-segment scan ran); rebuilt as SNAP-I219. The stale-deck build i218 was stopped by `asmchk` (UPDATE's NOT FOUND) — I-210's gate paid for itself within hours. | **closed** |
 | **I-214** | **`SEGMENT LOAD GCCLIB` fails under frame sharing** (w46, 15M MAINT: `Segment GCCLIB load failed.`): GCCLIB is 29 pages = segments 242 (16) and 243 (13 of 16); MODLOOP's `TRANS BRING` of the group's unsaved pages 3901–3903 lay beyond VMSIZE (extended only to the last saved page) → CC2 → MODERR → NAMPERR1. Now a model page without a DASD slot is not read and loses SWPSHR (every user gets a private zero page there), and DMKVMASH skips entries without SWPSHR. | **closed** — w46 on SNAP-I220 (19:15): 15M MAINT `IPL CMS` loads GCCLIB in its profile (`F20000 90ECD00C…`, keys D4 from the saved system, `GCCLIB already defined` on a second SEGMENT LOAD); CPWATCH, CMSBATCH, WAKEUP run from CP init; two more users; LOGOFF/shutdown clean. |
 | **I-215** | **`BLD002` at CPWATCH's `DEF STOR` after it had loaded GCCLIB** (w46 on SNAP-I219, during CP init — AUTOLOG1's full profile now runs: DRAIN, autolog CPWATCH/CMSBATCH/WAKEUP, logoff). Breakpoint at DMKBLD's ABEND 2: PTE 32 of segment 15 valid (E35000), its swap entry `5C20D4D4 00090200` — SWPSHR set — yet CHKPAGE did not skip it. The card read `TM SWPOFF(R0),SWPSHR`: **base register 0 is no base**, so the test read absolute X'408'. R1 as base. | **closed** (w46 19:15) |
+| **I-216** | **DMKMON lost its literal pool to the AMODE 31 TRANS wrapper** (full build i221: `IFO209 ADDRESSABILITY ERROR` ×4 on `MH R1,=AL2(MN600DLN)`, `=AL2(MN602DLN)`, `L R15,=A(DMKSCHST)`, `L R15,=A(DMKMIACC)` — all literals, none of them ours). The module is X'FF8' bytes on a single base register (`USING DMKMON,R12`), 8 bytes short of 4 KB, and its one `TRANS 2,1,OPT=(SYSTEM,BRING,DEFER,LOCK)` grew by the 16 bytes of XA0046DK's inline `LA/O/BSM/LRA/LA/BSM`. `I-56` all over again: **call-site size is a hard constraint in these modules.** Fix: the 31-bit LRA is a stub in the PSA (`ATRL31`/`TRL31` at X'41C', carved from the reserved `DS 5F` before `INSTWRD1`, every other offset unchanged) and the common `TRANS 2,1` form calls it with `L R15,ATRL31 / BASSM R15,R15` — +2 bytes a site, 139 of 151 sites; the other register forms keep the inline wrapper. `replchk` learned that a MACRO's scope includes the PSA. 34-AMODE31. | **fix built** (i223 pending) |
+| **I-217** | **`IFO220 ALIGNMENT ERROR` on DMKCDB's `STH R1,BUFBUF+27`** (XA0044DK's eight-digit `D K` line moved the key two columns right, onto an odd offset). Harmless on ESA/390 — `D K` had already been verified on w47 — but a severity-4 flag that `asmchk` rightly refuses, and the assembler is the one reader that cannot be told "it works". `STCM R1,B'0011',BUFBUF+27`. | **fix built** (i223 pending) |
 
 ## Counts
 
 | Status | Count |
 |---|---|
-| fixed | 104 |
+| fixed | 107 |
 | documented | 19 |
 | closed | 23 |
-| open | 21 |
+| open | 22 |
 | **z390 only** | 2 |
 | fix known | 10 |
 | worked around | 1 |
+| **FIXED** -- verified 02:33 4 Oct: `enable all`, `query dasd` (17 DASD), `cp disc`, `logon maint` all complete; CP now answers typed commands under ESA/390. The next failure is FRE013 at logon (wall 24, I-195). | 1 |
+| **FIXED** -- verified 05:06 4 Oct (w30, after I-197): `r 3DF16` = `88200014`/`89100014`, `IPL 190` passes the point and reaches the guest (wall 26). | 1 |
+| **FIXED** -- verified 05:40 (w32): SIO and the TIO polling loop simulated, the CMS nucleus loads and starts executing at `F80A36` (SSK simulated too). Next failure is PRG006 in CP (wall 27, I-200). | 1 |
+| **FIXED** -- verified 06:33 (w37): `IPL 190` runs to `Ready; T=0.01/0.01`, `QUERY DISK` lists 191/190/19E correctly. CMS runs. Wall 28 (I-202) is DMSITP141T in the profile EXEC. | 1 |
 | **closed -- retracted** | 1 |
-| fix built, unverified | 3 |
+| **closed 4 Oct, 14:31** — frame-level sharing (XA0045DK, docs/33): `IPL CMS` by name reaches `Ready;`, AUTOLOG1's init `IPL CMS` completes, two sharers (MAINT + CMSUSER) run, FORCE/LOGOFF/shutdown clean (w41). | 1 |
+| **closed** | 7 |
+| **closed** (w41 14:08: init completes, CPWATCH autologged) | 1 |
+| **closed** (w46 19:15) | 1 |
+| **closed** — w46 on SNAP-I220 (19:15): 15M MAINT `IPL CMS` loads GCCLIB in its profile (`F20000 90ECD00C…`, keys D4 from the saved system, `GCCLIB already defined` on a second SEGMENT LOAD); CPWATCH, CMSBATCH, WAKEUP run from CP init; two more users; LOGOFF/shutdown clean. | 1 |
+| **fix built** (i223 pending) | 2 |
+| CP side **verified** 07:56 (w41): `DEF STOR 32M` → `STORAGE EXCEEDS ALLOWED MAXIMUM`, the directory gate. The second gate was CE's `DIRECT` command itself: `DMKDIR 01133000 CL R3,=F'16777216'` — `DMKDIR.ASSEMBLE` is in the CP tree (a standalone utility, not CMS; the 06-LEDGER note that its source was missing looked in the wrong tree). Raised to 256 MB and `DIRECT MODULE` regenerated with LOAD/GENMOD in the build (i206build). | 1 |
+| fix built, unverified | 2 |
 | fix determined | 2 |
 | fixed by `I-104` | 1 |
+| measured | 1 |
+| open (M2) | 1 |
 | open, characterised | 2 |
 
 **Six of the twenty-three closed entries are retracted claims of my own** —

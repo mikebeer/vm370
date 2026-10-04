@@ -38,7 +38,7 @@
 ./ R 01100000          $ 01100100 100                                           
          MVC   BUFBUF+21(5),KEYEQ  MOVE 'KEY =' TO BUFFER      XA0044DK         
 ./ R 01103000 01104000 $ 01103100 100                                           
-         STH   R1,BUFBUF+27   STORE KEY IN BUFFER              XA0044DK         
+         STCM  R1,B'0011',BUFBUF+27 KEY, ODD OFFSET (I-217)    XA0044DK         
          LA    R1,29          STANDARD LINE LENGTH             XA0044DK         
 ./ R 01107000          $ 01107100 100                                           
          MVC   BUFBUF+21(23),=C'NON-ADDRESSABLE STORAGE'       XA0044DK         
