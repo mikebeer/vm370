@@ -1,7 +1,7 @@
 ./ R 00918000          $ 00918100 100                                           
-         L     R6,VMSEG       THE DESIGNATION                  XA0036DK         
-         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
-         ALR   R7,R6          ADD STO, GET STE                 XA0036DK         
+         L     R4,VMSEG       THE DESIGNATION                  XA0036DK         
+         N     R4,=A(SEGSTOM) WITHOUT THE LENGTH               XA0036DK         
+         ALR   R7,R4          ADD STO, GET STE (R6 IS THE VA)  XA0036DK         
 ./ R 00920000          $ 00920100 100                                           
 *                             (LA R7,0(0,R7) REPLACED BELOW)   XA0036DK         
 ./ R 00921000          $ 00921100 100                                           

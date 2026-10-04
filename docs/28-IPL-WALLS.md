@@ -1060,12 +1060,60 @@ Ready; T=0.01/0.01 06:33:42
 `IPL 190`. The minidisks are accessed through CP's SSCH path, the system
 profile runs, a typed command is read and answered from the file system.
 
-## Wall 28 — `DMSITP141T PROTECTION EXCEPTION` in the profile EXEC
+## Wall 28 — `DMSITP141T PROTECTION EXCEPTION` in the profile EXEC — CLOSED
 
-CMS survives it and reaches `Ready;`, but the profile does not complete.
-`DMSREX` at `F30CB6`. The first thing to test is R-12: CMS sets its 2 KB
-half-page keys independently (16,104 SSKs simulated during this IPL) and the
-new `SSKE` sets the 4 KB frame from one half. `I-202`.
+CMS survived it and reached `Ready;`, but the profile did not complete and
+REXX was dead. Measured, not guessed: Hercules `pgmtrace +4` during the IPL
+(w33) caught the real exception the guest took,
+
+```
+HHCCP014I CPU0000: Protection exception CODE=0004 ILC=4
+PSW=07ED1000 00F30CB6 INST=5043F004     ST    4,4(3,15)
+V:00EF8FDC:K:F4=00000000 ...
+GR03=00007FD8 ... GR15=00EF1000
+```
+
+a store in PSW key E into a frame keyed F. `pgmtrace +1` (w34) then traced
+every `SSK` CMS issued — 16,305 of them, decoded offline: CMS sets the two
+2 KB halves of a page alike, in consecutive instructions, everywhere (one
+page, `X'4000'`, ends mixed), and had set BOTH halves of EF8000 to E thirty
+trace lines before the fault. So R-12 — one hardware key per 4 KB frame —
+was not the problem, and the first hypothesis in the earlier text of this
+section is withdrawn.
+
+The fault was ours. XA0036DK's card for DMKPRV `SEGOK` computed the STO in
+R6:
+
+```
+         L     R6,VMSEG       THE DESIGNATION
+         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH
+         ALR   R7,R6          ADD STO, GET STE
+```
+
+R6 is the guest's virtual address, loaded at `GETKEYAD`, and the two
+`LRA R2,0(0,R6)` that follow (00935000, 00972000) need it: `ISK` read, and
+`SSK` set, the key of whatever guest page the STO's value happened to name,
+while the frame CMS meant kept the key it had at page-in — F, from the
+first SSK of the IPL. The original `AL R7,VMSEG` never touched R6. One
+register: R4, which 00924100 reloads anyway. SNAP-I211, w35 11:28:
+
+```
+/(0009) ipl 190
+VM Community Edition V1 R1.2
+Y (19E) R/O
+Segment GCCLIB is not loaded because virtual machine memory is in use.
+U (19D) R/O
+B (5E5) R/O
+Ready; T=0.01/0.01 11:28:42
+/(0009) rexx2
+REXX SAYS 1
+REXX SAYS 4
+REXX SAYS 9
+4 Oct 2026 11:28:48
+Ready(00007); T=0.01/0.01 11:28:48
+```
+
+`I-202`.
 
 The lesson belongs next to `I-111`: **the set of modules to reassemble is the
 set CPLOAD loads, not the set an EXEC happens to name.** A stale object deck in

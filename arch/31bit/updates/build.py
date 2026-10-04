@@ -4428,10 +4428,18 @@ DATMODS = {
         ]),
     ],
     'DMKPRV': [
+        # I-202 / wall 28.  The first version of this card used R6 for the
+        # STO -- and R6 is the guest's virtual address, loaded at GETKEYAD and
+        # still needed by the two LRAs below (00935000, 00972000).  With R6
+        # clobbered, ISK read the key of whatever guest page the STO's value
+        # named, and SSK set THAT frame's key; the frame CMS meant kept the
+        # key it had at page-in.  DMSREX then stored in key E into a frame
+        # still keyed F: DMSITP141T PROTECTION EXCEPTION AT F30CB6.  R4 is
+        # free here (00924100 reloads it).
         ('00918000', [
-            "         L     R6,VMSEG       THE DESIGNATION",
-            "         N     R6,=A(SEGSTOM) WITHOUT THE LENGTH",
-            "         ALR   R7,R6          ADD STO, GET STE",
+            "         L     R4,VMSEG       THE DESIGNATION",
+            "         N     R4,=A(SEGSTOM) WITHOUT THE LENGTH",
+            "         ALR   R7,R4          ADD STO, GET STE (R6 IS THE VA)",
         ]),
         ('00920000', [
             "*                             (LA R7,0(0,R7) REPLACED BELOW)",
