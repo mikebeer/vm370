@@ -1,10 +1,62 @@
 # cREXX on VM/370 CE — where things stand
 
-Last updated **1 October 2026**. **Read this first in a new session.**
+Last updated **4 October 2026, 06:45 UTC**. **Read this first in a new session.**
 
 ---
 
-## Current position, 1 October — the DAT conversion is written and verified
+## Current position, 4 October — CMS reaches `Ready;` under VM/370+ in ESA/390 mode
+
+```
+/(0009) ipl 190
+VM Community Edition V1 R1.2
+Y (19E) R/O
+Segment GCCLIB is not loaded because virtual machine memory is in use.
+DMSITP141T PROTECTION EXCEPTION OCCURRED AT F30CB6 IN ROUTINE DMSREX.
+CMS
+/(0009) query disk
+Label  CUU M  Stat  Cyl Type Blksize   Files  Blks Used-(%) Blks Left  Blk Total
+MNT191 191 A   R/W   30 3350  800        334       3681-22      13419      17100
+CMSDSK 190 S   R/O   59 3350  800        172      19537-58      14093      33630
+MNT19E 19E Y/S R/O   70 3350  800        710      28263-71      11637      39900
+Ready; T=0.01/0.01 06:33:42
+```
+
+Hercules 3.13, `ARCHMODE ESA/390`, the converted CP IPLed from 6A1. MAINT logs
+on (`LOGON MAINT CPCMS NOIPL`), `DEF STOR 16M`, `IPL 190`: CMS loads from the
+system disk, accesses its minidisks through CP's SSCH path, runs its profile,
+takes a typed command and answers it from the file system.
+
+### The night's walls, in order — all measured, none guessed
+
+| Wall | What it was | Status |
+|---|---|---|
+| 23 | CE's five `HDK` modules were never reassembled; `HDKD8C`'s work area sat under our ORB, so `enable all` branched into a channel program | **closed** `I-194` |
+| 24 | `DMKCFG SHRSLOOP` indexes the ESA/390 segment table with `DMKSNT`'s S/370 (64 KB) segment numbers → `FRE013` on the directory's auto-`IPL CMS` | cause known; the fix is frame-level sharing (`05`, M3); **bypassed** with `NOIPL` + `IPL 190` `I-195` |
+| 25 | `DMKPTRAN SEGEXA` built 16-page tables for 1 MB segments (PTL 0) → `RPA001` at 128 KB | **closed** `I-196` |
+| 26 | `SIO`/`TIO`/`SSK`… are *operation* exceptions on ESA/390, not privileged-op; DMKPRV reflected them | **closed** `I-199` |
+| 27 | DMKPRV's key simulation located the swap entry with 64 KB geometry and stored guest keys into the I/O new PSW → `PRG006` | **closed** `I-200` |
+| 28 | `DMSITP141T PROTECTION EXCEPTION` in `DMSREX` during the profile EXEC; CMS survives to `Ready;` | **open** `I-202`, R-12 candidate |
+
+Side items opened: `I-201` DMKDMP cannot write its dump under ESA/390 (abend
+registers come from Hercules until fixed); `I-197`/`I-198` build-tool gaps
+found and closed on the way (stage every deck a module's AUXLCL names; derived
+snapshots so a sliced build is restorable in minutes).
+
+### How to reproduce tonight's state
+
+```
+build.sh reset SNAP-I200           # DMKPTR I-196, DMKPRV I-199/I-200, HDK modules
+build.sh write
+# ESA/390: ipl 6A1 / cold / enable all / cp disc
+#          logon maint cpcms noipl / def stor 16m / ipl 190
+```
+
+`28-IPL-WALLS.md` has every wall with its trace; `13-ISSUES.md` rows
+I-194–I-202.
+
+---
+
+## Position on 1 October — the DAT conversion is written and verified (kept; superseded above)
 
 **The segment- and page-table conversion is done and it assembles.** On
 30 September CP reached `DMKDMP908I SYSTEM FAILURE; CODE PRG018` — a
