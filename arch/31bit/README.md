@@ -302,14 +302,14 @@ at all. See `../../docs/13-ISSUES.md` `I-08` through `I-12`.
 
 | | | Exit criterion | Status |
 |---|---|---|---|
-| **M0** | Assembler macros for the instructions CE does not know | `MACLIB GEN` builds them and CE's own assembler emits the documented opcodes | **done, verified on CE, measured complete** — 24 members, severity 0, 351-mnemonic probe. `../../docs/14-M0-CLOSED.md` |
-| **M1** | CP IPLs in ESA/390 mode, DAT off, no paging, no guests | CP writes its initialisation message **and then accepts a command typed at the console** | **steps 1, 2 and 3 done** — `XAOPS` accepted; all nine modules clean unmodified; and `PSA` changed, as an `AUXLCL` update level, with the predicted modules failing loudly. Step 4 is `DMKIOS`. **The critical path** |
-| **M2** | DAT on with ESA/390 tables; `TRANS`-bearing modules at AMODE 31 | `DMKBLD` builds a table set and `TRANS` returns the **correct above-the-line real address** for a virtual address in it, self-checked and reported | not started, **unblocked**, baselined — the DAT five assemble clean |
-| **M3a** | CP IPLs from DASD | a nucleus written by `DMKLDR`/`DMKSAVNC` is read back by `DMKCKP`/`DMKSAVRS` and reaches the console prompt with no `loadcore` | not started |
-| **M3b** | One S/370-mode guest runs CMS | a guest logs on and **`IPL 190`** — by device address, so no `DMKSNT` and no sharing — reaching `CMS` ready | not started |
-| **M3c** | Shared segments at frame granularity | **`IPL CMS`** by saved-system name works, and two guests sharing it cannot see each other's private storage | not started |
-| **M4** | Two guests, isolated | both run concurrently, and a guest reading its own storage keys through `ISK` still sees 2 KB semantics | not started |
-| **M5** | CMS runs in a 31-bit virtual machine | an application allocates and uses a heap above the 16 MB line | not started — **the only milestone that delivers the stated goal** |
+| **M0** | Assembler macros for the instructions CE does not know | `MACLIB GEN` builds them and CE's own assembler emits the documented opcodes | **done** — 24 members, severity 0, 351-mnemonic probe. `../../docs/14-M0-CLOSED.md` |
+| **M1** | CP IPLs in ESA/390 mode and accepts a console command | `DMKCPI966I`, then a typed command is answered | **done** (3 Oct) — I/O on the ESA/390 channel subsystem (`XAIO`, DMKIOS, DMKCNS, …), all walls 1–22 in `28-IPL-WALLS.md` |
+| **M2** | DAT on with ESA/390 tables; CP at AMODE 31 | a guest's storage **above 16 MB** holds what was stored there | **tables done** (`29-DAT-CONVERSION.md`, XA0033–0037DK: 1 MB segments, fullword PTEs); **AMODE 31 not started** — `I-208` measures the gap: `st s1ff0000` lands at `ff0000` because CP runs AMODE 24 (`27-STE-DESIGN.md` ledger test 8, the 215 `LA` strip sites `I-126`) |
+| **M3a** | CP IPLs from DASD | the nucleus `DMKSAV` wrote is read back by `DMKCKP` and reaches the console prompt | **done** (3 Oct) — `IPL 6A1` → `Start ((Warm…` |
+| **M3b** | One S/370-mode guest runs CMS | `LOGON`, `IPL 190`, `Ready;` | **done** (4 Oct 06:33, V0.1) — walls 23, 25–28: `I-194`, `I-196`, `I-199`, `I-200`, `I-202`; EXEC2 and REXX run |
+| **M3c** | Shared segments at frame granularity | `IPL CMS` by name works and two sharers keep their private storage private | **done** (4 Oct 14:31) — `33-FRAME-SHARING.md`, XA0045DK (DMKCFG, DMKPGS, DMKVMA, DMKBLD), `I-195`; increment 2 (bookkeeping, DCSS) open |
+| **M4** | Two guests, isolated; storage keys | both run concurrently; keys behave | **largely done by M3c** — two CMS users ran concurrently; R-12 measured: CMS sets both 2 KB halves alike (16,305 SSKs), so one key per frame is adequate; `DISPLAY K` converted (`I-209`) |
+| **M5** | CMS runs in a 31-bit virtual machine, real storage above 16 MB | an application uses a heap above the 16 MB line | not started — needs M2's AMODE 31 first; `DEF STOR 32M/64M` already correct as CP bookkeeping (`I-203`), CE's CMS is a 24-bit program |
 
 ### Why these criteria, and not the obvious ones
 

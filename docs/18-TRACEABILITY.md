@@ -108,24 +108,26 @@ conclusions this project has had to retract (`I-23`, `I-27`). Its enumeration
 ([`R01-SHIFT-SITES.md`](R01-SHIFT-SITES.md)) is evidence that the sites exist,
 not that converting them is as mechanical as claimed.
 
-## Milestones → what they must retire
+## Milestones → modules, risks and issues (maintained table, 4 October 2026)
 
-| Milestone | Risks | Open issues it must clear |
-|---|---|---|
-| M0 | — *(complete)* | none |
-| **M1** | **R-02**, R-03, **R-04**, R-19, R-22 | I-02 |
-| **M2** | **R-01**, R-05, R-07, R-15 | I-02 |
-| M3a | R-09 | — |
-| M3b | R-08 | — |
-| M3c | R-06 | — |
-| M4 | R-12 | **I-29** |
-| M5 | R-10 | — |
-| continuous | R-11, R-13, R-16, R-18, R-20, R-21 | I-05 |
-| 64-bit | — | I-28 |
+This is the one table that links the three registers. Rows are milestones;
+each names the modules it changed (as update decks), the risks it retires and
+the issues it opened and closed. `13-ISSUES.md` holds the issue text,
+`28-IPL-WALLS.md` the traces, `30-STATE.md` the current position.
 
-Only three issues are open — `I-05` (downgraded), `I-28` (immaterial), and
-`I-29` (new, and useful rather than harmful). **No milestone is blocked by an
-open issue.**
+| Milestone | Status | Modules / decks | Risks | Issues |
+|---|---|---|---|---|
+| M0 macros | done | `MACLIB GEN`, 24 members | — | I-08…I-12 closed |
+| M1 IPL + console | done 3 Oct | `XAIO` macro set; DMKIOS XA0004DK, DMKCNS XA0021DK, DMKCKP XA0015DK, DMKCPI XA0013DK, DMKCCH XA0010DK, DMKSAV XA0017DK, DMKRIO/RBLOKS XA0002DK, PSA XA0001DK… | R-02, R-03, R-04, R-19, R-22 retired | walls 1–22; I-83, I-86, I-87, I-97, I-102, I-107, I-115 closed; **I-211** (device without subchannel → CC3) |
+| M2 DAT tables | tables done | CORE XA0033DK, EQU XA0037DK, DMKBLD XA0034DK, DMKPTR/DMKPGS/DMKCFG/DMKVMA/DMKATS/DMKCDB/DMKCDM/DMKCDS/DMKDRD XA0036DK (the DAT sweep), DMKPRV XA0041DK keys | R-01, R-05, R-07 retired for the tables | I-185 (16-bit page numbers in DMKBLDRT), I-196, I-200, I-202 closed |
+| M2 AMODE 31 | **open** | the 215 `LA` strip sites in 79 modules (I-126), PSW to AMODE 31, `TRANS` above the line | R-01, R-15 | **I-208** (storage above 16 MB aliases onto the low 16 MB) |
+| M3a DASD IPL | done 3 Oct | DMKSAV, DMKCKP, DMKCPI | R-09 retired | I-119 (snapshot purpose) |
+| M3b CMS by `IPL 190` | done 4 Oct | HDK modules reassembled (I-194); DMKPTR XA0036DK (I-196); DMKPRV XA0041DK (I-199, I-200, I-202); DMKDEH/DMKDIR XA0042DK (I-203); DMKPGS (I-206); DMKCDB/DMKCDS XA0044DK (I-207, I-209) | R-08 retired | walls 23, 25–29 closed; I-201 (dump) open |
+| M3c shared by frame | done 4 Oct | DMKCFG, DMKPGS, DMKVMA, DMKBLD XA0045DK | R-06 retired | I-195, I-210, I-211, I-212 closed; increment 2 open (`33-FRAME-SHARING.md`) |
+| M4 two guests, keys | largely done | DMKPRV (ISKE/SSKE), DMKCDB (DISPLAY K) | R-12 measured (CMS sets both halves alike) | I-29 superseded |
+| M5 31-bit CMS, real > 16 MB | not started | after M2 AMODE 31; CMS itself | R-10 | I-203 (256 MB ceiling), I-204 |
+| continuous | — | build tools: `mkrun`, `snapshot`, `replchk`, `mkdeck`, `drive` | R-11, R-13, R-16, R-18, R-20, R-21 | I-197, I-198, I-205, I-210 closed |
+| 64-bit | later | — | — | I-28 |
 
 ## I-29, and why a new issue is good news here
 
