@@ -1,11 +1,18 @@
 ./ R 01066000          $ 01066100 100                                           
          BO    SHRDROP        YES -- DROP OUR COPY OF IT       XA0045DK         
-./ R 01248000          $ 01248100 100                                           
+./ R 01248000          $ 01248010 010                                           
          B     RELEXIT        RETURN TO CALLER                 XA0045DK         
 SHRDROP  TM    SAVEWRK1,PARTIAL KEEP THE NAMED SYSTEM?         XA0045DK         
          BO    NEXTPAGE       YES                              XA0045DK         
          MVC   PAGPFRA,=A(PAGINVW) OUR COPY OF THE MODEL PTE   XA0045DK         
          XC    SWPFLAG(8),SWPFLAG AND OF ITS SWAP ENTRY        XA0045DK         
+*  LEAVE A FRESH ZERO-PAGE ENTRY, AS DMKBLDRT MAKES THEM: A    XA0045DK         
+*  SWAP ENTRY WITH NEITHER SWPRECMP NOR A DASD SLOT IS ONE     XA0045DK         
+*  DMKPGTPR ABENDS ON (PGT005) -- DMKPGSPO RESCANS (REPEAT).   XA0045DK         
+         MVI   SWPFLAG,SWPRECMP ZERO PAGE, NOTHING TO RELEASE  XA0045DK         
+         LR    R0,R1          THE VIRTUAL ADDRESS              XA0045DK         
+         SRL   R0,12          ITS PAGE NUMBER                  XA0045DK         
+         STC   R0,SWPVPAGE    WITHIN THE SEGMENT               XA0045DK         
          OI    VMESTAT,VMINVPAG THE TLB MAY HOLD IT            XA0045DK         
          OI    APSTAT2,CPPTLBR ...                             XA0045DK         
          B     NEXTPAGE       NOT OURS TO FREE                 XA0045DK         

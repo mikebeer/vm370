@@ -1,6 +1,6 @@
 # cREXX on VM/370 CE — where things stand
 
-Last updated **4 October 2026, 11:30 UTC**. **Read this first in a new session.**
+Last updated **4 October 2026, 14:35 UTC**. **Read this first in a new session.**
 
 ---
 
@@ -31,7 +31,7 @@ takes a typed command and answers it from the file system.
 | Wall | What it was | Status |
 |---|---|---|
 | 23 | CE's five `HDK` modules were never reassembled; `HDKD8C`'s work area sat under our ORB, so `enable all` branched into a channel program | **closed** `I-194` |
-| 24 | `DMKCFG SHRSLOOP` indexes the ESA/390 segment table with `DMKSNT`'s S/370 (64 KB) segment numbers → `FRE013` on the directory's auto-`IPL CMS` | cause known; the fix is frame-level sharing (`05`, M3); **bypassed** with `NOIPL` + `IPL 190` `I-195` |
+| 24 | `DMKCFG SHRSLOOP` indexed the ESA/390 segment table with `DMKSNT`'s 64 KB segment numbers → `FRE013` on the directory's auto-`IPL CMS` | **closed** `I-195` — named systems shared by frame (XA0045DK: model tables, per-user copies, locked SYSTEM frames); `IPL CMS` works for two concurrent users, M3c reached |
 | 25 | `DMKPTRAN SEGEXA` built 16-page tables for 1 MB segments (PTL 0) → `RPA001` at 128 KB | **closed** `I-196` |
 | 26 | `SIO`/`TIO`/`SSK`… are *operation* exceptions on ESA/390, not privileged-op; DMKPRV reflected them | **closed** `I-199` |
 | 27 | DMKPRV's key simulation located the swap entry with 64 KB geometry and stored guest keys into the I/O new PSW → `PRG006` | **closed** `I-200` |
@@ -56,7 +56,7 @@ snapshots so a sliced build is restorable in minutes).
 ### How to reproduce tonight's state
 
 ```
-build.sh reset SNAP-I211           # V0.1 + I-203 DEF STOR 256M + DIRECT MODULE + I-206 PGT005 + I-207/I-209 DISPLAY + I-202 REXX
+build.sh reset SNAP-I217           # V0.1 + I-203..I-212: DEF STOR 256M, DISPLAY 8 digits, REXX, named systems by frame (IPL CMS)
 build.sh write
 # ESA/390: ipl 6A1 / cold / enable all / cp disc
 #          logon maint cpcms noipl / def stor 32m / ipl 190 ... cp logoff / shutdown / exit
@@ -64,7 +64,7 @@ build.sh write
 ```
 
 `28-IPL-WALLS.md` has every wall with its trace; `13-ISSUES.md` rows
-I-194–I-209.
+I-194–I-212.
 
 ---
 
