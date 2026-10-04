@@ -4176,7 +4176,19 @@ SHRMODS = {
             "         SLL   R7,16          ITS VIRTUAL ADDRESS",
             "         LA    R1,16          ...",
             "         ST    R1,SAVEWRK3    PAGES TO GO",
-            "BRINGLP  LR    R1,R7          THE PAGE",
+            "BRINGLP  L     R14,0(,R8)     THE MODEL",
+            "         N     R14,=A(SEGPTOM) ITS PTO",
+            "         LR    R1,R7          THE PAGE",
+            "         SRL   R1,12          ...",
+            "         N     R1,F255        WITHIN THE SEGMENT",
+            "         SLL   R1,3           TIMES PAGSWPE",
+            "         ALR   R14,R1         ...",
+            "         L     R1,SWPOFF+4(,R14) THE SAVED COPY'S DASD SLOT",
+            "         LTR   R1,R1          IS THERE ONE? (GCCLIB: 13 OF 16",
+            "         BNZ   BRINGDO        YES",
+            "         NI    SWPOFF(R14),X'FF'-SWPSHR NO: PRIVATE ZERO PAGE",
+            "         B     BRINGNX        FOR EVERY USER, NOTHING TO READ",
+            "BRINGDO  LR    R1,R7          THE PAGE",
             "         TRANS 2,1,OPT=(BRING,DEFER,LOCK)",
             "         BNZ   MODERR         CANNOT READ THE SAVED SYSTEM",
             "         LR    R1,R2          THE FRAME",
@@ -4191,7 +4203,7 @@ SHRMODS = {
             "         LH    R0,VMPAGES-VMBLOK(,R14) ...",
             "         LA    R0,1(,R0)      ONE MORE FOR IT",
             "         STH   R0,VMPAGES-VMBLOK(,R14) ...",
-            "         A     R7,F4096       NEXT PAGE",
+            "BRINGNX  A     R7,F4096       NEXT PAGE",
             "         L     R1,SAVEWRK3    ...",
             "         BCTR  R1,0           ...",
             "         ST    R1,SAVEWRK3    ...",
@@ -4291,7 +4303,7 @@ SHRMODS = {
     # model's PTE (CORPGPNT) as well as this user's copy.  Other sharers'
     # copies are M3's next increment.
     'DMKVMA': [
-        ('00192000', '00203000', [
+        ('00192000', '00205000', [
             "         SLR   R8,R8          ...",
             "         IC    R8,SHRSEGNM(R3) 64 KB SEGMENT NUMBER",
             "         LR    R4,R8          ...",
@@ -4306,9 +4318,17 @@ SHRMODS = {
             "         N     R6,=A(SEGPTOM) WITHOUT THE FLAGS",
             "         N     R4,F15         GROUP WITHIN THE MEGABYTE",
             "         SLL   R4,6           TIMES 16 PTES OF 4",
+            "         LR    R5,R4          ...",
+            "         AR    R5,R5          TIMES 16 SWAP ENTRIES OF 8",
+            "         AR    R5,R6          ...",
+            "         LA    R5,SWPOFF(,R5) THE GROUP'S FIRST SWAP ENTRY",
             "         ALR   R6,R4          THE GROUP'S FIRST PTE",
             "         LA    R4,16          ITS 16 PAGES",
             "         CNOP  0,8            ALIGN",
+            "PAGEISK  TM    0(R5),SWPSHR   A SHARED PAGE AT ALL? (A GROUP",
+            "         BZ    INVAL          MAY END SHORT: GCCLIB 13 OF 16)",
+            "         TM    PAGPFRA+2,PAGINV IS PAGE IN STORAGE?",
+            "         BO    INVAL          NO - GET NEXT PAGE ENTRY",
         ]),
         # XA0036DK made 00206000 load the fullword PTE but left the S/370
         # `SLL R2,8` that turned a halfword PAGCORE into an address: the frame
@@ -4319,6 +4339,11 @@ SHRMODS = {
         ('00207000', [
             "         N     R2,=A(PAGPFRM) THE FRAME ADDRESS, NO FLAGS",
         ]),
+        ('00215000', '00216000', [
+            "INVAL    LA    R6,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY",
+            "         LA    R5,8(,R5)      AND ITS SWAP ENTRY",
+            "         BCT   R4,PAGEISK     IF MORE PAGES, PROCESS ALL",
+        ]),
         ('00465000', [
             "         TM    CORFLAG,CORCFLCK+CORIOLCK FRAME LOCKED?",
         ]),
@@ -4328,6 +4353,10 @@ SHRMODS = {
             "         BZ    *+10           NONE",
             "         MVC   0(4,R15),=A(PAGINVW) INVALIDATE IT TOO",
             "         SLR   R15,R15        ZIP REG",
+        ]),
+        ('00576000', [
+            "         COPY  SYSTBL",
+            "SWPOFF   EQU   PAGTSWP-(PAGPFRA-PAGSTMP)+(SWPFLAG-SWPVM)",
         ]),
     ],
 }

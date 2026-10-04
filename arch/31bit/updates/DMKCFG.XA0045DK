@@ -100,7 +100,19 @@ MODFLAG  OI    0(R10),SWPSHR  SHARED                           XA0045DK
          SLL   R7,16          ITS VIRTUAL ADDRESS              XA0045DK         
          LA    R1,16          ...                              XA0045DK         
          ST    R1,SAVEWRK3    PAGES TO GO                      XA0045DK         
-BRINGLP  LR    R1,R7          THE PAGE                         XA0045DK         
+BRINGLP  L     R14,0(,R8)     THE MODEL                        XA0045DK         
+         N     R14,=A(SEGPTOM) ITS PTO                         XA0045DK         
+         LR    R1,R7          THE PAGE                         XA0045DK         
+         SRL   R1,12          ...                              XA0045DK         
+         N     R1,F255        WITHIN THE SEGMENT               XA0045DK         
+         SLL   R1,3           TIMES PAGSWPE                    XA0045DK         
+         ALR   R14,R1         ...                              XA0045DK         
+         L     R1,SWPOFF+4(,R14) THE SAVED COPY'S DASD SLOT    XA0045DK         
+         LTR   R1,R1          IS THERE ONE? (GCCLIB: 13 OF 16  XA0045DK         
+         BNZ   BRINGDO        YES                              XA0045DK         
+         NI    SWPOFF(R14),X'FF'-SWPSHR NO: PRIVATE ZERO PAGE  XA0045DK         
+         B     BRINGNX        FOR EVERY USER, NOTHING TO READ  XA0045DK         
+BRINGDO  LR    R1,R7          THE PAGE                         XA0045DK         
          TRANS 2,1,OPT=(BRING,DEFER,LOCK)                      XA0045DK         
          BNZ   MODERR         CANNOT READ THE SAVED SYSTEM     XA0045DK         
          LR    R1,R2          THE FRAME                        XA0045DK         
@@ -115,7 +127,7 @@ BRINGLP  LR    R1,R7          THE PAGE                         XA0045DK
          LH    R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
          LA    R0,1(,R0)      ONE MORE FOR IT                  XA0045DK         
          STH   R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
-         A     R7,F4096       NEXT PAGE                        XA0045DK         
+BRINGNX  A     R7,F4096       NEXT PAGE                        XA0045DK         
          L     R1,SAVEWRK3    ...                              XA0045DK         
          BCTR  R1,0           ...                              XA0045DK         
          ST    R1,SAVEWRK3    ...                              XA0045DK         

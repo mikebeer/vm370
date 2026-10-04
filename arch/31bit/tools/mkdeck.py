@@ -30,6 +30,7 @@ the next surviving anchor -- which is the failure mode R-22 describes.
 """
 import glob
 import os
+import re
 import sys
 
 ID_COL = 63          # zero-based: identifier occupies columns 64-71
@@ -232,6 +233,16 @@ def aux(path, entries):
             continue
         seen.add(deck)
         merged.append((deck, desc))
+    # VMFASM applies the LAST line first and the first line last, so the
+    # order of this file IS the order of application.  Generator order is
+    # not a safe proxy: DMKVMA's AUXLCL ended up with XA0045DK at the bottom,
+    # applied before XA0036DK whose anchors it had deleted (I-213).  Our XA
+    # decks are numbered in the order they were written and each later one
+    # anchors on what the earlier ones left, so sort them: highest first.
+    def key(e):
+        m = re.match(r'XA(\d+)DK$', e[0])
+        return (0, -int(m.group(1))) if m else (1, 0)
+    merged.sort(key=key)
     with open(path, 'w') as f:
         for deck, desc in merged:
             line = '%-8s V01 %s' % (deck, desc)

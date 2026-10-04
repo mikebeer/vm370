@@ -1,4 +1,4 @@
-./ R 00192000 00203000 $ 00192100 100                                           
+./ R 00192000 00205000 $ 00192100 100                                           
          SLR   R8,R8          ...                              XA0045DK         
          IC    R8,SHRSEGNM(R3) 64 KB SEGMENT NUMBER            XA0045DK         
          LR    R4,R8          ...                              XA0045DK         
@@ -13,11 +13,23 @@
          N     R6,=A(SEGPTOM) WITHOUT THE FLAGS                XA0045DK         
          N     R4,F15         GROUP WITHIN THE MEGABYTE        XA0045DK         
          SLL   R4,6           TIMES 16 PTES OF 4               XA0045DK         
+         LR    R5,R4          ...                              XA0045DK         
+         AR    R5,R5          TIMES 16 SWAP ENTRIES OF 8       XA0045DK         
+         AR    R5,R6          ...                              XA0045DK         
+         LA    R5,SWPOFF(,R5) THE GROUP'S FIRST SWAP ENTRY     XA0045DK         
          ALR   R6,R4          THE GROUP'S FIRST PTE            XA0045DK         
          LA    R4,16          ITS 16 PAGES                     XA0045DK         
          CNOP  0,8            ALIGN                            XA0045DK         
+PAGEISK  TM    0(R5),SWPSHR   A SHARED PAGE AT ALL? (A GROUP   XA0045DK         
+         BZ    INVAL          MAY END SHORT: GCCLIB 13 OF 16)  XA0045DK         
+         TM    PAGPFRA+2,PAGINV IS PAGE IN STORAGE?            XA0045DK         
+         BO    INVAL          NO - GET NEXT PAGE ENTRY         XA0045DK         
 ./ R 00207000          $ 00207100 100                                           
          N     R2,=A(PAGPFRM) THE FRAME ADDRESS, NO FLAGS      XA0045DK         
+./ R 00215000 00216000 $ 00215100 100                                           
+INVAL    LA    R6,PAGPFRA+L'PAGPFRA NEXT PAGE TABLE ENTRY      XA0045DK         
+         LA    R5,8(,R5)      AND ITS SWAP ENTRY               XA0045DK         
+         BCT   R4,PAGEISK     IF MORE PAGES, PROCESS ALL       XA0045DK         
 ./ R 00465000          $ 00465100 100                                           
          TM    CORFLAG,CORCFLCK+CORIOLCK FRAME LOCKED?         XA0045DK         
 ./ R 00489000          $ 00489100 100                                           
@@ -26,3 +38,6 @@
          BZ    *+10           NONE                             XA0045DK         
          MVC   0(4,R15),=A(PAGINVW) INVALIDATE IT TOO          XA0045DK         
          SLR   R15,R15        ZIP REG                          XA0045DK         
+./ R 00576000          $ 00576100 100                                           
+         COPY  SYSTBL                                          XA0045DK         
+SWPOFF   EQU   PAGTSWP-(PAGPFRA-PAGSTMP)+(SWPFLAG-SWPVM)       XA0045DK         
