@@ -176,6 +176,7 @@ EXPECTS = [
     (r'^/readcard',           r'Ready',                             120),
     (r'^/cpacc',              r'Ready',                             120),
     (r'^/exec vmsetup cms',   r'Ready',                             120),
+    (r'^/cp def stor',        r'STORAGE =',                         30),
     (r'^/ipl 190',            r'VM Community|Ready',                120),
     (r'^/vmfmac',             r'Ready',                             600),
     (r'^/vmfasm',             r'Ready',                             900),
@@ -259,8 +260,12 @@ def main():
         # IPL 00C CLEAR, PRG005 on IPL 190; I-235, w117).  So the CMS build
         # logs MAINT on NOIPL and IPLs 190 unshared, which DMKPGS releases the
         # ordinary way.  The CP build keeps the directory IPL: it never leaves.
+        # DEF STOR 16M first: an unshared CMS is loaded just under VMSIZE and
+        # DMSINS refuses a machine above 16 MB (DMSINI260T) -- the snapshot's
+        # directory gives MAINT more than that.
         rc = [BOOT.replace('/logon maint cpcms\npause 45\n',
                            '/logon maint cpcms noipl\npause 20\n'
+                           '/cp def stor 16m\npause 10\n'
                            '/ipl 190\npause 45\n')]
 
     # `--punch <file>` attaches the card punch AFTER the IPL and before the
