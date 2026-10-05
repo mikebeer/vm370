@@ -1,0 +1,6 @@
+./ R 00532000          $ 00532100 100                                           
+         N     R1,XRIGHT24 ZERO THE HIGH BYTE I-126            XA0047DK         
+./ R 00536000          $ 00536100 100                                           
+         N     R1,XRIGHT24 ZIP THE HIGH BYTE I-126             XA0047DK         
+./ R 00588000          $ 00588100 100                                           
+         N     R1,XRIGHT24 ZIP THE HIGH BYTE I-126             XA0047DK         

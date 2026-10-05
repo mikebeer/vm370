@@ -1,0 +1,8 @@
+./ R 00725500          $ 00725600 100                                           
+         N     R1,XRIGHT24 ZERO HIGH ORDER BYTE I-126          XA0047DK         
+./ R 00735500          $ 00735600 100                                           
+         N     R8,XRIGHT24 ZERO HIGH ORDER BYTE I-126          XA0047DK         
+./ R 01292500          $ 01292510 010                                           
+         N     R8,XRIGHT24 ZERO HIGH ORDER BYTE I-126          XA0047DK         
+./ R 01357500          $ 01357600 100                                           
+         N     R8,XRIGHT24 ZERO HIGH ORDER BYTE I-126          XA0047DK         

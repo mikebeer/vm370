@@ -1,0 +1,4 @@
+./ R 02045000          $ 02045100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 02136200          $ 02136210 010                                           
+         N     R1,XRIGHT24 CLEAR HIGH-ORDER BYTE I-126         XA0047DK         

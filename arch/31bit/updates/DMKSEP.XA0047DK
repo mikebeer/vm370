@@ -1,0 +1,6 @@
+./ R 00231000          $ 00231100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00471000          $ 00471100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH BYTE I-126               XA0047DK         
+./ R 00495000          $ 00495100 100                                           
+         N     R3,XRIGHT24 POINT DATA BUFFER I-126             XA0047DK         

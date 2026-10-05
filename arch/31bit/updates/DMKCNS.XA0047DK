@@ -1,0 +1,6 @@
+./ R 00706000          $ 00706100 100                                           
+         N     R4,XRIGHT24 STRIP OFF THE COMMAND CODE I-126    XA0047DK         
+./ R 00862060          $ 00862061 001                                           
+         N     R4,XRIGHT24 REMOVE COMMAND CODE FROM A I-126    XA0047DK         
+./ R 01789000          $ 01789100 100                                           
+         N     R4,XRIGHT24 WAS LA: 24-BIT STRIP, I-126         XA0047DK         

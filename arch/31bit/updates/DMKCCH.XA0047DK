@@ -1,0 +1,4 @@
+./ R 00219000          $ 00219100 100                                           
+         N     R2,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00224000          $ 00224100 100                                           
+         N     R2,XRIGHT24 GET THE ADDRESS OF THE LAS I-126    XA0047DK         

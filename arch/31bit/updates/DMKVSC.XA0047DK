@@ -1,0 +1,6 @@
+./ R 00142000          $ 00142100 100                                           
+         LR    R9,R2                                           XA0047DK         
+         N     R9,XRIGHT24 STRIP PROTECTION KEY FROM  I-126    XA0047DK         
+./ R 00396000          $ 00396100 100                                           
+         LR    R1,R3                                           XA0047DK         
+         N     R1,XRIGHT24 ADDRESS BITS ONLY INTO R1 I-126     XA0047DK         

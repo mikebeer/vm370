@@ -1,0 +1,4 @@
+./ R 00806000          $ 00806100 100                                           
+         N     R8,XRIGHT24 BE SURE OF HI-ORDER BYTE I-126      XA0047DK         
+./ R 00968000          $ 00968100 100                                           
+         N     R9,XRIGHT24 BE SURE (CLEAR HI-ORDER BY I-126    XA0047DK         

@@ -1,0 +1,8 @@
+./ R 00906000          $ 00906100 100                                           
+         N     R1,XRIGHT24 CLEAR HI BYTE I-126                 XA0047DK         
+./ R 01207000          $ 01207100 100                                           
+         LR    R15,R5                                          XA0047DK         
+         N     R15,XRIGHT24 GET SWP TBL PTR FOR VMBLOK I-126   XA0047DK         
+./ R 01546000          $ 01546100 100                                           
+         LR    R1,R5                                           XA0047DK         
+         N     R1,XRIGHT24 SWAPT TABLE ENTRY POINTER I-126     XA0047DK         

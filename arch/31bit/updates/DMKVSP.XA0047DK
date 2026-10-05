@@ -1,0 +1,20 @@
+./ R 00213000          $ 00213100 100                                           
+         LR    R1,R2                                           XA0047DK         
+         N     R1,XRIGHT24 CLEAR STORAGE KEY FROM CAW I-126    XA0047DK         
+./ R 00275000          $ 00275100 100                                           
+         N     R1,XRIGHT24 CLEAR CCW OP-CODE I-126             XA0047DK         
+./ R 00294000          $ 00294100 100                                           
+         LR    R1,R3                                           XA0047DK         
+         N     R1,XRIGHT24 FIELD FOR DATE I-126                XA0047DK         
+./ R 01998000          $ 01998100 100                                           
+         N     R1,XRIGHT24 CLEAR COMMAND CODE I-126            XA0047DK         
+./ R 02082000          $ 02082100 100                                           
+         N     R1,XRIGHT24 WAS LA: 24-BIT STRIP, I-126         XA0047DK         
+./ R 02269000          $ 02269100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH BYTE I-126               XA0047DK         
+./ R 02279000          $ 02279100 100                                           
+         N     R1,XRIGHT24 CLEAR COMMAND CODE I-126            XA0047DK         
+./ R 02354000          $ 02354100 100                                           
+         N     R1,XRIGHT24 STRIP OP-CODE I-126                 XA0047DK         
+./ R 02367000          $ 02367100 100                                           
+         N     R1,XRIGHT24 CLEAR OUT COMMAND CODE I-126        XA0047DK         

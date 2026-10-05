@@ -1,0 +1,8 @@
+./ R 00959000          $ 00959100 100                                           
+         N     R3,XRIGHT24 CLEAR TOP BYTE I-126                XA0047DK         
+./ R 00964000          $ 00964100 100                                           
+         N     R5,XRIGHT24 CLEAR FIRST BYTE I-126              XA0047DK         
+./ R 00987000          $ 00987100 100                                           
+         N     R5,XRIGHT24 AND KILL TOP BYTE I-126             XA0047DK         
+./ R 01006000          $ 01006100 100                                           
+         N     R6,XRIGHT24 AND CLEAR TOP BYTE I-126            XA0047DK         

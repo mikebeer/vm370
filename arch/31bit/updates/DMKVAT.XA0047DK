@@ -1,0 +1,8 @@
+./ R 00206000          $ 00206100 100                                           
+         N     R1,XRIGHT24 SANS ILC/CC I-126                   XA0047DK         
+./ R 00232136          $ 00232137 001                                           
+         N     R1,XRIGHT24 STRIP CC & ILC I-126                XA0047DK         
+./ R 00409900          $ 00410000 100                                           
+         N     R6,XRIGHT24 24 BITS ONLY, PLEASE I-126          XA0047DK         
+./ R 00956500          $ 00956600 100                                           
+         N     R6,XRIGHT24 ENSURE HI-ORDER BYTE IS ZE I-126    XA0047DK         

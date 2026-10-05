@@ -1,0 +1,14 @@
+./ R 01931000          $ 01931100 100                                           
+         LR    R0,R2                                           XA0047DK         
+         N     R0,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         
+./ R 01933000          $ 01933100 100                                           
+         N     R2,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         
+./ R 01937000          $ 01937100 100                                           
+         N     R1,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         
+./ R 02102000          $ 02102100 100                                           
+         LR    R0,R2                                           XA0047DK         
+         N     R0,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         
+./ R 02104000          $ 02104100 100                                           
+         N     R2,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         
+./ R 02108000          $ 02108100 100                                           
+         N     R3,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         

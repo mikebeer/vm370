@@ -1,0 +1,8 @@
+./ R 00533000          $ 00533100 100                                           
+         LR    R7,R5                                           XA0047DK         
+         N     R7,XRIGHT24 VIRTUAL TRANSFER-TO ADDRES I-126    XA0047DK         
+./ R 00987000          $ 00987100 100                                           
+         LR    R7,R1                                           XA0047DK         
+         N     R7,XRIGHT24 VIRTUAL ADDRESS WITHOUT HI I-126    XA0047DK         
+./ R 01377000          $ 01377100 100                                           
+         N     R1,XRIGHT24 MINUS THE HIGH ORDER BYTE I-126     XA0047DK         

@@ -1,0 +1,24 @@
+./ R 00406000          $ 00406100 100                                           
+         N     R9,XRIGHT24 STRIP HIGH-ORDER BYTE FROM I-126    XA0047DK         
+./ R 00479770          $ 00479771 001                                           
+         N     R2,XRIGHT24 STRIP OFF OP-CODE, I-126            XA0047DK         
+./ R 00641000          $ 00641100 100                                           
+         LR    R1,R3                                           XA0047DK         
+         N     R1,XRIGHT24 ADDRESS BITS ONLY INTO R1 I-126     XA0047DK         
+./ R 01199100          $ 01199200 100                                           
+         N     R14,XRIGHT24 ZERO HIGH ORDER FOR COMPAR I-126   XA0047DK         
+./ R 01271000          $ 01271100 100                                           
+         N     R7,XRIGHT24 ... I-126                           XA0047DK         
+./ R 01535000          $ 01535100 100                                           
+         N     R15,XRIGHT24 ALLOW STORAGE WRAP-AROUND, I-126   XA0047DK         
+./ R 01978000          $ 01978100 100                                           
+BRING8   LR    R1,R3                                           XA0047DK         
+         N     R1,XRIGHT24 RESTORE R1 TO ITS USUAL VA I-126    XA0047DK         
+./ R 01993000          $ 01993100 100                                           
+         LR    R1,R3                                           XA0047DK         
+         N     R1,XRIGHT24 ALSO R1 I-126                       XA0047DK         
+./ R 03976000          $ 03976100 100                                           
+         LR    R1,R3                                           XA0047DK         
+         N     R1,XRIGHT24 RESTORE R1 TO ITS USUAL VA I-126    XA0047DK         
+./ R 04065000          $ 04065100 100                                           
+         N     R1,XRIGHT24 (WITHOUT HIGH-ORDER BYTE,  I-126    XA0047DK         

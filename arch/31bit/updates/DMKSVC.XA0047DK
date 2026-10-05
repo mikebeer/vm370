@@ -1,0 +1,6 @@
+./ R 00373000          $ 00373100 100                                           
+         N     R13,XRIGHT24 STRIP ALL BUT IC I-126             XA0047DK         
+./ R 00597000          $ 00597100 100                                           
+         N     R15,XRIGHT24 REMOVE THE AFFINITY FLAG I-126     XA0047DK         
+./ R 00671000          $ 00671100 100                                           
+SVCRETAF N     R14,XRIGHT24 CLEAR SPECIFIED PROCESSOR  I-126   XA0047DK         

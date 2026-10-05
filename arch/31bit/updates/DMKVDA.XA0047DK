@@ -1,0 +1,22 @@
+./ R 00358500          $ 00358600 100                                           
+         N     R7,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00614500          $ 00614600 100                                           
+         N     R4,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00731500          $ 00731600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00734500          $ 00734600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00748500          $ 00748600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00756500          $ 00756600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00766500          $ 00766600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00770500          $ 00770600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00783500          $ 00783600 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00936500          $ 00936600 100                                           
+         N     R4,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00968500          $ 00968600 100                                           
+         N     R4,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         

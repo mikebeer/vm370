@@ -1,0 +1,10 @@
+./ R 00327000          $ 00327100 100                                           
+         N     R9,XRIGHT24 STRIP OFF CAW KEY I-126             XA0047DK         
+./ R 00540000          $ 00540100 100                                           
+         N     R2,XRIGHT24 CLEAR OUT COMMAND CODE I-126        XA0047DK         
+./ R 00718000          $ 00718100 100                                           
+         N     R1,XRIGHT24 ...WITHOUT THE CCW OP-CODE I-126    XA0047DK         
+./ R 00803000          $ 00803100 100                                           
+         N     R1,XRIGHT24 ...WITHOUT THE CCW OP-CODE I-126    XA0047DK         
+./ R 01177000          $ 01177100 100                                           
+         N     R4,XRIGHT24 ...WITHOUT THE OP-CODE, PL I-126    XA0047DK         

@@ -1,0 +1,23 @@
+./ R 01234000          $ 01234100 100                                           
+         N     R3,XRIGHT24 CLEAR TIC OP CODE I-126             XA0047DK         
+./ R 01288000          $ 01288100 100                                           
+         LR    R4,R5                                           XA0047DK         
+         N     R4,XRIGHT24 POINT TO END OF RECORD -4 I-126     XA0047DK         
+./ R 01296000          $ 01296100 100                                           
+SAVEPT   LR    R6,R1                                           XA0047DK         
+         N     R6,XRIGHT24 SAVE POINTER TO THIS RECOR I-126    XA0047DK         
+./ R 01297000          $ 01297100 100                                           
+         LR    R1,R5                                           XA0047DK         
+         N     R1,XRIGHT24 ADJUST TO NEXT CCW BY TIC  I-126    XA0047DK         
+./ R 01352000          $ 01352100 100                                           
+         N     R1,XRIGHT24 .. I-126                            XA0047DK         
+./ R 01428000          $ 01428100 100                                           
+         N     R6,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 01552000          $ 01552100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 01556000          $ 01556100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 01745000          $ 01745100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH BYTE I-126               XA0047DK         
+./ R 01749000          $ 01749100 100                                           
+         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         

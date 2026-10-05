@@ -1,0 +1,3 @@
+./ R 00593000          $ 00593100 100                                           
+         LR    R1,R10                                          XA0047DK         
+         N     R1,XRIGHT24 CLEAR HI BYTE AND MOVE TO  I-126    XA0047DK         

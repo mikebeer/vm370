@@ -1,0 +1,5 @@
+./ R 01048330          $ 01048331 001                                           
+         N     R15,XRIGHT24 Strip top byte I-126               XA0047DK         
+./ R 01378500          $ 01378501 001                                           
+         LR    R0,R7                                           XA0047DK         
+         N     R0,XRIGHT24 GET RESP LENGTH I-126               XA0047DK         

@@ -1,0 +1,4 @@
+./ R 01119000          $ 01119100 100                                           
+         N     R1,XRIGHT24 STRIP HIGH-ORDER BYTE FROM I-126    XA0047DK         
+./ R 01258000          $ 01258100 100                                           
+         N     R14,XRIGHT24 (WITHOUT HIGH-ORDER BYTE) I-126    XA0047DK         

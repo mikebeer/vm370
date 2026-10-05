@@ -18,10 +18,13 @@ Then read them onto MAINT's A disk and:
 `GLOBAL MACLIB &1 &2 ...` in that order, so a `PSA` member there overrides the
 one in `DMKMAC` without touching `DMKMAC` at all.
 """
+import glob
 import os
+import re
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
+TOOLS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tools')
+sys.path.insert(0, TOOLS)
 from mkdeck import Deck, aux, auxcheck, verify, next_seq    # noqa: E402
 
 
@@ -89,6 +92,7 @@ XA43 = 'XA0043DK'
 XA44 = 'XA0044DK'
 XA45 = 'XA0045DK'
 XA46 = 'XA0046DK'
+XA47 = 'XA0047DK'
 
 
 def psa():
@@ -4172,7 +4176,7 @@ AMODEMODS = {
             "DMKPTRAN ENTER",
             "         TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)",
             "         BO    PTRA31         YES: KEEP BITS 1-7",
-            "         LA    R1,0(,R1)      24-BIT CALLER: STRIP BYTE 0",
+            "         N     R1,XRIGHT24    24-BIT CALLER: STRIP BYTE 0",
             "PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE",
             "         SRL   R1,1           R10 IS SET UP (I-218)",
             "         XC    SAVEWRK9,SAVEWRK9 CLEAR PAGEIO ERROR SWITCH",
@@ -6577,6 +6581,91 @@ def corecopy():
     return d
 
 
+
+# ---------------------------------------------------------------------------
+# M2 step 2, part 1: the 24-bit strip sweep (I-126).  `LA Rx,0(,Ry)` clears
+# bits 0-7 in AMODE 24 and only bit 0 in AMODE 31, so before CP's PSW can go
+# AMODE 31 every site that uses it to drop a flag or length byte from a packed
+# pointer has to say so with a mask that means the same thing in both modes:
+#
+#     LA Rx,0(,Rx)   ->  N  Rx,XRIGHT24          same size, sets the CC
+#     LA Rx,0(,Ry)   ->  LR Rx,Ry / N Rx,XRIGHT24  +2 bytes
+#
+# XRIGHT24 is the PSA's X'00FFFFFF', addressable from base 0 in every module.
+# This is a behaviour-preserving refactor while CP stays AMODE 24 -- which is
+# how it is tested (i232) before the PSW flips (i233).  tools/strips.py is the
+# inventory; it found 241 sites in 78 nucleus modules, one of them
+# CC-sensitive and that one in DMKDDR, a utility.  Sites inside ranges that
+# an earlier deck already replaced are skipped: those decks wrote explicit
+# masks (SEGPTOM, PAGPFRM, ...) when they converted the field.  DMKLD00E is
+# the loader, runs before CP in AMODE 24 and is left alone.
+STRIP_SKIP = {'DMKLD00E'}
+
+def stripdecks():
+    sys.path.insert(0, TOOLS)
+    import strips, replchk
+    nuc = set()
+    for line in open('/home/claude/vmce/maintenance/files/194/CPLOAD.EXEC',
+                     errors='replace'):
+        for w in line.split():
+            if w.startswith(('DMK', 'HDK')) and len(w) >= 6:
+                nuc.add(w)
+    done = []
+    for path in sorted(glob.glob(os.path.join(SRC, '*.ASSEMBLE'))):
+        mod = os.path.basename(path).split('.')[0]
+        if mod not in nuc or mod in STRIP_SKIP:
+            continue
+        sites = [r for r in strips.scan(path) if r['kind'].startswith('LA')]
+        if not sites:
+            continue
+        # ranges other decks of this module already replace or delete
+        taken = []
+        for d in glob.glob(os.path.join(HERE, '%s.XA*DK' % mod)):
+            if d.endswith(XA47):
+                continue
+            for op, frm, to, lines in replchk.deck_cards(d):
+                if op in 'RD':
+                    taken.append((int(frm), int(to)))
+        cards = []
+        for r in sites:
+            s = int(r['seq'])
+            if any(a <= s <= b for a, b in taken):
+                continue
+            # the record itself, for its label and comment
+            rec = None
+            for line in open(path, errors='replace'):
+                if line[72:80].strip() == r['seq']:
+                    rec = line[:72].rstrip()
+                    break
+            label = rec.split()[0] if rec and not rec.startswith(' ') else ''
+            m = re.match(r'^\S*\s+LA\s+(R?\d+),0\((?:0?,)?(R?\d+)\)\s*(.*)$', rec)
+            rx, ry, cmt = m.group(1), m.group(2), m.group(3).strip()
+            rx = rx if rx.startswith('R') else 'R' + rx
+            ry = ry if ry.startswith('R') else 'R' + ry
+            cmt = re.sub(r'\s*(@V[A-Z0-9]+|HRC\d+DK|%V[A-Z0-9]+)\s*$', '', cmt)
+            cmt = (cmt[:26] + ' I-126') if cmt else 'WAS LA: 24-BIT STRIP, I-126'
+            if rx == ry:
+                lines = ['%-8s N     %s,XRIGHT24 %s' % (label, rx, cmt)]
+            else:
+                lines = ['%-8s LR    %s,%s' % (label, rx, ry),
+                         '         N     %s,XRIGHT24 %s' % (rx, cmt)]
+            lines = [l.rstrip()[:61] for l in lines]
+            cards.append((r['seq'], lines))
+        if not cards:
+            continue
+        cards.sort(key=lambda c: int(c[0]))
+        dk = datdeck(mod, cards, ident=XA47)
+        out = os.path.join(HERE, '%s.%s' % (mod, XA47))
+        n = dk.write(out)
+        aux(os.path.join(HERE, '%s.AUXLCL' % mod),
+            [(XA47, 'AMODE 31 SWEEP: LA STRIPS BECOME N XRIGHT24 (I-126)')])
+        print('%-8s %-9s %3d cards  %s' % (mod, XA47, n,
+              'OK' if not verify(out) else 'BAD'))
+        done.append((mod, len(cards)))
+    print('strip sweep: %d sites in %d modules' % (sum(n for _, n in done), len(done)))
+    return done
+
+
 def main():
     d = psa()
     n = d.write(os.path.join(HERE, 'PSA.%s' % XA1))
@@ -6867,6 +6956,11 @@ def main():
             [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
         print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
               'OK' if not verify(path) else 'BAD'))
+
+    # The strip sweep LAST of the module decks: it skips every record an
+    # earlier deck replaces, so those decks must exist when it runs, and
+    # aux() sorts XA0047DK highest so VMFASM applies it after them.
+    stripdecks()
 
 
     eq = equcopy()

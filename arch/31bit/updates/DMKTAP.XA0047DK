@@ -1,0 +1,8 @@
+./ R 00890000          $ 00890100 100                                           
+         N     R4,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00892600          $ 00892610 010                                           
+         N     R4,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00908000          $ 00908100 100                                           
+         N     R2,XRIGHT24 CLEAR HIGH ORDER BYTE (KEY I-126    XA0047DK         
+./ R 01217000          $ 01217100 100                                           
+         N     R1,XRIGHT24 CLEAR OUT THE GARBAGE I-126         XA0047DK         

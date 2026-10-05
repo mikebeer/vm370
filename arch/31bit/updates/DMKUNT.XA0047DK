@@ -1,0 +1,11 @@
+./ R 00111400          $ 00111500 100                                           
+         N     R3,XRIGHT24 CLEAR HI BYTE I-126                 XA0047DK         
+./ R 00220950          $ 00221050 100                                           
+         N     R4,XRIGHT24 STRIP POSSIBLE HIGH ORDER  I-126    XA0047DK         
+./ R 00222900          $ 00222910 010                                           
+         LR    R2,R5                                           XA0047DK         
+         N     R2,XRIGHT24 DATA ADDR INTO R2 (MINUS B I-126    XA0047DK         
+./ R 00728000          $ 00728100 100                                           
+         N     R4,XRIGHT24 CLEAR HI BYTE I-126                 XA0047DK         
+./ R 00755000          $ 00755100 100                                           
+         N     R6,XRIGHT24 STRIP OFF THE OP-CODE I-126         XA0047DK         

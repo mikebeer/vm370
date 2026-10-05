@@ -1,0 +1,4 @@
+./ R 01197120          $ 01197130 010                                           
+         N     R1,XRIGHT24 Use 24 bits I-126                   XA0047DK         
+./ R 01205140          $ 01205150 010                                           
+         N     R15,XRIGHT24 Use 24 bits I-126                  XA0047DK         

@@ -1,0 +1,11 @@
+./ R 00441000          $ 00441100 100                                           
+         N     R3,XRIGHT24 CLEAR OUT KEY..ETC I-126            XA0047DK         
+./ R 00614000          $ 00614100 100                                           
+         N     R1,XRIGHT24 CLEAR KEY..ETC I-126                XA0047DK         
+./ R 00636000          $ 00636100 100                                           
+         N     R6,XRIGHT24 CLEAR KEY..ETC.. I-126              XA0047DK         
+./ R 00647000          $ 00647100 100                                           
+         LR    R2,R3                                           XA0047DK         
+         N     R2,XRIGHT24 INTO R2 PLEASE, WITH NO HI I-126    XA0047DK         
+./ R 00762000          $ 00762100 100                                           
+         N     R1,XRIGHT24 CLEAR KEY..ETC.. I-126              XA0047DK         

@@ -1,0 +1,11 @@
+./ R 00150000          $ 00150100 100                                           
+         LR    R1,R2                                           XA0047DK         
+         N     R1,XRIGHT24 CLEAR STORAGE KEY FROM CAW I-126    XA0047DK         
+./ R 00232000          $ 00232100 100                                           
+         N     R1,XRIGHT24 ... I-126                           XA0047DK         
+./ R 00757000          $ 00757100 100                                           
+         N     R1,XRIGHT24 STRIP OP-CODE I-126                 XA0047DK         
+./ R 00788000          $ 00788100 100                                           
+         N     R1,XRIGHT24 CLEAR OP-CODE I-126                 XA0047DK         
+./ R 00839000          $ 00839100 100                                           
+         N     R1,XRIGHT24 CLEAR OP-CODE I-126                 XA0047DK         

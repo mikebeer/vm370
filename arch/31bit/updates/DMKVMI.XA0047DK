@@ -1,0 +1,16 @@
+./ R 00119000          $ 00119100 100                                           
+         N     R15,XRIGHT24 STRIP HIGH-ORDER BYTE FROM I-126   XA0047DK         
+./ R 00124000          $ 00124100 100                                           
+         N     R15,XRIGHT24 STRIP HIGH BYTE (FROM BALR I-126   XA0047DK         
+./ R 00268000          $ 00268100 100                                           
+         N     R11,XRIGHT24 ISOLATE DATA ADDRESS I-126         XA0047DK         
+./ R 00380000          $ 00380100 100                                           
+         N     R10,XRIGHT24 ISOLATE DATA ADDRESS I-126         XA0047DK         
+./ R 00389000          $ 00389100 100                                           
+         N     R1,XRIGHT24 ISOLATE DATA ADDRESS I-126          XA0047DK         
+./ R 00419000          $ 00419100 100                                           
+         N     R10,XRIGHT24 CLEAR HIGH BYTE I-126              XA0047DK         
+./ R 00541000          $ 00541100 100                                           
+         N     R10,XRIGHT24 ISOLATE DATA ADDRESS I-126         XA0047DK         
+./ R 00689000          $ 00689100 100                                           
+         N     R2,XRIGHT24 ISOLATE DATA ADDRESS I-126          XA0047DK         

@@ -1,0 +1,4 @@
+./ R 01964000          $ 01964100 100                                           
+         N     R14,XRIGHT24 CLEAR HIGH-ORDER BYTE I-126        XA0047DK         
+./ R 02328200          $ 02328210 010                                           
+         N     R15,XRIGHT24 GET MICBLOK ADDRESS, IF AN I-126   XA0047DK         

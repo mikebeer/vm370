@@ -1,0 +1,6 @@
+./ R 00248375          $ 00248385 010                                           
+         N     R1,XRIGHT24 CLEAN ANY GARBAGE I-126             XA0047DK         
+./ R 00258300          $ 00258310 010                                           
+         N     R1,XRIGHT24 CLEAR ANY GARBAGE I-126             XA0047DK         
+./ R 00781000          $ 00781100 100                                           
+         N     R1,XRIGHT24 CLEAR HI BYTE I-126                 XA0047DK         

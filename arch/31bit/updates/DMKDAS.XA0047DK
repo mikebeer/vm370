@@ -1,0 +1,18 @@
+./ R 00496000          $ 00496100 100                                           
+         N     R5,XRIGHT24 CLEAR GARBAGE I-126                 XA0047DK         
+./ R 00663500          $ 00663510 010                                           
+         N     R2,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
+./ R 00751000          $ 00751100 100                                           
+         N     R4,XRIGHT24 SEEK DATA AND I-126                 XA0047DK         
+./ R 00781000          $ 00781100 100                                           
+         N     R1,XRIGHT24 CLEAR HI BYTE I-126                 XA0047DK         
+./ R 00905000          $ 00905100 100                                           
+         N     R4,XRIGHT24 WAS LA: 24-BIT STRIP, I-126         XA0047DK         
+./ R 00985150          $ 00985250 100                                           
+         N     R1,XRIGHT24 CLEAR KEY I-126                     XA0047DK         
+./ R 00995900          $ 00995910 010                                           
+         N     R3,XRIGHT24 SEEK DATA AND I-126                 XA0047DK         
+./ R 01050000          $ 01050100 100                                           
+         N     R15,XRIGHT24 REMOVE CMD. CODE I-126             XA0047DK         
+./ R 01198200          $ 01198210 010                                           
+         N     R3,XRIGHT24 CLEAR HI-ORDER BYTE I-126           XA0047DK         

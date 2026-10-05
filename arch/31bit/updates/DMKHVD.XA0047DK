@@ -1,0 +1,14 @@
+./ R 01107000          $ 01107100 100                                           
+         N     R1,XRIGHT24 24 BITS ONLY I-126                  XA0047DK         
+./ R 01179000          $ 01179100 100                                           
+         LR    R1,R5                                           XA0047DK         
+         N     R1,XRIGHT24 PLACE THE ADDRESS NEATLY I I-126    XA0047DK         
+./ R 01220000          $ 01220100 100                                           
+         LR    R1,R5                                           XA0047DK         
+         N     R1,XRIGHT24 GET THE ADDRESS OF THE FIR I-126    XA0047DK         
+./ R 01338000          $ 01338100 100                                           
+         N     R9,XRIGHT24 GET RID OF HI ORDER BYTE I-126      XA0047DK         
+./ R 01365000          $ 01365100 100                                           
+         N     R9,XRIGHT24 CLEAR HI ORDER BYTE I-126           XA0047DK         
+./ R 01443000          $ 01443100 100                                           
+         N     R9,XRIGHT24 ADDRESS ONLY I-126                  XA0047DK         

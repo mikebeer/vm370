@@ -1,0 +1,9 @@
+./ R 00760300          $ 00760400 100                                           
+         N     R3,XRIGHT24 CLEAR FIRST BYTE I-126              XA0047DK         
+./ R 00796000          $ 00796100 100                                           
+         LR    R3,R1                                           XA0047DK         
+         N     R3,XRIGHT24 IF OK, LET R3 POINT TO VIR I-126    XA0047DK         
+./ R 00821000          $ 00821100 100                                           
+         N     R15,XRIGHT24 ALLOW STORAGE WRAP-AROUND, I-126   XA0047DK         
+./ R 00880000          $ 00880100 100                                           
+         N     R8,XRIGHT24 CLEAR UNWANTED BITS I-126           XA0047DK         
