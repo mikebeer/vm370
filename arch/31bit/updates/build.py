@@ -5518,10 +5518,13 @@ DATMODS = {
         ('01134000', '01135000', Deck.comment(
             "MVI 0(R1),0 CLEARED BYTE 0 AND THE NI KEPT TWO FLAGS THAT SHARED "
             "BYTE 1. PAGINV IS IN BYTE 2 AND PAGREF IN BYTE 3, SO PAGREF IS "
-            "SAVED FIRST AND THE FRAME ADDRESS IS CLEARED AS THREE BYTES.") + [
+            "SAVED FIRST AND THE FRAME ADDRESS IS CLEARED AS TWO BYTES PLUS "
+            "THE HIGH NIBBLE OF BYTE 2 -- THE NI DOES THAT NIBBLE AND KEEPS I. "
+            "AN XC OF THREE BYTES TOOK THE I BIT WITH IT, AND A PTE OF "
+            "00000001 IS REAL FRAME 0, VALID: THE GUEST WROTE CP'S PSA. I-240.") + [
             "         NI    3(R1),PAGREF   RETAINING THIS FLAG",
-            "         XC    0(3,R1),0(R1)  SET PTE ADDRESS -> 0,",
-            "         NI    2(R1),PAGINV   RETAINING THIS ONE",
+            "         XC    0(2,R1),0(R1)  SET PTE ADDRESS -> 0,",
+            "         NI    2(R1),PAGINV   RETAINING THIS ONE (I-240)",
         ]),
         ('01350130', [
             "         SLL   R0,2           MULTIPLY BY 4 FOR PTE SIZE",
@@ -5548,8 +5551,8 @@ DATMODS = {
         ('01679000', ["         TM    PAGPFRA+2,PAGINV    CATCH CULPRIT"]),
         ('01683000', '01684000', [
             "         NI    PAGPFRA+3,PAGREF RETAINING THIS FLAG",
-            "         XC    PAGPFRA(3),PAGPFRA CLEAR PTE ADDRESS",
-            "         NI    PAGPFRA+2,PAGINV RETAINING THIS ONE",
+            "         XC    PAGPFRA(2),PAGPFRA CLEAR PTE ADDRESS",
+            "         NI    PAGPFRA+2,PAGINV RETAINING THIS ONE (I-240)",
         ]),
         ('01719000', [
             "         TM    PAGPFRA+2,PAGINV    IT MUST BE INVALID",

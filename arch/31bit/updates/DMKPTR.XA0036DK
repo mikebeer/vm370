@@ -63,10 +63,13 @@ INVLPTE  DC    A(PAGINVW)     INVALID PTE CONSTANT             XA0036DK
 *  MVI 0(R1),0 CLEARED BYTE 0 AND THE NI KEPT TWO FLAGS THAT   XA0036DK         
 *  SHARED BYTE 1. PAGINV IS IN BYTE 2 AND PAGREF IN BYTE 3,    XA0036DK         
 *  SO PAGREF IS SAVED FIRST AND THE FRAME ADDRESS IS CLEARED   XA0036DK         
-*  AS THREE BYTES.                                             XA0036DK         
+*  AS TWO BYTES PLUS THE HIGH NIBBLE OF BYTE 2 -- THE NI DOES  XA0036DK         
+*  THAT NIBBLE AND KEEPS I. AN XC OF THREE BYTES TOOK THE I    XA0036DK         
+*  BIT WITH IT, AND A PTE OF 00000001 IS REAL FRAME 0, VALID:  XA0036DK         
+*  THE GUEST WROTE CP'S PSA. I-240.                            XA0036DK         
          NI    3(R1),PAGREF   RETAINING THIS FLAG              XA0036DK         
-         XC    0(3,R1),0(R1)  SET PTE ADDRESS -> 0,            XA0036DK         
-         NI    2(R1),PAGINV   RETAINING THIS ONE               XA0036DK         
+         XC    0(2,R1),0(R1)  SET PTE ADDRESS -> 0,            XA0036DK         
+         NI    2(R1),PAGINV   RETAINING THIS ONE (I-240)       XA0036DK         
 ./ R 01350130          $ 01350140 010                                           
          SLL   R0,2           MULTIPLY BY 4 FOR PTE SIZE       XA0036DK         
 ./ R 01350175          $ 01350185 010                                           
@@ -88,8 +91,8 @@ INVLPTE  DC    A(PAGINVW)     INVALID PTE CONSTANT             XA0036DK
          TM    PAGPFRA+2,PAGINV    CATCH CULPRIT               XA0036DK         
 ./ R 01683000 01684000 $ 01683100 100                                           
          NI    PAGPFRA+3,PAGREF RETAINING THIS FLAG            XA0036DK         
-         XC    PAGPFRA(3),PAGPFRA CLEAR PTE ADDRESS            XA0036DK         
-         NI    PAGPFRA+2,PAGINV RETAINING THIS ONE             XA0036DK         
+         XC    PAGPFRA(2),PAGPFRA CLEAR PTE ADDRESS            XA0036DK         
+         NI    PAGPFRA+2,PAGINV RETAINING THIS ONE (I-240)     XA0036DK         
 ./ R 01719000          $ 01719100 100                                           
          TM    PAGPFRA+2,PAGINV    IT MUST BE INVALID          XA0036DK         
 ./ R 01888000          $ 01888100 100                                           
