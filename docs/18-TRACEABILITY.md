@@ -125,7 +125,8 @@ the issues it opened and closed. `13-ISSUES.md` holds the issue text,
 | M3b CMS by `IPL 190` | done 4 Oct | HDK modules reassembled (I-194); DMKPTR XA0036DK (I-196); DMKPRV XA0041DK (I-199, I-200, I-202); DMKDEH/DMKDIR XA0042DK (I-203); DMKPGS (I-206); DMKCDB/DMKCDS XA0044DK (I-207, I-209) | R-08 retired | walls 23, 25–29 closed; I-201 (dump) open |
 | M3c shared by frame | done 4 Oct | DMKCFG, DMKPGS, DMKVMA, DMKBLD XA0045DK | R-06 retired | I-195, I-210, I-211, I-212 closed; increment 2 open (`33-FRAME-SHARING.md`) |
 | M4 two guests, keys | largely done | DMKPRV (ISKE/SSKE), DMKCDB (DISPLAY K) | R-12 measured (CMS sets both halves alike) | I-29 superseded |
-| M5 31-bit CMS, real > 16 MB | not started | after M2 AMODE 31; CMS itself | R-10 | I-203 (256 MB ceiling), I-204 |
+| M5 31-bit CMS, real > 16 MB | **in progress** 5 Oct as XA-CMS-light (`36-M5-CMS31.md`): M5a build route running under the ESA/390 CP (`cmsstage`/`cmswrite`), M5b–M5e to come | DMSINI, DMSITS, DMSITE, DMSITP, DMSIOW, DMSFRE, DMSINS; DMSLCL control file | R-10 | I-203 (256 MB ceiling), I-204, I-235 (leaving a named system; M3 increment 2) |
+| M6 31-bit CMS proper | **deferred** — not required for cREXX | the CMS nucleus itself at AMODE 31: FSCBs, PLISTs and DIAG plists above the line, the 156 `LA` strips and 34 ICM-3 sites in nucleus code, DMKPRV's ISKE/SSKE/RRBE simulation (I-46) | R-10 | — |
 | continuous | — | build tools: `mkrun`, `snapshot`, `replchk`, `mkdeck`, `drive` | R-11, R-13, R-16, R-18, R-20, R-21 | I-197, I-198, I-205, I-210 closed |
 | 64-bit | later | — | — | I-28 |
 
