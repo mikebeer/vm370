@@ -7,4 +7,5 @@ TRACESUB IPM   R15            CC INTO THE LINK (I-229)         XA0048DK
          IC    R4,0(R4)       R4 GETS TRACE-CODE FROM CALLER   XA0048DK         
 ./ R 01737000          $ 01737100 100                                           
          SPM   R15            RESTORE CONDITION CODE           XA0048DK         
-         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)       XA0048DK         
+         SLL   R15,8          LINK AS AN ADDRESS: SHIFTS       XA0048DK         
+         SRL   R15,8          LEAVE THE CC ALONE (I-229)       XA0048DK         

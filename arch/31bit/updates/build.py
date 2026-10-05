@@ -4234,15 +4234,19 @@ PSWMODS_CPI = [
 # DMKRIO device as present, cleared RDEVDISA on the 2701 lines Hercules
 # lacks, and the first ENABLE drove an SSCH at subsystem id 0 (PRG021,
 # w84).  IPM at entry puts the CC where byte 0 held it; the link is then
-# masked with XRIGHT24 wherever it is used as an address.
+# masked wherever it is used as an address -- with N where the CC has
+# already been captured, and with the shift pair SLL 8 / SRL 8 after the
+# SPM, because N sets the condition code it would have just restored
+# (i237: every traced SIO answered 'nonzero', and no DASD label was read).
 TRACESUBS = {
     'DMKCPI': [
         ('01593000', ["TRACESUB IPM   R1             CC INTO THE LINK (I-229)"]),
-        ('01595000', ["         LR    R0,R1          THE LINK AS AN ADDRESS",
-                      "         N     R0,XRIGHT24    WITHOUT THE CC BITS (I-229)",
-                      "         IC    R0,N0(R0)      LOAD THE TRACE CODE"]),
+        ('01595000', ["         LR    R14,R1         THE LINK AS AN ADDRESS",
+                      "         N     R14,XRIGHT24   WITHOUT THE CC BITS (I-229)",
+                      "         IC    R0,N0(,R14)    LOAD THE TRACE CODE"]),
         ('01607000', ["         SPM   R1             RESTORE CONDITION CODE",
-                      "         N     R1,XRIGHT24    LINK AS AN ADDRESS (I-229)"]),
+                      "         SLL   R1,8           LINK AS AN ADDRESS: SHIFTS",
+                      "         SRL   R1,8           LEAVE THE CC ALONE (I-229)"]),
     ],
     'DMKCNS': [
         ('01580000', ["CNTRACE  IPM   R15            CC INTO THE LINK (I-229)"]),
@@ -4250,7 +4254,8 @@ TRACESUBS = {
                       "         N     R4,XRIGHT24    WITHOUT THE CC BITS (I-229)",
                       "         IC    R4,0(,R4)      LOAD ENTRY TYPE FLAG"]),
         ('01600000', ["         SPM   R15            RESET COND. CODE",
-                      "         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)"]),
+                      "         SLL   R15,8          LINK AS AN ADDRESS: SHIFTS",
+                      "         SRL   R15,8          LEAVE THE CC ALONE (I-229)"]),
     ],
     'DMKIOS': [
         ('01721000', ["TRACESUB IPM   R15            CC INTO THE LINK (I-229)",
@@ -4259,12 +4264,14 @@ TRACESUBS = {
                       "         N     R4,XRIGHT24    WITHOUT THE CC BITS (I-229)",
                       "         IC    R4,0(R4)       R4 GETS TRACE-CODE FROM CALLER"]),
         ('01737000', ["         SPM   R15            RESTORE CONDITION CODE",
-                      "         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)"]),
+                      "         SLL   R15,8          LINK AS AN ADDRESS: SHIFTS",
+                      "         SRL   R15,8          LEAVE THE CC ALONE (I-229)"]),
     ],
     'DMKVSJ': [
         ('00363000', ["HIOTRACE IPM   R15            CC INTO THE LINK (I-229)"]),
         ('00377000', ["         SPM   R15            RESET COND CODE",
-                      "         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)"]),
+                      "         SLL   R15,8          LINK AS AN ADDRESS: SHIFTS",
+                      "         SRL   R15,8          LEAVE THE CC ALONE (I-229)"]),
     ],
 }
 PSWMODS = {

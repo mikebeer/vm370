@@ -2,4 +2,5 @@
 HIOTRACE IPM   R15            CC INTO THE LINK (I-229)         XA0048DK         
 ./ R 00377000          $ 00377100 100                                           
          SPM   R15            RESET COND CODE                  XA0048DK         
-         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)       XA0048DK         
+         SLL   R15,8          LINK AS AN ADDRESS: SHIFTS       XA0048DK         
+         SRL   R15,8          LEAVE THE CC ALONE (I-229)       XA0048DK         
