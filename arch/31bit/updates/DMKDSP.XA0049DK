@@ -9,3 +9,7 @@
          OI    VMFSTAT,VMAM31 YES: GUEST RUNS AMODE 31         XA0049DK         
 ./ R 01343000          $ 01343100 100                                           
          DS    0H             (BNZ BADPSW MOVED UP)            XA0049DK         
+./ R 01943000          $ 01943100 100                                           
+         SLL   R15,8          THE FLAG BYTE IS THE CC ABOVE,   XA0049DK         
+         SRL   R15,8          NOT AN ADDRESS (I-238)           XA0049DK         
+         BR    R15            AND GO ...                       XA0049DK         

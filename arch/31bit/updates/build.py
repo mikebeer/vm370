@@ -4182,6 +4182,15 @@ G31MODS = {
                       "         BZ    *+8            NO",
                       "         OI    VMFSTAT,VMAM31 YES: GUEST RUNS AMODE 31"]),
         ('01343000', ["         DS    0H             (BNZ BADPSW MOVED UP)"]),
+    # I-238.  DMKPAG marks a paging I/O error by storing X'FF' into byte 0
+    # of the CPEXBLOK's CPEXADD (STC R9,CPEXADD, R9 = -1), and the
+    # dispatcher hands it on as the CONDITION CODE of LTR R15,R15 before
+    # branching: in AMODE 24 the byte was invisible to BR.  In AMODE 31
+    # it is an instruction fetch at FF03EB84 (w122).  The CC is still
+    # the contract, so the byte is stripped with shifts, which set none.
+        ('01943000', ["         SLL   R15,8          THE FLAG BYTE IS THE CC ABOVE,",
+                      "         SRL   R15,8          NOT AN ADDRESS (I-238)",
+                      "         BR    R15            AND GO ..."]),
     ],
     'DMKPRV': [
         ('00395100', ["         GADR31 R1             THE PSW ADDRESS, EITHER MODE"]),
