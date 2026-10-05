@@ -1,0 +1,99 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 150
+ },
+ {
+  "send": "/",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 60
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I Initialization complete",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "/enable all",
+  "expect": "COMMAND COMPLETE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon maint cpcms noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 190",
+  "expect": "VM Community|Ready|DMK|CP ENTERED|DMS",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|CMS|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "query disk",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 32m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 190",
+  "expect": "VM Community|Ready|DMK|CP ENTERED|DMS",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|CMS|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp q v stor",
+  "expect": "STORAGE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT|DMK",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]

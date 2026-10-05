@@ -1,0 +1,172 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 150
+ },
+ {
+  "send": "/",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 60
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I Initialization complete",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "/enable all",
+  "expect": "COMMAND COMPLETE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/q names",
+  "expect": "USERS|VM/370",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon maint cpcms noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "def stor 15m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl cms",
+  "expect": "VM Community|CMS|Ready|DMK|CP ENTERED",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|CMS|DMK",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "query disk",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "query storage",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp q names",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp q v stor",
+  "expect": "STORAGE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "segment load gcclib",
+  "expect": "Ready|DMK|Segment",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "query segment",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp d f20000.20",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp d kf00000.100000",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp d kf80000.30000",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp d f80000.20",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp autolog cmsuser cmsuser",
+  "expect": "AUTO LOGON|Ready|DMK",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "settle": 8
+ },
+ {
+  "term": "cp q names",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp ind",
+  "expect": "Ready|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp force cmsuser",
+  "expect": "Ready|LOGOFF|FORCED|DMK",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "settle": 3
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT|DMK|PGT0|BLD0",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/q names",
+  "expect": "USERS|OPERATOR|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE",
+  "timeout": 90
+ },
+ {
+  "send": "exit"
+ }
+]
