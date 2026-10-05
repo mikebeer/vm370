@@ -4175,8 +4175,15 @@ AMODEMODS = {
             "         LA    R1,0(,R1)      24-BIT CALLER: STRIP BYTE 0",
             "PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE",
             "         SRL   R1,1           R10 IS SET UP (I-218)",
-            "         ST    R1,SAVEWRK9    CLEAR PAGEIO ERROR SWITCH",
+            "         XC    SAVEWRK9,SAVEWRK9 CLEAR PAGEIO ERROR SWITCH",
         ]),
+        # 'ST R1,SAVEWRK9  CLEAR PAGEIO ERROR SWITCH' cleared the switch --
+        # byte 0 of SAVEWRK9, read by 'CLI SAVEWRK9,0  PAGE IN OK??' --
+        # only because the stripped address had a zero byte 0.  A 31-bit
+        # address put 01 there and every first touch above 16 MB came back
+        # DMKPTR410W PAGING ERROR (w60).  Nothing reads the address from
+        # SAVEWRK9; the two other references store and test the switch.
+        # I-222.
         ('00307000', [
             "         LA    R15,PTRLRA     THE LRA, IN AMODE 31 (I-208)",
             "         O     R15,=X'80000000' ...",

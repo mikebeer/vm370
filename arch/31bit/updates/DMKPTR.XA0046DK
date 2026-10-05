@@ -5,7 +5,7 @@ DMKPTRAN ENTER                                                 XA0046DK
          LA    R1,0(,R1)      24-BIT CALLER: STRIP BYTE 0      XA0046DK         
 PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE     XA0046DK         
          SRL   R1,1           R10 IS SET UP (I-218)            XA0046DK         
-         ST    R1,SAVEWRK9    CLEAR PAGEIO ERROR SWITCH        XA0046DK         
+         XC    SAVEWRK9,SAVEWRK9 CLEAR PAGEIO ERROR SWITCH     XA0046DK         
 ./ R 00307000          $ 00307100 100                                           
          LA    R15,PTRLRA     THE LRA, IN AMODE 31 (I-208)     XA0046DK         
          O     R15,=X'80000000' ...                            XA0046DK         
