@@ -4141,7 +4141,7 @@ G31MODS = {
             "*  TRL31: THE TRANS MACRO'S LRA IN AMODE 31. ATRL31 AT X'41C'",
             "*  POINTS HERE. A 31-BIT GUEST OWNS BITS 1-31 (M2 STEP 3).",
             "TRL31    LR    R2,R1          THE GUEST ADDRESS",
-            "         TM    VMPSW+4-VMBLOK(R11),X'80'  31-BIT GUEST ?",
+            "         TM    VMFSTAT-VMBLOK(R11),VMAM31  31-BIT GUEST ?",
             "         BO    TRL31A         YES: ONLY BIT 0 GOES",
             "         N     R2,XRIGHT24    24-BIT GUEST: BYTE 0 GOES",
             "TRL31A   SLL   R2,1           BIT 0 OFF",
@@ -4155,7 +4155,7 @@ G31MODS = {
         # the hardware would.  No CC contract at this exit.
         ('00232000', [
             "         LA    R1,0(R1,R15)   ADD BASE/INDEX REGISTERS",
-            "         TM    VMPSW+4,X'80'  31-BIT GUEST ?",
+            "         TM    VMFSTAT,VMAM31 31-BIT GUEST ?",
             "         BO    *+8            YES: THE 31-BIT SUM IS RIGHT",
             "         N     R1,XRIGHT24    24-BIT GUEST: WRAP AT 16 MB",
         ]),
@@ -4170,15 +4170,40 @@ G31MODS = {
         ]),
     ],
     'DMKDSP': [
-        ('01342000', ["         TM    VMPSW+4,X'7F'  BAD BITS IN WORD 2 (32 = AMODE)"]),
+        # PSWCKSUB sees every PSW an interrupt reflection or a slow LPSW
+        # installs: the mode flag is recomputed here -- off, then on for
+        # an EC PSW with bit 32 (CKEXTPSW).  BC mode leaves it off.
+        ('01314100', ["         NI    VMDSTAT,255-VMDSP NOT RUN USER",
+                      "         NI    VMFSTAT,255-VMAM31 ASSUME 24-BIT (M2 STEP 3)"]),
+        ('01342000', ["         TM    VMPSW+4,X'7F'  BAD BITS IN WORD 2 (32 = AMODE)",
+                      "         BNZ   BADPSW         ILLEGAL PSW IF BIT SET",
+                      "         TM    VMPSW+4,X'80'  AMODE 31 ?",
+                      "         BZ    *+8            NO",
+                      "         OI    VMFSTAT,VMAM31 YES: GUEST RUNS AMODE 31"]),
+        ('01343000', ["         DS    0H             (BNZ BADPSW MOVED UP)"]),
     ],
     'DMKPRV': [
         ('00395100', ["         GADR31 R1             THE PSW ADDRESS, EITHER MODE"]),
-        ('00741000', ["         TM    VMPSW+4,X'7F'  BITS 33-39 = 0? (32 = AMODE)"]),
+        # PRLPSWEC's fast dispatch bypasses DMKDSP, so the flag is kept
+        # here as well; the status-difference test below is untouched.
+        ('00741000', ["         TM    VMPSW+4,X'7F'  BITS 33-39 = 0? (32 = AMODE)",
+                      "         BNZ   VPSWCHK        NO, -> DMKDSP",
+                      "         NI    VMFSTAT,255-VMAM31 MODE FROM THE NEW PSW",
+                      "         TM    VMPSW+4,X'80'  AMODE 31 ?",
+                      "         BZ    *+8            NO",
+                      "         OI    VMFSTAT,VMAM31 YES (M2 STEP 3)"]),
+        ('00742000', ["         DS    0H             (BNE VPSWCHK MOVED UP)"]),
         ('00903000', ["         GADR31 R6             GUEST ADDRESS, EITHER MODE"]),
     ],
     'DMKSVC': [
-        ('00419000', ["         TM    VMPSW+4,X'7F'  MUST-BE-ZERO BITS (32 = AMODE)"]),
+        # the SVC fast reflection loads the guest's new PSW without DMKDSP
+        ('00419000', ["         TM    VMPSW+4,X'7F'  MUST-BE-ZERO BITS (32 = AMODE)",
+                      "         BNZ   REFSVCA        IF NOT, MAKE DISPATCH CHECK IT",
+                      "         NI    VMFSTAT,255-VMAM31 MODE FROM THE NEW PSW",
+                      "         TM    VMPSW+4,X'80'  AMODE 31 ?",
+                      "         BZ    *+8            NO",
+                      "         OI    VMFSTAT,VMAM31 YES (M2 STEP 3)"]),
+        ('00420000', ["         DS    0H             (BNE REFSVCA MOVED UP)"]),
     ],
     'DMKHVC': [
         ('00617000', ["         LR    R1,R5          FIRST DOUBLE-WORD TO R1",
@@ -4249,7 +4274,7 @@ AMODEMODS = {
             "DMKPTRAN ENTER",
             "         TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)",
             "         BO    PTRA31         YES: KEEP BITS 1-7",
-            "         TM    VMPSW+4,X'80'  A 31-BIT GUEST? (M2 STEP 3)",
+            "         TM    VMFSTAT,VMAM31 A 31-BIT GUEST? (M2 STEP 3)",
             "         BO    PTRA31         ITS ADDRESSES ARE BITS 1-31",
             "         N     R1,XRIGHT24    24-BIT CALLER: STRIP BYTE 0",
             "PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE",
@@ -6650,9 +6675,13 @@ def equcopy():
     # I-208: a DMKPTRAN PARM flag that says "R1 is a clean 31-bit virtual
     # address, do not strip it to 24 bits".  Set by TRANS OPT=(...,AMODE31)
     # and by CALL DMKPTRAN,PARM=...+AMODE31.  X'02' and X'01' were free.
-    d.insert('00110060', first='00110070', inc=10, limit='00110100', lines=[
+    d.insert('00110060', first='00110065', inc=5, limit='00110100', lines=[
         "AMODE31  EQU   X'02'          R1 IS A CLEAN 31-BIT VIRTUAL",
         "*                             ADDRESS; STRIP BIT 0 ONLY",
+        "*  M2 STEP 3: VMFSTAT BIT KEPT BY THE PSW GATEKEEPERS (DMKDSP",
+        "*  PSWCKSUB, DMKPRV LPSW, DMKSVC): EC PSW, BIT 32 ON. IN BC",
+        "*  MODE BIT 32 IS ILC, SO VMPSW+4 ALONE IS NOT THE TEST.",
+        "VMAM31   EQU   X'01'          VMFSTAT: GUEST RUNS AMODE 31",
     ])
     d.insert('00168000', first='00168100', inc=10,
              limit=next_seq(SRC + '/EQU.COPY', '00168000'),

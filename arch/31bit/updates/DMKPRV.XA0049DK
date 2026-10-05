@@ -2,5 +2,12 @@
          GADR31 R1             THE PSW ADDRESS, EITHER MODE    XA0049DK         
 ./ R 00741000          $ 00741100 100                                           
          TM    VMPSW+4,X'7F'  BITS 33-39 = 0? (32 = AMODE)     XA0049DK         
+         BNZ   VPSWCHK        NO, -> DMKDSP                    XA0049DK         
+         NI    VMFSTAT,255-VMAM31 MODE FROM THE NEW PSW        XA0049DK         
+         TM    VMPSW+4,X'80'  AMODE 31 ?                       XA0049DK         
+         BZ    *+8            NO                               XA0049DK         
+         OI    VMFSTAT,VMAM31 YES (M2 STEP 3)                  XA0049DK         
+./ R 00742000          $ 00742100 100                                           
+         DS    0H             (BNE VPSWCHK MOVED UP)           XA0049DK         
 ./ R 00903000          $ 00903100 100                                           
          GADR31 R6             GUEST ADDRESS, EITHER MODE      XA0049DK         

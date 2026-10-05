@@ -1,2 +1,9 @@
 ./ R 00419000          $ 00419100 100                                           
          TM    VMPSW+4,X'7F'  MUST-BE-ZERO BITS (32 = AMODE)   XA0049DK         
+         BNZ   REFSVCA        IF NOT, MAKE DISPATCH CHECK IT   XA0049DK         
+         NI    VMFSTAT,255-VMAM31 MODE FROM THE NEW PSW        XA0049DK         
+         TM    VMPSW+4,X'80'  AMODE 31 ?                       XA0049DK         
+         BZ    *+8            NO                               XA0049DK         
+         OI    VMFSTAT,VMAM31 YES (M2 STEP 3)                  XA0049DK         
+./ R 00420000          $ 00420100 100                                           
+         DS    0H             (BNE REFSVCA MOVED UP)           XA0049DK         
