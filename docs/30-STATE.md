@@ -59,11 +59,9 @@ snapshots so a sliced build is restorable in minutes).
 ### How to reproduce tonight's state
 
 ```
-build.sh reset SNAP-I220           # V0.1 + I-203..I-215: DEF STOR 256M, DISPLAY 8 digits, REXX, named systems by frame (IPL CMS, GCCLIB DCSS, CE's full AUTOLOG1 init)
-build.sh write
-# ESA/390: ipl 6A1 / cold / enable all / cp disc
-#          logon maint cpcms noipl / def stor 32m / ipl 190 ... cp logoff / shutdown / exit
-# or:      esa390.sh w29 w29.json   (drive.py steps; ~20 s)
+build.sh reset SNAP-I241           # CP at AMODE 31 (M2 step 2, I-224 closed) -- or SNAP-I231 for the AMODE 24 CP with I-208 closed
+build.sh write                     # writes the ESA/390 nucleus to 6A1, keeps io/nucleus.deck and the load map (cpnuc.map, nucsyms.txt)
+esa390.sh r1 arch/31bit/tests/runs/amode31-32m.json   # the M2 run, ~2 min; ipl190-16m.json and gcclib-15m.json likewise
 ```
 
 `28-IPL-WALLS.md` has every wall with its trace; `13-ISSUES.md` rows
