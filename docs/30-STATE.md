@@ -4,7 +4,7 @@ Last updated **5 October 2026, 02:00 UTC**. **Read this first in a new session.*
 
 ---
 
-## Current position, 5 October — CP runs AMODE 31 and hosts a 31-bit guest (SNAP-I244); CMS runs; a 32M machine stores and displays above 16 MB from the console (install point SNAP-I231)
+## Current position, 5 October — CP runs AMODE 31, hosts a 31-bit guest and pages (SNAP-I248); CMS is rebuilt from source and IPLs from 290 (M5a); a 32M machine stores and displays above 16 MB from the console (install point SNAP-I231)
 
 ```
 /(0009) ipl 190
@@ -41,6 +41,7 @@ takes a typed command and answers it from the file system.
 | 29 | DMKPGS CKSEG's end-of-segment test was off by one page (XA0036DK); the release loop ran off every page/swap table into free storage → `PGT005` at LOGOFF and at `DEF STOR` after IPL | **closed** `I-206` |
 | 32 | **A guest in 31-bit mode (M2 step 3).** The mode had to be a maintained VMBLOK flag, not a test of PSW bit 32: CMS runs BC mode, where that bit is ILC, and the first cut turned every CMS base register's byte 0 into an address (I-234). With `VMAM31` kept by the three PSW gatekeepers and tested by GADR31/TRL31/DMKPTRAN, the G31 tape guest stores `AMODE 31` at 1FF0000 itself and takes an SVC with a 31-bit PSW. | **closed** 5 Oct 18:05 (i244, w114–w116). SNAP-I244. |
 | 31 | **CP itself at AMODE 31 (I-224, M2 second step).** The LA-strip sweep (275 sites inventoried, 209 rewritten) and the PSW flip were the easy part; the walls were the idioms the sweep cannot see: a two-register `LA` sum at 16 MB in DMKFRE (I-225); a CCW word used as a base (I-226, I-232 — DMKDGD, DMKCCW, DMKDIB, DMKUNT, DMKTRK, DMKVCA); `BALR Rx,0` as a condition-code save (I-228, 16 sites → `IPM`), the trace subroutines reading the CC out of a `BAL` link register (I-229, 4 subroutines, and `N` after `SPM` was itself a bug); `doublewords || address` words handed to DMKFRET (I-230, stripped at the callee); and DMKVMI, CP code that executes **inside the guest** and must keep its 24-bit strips (I-231). Each was found by running, with pgmtrace, single breakpoints per run (Hercules 3 stops once), `ds` for the SCSW and the load map from the punched nucleus deck (I-227). | **closed** 5 Oct 13:22 (i241, w109–w111): LOGON with every LINK, AUTOLOG1's full init, `IPL 190` at 16M and `IPL CMS`, directory recompile, `DEF STOR 32M`, stores above 16 MB, IPL CMS at 32M, LOGOFF, SHUTDOWN, the GCCLIB regression — all clean. SNAP-I241 (clean restage, i242). |
+| 33 | **The first paging workload (M5a: a 16 MB MAINT loading the CMS nucleus from the reader).** Nothing before it had made this CP page. Five defects in sequence, each hidden by the one before: `L Rx,CORSWPNT` carries CORFLAG in byte 0 (I-236, 13 sites); `LA R0,1(,R0)` is `LA R0,1`, so SYSTEM's resident-page count was 1 and the first steal of a CP page took it negative (I-237); DMKPAG's I/O-error flag rides in byte 0 of the CPEXBLOK exit address and DMKDSP branched through it (I-238); CE's VM50-4 is a preferred PAGE volume whose TEMP cylinders are 800-byte CMS format (I-239, pack patched); and a released PTE lost its invalid bit to a three-byte XC and mapped the guest's page to real frame 0, so the CMS loader wrote its PSWs into CP's PSA (I-240). | **closed** 5 Oct 23:37 (i245–i248, w160). SNAP-I248. |
 
 **V0.1 saved** (tag `v0.1`, `32-V0.1.md`). Since then: `DEF STOR 32M` and
 `64M` work — CP (`DMKDEH`) and `DIRECT` (`DMKDIR`) raised from 16 MB to 256 MB
@@ -60,9 +61,10 @@ snapshots so a sliced build is restorable in minutes).
 ### How to reproduce tonight's state
 
 ```
-build.sh reset SNAP-I244           # CP at AMODE 31 hosting 31-bit guests (M2 steps 2+3) -- SNAP-I241 without step 3, SNAP-I231 the AMODE 24 CP
+build.sh reset SNAP-I248           # CP at AMODE 31, 31-bit guests, paging (M2 + I-236..I-240) -- SNAP-I244 before the paging fixes, SNAP-I231 the AMODE 24 CP
 build.sh write                     # writes the ESA/390 nucleus to 6A1, keeps io/nucleus.deck and the load map (cpnuc.map, nucsyms.txt)
-esa390.sh r1 arch/31bit/tests/runs/amode31-32m.json   # the M2 run, ~2 min; ipl190-16m.json and gcclib-15m.json likewise
+esa390.sh r1 arch/31bit/tests/runs/amode31-32m.json   # the M2 run, ~2 min; ipl190-16m.json, gcclib-15m.json, guest31-tape.json, ipl290-cmstest.json likewise
+build.sh cmsstage asm:DMSINS && build.sh cmswrite 290   # M5a: rebuild a CMS module and write the CMSTEST nucleus under our CP (~1 min)
 ```
 
 `28-IPL-WALLS.md` has every wall with its trace; `13-ISSUES.md` rows
