@@ -4152,13 +4152,20 @@ AMODEMODS = {
     # first try, N R1,=X'7FFFFFFF', was assembled off a base register the
     # caller owned and IPL died in a program-interrupt loop at 1FC8 (w52).
     # Two shifts need no base at all.
+    # ...and after ENTER, because SAVER2 is written BY ENTER (STM
+    # R0,R11,SAVEREGS): at the entry instruction it still holds the previous
+    # caller's R2, which is how the first try stripped every address with the
+    # flag set (w57 trace: R2=C2 at entry, R1 masked to FF0000 at the LRA).
+    # ENTER keeps R1 (it stores, nothing else).  I-220.
     'DMKPTR': [
-        ('00285000', [
-            "DMKPTRAN TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)",
+        ('00285000', '00287000', [
+            "DMKPTRAN ENTER",
+            "         TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)",
             "         BO    PTRA31         YES: KEEP BITS 1-7",
             "         LA    R1,0(,R1)      24-BIT CALLER: STRIP BYTE 0",
             "PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE",
-            "         SRL   R1,1           ENTER (I-218)",
+            "         SRL   R1,1           R10 IS SET UP (I-218)",
+            "         ST    R1,SAVEWRK9    CLEAR PAGEIO ERROR SWITCH",
         ]),
         ('00307000', [
             "         LA    R15,PTRLRA     THE LRA, IN AMODE 31 (I-208)",
