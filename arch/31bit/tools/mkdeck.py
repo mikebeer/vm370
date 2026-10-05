@@ -293,6 +293,13 @@ def verify(path):
             bad.append((n, 'columns 73-80 not blank'))
         elif line[71] not in ' X':
             bad.append((n, 'column 72 is %r, not blank or X' % line[71]))
+        elif not line.startswith('*') and not line.startswith('./') \
+                and re.search(r'\(R?[0-9]*,R?0\)', line[:71]):
+            # Register 0 as a base or index is NO register: `LA R0,1(,R0)`
+            # loads 1.  XA0045DK counted SYSTEM's resident pages that way,
+            # so every steal of a CP page took VMPAGES negative (PTR018,
+            # I-237).  The assembler cannot tell us; this can.
+            bad.append((n, 'register 0 as base or index: %s' % line[9:40].strip()))
     return bad
 
 

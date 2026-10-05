@@ -125,7 +125,7 @@ BRINGDO  LR    R1,R7          THE PAGE                         XA0045DK
          L     R14,ASYSVM     SYSTEM OWNS SHARED FRAMES        XA0045DK         
          ST    R14,CORFPNT-CORTABLE(,R1) ...                   XA0045DK         
          LH    R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
-         LA    R0,1(,R0)      ONE MORE FOR IT                  XA0045DK         
+         AL    R0,F1          ONE MORE FOR IT (I-237)          XA0045DK         
          STH   R0,VMPAGES-VMBLOK(,R14) ...                     XA0045DK         
 BRINGNX  A     R7,F4096       NEXT PAGE                        XA0045DK         
          L     R1,SAVEWRK3    ...                              XA0045DK         

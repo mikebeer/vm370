@@ -4704,7 +4704,7 @@ SHRMODS = {
             "         L     R14,ASYSVM     SYSTEM OWNS SHARED FRAMES",
             "         ST    R14,CORFPNT-CORTABLE(,R1) ...",
             "         LH    R0,VMPAGES-VMBLOK(,R14) ...",
-            "         LA    R0,1(,R0)      ONE MORE FOR IT",
+            "         AL    R0,F1          ONE MORE FOR IT (I-237)",
             "         STH   R0,VMPAGES-VMBLOK(,R14) ...",
             "BRINGNX  A     R7,F4096       NEXT PAGE",
             "         L     R1,SAVEWRK3    ...",
@@ -6117,7 +6117,7 @@ DATMODS = {
         ('00610000', ["         L     R0,SEGPTO      LOAD STE"]),
         ('00611000', '00612000', [
             "         N     R0,=A(SEGPTLF) NUMBER PTE'S",
-            "         LA    R0,1(,R0)      UNITS OF 16 ENTRIES",
+            "         AL    R0,F1          UNITS OF 16 ENTRIES (I-237)",
             "         SLL   R0,4           PAGES IN THIS SEGMENT",
         ]),
         ('00613000', [
@@ -6161,7 +6161,7 @@ DATMODS = {
         ]),
         ('00714000', '00715000', [
             "         N     R0,=A(SEGPTLF) NUMBER PTES",
-            "         LA    R0,1(,R0)      UNITS OF 16 ENTRIES",
+            "         AL    R0,F1          UNITS OF 16 ENTRIES (I-237)",
             "         SLL   R0,4           PAGES IN THIS SEGMENT",
         ]),
         ('00719000', [

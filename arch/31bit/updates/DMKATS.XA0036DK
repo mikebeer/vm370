@@ -87,7 +87,7 @@
          L     R0,SEGPTO      LOAD STE                         XA0036DK         
 ./ R 00611000 00612000 $ 00611100 100                                           
          N     R0,=A(SEGPTLF) NUMBER PTE'S                     XA0036DK         
-         LA    R0,1(,R0)      UNITS OF 16 ENTRIES              XA0036DK         
+         AL    R0,F1          UNITS OF 16 ENTRIES (I-237)      XA0036DK         
          SLL   R0,4           PAGES IN THIS SEGMENT            XA0036DK         
 ./ R 00613000          $ 00613100 100                                           
          A     R1,=A(PAGPFRA-PAGSTMP) LOAD ADDR PTO            XA0036DK         
@@ -124,7 +124,7 @@ NXTENT3  TM    PAGPFRA+2-PAGPFRA(R2),PAGINV PTE VALID          XA0036DK
          N     R6,=A(SEGPTOM) CLEAR PTE COUNTER                XA0036DK         
 ./ R 00714000 00715000 $ 00714100 100                                           
          N     R0,=A(SEGPTLF) NUMBER PTES                      XA0036DK         
-         LA    R0,1(,R0)      UNITS OF 16 ENTRIES              XA0036DK         
+         AL    R0,F1          UNITS OF 16 ENTRIES (I-237)      XA0036DK         
          SLL   R0,4           PAGES IN THIS SEGMENT            XA0036DK         
 ./ R 00719000          $ 00719100 100                                           
          S     R5,=A(PAGPFRA-PAGSTMP) BACKUP TO HEADER         XA0036DK         
