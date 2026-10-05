@@ -346,7 +346,7 @@ st = json.load(open(p))
 tail = st[-2:]                      # /cp shutdown, exit
 st = st[:-2] + [
  {"send": "/vmfload cmsload dmslcl", "expect": "PUN FILE|Ready", "timeout": 600, "cont": True},
- {"send": "/cp ipl 00c clear", "expect": "SYSTEM DISK ADDRESS", "timeout": 120, "cont": True},
+ {"send": "/cp ipl 00c clear", "expect": "SYSTEM DISK ADDRESS", "timeout": 120},   # fatal: no prompt, no write
  {"send": "/" + sd, "expect": "Y-DISK ADDRESS", "timeout": 30, "cont": True},
  {"send": "/19e", "expect": "REWRITE THE NUCLEUS", "timeout": 30, "cont": True},
  {"send": "/yes", "expect": "IPL DEVICE ADDRESS", "timeout": 30, "cont": True},
