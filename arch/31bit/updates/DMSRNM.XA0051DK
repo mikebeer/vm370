@@ -1,0 +1,4 @@
+./ R 00458000          $ 00458100 100                                           
+         SSM   =X'00'         INHIBIT ALL AGAIN (EC)           XA0051DK         
+./ R 00501000          $ 00501100 100                                           
+ON       DC    X'03'          I/O AND EXTERNAL (EC)            XA0051DK         

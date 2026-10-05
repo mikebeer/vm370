@@ -45,6 +45,17 @@ def auxdrop(path, deck):
 
 # The resolved tree the anchors are measured against.  R-23.
 SRC = '/home/claude/vmce/source/cp'
+CMSSRC = '/home/claude/vmce/source/cms'      # M5: the CMS decks (DMSxxx)
+
+
+def srcfile(module, exts=('ASSEMBLE', 'MACRO', 'COPY')):
+    """The source a module or member comes from: CP first, then CMS."""
+    for d in (SRC, CMSSRC):
+        for ext in exts:
+            q = os.path.join(d, '%s.%s' % (module, ext))
+            if os.path.exists(q):
+                return q
+    return os.path.join(SRC, '%s.ASSEMBLE' % module)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 XA1 = 'XA0001DK'
@@ -96,6 +107,7 @@ XA47 = 'XA0047DK'
 XA48 = 'XA0048DK'
 XA49 = 'XA0049DK'
 XA50 = 'XA0050DK'
+XA51 = 'XA0051DK'
 
 
 def psa():
@@ -3984,11 +3996,7 @@ def datdeck(module, cards, ident=None):
     `UPDATE` requires and `Deck._anchor` enforces.
     """
     d = Deck(ident or XA36)
-    src = os.path.join(SRC, '%s.ASSEMBLE' % module)
-    for ext in ('MACRO', 'COPY'):
-        alt = os.path.join(SRC, '%s.%s' % (module, ext))
-        if not os.path.exists(src) and os.path.exists(alt):
-            src = alt
+    src = srcfile(module)
     for item in cards:
         seq, to, lines = (item if len(item) == 3 else (item[0], None, item[1]))
         limit = next_seq(src, to or seq)
@@ -4425,6 +4433,112 @@ CORSWMODS = {
                              "         N     R14,XRIGHT24   BYTE 0 IS CORFLAG (I-236)",
                              "         LTR   R13,R13        ENTERED VIA CPEXBLOK",
                              "         BNZ   RETFRAM2       NO, SKIP RESETTING BITS"])],
+}
+
+# M5b.  CMS in EC mode (36-M5-CMS31.md).  Three things change and nothing
+# else: (1) every PSW constant takes the EC form -- BC `channels || key AMWP`
+# becomes `00000011 || key 1MWP`, so X'FF06' is X'030E', AL2(MCKM,0) is
+# X'000C', and a wait is X'0E'/X'0A' in byte 1; (2) the interruption code and
+# ILC are read from the fixed locations (external X'86', SVC X'89'/X'8A',
+# program X'8D'/X'8E', I/O device X'BA') instead of the old PSW, which in EC
+# mode carries neither; (3) every SSM mask: BC byte 0 is six channel masks,
+# channels-6-plus and EXTERNAL, EC byte 0 is PER (bit 1), DAT (bit 5), I/O
+# (bit 6) and external (bit 7), so X'FF' becomes X'03', X'FE' X'02', X'81'
+# X'03', and the six `SSM *+1` tricks that borrowed the next opcode as a
+# disable mask become an honest X'00' -- a borrowed X'58' would have set DAT.
+# 133 SSM sites in 23 modules, 16 decode sites, PSW constants in 9 modules.
+# Command modules (TYPE, LISTFILE, TAPE, ...) are rebuilt with CMSGEND.
+ECMODS = {
+    'DMSINI': [
+        ('00192000', ["RDERRPSW DC    X'000E0000',CL4' INI'  EC, MCK, WAIT"]),
+        ('00246000', ["ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)"]),
+        ('00275000', ["WAKEHERE LH    R13,X'BA'      THE INTERRUPTING DEVICE (EC)"]),
+        ('00613000', ["         DC    X'000C0000',V(EXTINT)   EC, MCK ON"]),
+        ('00614000', ["         DC    X'000C0000',V(DMSITS1)  EC, MCK ON"]),
+        ('00615000', ["         DC    X'000C0000',V(DMSDBGP)  EC, MCK ON"]),
+        ('00616000', ["         DC    X'000E0000',A(MCKNPSW-NUCON) EC WAIT"]),
+        ('00617000', ["         DC    X'000C0000',V(IOINT)    EC, MCK ON"]),
+        ('00619000', ["NIOPSW   DC    X'000C0000',V(IOINT)    EC, MCK ON"]),
+        ('00620000', ["WAITPSW  DC    X'020E0000',A(WAKEHERE) EC, I/O, WAIT"]),
+        ('00621000', ["WAKEPSW  DC    X'000C0000',A(WAKEHERE) EC, MCK ON"]),
+        ('00764900', ["         DC    X'000C0000',A(DMSINIR)    00 EC MODE"]),
+        ('00765200', ["         DC    X'000C0000',A(DMSINIR)    68 EC MODE"]),
+    ],
+    'DMSINS': [
+        ('00699000', ["         DC    X'000C0000'    EC, MCK ON (WAS H'4,0')"]),
+        ('00701000', ["ACVTOK   DC    X'000C0000',A(CVTOK)     EC (EXT-PREC.)"]),
+        ('00709000', ["NIOPSW   DC    X'000C0000',V(IOINT)     EC, MCK ON"]),
+        ('00710000', ["WAKEPSW  DC    X'000C0000',A(WAKEHERE)  EC, MCK ON"]),
+        ('00711000', ["WAITPSW  DC    X'020E0000',A(WAKEHERE)  EC, I/O, WAIT"]),
+    ],
+    'DMSITS': [
+        ('00249000', '00250000', [
+            "         MVC   SVCOPSW(4),=X'000C0000' EC VIRTUAL OLD PSW",
+            "         MVC   X'88'(4),=X'000200CA' ILC 2, SVC 202 (EC)"]),
+        ('00268000', ["         CLI   X'8B',201      IS IT SVC 201? (EC CODE)"]),
+        ('00328000', ["         CLI   X'8B',202      IS THIS SVC 202? (EC CODE)"]),
+        ('00330000', ["         CLI   X'8B',203      IS THIS SVC 203? (EC CODE)"]),
+        ('00706000', ["         TM    X'89',X'04'    EXECUTE (4-BYTE)? ILC AT 89"]),
+        ('00749000', ["         IC    XR,X'8B'       GET SVC NUMBER (EC CODE)"]),
+        ('00850000', ["         CLI   X'8B',S203     IS THIS AN SVC 203? (EC)"]),
+        ('01067000', ["         CLI   X'8B',201      SVC 201? (EC CODE)"]),
+    ],
+    'DMSITE': [
+        ('00084000', ["         CLI   X'87',X'80'    INTERRUPT-CODE = TIMER? (EC)"]),
+        ('00196150', ["         CLC   X'86'(2),=X'4001' VMCF EXTERNAL INT? (EC)"]),
+        ('00199000', ["         STH   R15,X'BA'      CLEAR I/O INT. CODE (EC)"]),
+        ('00216600', ["         SSM   =X'00'         DISABLE (NOT *+1: EC MODE)"]),
+        ('00231000', ["         CH    R15,X'BA'      WHILE WE WERE OCCUPIED? (EC)"]),
+    ],
+    'DMSITP': [
+        ('00129000', ["         IC    WORDP,X'8F'    GET INTERRUPT CODE (EC)"]),
+        ('00142050', '00142200', [
+            "         IC    R10,X'8D'      ILC, BITS 5-6 (EC)",
+            "         SLL   R10,16         TO BYTE 1 OF INTINFO",
+            "         ICM   R10,3,X'8E'    INTERRUPT CODE (EC)"]),
+        ('00152000', ["         IC    XR,X'8F'       GET INTERRUPT CODE (EC)"]),
+    ],
+    'DMSIOW': [
+        ('00162000', ["         MVC   X'BA'(2),SAVIOLD+2(R9) DEVICE IN I/O CODE"]),
+        ('00199000', ["WAITNG   DC    X'030E0000',A(WAITRTN) EC WAIT, ENABLED"]),
+    ],
+    'DMSITI': [
+        ('00134000', ["         LH    R4,X'BA'       INTERRUPTING DEVICE (EC)",
+                      "         N     R4,TRUNCR      11 BITS OF IT"]),
+        ('00154000', ["         LM    0,1,IOOPSW     SET UP I/O OLD PSW",
+                      "         ICM   R0,3,X'BA'     WITH THE DEVICE, AS BC HAD IT"]),
+        ('00156000', ["         MVC   SAVINT(16,R9),IOOPSW     SAVE THE INTERRUPT",
+                      "         MVC   SAVINT+2(2,R9),X'BA'     AND THE DEVICE (EC)"]),
+    ],
+    'DMSSVN': [
+        ('00151100', ["         SSM   =X'00'         DISABLE FOR ECB SCAN (EC)"]),
+        ('00211000', ["ECBPSW   DC    X'030E0000',A(WAKEUP)  EC WAIT, ENABLED"]),
+    ],
+    'DMSABN': [('00309600', ["WAITPSW  DC    X'000A0000',A(*-4)  EC DISABLED WAIT"])],
+    'DMSFNS': [('00651000', ["DIE      DC    X'000A0000',A(*)  EC DISABLED PSW TO DIE"])],
+    'DMSCIT': [('00449000', ["         SSM   =X'00'         GO DISABLED (EC MODE)"])],
+    'DMSEDI': [('04052000', ["FE       DC    X'02'          I/O ENABLED (EC MODE)"])],
+    'DMSERS': [('00675000', ["         SSM   =X'00'         INHIBIT ALL (EC MODE)"]),
+               ('00735000', ["ON       DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'DMSEXC': [('00098685', ["         SSM   =X'00'         DISABLE INTERRUPTS (EC)"])],
+    'DMSEXT': [('02356000', ["ON       DC    X'03'          ENABLE I/O, EXT (EC)"])],
+    'DMSINT': [('00253000', ["         SSM   =X'03'         ENABLE I/O AND EXTERNAL"])],
+    'DMSLDR': [('01505000', ["         SSM   =AL1(X'03')    TURN ON SYSTEM MASK (EC)"])],
+    'DMSRNM': [('00458000', ["         SSM   =X'00'         INHIBIT ALL AGAIN (EC)"]),
+               ('00501000', ["ON       DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    # command modules: rebuilt with CMSGEND after VMFASM
+    'DMSAMS': [('00964600', ["AMSENA   DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'DMSCMP': [('00609000', ["ENABLE   DC    X'03'          FOR SET SYSTEM MASK (EC)"])],
+    'DMSFOR': [('00968000', ["OK81     DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'DMSLFN': [('14360000', ["MASKENAB DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'DMSLST': [('00781000', ["OK81     DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'DMSSYN': [('00387500', ["SHOWSYS  SSM   =X'03'         PERMIT INTERRUPTS (EC)"])],
+    'DMSTPE': [('00192000', ["         SSM   =X'03'         ENABLE INTERRUPTS (EC)"]),
+               ('01789000', ["TPEENA   DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'DMSTYP': [('00148000', ["         SSM   =X'03'         ENABLE INTERRUPTS (EC)"]),
+               ('00646600', ["TYPENA   DC    X'03'          I/O AND EXTERNAL (EC)"])],
+    'VMFPLC2': [('00246000', ["         SSM   =X'03'         ENABLE INTERRUPTS (EC)"]),
+                ('02517000', ["TPEENA   DC    X'03'          I/O AND EXTERNAL (EC)"])],
 }
 
 PSWMODS = {
@@ -7446,6 +7560,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
         print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(ECMODS):
+        dk = datdeck(m, ECMODS[m], ident=XA51)
+        path = os.path.join(HERE, '%s.%s' % (m, XA51))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA51, 'CMS IN EC MODE: PSWS, INTERRUPT CODES, MASKS (M5B)')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA51, n,
               'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(CORSWMODS):

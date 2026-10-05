@@ -1,0 +1,4 @@
+./ R 00246000          $ 00246100 100                                           
+         SSM   =X'03'         ENABLE INTERRUPTS (EC)           XA0051DK         
+./ R 02517000          $ 02517100 100                                           
+TPEENA   DC    X'03'          I/O AND EXTERNAL (EC)            XA0051DK         

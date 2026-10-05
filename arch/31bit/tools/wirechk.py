@@ -35,6 +35,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 UPDATES = os.path.join(HERE, '..', 'updates')
 SRC = '/home/claude/vmce/source/cp'
+CMSSRC = '/home/claude/vmce/source/cms'
 LIST = os.path.join(UPDATES, 'DMKLCL.EXEC')
 
 
@@ -53,7 +54,8 @@ def main():
     for path in sorted(glob.glob(os.path.join(UPDATES, '*.XA*DK'))):
         base = os.path.basename(path)
         name = base.split('.')[0]
-        if os.path.exists(os.path.join(SRC, '%s.ASSEMBLE' % name)):
+        if os.path.exists(os.path.join(SRC, '%s.ASSEMBLE' % name)) or \
+                os.path.exists(os.path.join(CMSSRC, '%s.ASSEMBLE' % name)):
             continue                      # a module, found by its own name
         members.append((name, base))
         if name.upper() not in named:

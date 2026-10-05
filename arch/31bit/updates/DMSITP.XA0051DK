@@ -1,0 +1,8 @@
+./ R 00129000          $ 00129100 100                                           
+         IC    WORDP,X'8F'    GET INTERRUPT CODE (EC)          XA0051DK         
+./ R 00142050 00142200 $ 00142060 010                                           
+         IC    R10,X'8D'      ILC, BITS 5-6 (EC)               XA0051DK         
+         SLL   R10,16         TO BYTE 1 OF INTINFO             XA0051DK         
+         ICM   R10,3,X'8E'    INTERRUPT CODE (EC)              XA0051DK         
+./ R 00152000          $ 00152100 100                                           
+         IC    XR,X'8F'       GET INTERRUPT CODE (EC)          XA0051DK         

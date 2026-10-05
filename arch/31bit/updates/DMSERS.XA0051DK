@@ -1,0 +1,4 @@
+./ R 00675000          $ 00675100 100                                           
+         SSM   =X'00'         INHIBIT ALL (EC MODE)            XA0051DK         
+./ R 00735000          $ 00735100 100                                           
+ON       DC    X'03'          I/O AND EXTERNAL (EC)            XA0051DK         

@@ -1,0 +1,2 @@
+./ R 00651000          $ 00651010 010                                           
+DIE      DC    X'000A0000',A(*)  EC DISABLED PSW TO DIE        XA0051DK         

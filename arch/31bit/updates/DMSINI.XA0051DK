@@ -1,0 +1,26 @@
+./ R 00192000          $ 00192100 100                                           
+RDERRPSW DC    X'000E0000',CL4' INI'  EC, MCK, WAIT            XA0051DK         
+./ R 00246000          $ 00246010 010                                           
+ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)       XA0051DK         
+./ R 00275000          $ 00275100 100                                           
+WAKEHERE LH    R13,X'BA'      THE INTERRUPTING DEVICE (EC)     XA0051DK         
+./ R 00613000          $ 00613100 100                                           
+         DC    X'000C0000',V(EXTINT)   EC, MCK ON              XA0051DK         
+./ R 00614000          $ 00614100 100                                           
+         DC    X'000C0000',V(DMSITS1)  EC, MCK ON              XA0051DK         
+./ R 00615000          $ 00615100 100                                           
+         DC    X'000C0000',V(DMSDBGP)  EC, MCK ON              XA0051DK         
+./ R 00616000          $ 00616100 100                                           
+         DC    X'000E0000',A(MCKNPSW-NUCON) EC WAIT            XA0051DK         
+./ R 00617000          $ 00617100 100                                           
+         DC    X'000C0000',V(IOINT)    EC, MCK ON              XA0051DK         
+./ R 00619000          $ 00619100 100                                           
+NIOPSW   DC    X'000C0000',V(IOINT)    EC, MCK ON              XA0051DK         
+./ R 00620000          $ 00620100 100                                           
+WAITPSW  DC    X'020E0000',A(WAKEHERE) EC, I/O, WAIT           XA0051DK         
+./ R 00621000          $ 00621100 100                                           
+WAKEPSW  DC    X'000C0000',A(WAKEHERE) EC, MCK ON              XA0051DK         
+./ R 00764900          $ 00764910 010                                           
+         DC    X'000C0000',A(DMSINIR)    00 EC MODE            XA0051DK         
+./ R 00765200          $ 00765210 010                                           
+         DC    X'000C0000',A(DMSINIR)    68 EC MODE            XA0051DK         

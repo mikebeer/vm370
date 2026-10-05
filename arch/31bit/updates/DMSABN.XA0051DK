@@ -1,0 +1,2 @@
+./ R 00309600          $ 00309610 010                                           
+WAITPSW  DC    X'000A0000',A(*-4)  EC DISABLED WAIT            XA0051DK         

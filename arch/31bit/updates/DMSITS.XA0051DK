@@ -1,0 +1,17 @@
+./ R 00249000 00250000 $ 00249100 100                                           
+         MVC   SVCOPSW(4),=X'000C0000' EC VIRTUAL OLD PSW      XA0051DK         
+         MVC   X'88'(4),=X'000200CA' ILC 2, SVC 202 (EC)       XA0051DK         
+./ R 00268000          $ 00268100 100                                           
+         CLI   X'8B',201      IS IT SVC 201? (EC CODE)         XA0051DK         
+./ R 00328000          $ 00328100 100                                           
+         CLI   X'8B',202      IS THIS SVC 202? (EC CODE)       XA0051DK         
+./ R 00330000          $ 00330100 100                                           
+         CLI   X'8B',203      IS THIS SVC 203? (EC CODE)       XA0051DK         
+./ R 00706000          $ 00706100 100                                           
+         TM    X'89',X'04'    EXECUTE (4-BYTE)? ILC AT 89      XA0051DK         
+./ R 00749000          $ 00749100 100                                           
+         IC    XR,X'8B'       GET SVC NUMBER (EC CODE)         XA0051DK         
+./ R 00850000          $ 00850100 100                                           
+         CLI   X'8B',S203     IS THIS AN SVC 203? (EC)         XA0051DK         
+./ R 01067000          $ 01067100 100                                           
+         CLI   X'8B',201      SVC 201? (EC CODE)               XA0051DK         

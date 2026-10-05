@@ -1,0 +1,9 @@
+./ R 00134000          $ 00134100 100                                           
+         LH    R4,X'BA'       INTERRUPTING DEVICE (EC)         XA0051DK         
+         N     R4,TRUNCR      11 BITS OF IT                    XA0051DK         
+./ R 00154000          $ 00154100 100                                           
+         LM    0,1,IOOPSW     SET UP I/O OLD PSW               XA0051DK         
+         ICM   R0,3,X'BA'     WITH THE DEVICE, AS BC HAD IT    XA0051DK         
+./ R 00156000          $ 00156100 100                                           
+         MVC   SAVINT(16,R9),IOOPSW     SAVE THE INTERRUPT     XA0051DK         
+         MVC   SAVINT+2(2,R9),X'BA'     AND THE DEVICE (EC)    XA0051DK         

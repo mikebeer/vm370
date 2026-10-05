@@ -1,0 +1,4 @@
+./ R 00151100          $ 00151200 100                                           
+         SSM   =X'00'         DISABLE FOR ECB SCAN (EC)        XA0051DK         
+./ R 00211000          $ 00211100 100                                           
+ECBPSW   DC    X'030E0000',A(WAKEUP)  EC WAIT, ENABLED         XA0051DK         

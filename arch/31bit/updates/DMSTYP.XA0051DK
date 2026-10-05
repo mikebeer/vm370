@@ -1,0 +1,4 @@
+./ R 00148000          $ 00148100 100                                           
+         SSM   =X'03'         ENABLE INTERRUPTS (EC)           XA0051DK         
+./ R 00646600          $ 00646700 100                                           
+TYPENA   DC    X'03'          I/O AND EXTERNAL (EC)            XA0051DK         

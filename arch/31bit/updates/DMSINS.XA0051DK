@@ -1,0 +1,10 @@
+./ R 00699000          $ 00699100 100                                           
+         DC    X'000C0000'    EC, MCK ON (WAS H'4,0')          XA0051DK         
+./ R 00701000          $ 00701100 100                                           
+ACVTOK   DC    X'000C0000',A(CVTOK)     EC (EXT-PREC.)         XA0051DK         
+./ R 00709000          $ 00709100 100                                           
+NIOPSW   DC    X'000C0000',V(IOINT)     EC, MCK ON             XA0051DK         
+./ R 00710000          $ 00710100 100                                           
+WAKEPSW  DC    X'000C0000',A(WAKEHERE)  EC, MCK ON             XA0051DK         
+./ R 00711000          $ 00711100 100                                           
+WAITPSW  DC    X'020E0000',A(WAKEHERE)  EC, I/O, WAIT          XA0051DK         

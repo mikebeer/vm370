@@ -43,6 +43,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = '/home/claude/vmce/source/cp'
+CMSSRC = '/home/claude/vmce/source/cms'
 UPDATES = os.path.join(HERE, '..', 'updates')
 
 CTL = re.compile(r'^\./ ([RDI])\s+(\d{8})(?:\s+(\d{8}))?')
@@ -81,7 +82,7 @@ def continued(text):
 def known_member(name):
     """Is there a COPY or MACRO file of this name anywhere we look?"""
     for ext in ('COPY', 'MACRO'):
-        for d in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+        for d in (SRC, CMSSRC, os.path.join(SRC, '..', 'common'), UPDATES):
             if os.path.exists(os.path.join(d, '%s.%s' % (name, ext))):
                 return True
     return False
@@ -134,7 +135,7 @@ def copies(base):
             seen.add(name)
             out.append(name)
             for ext in ('COPY', 'MACRO'):
-                for d in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+                for d in (SRC, CMSSRC, os.path.join(SRC, '..', 'common'), UPDATES):
                     q = os.path.join(d, '%s.%s' % (name, ext))
                     if os.path.exists(q):
                         queue.append(q)
@@ -163,7 +164,7 @@ def member_symbols(member):
     """
     found = None
     for ext in ('COPY', 'MACRO'):
-        for d in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+        for d in (SRC, CMSSRC, os.path.join(SRC, '..', 'common'), UPDATES):
             p = os.path.join(d, '%s.%s' % (member, ext))
             if os.path.exists(p):
                 found = labels(p) if found is None else found | labels(p)
@@ -203,7 +204,7 @@ def check(mod):
     # continuation invariants apply to a member exactly as to a module.
     base = None
     for cand in ('%s.ASSEMBLE' % mod, '%s.COPY' % mod, '%s.MACRO' % mod):
-        for d in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+        for d in (SRC, CMSSRC, os.path.join(SRC, '..', 'common'), UPDATES):
             if os.path.exists(os.path.join(d, cand)):
                 base = os.path.join(d, cand)
                 break
@@ -340,7 +341,7 @@ def check(mod):
         own = set()
         dmod = os.path.basename(d).split('.')[0]
         for cand in ('%s.ASSEMBLE' % dmod, '%s.COPY' % dmod, '%s.MACRO' % dmod):
-            for sd in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+            for sd in (SRC, CMSSRC, os.path.join(SRC, '..', 'common'), UPDATES):
                 q = os.path.join(sd, cand)
                 if os.path.exists(q):
                     for _, txt in records(q):
@@ -388,7 +389,7 @@ def check(mod):
                 if m and m.group(1) not in members:
                     members.append(m.group(1))
                     for ext in ('COPY', 'MACRO'):
-                        for d in (SRC, os.path.join(SRC, '..', 'common'), UPDATES):
+                        for d in (SRC, CMSSRC, os.path.join(SRC, '..', 'common'), UPDATES):
                             q = os.path.join(d, '%s.%s' % (m.group(1), ext))
                             if os.path.exists(q):
                                 members.extend(x for x in copies_of(q)

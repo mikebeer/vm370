@@ -1,0 +1,10 @@
+./ R 00084000          $ 00084100 100                                           
+         CLI   X'87',X'80'    INTERRUPT-CODE = TIMER? (EC)     XA0051DK         
+./ R 00196150          $ 00196160 010                                           
+         CLC   X'86'(2),=X'4001' VMCF EXTERNAL INT? (EC)       XA0051DK         
+./ R 00199000          $ 00199100 100                                           
+         STH   R15,X'BA'      CLEAR I/O INT. CODE (EC)         XA0051DK         
+./ R 00216600          $ 00216700 100                                           
+         SSM   =X'00'         DISABLE (NOT *+1: EC MODE)       XA0051DK         
+./ R 00231000          $ 00231100 100                                           
+         CH    R15,X'BA'      WHILE WE WERE OCCUPIED? (EC)     XA0051DK         

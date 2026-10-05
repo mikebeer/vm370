@@ -346,6 +346,10 @@ st = json.load(open(p))
 tail = st[-2:]                      # /cp shutdown, exit
 st = st[:-2] + [
  {"send": "/vmfload cmsload dmslcl", "expect": "PUN FILE|Ready", "timeout": 600, "cont": True},
+ # M5b: the nucleus IPLs itself in EC mode after the write, and CP admits an
+ # EC PSW only with ECMODE on.  SET ECMODE resets the virtual machine, which
+ # is why it comes after VMFLOAD and before the IPL, not in the boot.
+ {"send": "/cp set ecmode on", "expect": "CP|Ready|STORAGE", "timeout": 20, "cont": True},
  {"send": "/cp ipl 00c clear", "expect": "SYSTEM DISK ADDRESS", "timeout": 120},   # fatal: no prompt, no write
  {"send": "/" + sd, "expect": "Y-DISK ADDRESS", "timeout": 30, "cont": True},
  {"send": "/19e", "expect": "REWRITE THE NUCLEUS", "timeout": 30, "cont": True},
