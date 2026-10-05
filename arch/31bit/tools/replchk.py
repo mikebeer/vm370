@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Four invariants every `./ R` must satisfy, checked before a build runs.
+"""Five invariants every `./ R` must satisfy, checked before a build runs.
 
 The 1 October verification build came back 180 modules clean of 192, and all
 twelve remaining diagnostics were one of four mistakes -- none of them about DAT
@@ -228,10 +228,22 @@ def check(mod):
 
     replaced = set()
     newlabels = {}
+    # ANCHOR-GONE: an anchor inside a range an EARLIER deck (lower number,
+    # applied first) replaces or deletes is a record UPDATE no longer has,
+    # and VMFASM stops on 'SEQUENCE NUMBER NOT FOUND' (i241: DMKPTR
+    # XA0048DK anchored three ICMs the DAT deck XA0036DK had removed).
+    taken = []                       # (a, b, deck) in application order
     for deck in decks:
         for op, frm, to, lines in deck_cards(deck):
             if op in 'RD':
                 a, b = int(frm), int(to)
+                for ta, tb, tdeck in taken:
+                    if ta <= a <= tb or ta <= b <= tb:
+                        bad.append(('ANCHOR-GONE', frm,
+                                    '%s anchors %s-%s inside %s-%s, which %s '
+                                    'already replaced' % (os.path.basename(deck),
+                                    frm, to, ta, tb, os.path.basename(tdeck))))
+                taken.append((a, b, deck))
                 for n, i in byseq.items():
                     if a <= n <= b:
                         replaced.add(i)
@@ -417,7 +429,7 @@ def main():
     for kind, n in counts.most_common():
         print('%-12s %d' % (kind, n))
     if not counts:
-        print('all four invariants hold on every deck')
+        print('all five invariants hold on every deck')
     return 1 if any(not k.endswith('?') for k in counts) else 0
 
 

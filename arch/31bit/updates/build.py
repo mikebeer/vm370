@@ -6843,7 +6843,7 @@ ICM3_SKIP = {('DMKPER', '00628000'),   # R1 came from L R1,PERADDR, an address
 
 def icm3cards():
     sys.path.insert(0, TOOLS)
-    import strips
+    import strips, replchk
     nuc = set()
     for line in open('/home/claude/vmce/maintenance/files/194/CPLOAD.EXEC',
                      errors='replace'):
@@ -6862,6 +6862,18 @@ def icm3cards():
         sites = [r for r in strips.scan(path) if r['kind'] == 'icm3']
         if not sites:
             continue
+        # ranges other decks of this module already replace or delete:
+        # DMKPTR's VMSEG/SEGPAGE ICMs went with the DAT tables (XA0036DK),
+        # and UPDATE stops on an anchor that is no longer there.
+        taken = []
+        for d in glob.glob(os.path.join(HERE, '%s.XA*DK' % mod)):
+            if d.endswith(XA48):
+                continue
+            for op, frm, to, lines in replchk.deck_cards(d):
+                if op in 'RD':
+                    taken.append((int(frm), int(to)))
+        sites = [r for r in sites
+                 if not any(a <= int(r['seq']) <= b for a, b in taken)]
         L = [l.rstrip('\n') for l in open(path, errors='replace')]
         bynum = {l[72:80].strip(): i for i, l in enumerate(L)}
         for r in sites:

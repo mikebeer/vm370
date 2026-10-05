@@ -28,18 +28,9 @@
 ./ R 01913000          $ 01913100 100                                           
          SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
          ICM   R2,B'0111',VMMADDR VM ASSIST OF FOR USER?       XA0048DK         
-./ R 01921000          $ 01921100 100                                           
-         SR    R3,R3           CLEAN BYTE 0, I-233             XA0048DK         
-         ICM   R3,B'0111',VMSEG+1 GET SEG ADDR                 XA0048DK         
-./ R 01936000          $ 01936100 100                                           
-         SR    R9,R9           CLEAN BYTE 0, I-233             XA0048DK         
-         ICM   R9,B'0111',SEGPAGE+1 PAGE TABLE POINTER         XA0048DK         
 ./ R 01943000          $ 01943100 100                                           
          SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
          ICM   R2,B'0111',PAGSHR+1 NAMED SYSTEM POINTER?       XA0048DK         
 ./ R 01982000          $ 01982100 100                                           
          SR    R5,R5           CLEAN BYTE 0, I-233             XA0048DK         
          ICM   R5,B'0111',CORSWPNT+1 SWAP TABLE POINTER        XA0048DK         
-./ R 02054000          $ 02054100 100                                           
-         SR    R9,R9           CLEAN BYTE 0, I-233             XA0048DK         
-         ICM   R9,B'0111',SEGPAGE+1 LOAD PAGE TBL POINTER      XA0048DK         
