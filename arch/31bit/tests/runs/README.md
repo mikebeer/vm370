@@ -11,6 +11,7 @@ test user logs on). Only the operator issues `shutdown`.
 |---|---|---|
 | `amode31-32m.json` | the M2 run: IPL, `enable all`, LOGON with every LINK (`q v dasd`), `IPL 190` (15M: CMS's own `DMSINI260T`, it loads high), `IPL CMS`, EDIT + `DIRECT` recompile to 16M/64M, `DEF STOR 32M`, stores and displays above 16 MB, `IPL CMS` in the 32M machine, `QUERY DISK`, LOGOFF, SHUTDOWN | the `Online` wait (the message arrives before the step), the `Ready` after `IPL 190` at 15M, `d 1ffffff.10` (DMKCDB prints its range in 6 hex digits — cosmetic) |
 | `ipl190-16m.json` | `DEF STOR 16M` then `IPL 190`: CMS from the system disk, `QUERY DISK`; `DEF STOR 32M` on an unrecompiled directory answers `EXCEEDS ALLOWED MAXIMUM` | the `Online` wait; `STORAGE =` after the 32M attempt |
+| `guest31-tape.json` | M2 step 3: `devinit 480 io/g31.aws` (built by `../guest31/mkipl31.py`), ATTACH as 181, directory recompiled to 64M, `DEF STOR 32M`, `IPL 181`: the guest runs in AMODE 31, stores `AMODE 31` at 1FF0000 and `HI31` at 1000000, takes an SVC with a 31-bit PSW (old PSW `00080000 8000041E` at 1FF0010) and waits `000A0000 00000031`; displayed from CP | the `Online` wait; `ATTACHED` arrives on the user's terminal, not the operator's |
 | `gcclib-15m.json` | the 15M GCCLIB / autolog regression: `IPL CMS`, `SEGMENT LOAD GCCLIB` ("already defined"), the key map of F00000–FFFFFF, AUTOLOG CMSUSER, `IND`, FORCE | the `Online` wait |
 
 Last run clean: 5 October 2026 14:45 UTC on SNAP-I241's nucleus (w109, w111,

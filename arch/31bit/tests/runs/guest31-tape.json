@@ -1,5 +1,59 @@
 [
  {
+  "send": "pgmtrace +01",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +02",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +03",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +04",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +05",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +06",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +10",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +11",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
+  "send": "pgmtrace +12",
+  "expect": "HHC|pgmtrace",
+  "timeout": 5,
+  "cont": true
+ },
+ {
   "send": "ipl 6A1",
   "expect": "Start \\(\\(Warm",
   "timeout": 150
@@ -43,6 +97,48 @@
   "send": "/attach 480 to maint as 181",
   "expect": "ATTACHED|DMK",
   "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl cms",
+  "expect": "VM Community|Ready|DMK",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|CMS|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "edit user direct a",
+  "expect": "EDIT",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "locate /USER MAINT/",
+  "expect": "USER MAINT",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "change /15M 16M/16M 64M/",
+  "expect": "USER MAINT",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "file",
+  "expect": "Ready",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "direct user direct a",
+  "expect": "Ready",
+  "timeout": 60,
   "cont": true
  },
  {

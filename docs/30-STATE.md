@@ -4,7 +4,7 @@ Last updated **5 October 2026, 02:00 UTC**. **Read this first in a new session.*
 
 ---
 
-## Current position, 5 October — CP runs AMODE 31 (SNAP-I241); CMS runs; a 32M machine stores and displays above 16 MB from the console (install point SNAP-I231)
+## Current position, 5 October — CP runs AMODE 31 and hosts a 31-bit guest (SNAP-I244); CMS runs; a 32M machine stores and displays above 16 MB from the console (install point SNAP-I231)
 
 ```
 /(0009) ipl 190
@@ -39,6 +39,7 @@ takes a typed command and answers it from the file system.
 | 24b | DCSS in the same megabyte (GCCLIB, 13-of-16-page group): LOADSYS via the same model/copy path; DMKBLD keeps a full table and lets SWPSHR copies go | **closed** `I-214`, `I-215` — CE's complete init (AUTOLOG1 → CPWATCH, CMSBATCH, WAKEUP) runs |
 | 30 | **Virtual storage above 16 MB (I-208, M2 first step).** CP runs AMODE 24, so `LRA` and DMKPTRAN saw every guest address modulo 16 MB. Seven findings on the way (I-216 – I-223): the inline `BSM` wrapper cost DMKMON its literal pool → a stub in the PSA; `N R1,=X'7FFFFFFF'` before ENTER read a literal off the caller's R10; CP's callers hand TRANS CCW/CAW words with byte 0 in use, so a 24-bit guest's addresses are rightly masked and only `OPT=AMODE31` callers (console STORE/DISPLAY, DMKPGS's release walk) are 31-bit; the flag test must follow ENTER; DMKBLDRT's `F4095` end-page mask built 16-entry segment tables; SAVEWRK9's byte 0 is a switch. | **closed** w62/w63 5 Oct 01:55 — `st s1ff0000 deadbeef` lands at 1FF0000 only, IPL CMS/LOGOFF/SHUTDOWN clean, GCCLIB regression unchanged. SNAP-I231. |
 | 29 | DMKPGS CKSEG's end-of-segment test was off by one page (XA0036DK); the release loop ran off every page/swap table into free storage → `PGT005` at LOGOFF and at `DEF STOR` after IPL | **closed** `I-206` |
+| 32 | **A guest in 31-bit mode (M2 step 3).** The mode had to be a maintained VMBLOK flag, not a test of PSW bit 32: CMS runs BC mode, where that bit is ILC, and the first cut turned every CMS base register's byte 0 into an address (I-234). With `VMAM31` kept by the three PSW gatekeepers and tested by GADR31/TRL31/DMKPTRAN, the G31 tape guest stores `AMODE 31` at 1FF0000 itself and takes an SVC with a 31-bit PSW. | **closed** 5 Oct 18:05 (i244, w114–w116). SNAP-I244. |
 | 31 | **CP itself at AMODE 31 (I-224, M2 second step).** The LA-strip sweep (275 sites inventoried, 209 rewritten) and the PSW flip were the easy part; the walls were the idioms the sweep cannot see: a two-register `LA` sum at 16 MB in DMKFRE (I-225); a CCW word used as a base (I-226, I-232 — DMKDGD, DMKCCW, DMKDIB, DMKUNT, DMKTRK, DMKVCA); `BALR Rx,0` as a condition-code save (I-228, 16 sites → `IPM`), the trace subroutines reading the CC out of a `BAL` link register (I-229, 4 subroutines, and `N` after `SPM` was itself a bug); `doublewords || address` words handed to DMKFRET (I-230, stripped at the callee); and DMKVMI, CP code that executes **inside the guest** and must keep its 24-bit strips (I-231). Each was found by running, with pgmtrace, single breakpoints per run (Hercules 3 stops once), `ds` for the SCSW and the load map from the punched nucleus deck (I-227). | **closed** 5 Oct 13:22 (i241, w109–w111): LOGON with every LINK, AUTOLOG1's full init, `IPL 190` at 16M and `IPL CMS`, directory recompile, `DEF STOR 32M`, stores above 16 MB, IPL CMS at 32M, LOGOFF, SHUTDOWN, the GCCLIB regression — all clean. SNAP-I241 (clean restage, i242). |
 
 **V0.1 saved** (tag `v0.1`, `32-V0.1.md`). Since then: `DEF STOR 32M` and
@@ -59,7 +60,7 @@ snapshots so a sliced build is restorable in minutes).
 ### How to reproduce tonight's state
 
 ```
-build.sh reset SNAP-I241           # CP at AMODE 31 (M2 step 2, I-224 closed) -- or SNAP-I231 for the AMODE 24 CP with I-208 closed
+build.sh reset SNAP-I244           # CP at AMODE 31 hosting 31-bit guests (M2 steps 2+3) -- SNAP-I241 without step 3, SNAP-I231 the AMODE 24 CP
 build.sh write                     # writes the ESA/390 nucleus to 6A1, keeps io/nucleus.deck and the load map (cpnuc.map, nucsyms.txt)
 esa390.sh r1 arch/31bit/tests/runs/amode31-32m.json   # the M2 run, ~2 min; ipl190-16m.json and gcclib-15m.json likewise
 ```

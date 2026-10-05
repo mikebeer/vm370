@@ -190,7 +190,48 @@ What step 2 does not do: real storage above 16 MB (M4: format-1 CCWs, the
 packed `count || address` words, `XPAGNUM`); 31-bit guests (step 3); the
 256 MB per-VM ceiling (I-185).
 
-## Step 3 (scoped 5 October): a guest in 31-bit mode
+## Step 3 — first observable 5 October 18:05 UTC (i244, SNAP-I244): a guest runs in 31-bit mode
+
+`tests/guest31/mkipl31.py` builds G31, a 128-byte program on an AWS tape:
+IPL PSW `00080000 80000400` (EC, bit 32 on), `BALR R12,0` for a base with
+bit 0 on, a store of `AMODE 31` at 1FF0000 and of `HI31` at 1000000, an SVC
+whose new PSW is 31-bit, and a disabled wait `000A0000 00000031`. In a 64M
+MAINT (`tests/runs/guest31-tape.json`): `d 1ff0000.20` shows `C1D4D6C4
+C540F3F1` and, at 1FF0010, the SVC old PSW `00080000 8000041E` — the
+interrupt was taken and reflected in AMODE 31; `d 1000000.10` shows
+`C8C9F3F1`; `d psw` the wait; R12 = `80000402`. CMS (a BC-mode, 24-bit
+guest) and the whole 32M run are unchanged (w115, w116).
+
+What it took (XA0049DK, one EQU, one macro):
+
+- **The mode is a flag, not a PSW bit.** `VMAM31` (VMFSTAT X'01') is set
+  and cleared wherever CP accepts a guest PSW — DMKDSP PSWCKSUB (every
+  reflected or slow-path PSW), DMKPRV's PRLPSWEC fast dispatch, DMKSVC's
+  fast SVC reflection — as "EC mode and bit 32". The first cut tested
+  `VMPSW+4` directly and mistook every CMS PSW with ILC 2 or 3 for a 31-bit
+  one (I-234): in BC mode those bits are the ILC.
+- **Gatekeepers.** The three must-be-zero checks on `VMPSW+4` (DMKDSP
+  01342000, DMKPRV 00741000, DMKSVC 00419000) test `X'7F'`.
+- **Addresses by mode.** `GADR31 Rx` (XAOPS): `TM VMFSTAT,VMAM31` / `BO` /
+  `N Rx,XRIGHT24` / `SLL 1` / `SRL 1` — replaces the `LA Rx,0(,Rx)` strips
+  that form GUEST addresses: DMKPRV 00395100 (the PSW address) and 00903000
+  (the key-instruction operand), DMKPSA DMKPSARR/PSAMVCL (with `CLI *,0` to
+  keep the CC = 2 contract), DMKHVC 00617000/00789000 (DIAG buffers). The
+  effective-address sum in DMKPSARX wraps to 24 bits only for a 24-bit
+  guest. TRL31, the TRANS stub, grew the same test and moved from the PSA's
+  reserved words into DMKPSA's live code (the adcon at X'41C' stays, assembled
+  only in DMKPSA: the PSA macro's DSECT form has `DS 1F` there). DMKPTRAN's
+  entry keeps bits 1-31 for a 31-bit guest as it does for `OPT=AMODE31`.
+- **Dispatch and reflection needed nothing**: DMKDSP copies an EC PSW's
+  second word whole into the real PSW, and every interrupt reflection moves
+  8 bytes.
+
+Not done in step 3: a 31-bit guest's own DAT (shadow tables, DMKVAT); IDAWs
+and format-1 CCWs for guest I/O (G31 does none); DIAG handlers beyond the two
+above — each goes `GADR31` when a caller needs it. The directory `ECMODE`
+option is required for an EC-mode guest, as on S/370.
+
+## Step 3 as scoped (5 October, before the build)
 
 A guest with PSW bit 32 on runs in AMODE 31 on the hardware the moment
 DMKDSP loads its PSW; everything else is CP's simulation of that guest, which
