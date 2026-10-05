@@ -173,6 +173,7 @@ EXPECTS = [
     (r'^/readcard',           r'Ready',                             120),
     (r'^/cpacc',              r'Ready',                             120),
     (r'^/exec vmsetup cms',   r'Ready',                             120),
+    (r'^/ipl 190',            r'VM Community|Ready',                120),
     (r'^/vmfmac',             r'Ready',                             600),
     (r'^/vmfasm',             r'Ready',                             900),
     (r'^/asmdmk',             r'Ready',                             1800),
@@ -235,6 +236,17 @@ def main():
     # nothing to purge.  Everything still comes from specs rather than a
     # hand-edited rc, which is the rule run33 taught.
     rc = [] if '--bare' in sys.argv else [BOOT]
+    if '--cms' in sys.argv:
+        # MAINT's directory IPL is the saved system CMS, shared by frame
+        # (XA0045DK).  A user who then IPLs something ELSE -- VMFLOAD's deck
+        # from 00C, or 190 -- leaves the named system, and that bookkeeping is
+        # M3 increment 2, not yet written: CP abends in the release (PTR018 on
+        # IPL 00C CLEAR, PRG005 on IPL 190; I-235, w117).  So the CMS build
+        # logs MAINT on NOIPL and IPLs 190 unshared, which DMKPGS releases the
+        # ordinary way.  The CP build keeps the directory IPL: it never leaves.
+        rc = [BOOT.replace('/logon maint cpcms\npause 45\n',
+                           '/logon maint cpcms noipl\npause 20\n'
+                           '/ipl 190\npause 45\n')]
 
     # `--punch <file>` attaches the card punch AFTER the IPL and before the
     # specs.  Getting a deck out of CP takes TWO runs and the reason is not
