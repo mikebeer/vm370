@@ -78,8 +78,18 @@ run(){ local eng=${2:-$HERC3}
        # and I-138; refuse rather than measure the wrong thing.  I-140.
        python3 "$T/iochk.py" "$C" || {
          echo "### run($1): re-run 'mk' (or restage those files) first"; return 1; }
-       ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
-       sleep 8; w
+       # Driven when mkrun wrote the steps (every build since 5 Oct): each
+       # command waits for its answer in the log, not for a pause.  Mike,
+       # twice: polling, not sleeping.  The rc path stays for a run without
+       # a steps file.
+       if test -f "$C/$1.json"; then
+         rm -f "$C/$1.rc"
+         python3 "$T/drive.py" "$C" "$1" "$C/$1.json" --herc "$eng" > "$C/$1.drive.out" 2>&1
+         tail -3 "$C/$1.drive.out"; w
+       else
+         ( cd "$C" && setsid nohup "$eng" -f vm370ce.conf > "$1.log" 2>&1 </dev/null & )
+         sleep 8; w
+       fi
        # Append to the journal, so the next snapshot can be validated against
        # everything since the restore rather than against this slice alone.
        test -f "$C/$1.log" && cat "$C/$1.log" >> "$C/build.journal"
