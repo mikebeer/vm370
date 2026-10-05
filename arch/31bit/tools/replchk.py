@@ -363,6 +363,21 @@ def check(mod):
     # looks at, so the PSA is the one member a macro is given.
     if base.endswith('.MACRO') and 'PSA' not in members:
         members.append('PSA')
+    # The PSA macro's storage form expands in DMKPSA and nowhere else
+    # (AIF ('&SYSECT' EQ 'DMKPSA')), so a symbol DMKPSA's own code or decks
+    # define is in reach of PSA's storage-only cards -- TRL31, the TRANS
+    # stub, lives in DMKPSA's live code (XA0049DK) and the adcon that names
+    # it is assembled only there.
+    if mod == 'PSA':
+        q = os.path.join(SRC, 'DMKPSA.ASSEMBLE')
+        if os.path.exists(q):
+            reach |= labels(q)
+        for d in glob.glob(os.path.join(UPDATES, 'DMKPSA.XA*DK')):
+            for _, _, _, lines in deck_cards(d):
+                for l in lines:
+                    m = LABEL.match(l) if not iscomment(l) else None
+                    if m:
+                        reach.add(m.group(1))
     # A deck may add a COPY of its own -- XA0044DK gives DMKCDB `COPY CORE`
     # so that GETKEY can name PAGTSWP -- and that widens the module's scope
     # exactly as a COPY in the base does (I-209).  Nested members follow.

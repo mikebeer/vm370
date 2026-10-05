@@ -94,6 +94,7 @@ XA45 = 'XA0045DK'
 XA46 = 'XA0046DK'
 XA47 = 'XA0047DK'
 XA48 = 'XA0048DK'
+XA49 = 'XA0049DK'
 
 
 def psa():
@@ -260,13 +261,16 @@ def psa():
     #     reserved before INSTWRD1, so no later offset moves.
     d.replace('00255600', first='00255610', inc=10, limit='00256000', lines=[
         "*  AMODE 31 STUB FOR THE TRANS MACRO. DOCS/34-AMODE31.",
+        "*  TRL31 IS IN DMKPSA'S LIVE CODE NOW (XA0049DK): IT GREW",
+        "*  A MODE TEST FOR 31-BIT GUESTS AND NO LONGER FITS HERE, SO",
+        "*  THE ADCON IS ONLY RESOLVED WHERE THE CODE IS -- DMKPSA.",
+        "         AIF   ('&SYSECT' NE 'DMKPSA').ATRLD",
         "ATRL31   DC    X'80',AL3(TRL31) 31-BIT ENTRY, FOR BASSM",
-        "TRL31    LR    R2,R1          24-BIT GUEST: THE ADDRESS IS",
-        "         N     R2,XRIGHT24    BITS 8-31, WHATEVER BYTE 0 IS",
-        "         LRA   R2,0(0,R2)     TRANSLATE, IN AMODE 31",
-        "         BSM   0,R15          BACK TO THE CALLER'S MODE",
-        "         DS    0F -           RESERVED (WAS 5F)",
-        "         DS    1F -           RESERVED (WAS 5F)",
+        "         AGO   .ATRLX",
+        ".ATRLD   ANOP",
+        "ATRL31   DS    1F -           THE ADCON, SEEN AS A DSECT",
+        ".ATRLX   ANOP",
+        "         DS    4F -           RESERVED (WAS 5F)",
     ])
 
     return d
@@ -4115,6 +4119,74 @@ GUESTMODS = {
 # which is exactly what BSM needs to return to AMODE 24.  While real storage
 # stays below 16 MB every CP address is a 24-bit address, so nothing else in
 # CP notices; this unlocks VIRTUAL storage above the line.
+# M2 step 3: a guest with PSW bit 32 on.  The dispatcher already copies an
+# EC-mode guest's VMPSW+4 whole into the real PSW, so the guest RUNS in
+# AMODE 31; what remains is CP's own idea of a guest address.  Every place
+# that forms or checks one gets the one test `TM VMPSW+4,X'80'` (R11 is the
+# VMBLOK everywhere CP simulates a guest): a 24-bit guest's address is bits
+# 8-31, a 31-bit guest's is bits 1-31.  The GADR31 macro (XAOPS) says it in
+# five instructions; the three PSW gatekeepers admit bit 32 in EC mode.
+# docs/34-AMODE31.md, step 3.
+SWEEP_EXCEPT = {('DMKPRV', '00395100'), ('DMKPRV', '00903000'),
+                ('DMKPSA', '00272000'), ('DMKPSA', '00279000'),
+                ('DMKHVC', '00617000'), ('DMKHVC', '00789000')}
+G31MODS = {
+    'DMKPSA': [
+        # TRL31, the TRANS macro's AMODE 31 LRA, out of the PSA's reserved
+        # words (where it no longer fits) into the live code at X'800'.
+        # Base register 0 covers it (USING DMKPSA,R0 THROUGHOUT); the VMBLOK
+        # is addressed explicitly because USING VMBLOK,R11 comes later.
+        ('00171000', [
+            "         DC    (X'800'-(*-DMKPSA))X'0'  CLEAR TO X'800'",
+            "*  TRL31: THE TRANS MACRO'S LRA IN AMODE 31. ATRL31 AT X'41C'",
+            "*  POINTS HERE. A 31-BIT GUEST OWNS BITS 1-31 (M2 STEP 3).",
+            "TRL31    LR    R2,R1          THE GUEST ADDRESS",
+            "         TM    VMPSW+4-VMBLOK(R11),X'80'  31-BIT GUEST ?",
+            "         BO    TRL31A         YES: ONLY BIT 0 GOES",
+            "         N     R2,XRIGHT24    24-BIT GUEST: BYTE 0 GOES",
+            "TRL31A   SLL   R2,1           BIT 0 OFF",
+            "         SRL   R2,1           ...",
+            "         LRA   R2,0(0,R2)     TRANSLATE, IN AMODE 31",
+            "         BSM   0,R15          BACK TO THE CALLER'S MODE",
+        ]),
+        # DMKPSARX: the effective address of a guest RX operand.  LA in
+        # AMODE 31 sums to 31 bits; a 24-bit guest's registers may carry
+        # flags in byte 0 (BALR's ILC/CC), so its sum wraps to 24 bits as
+        # the hardware would.  No CC contract at this exit.
+        ('00232000', [
+            "         LA    R1,0(R1,R15)   ADD BASE/INDEX REGISTERS",
+            "         TM    VMPSW+4,X'80'  31-BIT GUEST ?",
+            "         BO    *+8            YES: THE 31-BIT SUM IS RIGHT",
+            "         N     R1,XRIGHT24    24-BIT GUEST: WRAP AT 16 MB",
+        ]),
+        # DMKPSARR / PSAMVCL: the guest's register as an address, with the
+        # CC = 2 contract restored by CLI *,0 as PSAMVCL already does.
+        ('00272000', [
+            "         GADR31 R1             GUEST ADDRESS, EITHER MODE",
+            "         CLI   *,X'00'        SET CC = 2 (THE CONTRACT)",
+        ]),
+        ('00279000', [
+            "         GADR31 R1             ...ADDRESS ONLY, EITHER MODE",
+        ]),
+    ],
+    'DMKDSP': [
+        ('01342000', ["         TM    VMPSW+4,X'7F'  BAD BITS IN WORD 2 (32 = AMODE)"]),
+    ],
+    'DMKPRV': [
+        ('00395100', ["         GADR31 R1             THE PSW ADDRESS, EITHER MODE"]),
+        ('00741000', ["         TM    VMPSW+4,X'7F'  BITS 33-39 = 0? (32 = AMODE)"]),
+        ('00903000', ["         GADR31 R6             GUEST ADDRESS, EITHER MODE"]),
+    ],
+    'DMKSVC': [
+        ('00419000', ["         TM    VMPSW+4,X'7F'  MUST-BE-ZERO BITS (32 = AMODE)"]),
+    ],
+    'DMKHVC': [
+        ('00617000', ["         LR    R1,R5          FIRST DOUBLE-WORD TO R1",
+                      "         GADR31 R1             GUEST ADDRESS, EITHER MODE"]),
+        ('00789000', ["         GADR31 R1             GUEST ADDRESS, EITHER MODE"]),
+    ],
+}
+
 AMODEMODS = {
     'TRANS': [
         # The common form goes through the PSA stub (+2 bytes a site, I-216),
@@ -4177,6 +4249,8 @@ AMODEMODS = {
             "DMKPTRAN ENTER",
             "         TM    SAVER2+3,AMODE31 CLEAN 31-BIT ADDRESS? (I-208)",
             "         BO    PTRA31         YES: KEEP BITS 1-7",
+            "         TM    VMPSW+4,X'80'  A 31-BIT GUEST? (M2 STEP 3)",
+            "         BO    PTRA31         ITS ADDRESSES ARE BITS 1-31",
             "         N     R1,XRIGHT24    24-BIT CALLER: STRIP BYTE 0",
             "PTRA31   SLL   R1,1           BIT 0 OFF, NO LITERAL BEFORE",
             "         SRL   R1,1           R10 IS SET UP (I-218)",
@@ -6945,6 +7019,8 @@ def stripdecks():
             s = int(r['seq'])
             if any(a <= s <= b for a, b in taken):
                 continue
+            if (mod, r['seq']) in SWEEP_EXCEPT:
+                continue            # a guest address: G31MODS owns it
             # the record itself, for its label and comment
             rec = None
             for line in open(path, errors='replace'):
@@ -6965,7 +7041,13 @@ def stripdecks():
                          '         N     %s,XRIGHT24 %s' % (rx, cmt)]
             lines = [l.rstrip()[:61] for l in lines]
             cards.append((r['seq'], lines))
+        out = os.path.join(HERE, '%s.%s' % (mod, XA47))
         if not cards:
+            # every site excepted or taken: a deck left from an earlier
+            # run would anchor on cards another deck now owns (ANCHOR-GONE)
+            if os.path.exists(out):
+                os.remove(out)
+                aux(os.path.join(HERE, '%s.AUXLCL' % mod), [])
             continue
         cards.sort(key=lambda c: int(c[0]))
         dk = datdeck(mod, cards, ident=XA47)
@@ -7260,6 +7342,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA46, 'LRA IN AMODE 31: VIRTUAL STORAGE ABOVE 16 MB')])
         print('%-8s %-9s %3d cards  %s' % (m, XA46, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(G31MODS):
+        dk = datdeck(m, G31MODS[m], ident=XA49)
+        path = os.path.join(HERE, '%s.%s' % (m, XA49))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA49, '31-BIT GUESTS: PSW BIT 32 ADMITTED, ADDRESSES BY MODE')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA49, n,
               'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(SHRMODS):

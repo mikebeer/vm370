@@ -1,4 +1,0 @@
-./ R 00395100          $ 00395110 010                                           
-         N     R1,XRIGHT24 CLEAR HIGH ORDER BYTE I-126         XA0047DK         
-./ R 00903000          $ 00903100 100                                           
-         N     R6,XRIGHT24 24-BITS ONLY, PLEASE I-126          XA0047DK         

@@ -1,0 +1,2 @@
+./ R 01342000          $ 01342100 100                                           
+         TM    VMPSW+4,X'7F'  BAD BITS IN WORD 2 (32 = AMODE)  XA0049DK         

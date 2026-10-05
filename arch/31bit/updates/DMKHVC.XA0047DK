@@ -1,8 +1,3 @@
-./ R 00617000          $ 00617100 100                                           
-         LR    R1,R5                                           XA0047DK         
-         N     R1,XRIGHT24 FIRST DOUBLE-WORD TO R1 I-126       XA0047DK         
-./ R 00789000          $ 00789100 100                                           
-         N     R1,XRIGHT24 24 BITS ONLY I-126                  XA0047DK         
 ./ R 00825100          $ 00825200 100                                           
          LR    R1,R4                                           XA0047DK         
          N     R1,XRIGHT24 CCW ADDRESS LESS 1ST BYTE I-126     XA0047DK         

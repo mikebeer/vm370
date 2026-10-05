@@ -1,0 +1,22 @@
+./ R 00171000          $ 00171010 010                                           
+         DC    (X'800'-(*-DMKPSA))X'0'  CLEAR TO X'800'        XA0049DK         
+*  TRL31: THE TRANS MACRO'S LRA IN AMODE 31. ATRL31 AT X'41C'  XA0049DK         
+*  POINTS HERE. A 31-BIT GUEST OWNS BITS 1-31 (M2 STEP 3).     XA0049DK         
+TRL31    LR    R2,R1          THE GUEST ADDRESS                XA0049DK         
+         TM    VMPSW+4-VMBLOK(R11),X'80'  31-BIT GUEST ?       XA0049DK         
+         BO    TRL31A         YES: ONLY BIT 0 GOES             XA0049DK         
+         N     R2,XRIGHT24    24-BIT GUEST: BYTE 0 GOES        XA0049DK         
+TRL31A   SLL   R2,1           BIT 0 OFF                        XA0049DK         
+         SRL   R2,1           ...                              XA0049DK         
+         LRA   R2,0(0,R2)     TRANSLATE, IN AMODE 31           XA0049DK         
+         BSM   0,R15          BACK TO THE CALLER'S MODE        XA0049DK         
+./ R 00232000          $ 00232100 100                                           
+         LA    R1,0(R1,R15)   ADD BASE/INDEX REGISTERS         XA0049DK         
+         TM    VMPSW+4,X'80'  31-BIT GUEST ?                   XA0049DK         
+         BO    *+8            YES: THE 31-BIT SUM IS RIGHT     XA0049DK         
+         N     R1,XRIGHT24    24-BIT GUEST: WRAP AT 16 MB      XA0049DK         
+./ R 00272000          $ 00272100 100                                           
+         GADR31 R1             GUEST ADDRESS, EITHER MODE      XA0049DK         
+         CLI   *,X'00'        SET CC = 2 (THE CONTRACT)        XA0049DK         
+./ R 00279000          $ 00279100 100                                           
+         GADR31 R1             ...ADDRESS ONLY, EITHER MODE    XA0049DK         

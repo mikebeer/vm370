@@ -1,0 +1,2 @@
+./ R 00419000          $ 00419100 100                                           
+         TM    VMPSW+4,X'7F'  MUST-BE-ZERO BITS (32 = AMODE)   XA0049DK         
