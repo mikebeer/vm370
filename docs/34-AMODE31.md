@@ -198,7 +198,7 @@ assumes a 24-bit machine in exactly the places the sweep touched. Measured:
 
 - **PSW validity.** DMKDSP `GETMASK` rejects any bit in `VMPSW+4` (`TM
   VMPSW+4,X'FF'`, 01342000); DMKPRV's LPSW (`CLI VMPSW+4,0`, 00741000) and
-  DMKSVC's new-PSW load (`CLI VMPSW+4,0`, 00433000) likewise. Three sites:
+  DMKSVC's new-PSW load (`CLI VMPSW+4,0`, 00419000) likewise. Three sites:
   allow `X'80'` for an EC-mode guest, keep refusing bits 33-39.
 - **Guest addresses CP forms.** The sweep's `N Rx,XRIGHT24` is right for CP's
   own packed pointers and wrong for a 31-bit guest's operand addresses: DMKPRV
