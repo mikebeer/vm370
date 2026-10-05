@@ -4282,10 +4282,22 @@ PSWMODS = {
     # savearea DMKSVC chained at IPL was one of these, and CP's first SVC in
     # AMODE 31 took an addressing exception at 7FFFF938 (w68).  Add, don't LA.
     'DMKFRE': [
+        # I-230.  DMKERMSG's callers hand it 'doublewords || address' in one
+        # register and it passes the word to DMKFRET as it is ("HIGH-ORDER
+        # BYTE IS OK", 00352000): FRET's address arithmetic ignored byte 0
+        # in AMODE 24.  In AMODE 31 the FRETRAP compare took an addressing
+        # exception (PRG005, w104: DEF STOR after IPL CMS).  The contract
+        # is kept at the callee: FRET and FRETR strip byte 0 on entry.
+        # Valid until real storage passes 16 MB (M4), where every such
+        # packed word has to go anyway.
         ('00495000', [
             "         LR    R5,R8          END OF LAST LARGER BLOCK: ADD,",
             "         ALR   R5,R9          NOT LA: 16 MB IS NOT 0 (I-225)",
         ]),
+        ('01087000', ["DMKFRETR STM   R0,R15,FREESAVE ENTER FRETR - SAVE REGS",
+                      "         N     R1,XRIGHT24    CALLERS PASS A FLAG BYTE, I-230"]),
+        ('01101000', ["         STM   R0,R15,FREESAVE       - SAVE REGISTERS",
+                      "         N     R1,XRIGHT24    CALLERS PASS A FLAG BYTE, I-230"]),
     ],
     # I-226.  A CCW's address word carries the command code in byte 0, and
     # CP loads it whole -- L R3,RCWADDR -- then uses the register as a BASE,
@@ -6779,7 +6791,12 @@ def corecopy():
 # an earlier deck already replaced are skipped: those decks wrote explicit
 # masks (SEGPTOM, PAGPFRM, ...) when they converted the field.  DMKLD00E is
 # the loader, runs before CP in AMODE 24 and is left alone.
-STRIP_SKIP = {'DMKLD00E'}
+# Code that executes INSIDE the virtual machine is 24-bit guest code and keeps
+# its LA strips: DMKLD00E (the loader) and DMKVMI, the IPL simulator CP copies
+# into the guest's storage at X'20000' -- its N Rx,XRIGHT24 read the GUEST's
+# page 0, not the PSA, got zero, and IPL 190 looped on an operation exception
+# at virtual 6A (w104/w107, I-231).
+STRIP_SKIP = {'DMKLD00E', 'DMKVMI'}
 
 def stripdecks():
     sys.path.insert(0, TOOLS)

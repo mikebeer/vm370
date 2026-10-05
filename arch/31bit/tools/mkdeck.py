@@ -228,8 +228,17 @@ def aux(path, entries):
             if len(parts) == 3 and parts[1] == 'V01':
                 old.append((parts[0], parts[2].rstrip()))
     seen, merged = set(), []
+    deckdir = os.path.dirname(path)
+    member = os.path.basename(path).split('.')[0]
     for deck, desc in list(entries) + old:
         if deck in seen:
+            continue
+        # An old line whose deck FILE is gone names a deck a generator stopped
+        # producing (DMKVMI left the sweep, I-231): VMFASM would stop on it
+        # as missing, so it goes.  Only our XA decks are judged this way.
+        if re.match(r'XA\d+DK$', deck) and \
+                not os.path.exists(os.path.join(deckdir, '%s.%s' % (member, deck))) \
+                and deck not in dict(entries):
             continue
         seen.add(deck)
         merged.append((deck, desc))

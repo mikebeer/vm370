@@ -1,3 +1,9 @@
 ./ R 00495000          $ 00495100 100                                           
          LR    R5,R8          END OF LAST LARGER BLOCK: ADD,   XA0048DK         
          ALR   R5,R9          NOT LA: 16 MB IS NOT 0 (I-225)   XA0048DK         
+./ R 01087000          $ 01087100 100                                           
+DMKFRETR STM   R0,R15,FREESAVE ENTER FRETR - SAVE REGS         XA0048DK         
+         N     R1,XRIGHT24    CALLERS PASS A FLAG BYTE, I-230  XA0048DK         
+./ R 01101000          $ 01101010 010                                           
+         STM   R0,R15,FREESAVE       - SAVE REGISTERS          XA0048DK         
+         N     R1,XRIGHT24    CALLERS PASS A FLAG BYTE, I-230  XA0048DK         
