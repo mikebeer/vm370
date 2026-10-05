@@ -1,0 +1,6 @@
+./ R 00751000          $ 00751100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',WORKCYL PICK UP CYL AND PAGE POINTE  XA0048DK         
+./ R 00956000          $ 00956100 100                                           
+         SR    R0,R0           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R0,B'0111',WORKCYL GET CURRENT 'CCP' VALUE      XA0048DK         

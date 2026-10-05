@@ -1,0 +1,45 @@
+./ R 00329000          $ 00329100 100                                           
+         SR    R3,R3           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R3,B'0111',PAGSHR-PAGTABLE+1(R7) NAMED SYSTEM   XA0048DK         
+./ R 00689000          $ 00689100 100                                           
+         SR    R15,R15         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R15,B'0111',VMMADDR IS VMASSIST BEING USED????  XA0048DK         
+./ R 00756000          $ 00756100 100                                           
+         SR    R6,R6           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R6,B'0111',PAGSHR+1 NAMED SYSTEM PNTR.          XA0048DK         
+./ R 00778000          $ 00778100 100                                           
+         SR    R14,R14         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R14,B'0111',VMMADDR VM ASSIST ON FOR USER?      XA0048DK         
+./ R 00950000          $ 00950100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,B'0111',1(R4) ACCESS AP BACK POCKET          XA0048DK         
+./ R 01006000          $ 01006100 100                                           
+         SR    R5,R5           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R5,B'0111',CORSWPNT+1 GET SWAP TABLE ENTRY      XA0048DK         
+./ R 01195000          $ 01195100 100                                           
+         SR    R9,R9           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R9,B'0111',CORPGPNT+1 GET PTE POINTER           XA0048DK         
+./ R 01269000          $ 01269100 100                                           
+         SR    R5,R5           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R5,B'0111',CORSWPNT+1 SWAP TABLE ENTRY POINTER  XA0048DK         
+./ R 01412000          $ 01412100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',VMMADDR VM ASSIST ON FOR USER?       XA0048DK         
+./ R 01913000          $ 01913100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',VMMADDR VM ASSIST OF FOR USER?       XA0048DK         
+./ R 01921000          $ 01921100 100                                           
+         SR    R3,R3           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R3,B'0111',VMSEG+1 GET SEG ADDR                 XA0048DK         
+./ R 01936000          $ 01936100 100                                           
+         SR    R9,R9           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R9,B'0111',SEGPAGE+1 PAGE TABLE POINTER         XA0048DK         
+./ R 01943000          $ 01943100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',PAGSHR+1 NAMED SYSTEM POINTER?       XA0048DK         
+./ R 01982000          $ 01982100 100                                           
+         SR    R5,R5           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R5,B'0111',CORSWPNT+1 SWAP TABLE POINTER        XA0048DK         
+./ R 02054000          $ 02054100 100                                           
+         SR    R9,R9           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R9,B'0111',SEGPAGE+1 LOAD PAGE TBL POINTER      XA0048DK         

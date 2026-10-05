@@ -1,0 +1,6 @@
+./ R 00205000          $ 00205100 100                                           
+         SR    R4,R4           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R4,7,SAVEWRK1+1 LOAD ADDR PREVIOUS VMABLOK      XA0048DK         
+./ R 00467000          $ 00467100 100                                           
+         SR    R15,R15         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R15,B'0111',SAVEWRK1+1 LOAD ADDR PREV VMABLOK   XA0048DK         

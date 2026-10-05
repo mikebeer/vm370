@@ -1,0 +1,3 @@
+./ R 00840100          $ 00840200 100                                           
+         SR    R4,R4           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R4,B'0111',1(R2) GET PTR TO STACK BUFFER        XA0048DK         

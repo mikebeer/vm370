@@ -1,0 +1,9 @@
+./ R 00842000          $ 00842100 100                                           
+         SR    R6,R6           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R6,B'0111',CONCCW2+1-CONCCW1(R6) NEXT TASK      XA0048DK         
+./ R 00855000          $ 00855100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',CONCCW2+1-CONTASK(R2) NEXT TASK      XA0048DK         
+./ R 00892000          $ 00892100 100                                           
+         SR    R6,R6           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R6,B'0111',CONCCW2+1 ADDRESS OF NEXT TASK   @V  XA0048DK         

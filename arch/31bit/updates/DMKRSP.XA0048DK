@@ -1,0 +1,3 @@
+./ R 01219000          $ 01219100 100                                           
+         SR    R15,R15         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R15,B'0111',IOBCSW+1 CCW ADDRESS ZERO ?         XA0048DK         

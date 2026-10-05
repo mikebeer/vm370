@@ -1,0 +1,6 @@
+./ R 00177220          $ 00177221 001                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,VMMADDR    -> MICBLOK              HRC068  XA0048DK         
+./ R 00340180          $ 00340181 001                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,VMMADDR    -> MICBLOK              HRC068  XA0048DK         

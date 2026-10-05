@@ -6822,6 +6822,87 @@ def corecopy():
 # at virtual 6A (w104/w107, I-231).
 STRIP_SKIP = {'DMKLD00E', 'DMKVMI'}
 
+# I-233.  `ICM Rx,B'0111',FIELD+1` loads a 3-byte pointer and LEAVES BYTE 0 OF
+# Rx AS IT WAS; AMODE 24 never looked at it.  In AMODE 31 a register that
+# last held a packed word (count or flags in byte 0) then addresses storage
+# above 16 MB: PRG005 in DMKPTR RSPGLOOP at AUTOLOG1's LOGOFF (i240, w109),
+# `ICM R2,B'0111',PAGSHR+1` then `ICM R2,B'1111',SHRSEGCT-SHRTABLE(R2)`.
+# Every ICM-3 in the nucleus whose register is not provably clean -- no
+# SR/SLR/XR of it, no LA/LH/IC/SRL into it, within the previous eight
+# instructions -- gets `SR Rx,Rx` in front: ICM sets the condition code the
+# code then tests, so the SR changes nothing it reads.  The five it must not
+# touch are listed: three where the register IS clean by a path the rule
+# cannot see, and two (DMKCPS, DMKVDE) that build 'count || address' for
+# DMKFRET on purpose with SLL 24 first.  tools/strips.py kind icm3 is the
+# inventory (100 sites in nucleus modules; 59 get the SR).
+ICM3_SKIP = {('DMKPER', '00628000'),   # R1 came from L R1,PERADDR, an address
+             ('DMKRSE', '00508000'),   # R1 from SR + ICM two lines up
+             ('DMKVER', '00571000'),   # R1 from SLR + ICM
+             ('DMKCPS', '01358000'),   # SLL R3,24 then ICM: packed on purpose
+             ('DMKVDE', '00813000')}   # same
+
+def icm3cards():
+    sys.path.insert(0, TOOLS)
+    import strips
+    nuc = set()
+    for line in open('/home/claude/vmce/maintenance/files/194/CPLOAD.EXEC',
+                     errors='replace'):
+        for w in line.split():
+            if w.startswith(('DMK', 'HDK')) and len(w) >= 6:
+                nuc.add(w)
+    clear = re.compile(r"^\S*\s+(SR|SLR|XR)\s+(R?\d+),(R?\d+)\b")
+    skipops = re.compile(r"^\S*\s+(SPACE|EJECT|USING|DROP|AIF|ANOP)\b")
+    def reg(x):
+        return x if x.startswith('R') else 'R' + x
+    out = {}
+    for path in sorted(glob.glob(os.path.join(SRC, '*.ASSEMBLE'))):
+        mod = os.path.basename(path).split('.')[0]
+        if mod not in nuc or mod in STRIP_SKIP:
+            continue
+        sites = [r for r in strips.scan(path) if r['kind'] == 'icm3']
+        if not sites:
+            continue
+        L = [l.rstrip('\n') for l in open(path, errors='replace')]
+        bynum = {l[72:80].strip(): i for i, l in enumerate(L)}
+        for r in sites:
+            if (mod, r['seq']) in ICM3_SKIP or r['seq'] not in bynum:
+                continue
+            i = bynum[r['seq']]
+            t = L[i][:72]
+            m = re.search(r"\bICM\s+(R?\d+),(7|B'0111'),(\S+)", t)
+            if not m:
+                continue
+            rx = reg(m.group(1))
+            safe = False
+            for j in range(i - 1, max(i - 8, -1), -1):
+                p = L[j][:72]
+                if p.startswith('*') or not p.strip() or skipops.match(p):
+                    continue
+                mm = clear.match(p)
+                if mm and reg(mm.group(2)) == rx and reg(mm.group(3)) == rx:
+                    safe = True
+                    break
+                if re.match(r"^\S*\s+(L|LA|LH|LR|LM|IC|SLL|SRL|ICM)\s+%s\b" % rx, p) \
+                        or re.match(r"^\S*\s+(L|LA|LH|LR)\s+%s," % rx, p) \
+                        or re.match(r"^\S*\s+ICM\s+%s,(15|B'1111')," % rx, p):
+                    safe = bool(re.match(r"^\S*\s+(LA|LH|IC|SRL)\s+%s" % rx, p))
+                    break
+                w = p.split()
+                if len(w) > 1 and re.search(r"\b%s\b" % rx, w[1]):
+                    break
+            if safe:
+                continue
+            label = t.split()[0] if not t.startswith(' ') else ''
+            body = t[len(label):].strip() if label else t.strip()
+            parts = body.split(None, 2)
+            icm = '         %-5s %s' % (parts[0], parts[1])
+            if len(parts) > 2:
+                icm = ('%-30s %s' % (icm, parts[2].strip()))[:61].rstrip()
+            sr = ('%-30s CLEAN BYTE 0, I-233'
+                  % ('%-8s SR    %s,%s' % (label, rx, rx)))
+            out.setdefault(mod, []).append((r['seq'], [sr, icm]))
+    return out
+
 def stripdecks():
     sys.path.insert(0, TOOLS)
     import strips, replchk
@@ -7178,6 +7259,12 @@ def main():
         print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
               'OK' if not verify(path) else 'BAD'))
 
+    # I-233: ICM Rx,7 into a register whose byte 0 is not known clean.
+    for m, cards in icm3cards().items():
+        PSWMODS.setdefault(m, [])
+        have = {c[0] for c in PSWMODS[m]}
+        PSWMODS[m] = sorted(PSWMODS[m] + [c for c in cards if c[0] not in have],
+                            key=lambda c: int(c[0]))
     for m in sorted(PSWMODS):
         dk = datdeck(m, PSWMODS[m], ident=XA48)
         path = os.path.join(HERE, '%s.%s' % (m, XA48))

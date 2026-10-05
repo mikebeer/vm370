@@ -1,0 +1,3 @@
+./ R 01269000          $ 01269100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,IOBMISC2+1 GET ADDR. OF RESTART CCW STRIN  XA0048DK         

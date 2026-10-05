@@ -1,0 +1,12 @@
+./ R 00531000          $ 00531100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,DDRCUA1    LOAD 'FROM' DEVICE ADDRESS      XA0048DK         
+./ R 00535000          $ 00535100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,DDRCUA2    LOAD 'TO' ADDRESS               XA0048DK         
+./ R 00587000          $ 00587100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,MIHCUA1    LOAD PRIMARY ADDRESS            XA0048DK         
+./ R 00653950          $ 00653960 010                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,OBRCUA     YES, THIS IS CUA OF DEVICE   @  XA0048DK         

@@ -1,6 +1,9 @@
 ./ R 00495000          $ 00495100 100                                           
          LR    R5,R8          END OF LAST LARGER BLOCK: ADD,   XA0048DK         
          ALR   R5,R9          NOT LA: 16 MB IS NOT 0 (I-225)   XA0048DK         
+./ R 00781000          $ 00781100 100                                           
+         SR    R15,R15         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R15,B'0111',DMKFREAP+1 WAS BACK POCKET REFILLE  XA0048DK         
 ./ R 01087000          $ 01087100 100                                           
 DMKFRETR STM   R0,R15,FREESAVE ENTER FRETR - SAVE REGS         XA0048DK         
          N     R1,XRIGHT24    CALLERS PASS A FLAG BYTE, I-230  XA0048DK         

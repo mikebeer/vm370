@@ -1,0 +1,3 @@
+./ R 00999000          $ 00999100 100                                           
+         SR    R4,R4           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R4,7,ACNTNEXT+1 GET ADD FRON THE TIC OF NEXT R  XA0048DK         

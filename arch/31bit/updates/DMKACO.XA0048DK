@@ -1,0 +1,3 @@
+./ R 00751000          $ 00751100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,7,ACNTNEXT+1 GET ADD OF NEXT BUFFER, IS IT   XA0048DK         

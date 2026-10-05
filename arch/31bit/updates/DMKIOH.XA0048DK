@@ -1,0 +1,12 @@
+./ R 00555000          $ 00555100 100                                           
+UPPAG    SR    R14,R14         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R14,B'0111',WORKCYL RETRIEVE CURRENT PAGE 'CCP  XA0048DK         
+./ R 00591000          $ 00591100 100                                           
+         SR    R3,R3           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R3,B'0111',WORKCYL SAVE UPDATED WORKCYL VALUE   XA0048DK         
+./ R 00631000          $ 00631100 100                                           
+         SR    R6,R6           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R6,B'0111',RDVBUFF FRAME RECORD BUFFER ADDRESS  XA0048DK         
+./ R 00796000          $ 00796100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,B'0111',RDVBUFF ADDRESS OF 2K BUFFER         XA0048DK         

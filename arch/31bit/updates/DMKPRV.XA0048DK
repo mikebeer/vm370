@@ -1,0 +1,3 @@
+./ R 00777000          $ 00777100 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',VMMADDR ASSIST ENABLED?              XA0048DK         

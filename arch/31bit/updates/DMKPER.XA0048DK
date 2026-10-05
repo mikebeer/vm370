@@ -1,0 +1,6 @@
+./ R 00850000          $ 00850100 100                                           
+         SR    R0,R0           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R0,B'0111',PEREXADD LOAD PER ADDRESS            XA0048DK         
+./ R 01188000          $ 01188100 100                                           
+         SR    R0,R0           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R0,B'0111',PEREXADD INSERT ADDR OF EX'D ISN     XA0048DK         

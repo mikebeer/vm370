@@ -1,0 +1,3 @@
+./ R 01101000          $ 01101100 100                                           
+         SR    R7,R7           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R7,7,1(R7)      GET PAGE TABLE ADDRESS          XA0048DK         

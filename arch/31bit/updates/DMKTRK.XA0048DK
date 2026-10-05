@@ -1,3 +1,6 @@
+./ R 00355000          $ 00355100 100                                           
+         SR    R14,R14         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R14,7,RCWPNT+1  GET NEXT RCWTASK                XA0048DK         
 ./ R 00360000          $ 00360100 100                                           
          L     R15,RCWADDR    GET FILE MASK POINTER.           XA0048DK         
          N     R15,XRIGHT24   NO COMMAND CODE (I-232)          XA0048DK         

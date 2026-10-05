@@ -1,0 +1,12 @@
+./ R 00666000          $ 00666100 100                                           
+         SR    R15,R15         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R15,B'0111',VMMADDR GET ADDRESS OF MICBLOK      XA0048DK         
+./ R 00781000          $ 00781100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,7,VMMICRO+1  IS THERE A MICBLOK ACTIVE ? @V  XA0048DK         
+./ R 00907000          $ 00907100 100                                           
+         SR    R15,R15         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R15,B'0111',VMMADDR DOES MICBLOK STILL EXIST?   XA0048DK         
+./ R 00940000          $ 00940100 100                                           
+         SR    R1,R1           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R1,B'0111',VMMADDR CURRENTLY USING VM ASSIST?   XA0048DK         

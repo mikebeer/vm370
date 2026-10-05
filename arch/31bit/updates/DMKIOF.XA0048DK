@@ -1,0 +1,3 @@
+./ R 01174100          $ 01174200 100                                           
+         SR    R14,R14         CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R14,B'0111',WORKCYL CURRENT RECORDING CYL & PA  XA0048DK         

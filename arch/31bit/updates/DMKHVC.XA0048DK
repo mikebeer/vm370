@@ -1,0 +1,6 @@
+./ R 00836100          $ 00836200 100                                           
+         SR    R7,R7           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R7,B'0111',IOBCAW+1 ADDRESS OF CCW'S            XA0048DK         
+./ R 00902100          $ 00902200 100                                           
+         SR    R2,R2           CLEAN BYTE 0, I-233             XA0048DK         
+         ICM   R2,B'0111',1(R6) TIC TO ADDRESS                 XA0048DK         
