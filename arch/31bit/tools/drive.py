@@ -271,6 +271,11 @@ def drive(ce, name, steps, herc='hercules', hold=False):
                     continue
                 print(tail(log))
                 break
+            if 'settle' in st:
+                # The pattern came, and the system still needs a moment:
+                # DMKCPI966I precedes AUTOLOG1's logons, and a CP DISC typed
+                # into that is swallowed (I-112, c1 19:00).
+                time.sleep(st['settle'])
         else:
             time.sleep(st.get('settle', 2))
             print('%s %-42s settled %ss' % (stamp(), line[:42], st.get('settle', 2)))

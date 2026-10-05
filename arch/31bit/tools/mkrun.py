@@ -162,8 +162,11 @@ EXPECTS = [
     # The two console lines that follow are the rc's answers to that prompt
     # and cost nothing when there is none.
     (r'^ipl ',                r'DMKCPI966I|Start \(\(Warm',        180),
-    (r'^/$',                  r'Ready|Start \(\(Warm|AUTO LOGON|CP', 15),
-    (r'^/cold$',              r'DMKCPI966I|AUTO LOGON|\?CP|CP',      15),
+    (r'^/$',                  r'Ready|Start \(\(Warm|AUTO LOGON|\?CP', 15),
+    # 966I only: 'CP' matched 'DMKCPI957I Storage size' and the CP DISC that
+    # followed went into a system still initialising (c1 19:00, I-112).  The
+    # S/370 build boot answers a bare '/cold' with '?CP: COLD'.
+    (r'^/cold$',              r'DMKCPI966I|\?CP',                   90),
     (r'^/cp disc',            r'DISCONNECT AT',                     60),
     (r'^/logon ',             r'Ready|LOGON AT|RECONNECT',          180),
     (r'^/cp purge',           r'Ready',                             60),
@@ -195,6 +198,8 @@ def steps_from_rc(text):
         if line.startswith('pause '):
             if pending is not None and 'expect' not in pending:
                 pending['settle'] = int(line.split()[1])
+            elif pending is not None and pending['send'] == '/cold':
+                pending['settle'] = 8       # AUTOLOG1's logons after 966I
             continue
         if line == 'exit':
             steps.append({'send': 'exit'})
