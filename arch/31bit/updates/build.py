@@ -4227,6 +4227,18 @@ PSWMODS = {
         ('01916000', ["MCKPSW   DC    A(XMODEON),X'80',AL3(DMKMCHIN) MCK, AMODE 31"]),
         ('01917000', ["RESTPSW  DC    A(MCHEKENB),X'80',AL3(DMKPSADU) RESTART, 31"]),
     ],
+    # I-225.  DMKFREE's FREE08 computed the END of the last larger free block
+    # with LA R5,0(R8,R9); for the block that reaches 16 MB that is 01000000,
+    # which LA in AMODE 24 made 0, and SR R5,R2 then gave the block's address
+    # as a NEGATIVE number -- FFFFF938 -- whose low 24 bits were right.  Every
+    # savearea DMKSVC chained at IPL was one of these, and CP's first SVC in
+    # AMODE 31 took an addressing exception at 7FFFF938 (w68).  Add, don't LA.
+    'DMKFRE': [
+        ('00495000', [
+            "         LR    R5,R8          END OF LAST LARGER BLOCK: ADD,",
+            "         ALR   R5,R9          NOT LA: 16 MB IS NOT 0 (I-225)",
+        ]),
+    ],
     'DMKMCH': [
         ('01252000', ["         DC    X'80',AL3(ENBHARD) AMODE 31 (I-224)"]),
         ('01255000', ["         DC    X'80',AL3(MCHTERM2) HARD MCKS IN TERM, 31"]),
