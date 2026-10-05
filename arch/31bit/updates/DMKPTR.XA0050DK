@@ -1,0 +1,9 @@
+./ R 00371000          $ 00371100 100                                           
+         L     R5,CORSWPNT    RESTORE SWAP TABLE ADDRESS       XA0050DK         
+         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         
+./ R 00826000          $ 00826100 100                                           
+         L     R5,CORSWPNT    PICK-UP SWAPTABLE ENTRY          XA0050DK         
+         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         
+./ R 01206000          $ 01206100 100                                           
+         L     R5,CORSWPNT    SWAP TABLE POINTER               XA0050DK         
+         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         

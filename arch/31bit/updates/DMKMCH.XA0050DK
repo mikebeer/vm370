@@ -1,0 +1,3 @@
+./ R 00618000          $ 00618100 100                                           
+         L     R3,CORSWPNT    THE SWPTABLE ENTRY ADDRESS       XA0050DK         
+         N     R3,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         

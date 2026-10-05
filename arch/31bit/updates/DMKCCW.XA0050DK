@@ -1,0 +1,6 @@
+./ R 00971000          $ 00971100 100                                           
+         L     R15,CORSWPNT-CORTABLE(,R15) POINTER TO SWAP     XA0050DK         
+         N     R15,XRIGHT24   BYTE 0 IS CORFLAG (I-236)        XA0050DK         
+./ R 03582000          $ 03582100 100                                           
+         L     R15,CORSWPNT-CORTABLE(,R15) POINTER TO SWAP     XA0050DK         
+         N     R15,XRIGHT24   BYTE 0 IS CORFLAG (I-236)        XA0050DK         

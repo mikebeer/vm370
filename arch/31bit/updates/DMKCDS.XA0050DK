@@ -1,0 +1,3 @@
+./ R 00890000          $ 00890010 010                                           
+         L     R14,CORSWPNT-CORTABLE(,R15) SWAP TABLE ENTRY    XA0050DK         
+         N     R14,XRIGHT24   BYTE 0 IS CORFLAG (I-236)        XA0050DK         

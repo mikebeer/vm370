@@ -1,0 +1,3 @@
+./ R 00284000          $ 00284001 001                                           
+         L     R5,CORSWPNT    AND SWPTABLE POINTER             XA0050DK         
+         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         

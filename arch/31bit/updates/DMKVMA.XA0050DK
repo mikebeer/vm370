@@ -1,0 +1,8 @@
+./ R 00280100          $ 00280200 100                                           
+         L     R2,CORSWPNT-CORTABLE(,R2) LOAD SWAP TABLE PTR   XA0050DK         
+         N     R2,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         
+./ R 00456000 00458000 $ 00456100 100                                           
+         L     R14,CORSWPNT   GET ADDRESS OF SWPTABLE ENTRY    XA0050DK         
+         N     R14,XRIGHT24   BYTE 0 IS CORFLAG (I-236)        XA0050DK         
+         LTR   R13,R13        ENTERED VIA CPEXBLOK             XA0050DK         
+         BNZ   RETFRAM2       NO, SKIP RESETTING BITS          XA0050DK         

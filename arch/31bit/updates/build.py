@@ -95,6 +95,7 @@ XA46 = 'XA0046DK'
 XA47 = 'XA0047DK'
 XA48 = 'XA0048DK'
 XA49 = 'XA0049DK'
+XA50 = 'XA0050DK'
 
 
 def psa():
@@ -4373,6 +4374,50 @@ TRACESUBS = {
                       "         SRL   R15,8          LEAVE THE CC ALONE (I-229)"]),
     ],
 }
+# I-236.  CORSWPNT is a fullword whose byte 0 is CORFLAG: the CORTABLE entry's
+# status flags share the word with the swap-table pointer ("ORG CORSWPNT /
+# CORFLAG DS 1X").  CP reads the pointer with ICM Rx,B'0111',CORSWPNT+1 at
+# most sites -- and with a plain L at these thirteen, where AMODE 24 made the
+# flag byte invisible.  In AMODE 31 a page on the flush list (CORFLUSH X'20')
+# gave DMKPTR's steal path R5 = 20FD94F8 and the page-out completion NI on
+# SWPFLAG took an addressing exception (PRG005, w121: IPL 00C of VMFLOAD's
+# deck into a 16 MB MAINT, the first workload to page under this CP).  The
+# seventh idiom the strip sweep cannot see: a flag-bearing pointer word
+# loaded whole.  Found by `grep "L  *R[0-9]*,CORSWPNT"` over the nucleus;
+# CORFPNT/CORBPNT/CORPGPNT carry no flags.  DMKVMA 00457000 sits between an
+# LTR and its BNZ, so the N moves ahead of the LTR there.
+CORSWMODS = {
+    'DMKATS': [('00809000', ["         L     R5,CORSWPNT    GET ADDRESS OF SWPTABLE",
+                             "         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKCCW': [('00971000', ["         L     R15,CORSWPNT-CORTABLE(,R15) POINTER TO SWAP",
+                             "         N     R15,XRIGHT24   BYTE 0 IS CORFLAG (I-236)"]),
+               ('03582000', ["         L     R15,CORSWPNT-CORTABLE(,R15) POINTER TO SWAP",
+                             "         N     R15,XRIGHT24   BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKCDS': [('00890000', ["         L     R14,CORSWPNT-CORTABLE(,R15) SWAP TABLE ENTRY",
+                             "         N     R14,XRIGHT24   BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKDGD': [('00516000', ["         L     R5,CORSWPNT-CORTABLE(,R5) POINTER TO SWAP",
+                             "         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKMCH': [('00618000', ["         L     R3,CORSWPNT    THE SWPTABLE ENTRY ADDRESS",
+                             "         N     R3,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKPTR': [('00371000', ["         L     R5,CORSWPNT    RESTORE SWAP TABLE ADDRESS",
+                             "         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"]),
+               ('00826000', ["         L     R5,CORSWPNT    PICK-UP SWAPTABLE ENTRY",
+                             "         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"]),
+               ('01206000', ["         L     R5,CORSWPNT    SWAP TABLE POINTER",
+                             "         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKRPA': [('00284000', ["         L     R5,CORSWPNT    AND SWPTABLE POINTER",
+                             "         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKUDU': [('00274000', ["         L     R7,CORSWPNT    R7 = SWAPTABLE ENTRY ADDRESS",
+                             "         N     R7,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"])],
+    'DMKVMA': [('00280100', ["         L     R2,CORSWPNT-CORTABLE(,R2) LOAD SWAP TABLE PTR",
+                             "         N     R2,XRIGHT24    BYTE 0 IS CORFLAG (I-236)"]),
+               ('00456000', '00458000',
+                            ["         L     R14,CORSWPNT   GET ADDRESS OF SWPTABLE ENTRY",
+                             "         N     R14,XRIGHT24   BYTE 0 IS CORFLAG (I-236)",
+                             "         LTR   R13,R13        ENTERED VIA CPEXBLOK",
+                             "         BNZ   RETFRAM2       NO, SKIP RESETTING BITS"])],
+}
+
 PSWMODS = {
     # I-225.  DMKFREE's FREE08 computed the END of the last larger free block
     # with LA R5,0(R8,R9); for the block that reaches 16 MB that is 01000000,
@@ -7389,6 +7434,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
         print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(CORSWMODS):
+        dk = datdeck(m, CORSWMODS[m], ident=XA50)
+        path = os.path.join(HERE, '%s.%s' % (m, XA50))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA50, 'CORSWPNT LOADED WHOLE: BYTE 0 IS CORFLAG (I-236)')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA50, n,
               'OK' if not verify(path) else 'BAD'))
 
     # I-233: ICM Rx,7 into a register whose byte 0 is not known clean.

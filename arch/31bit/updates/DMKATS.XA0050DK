@@ -1,0 +1,3 @@
+./ R 00809000          $ 00809100 100                                           
+         L     R5,CORSWPNT    GET ADDRESS OF SWPTABLE          XA0050DK         
+         N     R5,XRIGHT24    BYTE 0 IS CORFLAG (I-236)        XA0050DK         
