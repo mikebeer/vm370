@@ -187,9 +187,18 @@ EXPECTS = [
 ]
 
 
+# A step nothing after it can survive: when its pattern does not come, drive
+# stops the run there and shuts CP down, instead of typing the forty steps
+# that follow into whatever is on the console -- 40 minutes of timeouts, and
+# a VMFLOAD and IPL 00C issued as OPERATOR (c1 19:00).
+FATAL = (r'^/cp disc', r'^/logon ', r'^/ipl 190', r'^/cpacc',
+         r'^/exec vmsetup cms')
+
+
 def steps_from_rc(text):
     """drive.py steps for an rc: the pauses become expects (EXPECTS above);
-    a command no pattern knows keeps its pause as a settle."""
+    a command no pattern knows keeps its pause as a settle.  FATAL steps
+    carry no `cont`, so drive aborts the run when they fail."""
     steps, pending = [], None
     for raw in text.split('\n'):
         line = raw.strip()
@@ -210,7 +219,8 @@ def steps_from_rc(text):
             if re.match(pat, line):
                 st['expect'] = exp
                 st['timeout'] = to
-                st['cont'] = True
+                if not any(re.match(f, line) for f in FATAL):
+                    st['cont'] = True
                 break
         steps.append(st)
         pending = st
