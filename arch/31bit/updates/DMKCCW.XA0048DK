@@ -1,0 +1,6 @@
+./ R 00793000          $ 00793100 100                                           
+         L     R9,RCWADDR     R9 = POINTER TO NEXT CCWS        XA0048DK         
+         N     R9,XRIGHT24    NO COMMAND CODE (I-226)          XA0048DK         
+./ R 04086000          $ 04086100 100                                           
+TICSCAN5 L     R9,RCWADDR     SET R9 TO ADDRESS IN CCW         XA0048DK         
+         N     R9,XRIGHT24    NO COMMAND CODE (I-226)          XA0048DK         

@@ -4239,6 +4239,43 @@ PSWMODS = {
             "         ALR   R5,R9          NOT LA: 16 MB IS NOT 0 (I-225)",
         ]),
     ],
+    # I-226.  A CCW's address word carries the command code in byte 0, and
+    # CP loads it whole -- L R3,RCWADDR -- then uses the register as a BASE,
+    # which AMODE 24 forgave.  DMKDGD's DGUNLOK1 did exactly that (R3 =
+    # 06FFCBBC, L R2,0(,R3), addressing exception, PRG005 at AUTOLOG1's IPL
+    # CMS, w71).  The strip sweep saw only the LA R2,0(,R3) copy beside it.
+    # Every L of RCWADDR in the nucleus that is not followed by its own strip
+    # gets one; the CCW address is a 24-bit field by definition.
+    'DMKCCW': [
+        ('00793000', [
+            "         L     R9,RCWADDR     R9 = POINTER TO NEXT CCWS",
+            "         N     R9,XRIGHT24    NO COMMAND CODE (I-226)",
+        ]),
+        ('04086000', [
+            "TICSCAN5 L     R9,RCWADDR     SET R9 TO ADDRESS IN CCW",
+            "         N     R9,XRIGHT24    NO COMMAND CODE (I-226)",
+        ]),
+    ],
+    'DMKDGD': [
+        ('00254000', [
+            "         L     R1,RCWADDR     DATA ADDRESS INTO R1, AND",
+            "         N     R1,XRIGHT24    NO COMMAND CODE (I-226)",
+        ]),
+        ('00286000', [
+            "         L     R1,RCWADDR     DATA ADDRESS INTO R1, AND",
+            "         N     R1,XRIGHT24    NO COMMAND CODE (I-226)",
+        ]),
+        ('00646000', [
+            "DGUNLOK1 L     R3,RCWADDR     ADDRESS INTO R3 (CC STILL SET)",
+            "         N     R3,XRIGHT24    R3 IS A BASE BELOW (I-226)",
+        ]),
+    ],
+    'DMKDIB': [
+        ('01063000', [
+            "         L     R9,RCWADDR     GET NEXT CCW ADDRESS",
+            "         N     R9,XRIGHT24    NO COMMAND CODE (I-226)",
+        ]),
+    ],
     'DMKMCH': [
         ('01252000', ["         DC    X'80',AL3(ENBHARD) AMODE 31 (I-224)"]),
         ('01255000', ["         DC    X'80',AL3(MCHTERM2) HARD MCKS IN TERM, 31"]),
