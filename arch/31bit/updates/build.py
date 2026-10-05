@@ -4383,8 +4383,21 @@ SHRMODS = {
     # the PTE copy is valid and DMKBLDRL's CHKPAGE abends (BLD002) on any
     # valid PTE when it frees the table at logoff.  PARTIAL keeps them.
     'DMKPGS': [
+        # I-223: the release walk's three TRANS take clean page addresses
+        # that CP itself computed over the whole machine; without AMODE31
+        # DMKPTRAN masked 01000000 to 0 and the walk never left 16 MB (CP
+        # looped at RELLOOP on the IPL after a 32M session, w61).
+        ('00822500', [
+            "         TRANS 2,1,OPT=(DEFER,AMODE31) PAGE NOT IN TRANSIT?",
+        ]),
+        ('00962000', [
+            "         TRANS 7,1,OPT=(DEFER,AMODE31) ENQUEUE ON SEGMENT",
+        ]),
         ('01066000', [
             "         BO    SHRDROP        YES -- DROP OUR COPY OF IT",
+        ]),
+        ('01071000', [
+            "         TRANS 7,1,OPT=(DEFER,AMODE31) ENQUEUE ON PAGE",
         ]),
         ('01248000', [
             "         B     RELEXIT        RETURN TO CALLER",

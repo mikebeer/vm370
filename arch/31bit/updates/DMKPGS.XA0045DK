@@ -1,5 +1,11 @@
+./ R 00822500          $ 00822600 100                                           
+         TRANS 2,1,OPT=(DEFER,AMODE31) PAGE NOT IN TRANSIT?    XA0045DK         
+./ R 00962000          $ 00962100 100                                           
+         TRANS 7,1,OPT=(DEFER,AMODE31) ENQUEUE ON SEGMENT      XA0045DK         
 ./ R 01066000          $ 01066100 100                                           
          BO    SHRDROP        YES -- DROP OUR COPY OF IT       XA0045DK         
+./ R 01071000          $ 01071100 100                                           
+         TRANS 7,1,OPT=(DEFER,AMODE31) ENQUEUE ON PAGE         XA0045DK         
 ./ R 01248000          $ 01248010 010                                           
          B     RELEXIT        RETURN TO CALLER                 XA0045DK         
 SHRDROP  TM    SAVEWRK1,PARTIAL KEEP THE NAMED SYSTEM?         XA0045DK         
