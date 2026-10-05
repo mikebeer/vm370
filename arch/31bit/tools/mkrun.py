@@ -157,9 +157,13 @@ def card(text, src=''):
 # the timeout is only a cap -- generous, because reaching it is a failure
 # the post-checks (incomplete, asmchk) report, not a pacing choice.
 EXPECTS = [
-    (r'^ipl ',                r'Start \(\(Warm',                   180),
-    (r'^/$',                  r'Start \(\(Warm|Ready',             60),
-    (r'^/cold$',              r'DMKCPI966I',                        120),
+    # A BUILD boots CE's own S/370 nucleus, which asks nothing and prints
+    # DMKCPI966I within a second; the ESA/390 nucleus asks 'Start ((Warm'.
+    # The two console lines that follow are the rc's answers to that prompt
+    # and cost nothing when there is none.
+    (r'^ipl ',                r'DMKCPI966I|Start \(\(Warm',        180),
+    (r'^/$',                  r'Ready|Start \(\(Warm|AUTO LOGON|CP', 15),
+    (r'^/cold$',              r'DMKCPI966I|AUTO LOGON|\?CP|CP',      15),
     (r'^/cp disc',            r'DISCONNECT AT',                     60),
     (r'^/logon ',             r'Ready|LOGON AT|RECONNECT',          180),
     (r'^/cp purge',           r'Ready',                             60),
@@ -172,7 +176,7 @@ EXPECTS = [
     (r'^/vmfasm',             r'Ready',                             900),
     (r'^/asmdmk',             r'Ready',                             1800),
     (r'^/vmfload',            r'Ready|SYSTEM LOAD DECK COMPLETE',   600),
-    (r'^/cp shutdown',        r'HHCCP011I|SHUTDOWN COMPLETE',       120),
+    (r'^/cp shutdown',        r'HHCCP011I|SHUTDOWN COMPLETE|SHUTDOWN', 40),
     (r'^/cp ipl 00c',         r'00000012|DISABLED WAIT',            300),
     (r'^/cp ',                r'Ready',                             120),
 ]
