@@ -4330,6 +4330,30 @@ PSWMODS = {
             "         N     R3,XRIGHT24    R3 IS A BASE BELOW (I-226)",
         ]),
     ],
+    # I-232.  More of the I-226 class, found by `grep 'L  *R.*,RCWADDR'`
+    # once IPL 190 reached DMKUNT's IDA path (w109, PRG005 at UNT+E2):
+    # every load of RCWADDR that is then used as a base without a strip
+    # of its own.  DMKVCA is the virtual CTCA, fixed for completeness.
+    'DMKUNT': [
+        ('00222450', ["         L     R5,RCWADDR     GET DATA ADDRESS IN THE CCW",
+                      "         N     R5,XRIGHT24    IDASET USES IT AS A BASE, I-232"]),
+        ('00378000', ["UNREL5   L     R5,RCWADDR     RESTORE R5 (IN CASE LOST)",
+                      "         N     R5,XRIGHT24    NO COMMAND CODE (I-232)"]),
+    ],
+    'DMKTRK': [
+        ('00360000', ["         L     R15,RCWADDR    GET FILE MASK POINTER.",
+                      "         N     R15,XRIGHT24   NO COMMAND CODE (I-232)"]),
+        ('00507000', ["         L     R4,RCWADDR     FOLLOW TIC",
+                      "         N     R4,XRIGHT24    NO COMMAND CODE (I-232)"]),
+    ],
+    'DMKVCA': [
+        ('00361000', ["         L     R9,RCWADDR     LOAD NEXT CCW ADDRESS",
+                      "         N     R9,XRIGHT24    NO COMMAND CODE (I-232)"]),
+        ('01171000', ["         L     R9,RCWADDR     TAKE THE CCW TRANSFER",
+                      "         N     R9,XRIGHT24    NO COMMAND CODE (I-232)"]),
+        ('01604000', ["         L     R1,RCWADDR     GET ADDRESS OF FIRST IDAW",
+                      "         N     R1,XRIGHT24    NO COMMAND CODE (I-232)"]),
+    ],
     'DMKDIB': [
         ('01063000', [
             "         L     R9,RCWADDR     GET NEXT CCW ADDRESS",

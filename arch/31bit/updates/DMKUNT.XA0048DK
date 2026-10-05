@@ -1,0 +1,6 @@
+./ R 00222450          $ 00222460 010                                           
+         L     R5,RCWADDR     GET DATA ADDRESS IN THE CCW      XA0048DK         
+         N     R5,XRIGHT24    IDASET USES IT AS A BASE, I-232  XA0048DK         
+./ R 00378000          $ 00378100 100                                           
+UNREL5   L     R5,RCWADDR     RESTORE R5 (IN CASE LOST)        XA0048DK         
+         N     R5,XRIGHT24    NO COMMAND CODE (I-232)          XA0048DK         

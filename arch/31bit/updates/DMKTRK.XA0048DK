@@ -1,0 +1,6 @@
+./ R 00360000          $ 00360100 100                                           
+         L     R15,RCWADDR    GET FILE MASK POINTER.           XA0048DK         
+         N     R15,XRIGHT24   NO COMMAND CODE (I-232)          XA0048DK         
+./ R 00507000          $ 00507100 100                                           
+         L     R4,RCWADDR     FOLLOW TIC                       XA0048DK         
+         N     R4,XRIGHT24    NO COMMAND CODE (I-232)          XA0048DK         
