@@ -4226,6 +4226,47 @@ PSWMODS_CPI = [
         ('01916000', ["MCKPSW   DC    A(XMODEON),X'80',AL3(DMKMCHIN) MCK, AMODE 31"]),
         ('01917000', ["RESTPSW  DC    A(MCHEKENB),X'80',AL3(DMKPSADU) RESTART, 31"]),
 ]
+# I-229.  The trace subroutines are entered with BAL and read the caller's
+# condition code out of byte 0 of the LINK register: STCM Rlink,8 into the
+# trace entry and SPM Rlink to restore it, then B 2(,Rlink) over the inline
+# trace code.  In AMODE 31 BAL stores bit 0 and a 31-bit address, so every
+# traced HIO/TIO/SIO came back CC 0: DMKCPI's IPL device check saw every
+# DMKRIO device as present, cleared RDEVDISA on the 2701 lines Hercules
+# lacks, and the first ENABLE drove an SSCH at subsystem id 0 (PRG021,
+# w84).  IPM at entry puts the CC where byte 0 held it; the link is then
+# masked with XRIGHT24 wherever it is used as an address.
+TRACESUBS = {
+    'DMKCPI': [
+        ('01593000', ["TRACESUB IPM   R1             CC INTO THE LINK (I-229)"]),
+        ('01595000', ["         LR    R0,R1          THE LINK AS AN ADDRESS",
+                      "         N     R0,XRIGHT24    WITHOUT THE CC BITS (I-229)",
+                      "         IC    R0,N0(R0)      LOAD THE TRACE CODE"]),
+        ('01607000', ["         SPM   R1             RESTORE CONDITION CODE",
+                      "         N     R1,XRIGHT24    LINK AS AN ADDRESS (I-229)"]),
+    ],
+    'DMKCNS': [
+        ('01580000', ["CNTRACE  IPM   R15            CC INTO THE LINK (I-229)"]),
+        ('01584100', ["         LR    R4,R15         THE LINK AS AN ADDRESS",
+                      "         N     R4,XRIGHT24    WITHOUT THE CC BITS (I-229)",
+                      "         IC    R4,0(,R4)      LOAD ENTRY TYPE FLAG"]),
+        ('01600000', ["         SPM   R15            RESET COND. CODE",
+                      "         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)"]),
+    ],
+    'DMKIOS': [
+        ('01721000', ["TRACESUB IPM   R15            CC INTO THE LINK (I-229)",
+                      "         TM    TRACFLG2,TRACBEF     TRACING ACTIVE?"]),
+        ('01723000', ["         LR    R4,R15         THE LINK AS AN ADDRESS",
+                      "         N     R4,XRIGHT24    WITHOUT THE CC BITS (I-229)",
+                      "         IC    R4,0(R4)       R4 GETS TRACE-CODE FROM CALLER"]),
+        ('01737000', ["         SPM   R15            RESTORE CONDITION CODE",
+                      "         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)"]),
+    ],
+    'DMKVSJ': [
+        ('00363000', ["HIOTRACE IPM   R15            CC INTO THE LINK (I-229)"]),
+        ('00377000', ["         SPM   R15            RESET COND CODE",
+                      "         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)"]),
+    ],
+}
 PSWMODS = {
     # I-225.  DMKFREE's FREE08 computed the END of the last larger free block
     # with LA R5,0(R8,R9); for the block that reaches 16 MB that is 01000000,
@@ -4284,10 +4325,13 @@ PSWMODS = {
     # (XAOPS) puts CC and mask in the same bits in either mode.  The BALR
     # Rx,0 sites that only ESTABLISH ADDRESSABILITY are left: a base
     # register ignores bit 0.  tools/strips.py lists both kinds.
-    'DMKCPI': sorted(PSWMODS_CPI + [
+    'DMKCPI': sorted(PSWMODS_CPI + TRACESUBS['DMKCPI'] + [
         ('00510000', ["         IPM   R15            SET CONDITION CODE IN REG"]),
         ('00530000', ["         IPM   R15            SAVE CC IN CASE OF ERROR"]),
     ], key=lambda c: int(c[0])),
+    'DMKCNS': TRACESUBS['DMKCNS'],
+    'DMKIOS': TRACESUBS['DMKIOS'],
+    'DMKVSJ': TRACESUBS['DMKVSJ'],
     'DMKCQR': [
         ('00595000', ["         IPM   R15            CC BITS IN REG (I-228)"]),
     ],

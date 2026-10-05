@@ -2,6 +2,15 @@
          IPM   R15            SET CONDITION CODE IN REG        XA0048DK         
 ./ R 00530000          $ 00530100 100                                           
          IPM   R15            SAVE CC IN CASE OF ERROR         XA0048DK         
+./ R 01593000          $ 01593100 100                                           
+TRACESUB IPM   R1             CC INTO THE LINK (I-229)         XA0048DK         
+./ R 01595000          $ 01595100 100                                           
+         LR    R0,R1          THE LINK AS AN ADDRESS           XA0048DK         
+         N     R0,XRIGHT24    WITHOUT THE CC BITS (I-229)      XA0048DK         
+         IC    R0,N0(R0)      LOAD THE TRACE CODE              XA0048DK         
+./ R 01607000          $ 01607100 100                                           
+         SPM   R1             RESTORE CONDITION CODE           XA0048DK         
+         N     R1,XRIGHT24    LINK AS AN ADDRESS (I-229)       XA0048DK         
 ./ R 01911000          $ 01911100 100                                           
 CPIPSWS  DC    A(MCHEKENB),X'80',AL3(DMKPSAEX) EXT, AMODE 31   XA0048DK         
 ./ R 01912000          $ 01912100 100                                           

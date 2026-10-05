@@ -1,0 +1,9 @@
+./ R 01580000          $ 01580100 100                                           
+CNTRACE  IPM   R15            CC INTO THE LINK (I-229)         XA0048DK         
+./ R 01584100          $ 01584200 100                                           
+         LR    R4,R15         THE LINK AS AN ADDRESS           XA0048DK         
+         N     R4,XRIGHT24    WITHOUT THE CC BITS (I-229)      XA0048DK         
+         IC    R4,0(,R4)      LOAD ENTRY TYPE FLAG             XA0048DK         
+./ R 01600000          $ 01600100 100                                           
+         SPM   R15            RESET COND. CODE                 XA0048DK         
+         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)       XA0048DK         

@@ -1,0 +1,10 @@
+./ R 01721000          $ 01721100 100                                           
+TRACESUB IPM   R15            CC INTO THE LINK (I-229)         XA0048DK         
+         TM    TRACFLG2,TRACBEF     TRACING ACTIVE?            XA0048DK         
+./ R 01723000          $ 01723100 100                                           
+         LR    R4,R15         THE LINK AS AN ADDRESS           XA0048DK         
+         N     R4,XRIGHT24    WITHOUT THE CC BITS (I-229)      XA0048DK         
+         IC    R4,0(R4)       R4 GETS TRACE-CODE FROM CALLER   XA0048DK         
+./ R 01737000          $ 01737100 100                                           
+         SPM   R15            RESTORE CONDITION CODE           XA0048DK         
+         N     R15,XRIGHT24   LINK AS AN ADDRESS (I-229)       XA0048DK         
