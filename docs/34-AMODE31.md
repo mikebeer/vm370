@@ -187,9 +187,45 @@ unchanged. Known cosmetics: `d 1ffffff.10` prints its range in 6 hex digits;
 `IPL 190` in a 15M machine is CMS's own `DMSINI260T` (CMS loads high).
 
 What step 2 does not do: real storage above 16 MB (M4: format-1 CCWs, the
-packed `count || address` words, `XPAGNUM`); 31-bit guests (step 3: the PSA
-stub tests the VMBLOK mode flag and skips the mask); the 256 MB per-VM ceiling
-(I-185).
+packed `count || address` words, `XPAGNUM`); 31-bit guests (step 3); the
+256 MB per-VM ceiling (I-185).
+
+## Step 3 (scoped 5 October): a guest in 31-bit mode
+
+A guest with PSW bit 32 on runs in AMODE 31 on the hardware the moment
+DMKDSP loads its PSW; everything else is CP's simulation of that guest, which
+assumes a 24-bit machine in exactly the places the sweep touched. Measured:
+
+- **PSW validity.** DMKDSP `GETMASK` rejects any bit in `VMPSW+4` (`TM
+  VMPSW+4,X'FF'`, 01342000); DMKPRV's LPSW (`CLI VMPSW+4,0`, 00741000) and
+  DMKSVC's new-PSW load (`CLI VMPSW+4,0`, 00433000) likewise. Three sites:
+  allow `X'80'` for an EC-mode guest, keep refusing bits 33-39.
+- **Guest addresses CP forms.** The sweep's `N Rx,XRIGHT24` is right for CP's
+  own packed pointers and wrong for a 31-bit guest's operand addresses: DMKPRV
+  00395100, 00903000, 00920000 (`24-BITS ONLY, PLEASE`), the TRANS stub's
+  mask, DIAG handlers that take a guest address (DMKHVC: 9 swept sites), the
+  console STORE/DISPLAY (already `AMODE31`), DMKVSI/DMKCCW's CAW and CCW
+  address handling (format-0 CCWs are 24-bit by definition; a 31-bit guest
+  still uses them, and IDAWs carry 31-bit addresses). Each such site becomes
+  mode-dependent: mask when the VMBLOK says 24-bit, keep bits 1-7 when it
+  says 31. The mode lives in one new VMBLOK flag, set from the guest's PSW bit
+  32 whenever CP accepts a PSW (DSP/PRV/SVC above), so the test is one `TM`.
+- **Interrupt reflection.** DMKPSA/DMKPRG/DMKIOT/DMKSVC/DMKDSP store the
+  guest's old PSW and load its new one as 8 bytes; bit 32 travels with them
+  unchanged, so only the validity checks and the ILC/CC arithmetic on
+  `VMPSW+4` (DMKPRG 00290000–00653000, DMKPRV 01594000–01709000: `L R1,VMPSW+4`
+  / add ILC / `ST`) need to keep bit 0 — an `O` of the saved bit after the
+  add, or arithmetic on bits 1-31 only.
+- **Shadow tables** (DMKVAT) only matter for a guest that runs its own DAT;
+  CMS does not. A 31-bit guest's own segment tables would be ESA/390 format
+  — out of scope until something needs it.
+- **CMS.** CE's CMS is a 24-bit program: `DMSINI` sizes storage with DIAG
+  X'60', loads high (I-232's `DMSINI260T`), and every CMS address is 24-bit.
+  A 31-bit CMS is M5; step 3 gives it the machine to run on and is verified
+  with a test program IPLed from the reader that sets bit 32, stores above
+  16 MB and takes an interrupt there.
+
+Estimate: ~25 sites in 8 modules plus the VMBLOK flag; two builds.
 
 ## Verification of step 1 — done, 5 October 01:54 UTC (w62, SNAP-I231)
 
