@@ -1,3 +1,7 @@
+./ R 00510000          $ 00510100 100                                           
+         IPM   R15            SET CONDITION CODE IN REG        XA0048DK         
+./ R 00530000          $ 00530100 100                                           
+         IPM   R15            SAVE CC IN CASE OF ERROR         XA0048DK         
 ./ R 01911000          $ 01911100 100                                           
 CPIPSWS  DC    A(MCHEKENB),X'80',AL3(DMKPSAEX) EXT, AMODE 31   XA0048DK         
 ./ R 01912000          $ 01912100 100                                           

@@ -3617,8 +3617,8 @@ KEYMODS = {
             "IT OFF, SO NEITHER CAN FIRE. BOTH BALRS STAY AND NOW PARK THE "
             "SAME CONDITION CODE, WHICH IS WHAT OR R14,R15 COMBINES. "
             "I-192.") + [
-            "         BALR  R14,0          SAVE C.C. FOR CHANGE TEST",
-            "         BALR  R15,R0         ONE KEY, SO THE SAME C.C.",
+            "         IPM   R14            SAVE C.C. FOR CHANGE TEST I-228",
+            "         IPM   R15            ONE KEY, SO THE SAME C.C.",
         ]),
         ('01461000', '01466000', Deck.comment(
             "BCHNGE. WAS RRB 0(R6) / BC 8+2,*+8 / OI SWPKEY1,2 / RRB "
@@ -3638,8 +3638,8 @@ KEYMODS = {
             "AT 01998000 COMBINES AND SPM R14 AT 02001000 RESTORES. THE TWO "
             "*+8 OFFSETS BECOME ONE LABEL, NOREFBK, R-26. I-192.") + [
             "         RRBE  0,R1           ONE KEY FOR THE WHOLE PAGE",
-            "         BALR  R14,0          SAVE CONDITION CODE",
-            "         BALR  R15,R0         ONE KEY, SO THE SAME C.C.",
+            "         IPM   R14            SAVE CONDITION CODE, I-228",
+            "         IPM   R15            ONE KEY, SO THE SAME C.C.",
             "         BC    8+4,NOREFBK    REF WAS OFF, NOTHING TO BACK UP",
             "         OI    SWPKEY1,4      REF. BIT RESET, BACK-UP TO VIRT",
             "         OI    SWPKEY2,4      BOTH HALVES, ONE REAL KEY",
@@ -4218,15 +4218,15 @@ AMODEMODS = {
 # local label (six sites) keeps working.  DMKMCH's five PSWs for the
 # machine-check paths get the bit too.  The initial machine-check new PSW
 # (01914000, a disabled wait) is left as it is.  I-224.
-PSWMODS = {
-    'DMKCPI': [
+PSWMODS_CPI = [
         ('01911000', ["CPIPSWS  DC    A(MCHEKENB),X'80',AL3(DMKPSAEX) EXT, AMODE 31"]),
         ('01912000', ["         DC    A(MCHEKENB),X'80',AL3(DMKSVCIN) SVC, AMODE 31"]),
         ('01913000', ["         DC    A(MCHEKENB),X'80',AL3(DMKPRGIN) PROG, AMODE 31"]),
         ('01915000', ["         DC    A(MCHEKENB),X'80',AL3(DMKIOTIN) I/O, AMODE 31"]),
         ('01916000', ["MCKPSW   DC    A(XMODEON),X'80',AL3(DMKMCHIN) MCK, AMODE 31"]),
         ('01917000', ["RESTPSW  DC    A(MCHEKENB),X'80',AL3(DMKPSADU) RESTART, 31"]),
-    ],
+]
+PSWMODS = {
     # I-225.  DMKFREE's FREE08 computed the END of the last larger free block
     # with LA R5,0(R8,R9); for the block that reaches 16 MB that is 01000000,
     # which LA in AMODE 24 made 0, and SR R5,R2 then gave the block's address
@@ -4276,6 +4276,50 @@ PSWMODS = {
             "         N     R9,XRIGHT24    NO COMMAND CODE (I-226)",
         ]),
     ],
+    # I-228.  BALR Rx,0 saved the condition code in AMODE 24 (byte 0 of Rx
+    # = ILC, CC, program mask) and SPM Rx restored it.  In AMODE 31 BALR
+    # stores bit 0 and a 31-bit address and no condition code, so every
+    # such restore gave CC 0: DMKLNK took CC 0 from DMKSCNVU's CC 3 and
+    # refused every directory LINK as 'ALREADY DEFINED' (w83 trace).  IPM
+    # (XAOPS) puts CC and mask in the same bits in either mode.  The BALR
+    # Rx,0 sites that only ESTABLISH ADDRESSABILITY are left: a base
+    # register ignores bit 0.  tools/strips.py lists both kinds.
+    'DMKCPI': sorted(PSWMODS_CPI + [
+        ('00510000', ["         IPM   R15            SET CONDITION CODE IN REG"]),
+        ('00530000', ["         IPM   R15            SAVE CC IN CASE OF ERROR"]),
+    ], key=lambda c: int(c[0])),
+    'DMKCQR': [
+        ('00595000', ["         IPM   R15            CC BITS IN REG (I-228)"]),
+    ],
+    'DMKCSP': [
+        ('00885250', ["         IPM   R0             SAVE CONDITION CODE"]),
+    ],
+    'DMKEPS': [
+        ('00220000', ["PASSCHK1 IPM   R2             SAVE CONDITION CODE"]),
+        ('00227300', ["         IPM   R2             SAVE CC - GOOD FOR REJECT"]),
+    ],
+    'DMKLNK': [
+        ('00654200', ["         IPM   R15            PRESERVE COND CODE FROM SCNVU"]),
+    ],
+    'DMKLOG': [
+        ('00616000', ["         IPM   R15            GET THE CONDITION CODE"]),
+    ],
+    'DMKPAG': [
+        ('01153000', ["         IPM   R15            CC BITS IN REG (I-228)"]),
+    ],
+    'DMKRPA': [
+        ('00217000', ["         IPM   R15            SAVE CONDITION CODE"]),
+    ],
+    'DMKTCS': [
+        ('00791000', ["         IPM   R6             SAVE CONDITION CODE"]),
+    ],
+    'DMKTRC': [
+        ('01385520', ["         IPM   R0             SAVE C.C."]),
+    ],
+    'DMKVSI': [
+        ('00208000', ["         IPM   R0             PRESERVE CONDITION CODE"]),
+    ],
+    # DMKVSJ 00176000 (BALR R0,0 for CLRCH) is inside the block XA0018DK removed.
     'DMKMCH': [
         ('01252000', ["         DC    X'80',AL3(ENBHARD) AMODE 31 (I-224)"]),
         ('01255000', ["         DC    X'80',AL3(MCHTERM2) HARD MCKS IN TERM, 31"]),

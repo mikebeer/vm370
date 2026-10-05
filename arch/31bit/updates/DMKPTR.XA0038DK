@@ -55,8 +55,8 @@ STKEY2   OI    SWPKEY2,4      AND THE SECOND HALF, ONE KEY     XA0038DK
 *  HERE ALREADY PROVED IT OFF, SO NEITHER CAN FIRE. BOTH       XA0038DK         
 *  BALRS STAY AND NOW PARK THE SAME CONDITION CODE, WHICH IS   XA0038DK         
 *  WHAT OR R14,R15 COMBINES. I-192.                            XA0038DK         
-         BALR  R14,0          SAVE C.C. FOR CHANGE TEST        XA0038DK         
-         BALR  R15,R0         ONE KEY, SO THE SAME C.C.        XA0038DK         
+         IPM   R14            SAVE C.C. FOR CHANGE TEST I-228  XA0038DK         
+         IPM   R15            ONE KEY, SO THE SAME C.C.        XA0038DK         
 ./ R 01461000 01466000 $ 01461100 100                                           
 *  BCHNGE. WAS RRB 0(R6) / BC 8+2,*+8 / OI SWPKEY1,2 / RRB     XA0038DK         
 *  2048(R6) / BC 8+2,*+8 / OI SWPKEY2,2 -- WHICH OF THE TWO    XA0038DK         
@@ -75,8 +75,8 @@ NOCHGBK  DS    0H                                              XA0038DK
 *  02001000 RESTORES. THE TWO *+8 OFFSETS BECOME ONE LABEL,    XA0038DK         
 *  NOREFBK, R-26. I-192.                                       XA0038DK         
          RRBE  0,R1           ONE KEY FOR THE WHOLE PAGE       XA0038DK         
-         BALR  R14,0          SAVE CONDITION CODE              XA0038DK         
-         BALR  R15,R0         ONE KEY, SO THE SAME C.C.        XA0038DK         
+         IPM   R14            SAVE CONDITION CODE, I-228       XA0038DK         
+         IPM   R15            ONE KEY, SO THE SAME C.C.        XA0038DK         
          BC    8+4,NOREFBK    REF WAS OFF, NOTHING TO BACK UP  XA0038DK         
          OI    SWPKEY1,4      REF. BIT RESET, BACK-UP TO VIRT  XA0038DK         
          OI    SWPKEY2,4      BOTH HALVES, ONE REAL KEY        XA0038DK         

@@ -191,7 +191,34 @@ def loadmap(path):
     "where did DMKSAVNC go" and "does anything overlap low storage".
     """
     addr, rows, cur = 0, [], None
+    pageable = False
+    newmod = False
     for c in cards(path):
+        # VMFLOAD separates modules with ':READ name TXTxxx' cards, and the
+        # loader starts every module after DMKCPEND -- the pageable ones --
+        # on a page boundary ('(SPB INSERTED)' in its map).  Verified against
+        # the module identifiers found in a storage dump: DMKBLD 064000,
+        # DMKMSG 065000, DMKRSE 066000, DMKVDR 067000.  I-227.
+        if c[0] != 0x02:
+            try:
+                txt = c[:6].decode('cp037')
+            except Exception:
+                txt = ''
+            if txt.startswith(':READ'):
+                newmod = True
+            continue
+        # Loader control cards: X'02' then SPB (set page boundary: the next
+        # CSECT starts on a 4 KB boundary -- every pageable module carries
+        # one, from PUNCH 'SPB') or SLC (set location counter).  I-227.
+        if len(c) >= 4 and c[0] == 0x02 and c[1:4] == b'\xe2\xd7\xc2':
+            addr = (addr + 4095) & ~4095
+            continue
+        if len(c) >= 12 and c[0] == 0x02 and c[1:4] == b'\xe2\xd3\xc3':
+            try:
+                addr = int(c[6:12].decode('cp037').strip() or '0', 16)
+            except ValueError:
+                pass
+            continue
         if kind(c) == 'ESD':
             n = int.from_bytes(c[10:12], 'big')
             for off in range(16, 16 + n, 16):
@@ -202,9 +229,16 @@ def loadmap(path):
                 typ, ln = item[8], int.from_bytes(item[13:16], 'big')
                 if typ in (0x00, 0x04) and name:          # SD, PC
                     addr = (addr + 7) & ~7
+                    # A pageable module must not straddle a page: when it
+                    # would, the loader starts it on the next one.
+                    if pageable and newmod and (addr & 4095) + ln > 4096:
+                        addr = (addr + 4095) & ~4095
+                    newmod = False
                     cur = [name, addr, ln, 0]
                     rows.append(cur)
                     addr += ln
+                    if name == 'DMKCPE':   # DMKCPEND: end of the resident nucleus
+                        pageable = True
         elif kind(c) == 'TXT' and cur is not None:
             a2 = int.from_bytes(c[5:8], 'big')
             n2 = int.from_bytes(c[10:12], 'big')

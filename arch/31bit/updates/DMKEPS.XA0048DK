@@ -1,0 +1,4 @@
+./ R 00220000          $ 00220100 100                                           
+PASSCHK1 IPM   R2             SAVE CONDITION CODE              XA0048DK         
+./ R 00227300          $ 00227310 010                                           
+         IPM   R2             SAVE CC - GOOD FOR REJECT        XA0048DK         

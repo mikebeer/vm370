@@ -324,10 +324,29 @@ write)
   # of pause becomes 100, on every write, and a write happens every cycle.
   w || exit 1
   arch S/370
-  mk n1 "cmd:cp purge rdr all:10" "cmd:cp spool punch to *:10" \
+  # The nucleus deck itself is punched to the REAL punch first, in binary,
+  # so tools/deckscan.py --map can place every CSECT the way the loader does
+  # and a Hercules breakpoint can be set by module name against THIS nucleus
+  # (nucsyms.txt).  CPNUC MAP on MAINT's A-disk is CE's own 2018 map and does
+  # not describe our nucleus (I-227).  A second VMFLOAD, spooled to *, feeds
+  # the loader as before.
+  mk n1 "herc:devinit 000d io/nucleus.deck:5" \
+        "cmd:cp purge rdr all:10" \
+        "cmd:cp start 00d class a:5" "cmd:cp spool punch class a nocont:5" \
+        "cmd:vmfload cpload dmklcl:40" "cmd:cp close punch:15" "cmd:cp drain 00d:5" \
+        "cmd:cp spool punch to *:10" \
         "cmd:vmfload cpload dmklcl:40" "cmd:cp close punch:15" \
         "cmd:cp ipl 00c:60" || exit 1
   run n1 || exit 1; chk n1 S/370 || exit 1
+  python3 "$T/deckscan.py" "$C/io/nucleus.deck" --map > "$C/cpnuc.map" 2>&1 \
+    && python3 - "$C/cpnuc.map" "$C/nucsyms.txt" <<'PY'
+import re, sys
+rows = re.findall(r'^([A-Z0-9@#$]+) +([0-9A-F]+) +([0-9A-F]+)', open(sys.argv[1]).read(), re.M)
+with open(sys.argv[2], 'w') as f:
+    for s, a, b in rows:
+        f.write('%s %s\n' % (s, a))
+print('--- load map: %d CSECTs in %s' % (len(rows), sys.argv[2]))
+PY
   grep -E "Nucleus loaded|LOAD DECK COMPLETE|DISABLED WAIT" "$C/n1.log" | tail -3
   # Both halves are now checked, not just the second.  With the pauses cut
   # (I-193) a vmfload that did not finish must fail here rather than produce a
@@ -337,6 +356,38 @@ write)
   grep -q "00000012" "$C/n1.log" || { echo "### NUCLEUS WRITE FAILED"; exit 1; }
   # 6A1 now holds the ESA/390 nucleus.  I-191.
   : > "$C/.written"
+  ;;
+map)
+  # The nucleus load map VMFLOAD left on MAINT's A-disk (CPNUC MAP), punched
+  # to the REAL punch so it lands in io/punch.txt on this side.  Needed to
+  # set a Hercules breakpoint in a module by name once CP runs AMODE 31 and
+  # CMS cannot be used to TYPE it (I-227).  Does not touch the nucleus.
+  # Boots the STOCK nucleus from the snapshot named (6A1 holds ours after a
+  # write), runs VMFLOAD to produce the map for the staged decks, and punches
+  # it.  The nucleus deck goes to the virtual punch spooled to *, and is
+  # purged.  Follow with 'write' to put the ESA/390 nucleus back on 6A1.
+  w || exit 1
+  arch S/370
+  ALLOW_STALE=yes restore "${2:?snapshot}" || exit 1
+  : > "$C/io/print1.listing"
+  mk m1 "cmd:cp purge rdr all:10" "cmd:cp spool punch to *:10" \
+        "cmd:vmfload cpload dmklcl:40" "cmd:cp close punch:15" \
+        "cmd:cp purge rdr all:10" \
+        "cmd:cp start 00e class a:5" "cmd:cp spool print class a nocont:5" \
+        "cmd:print cpnuc map a:40" "cmd:cp close print:10" \
+        "cmd:cp drain 00e:5" || exit 1
+  run m1 || exit 1; chk m1 S/370 || exit 1
+  # The map's records are longer than a card (PUNCH says RECORD EXCEEDS
+  # ALLOWABLE MAXIMUM), so it goes to the real printer, io/print1.listing.
+  python3 - "$C/io/print1.listing" "$C/cpnuc.map" <<'PY'
+import sys
+raw = open(sys.argv[1], 'rb').read()
+out = open(sys.argv[2], 'w')
+n = 0
+for line in raw.decode('latin-1').splitlines():
+    out.write(line.rstrip() + '\n'); n += 1
+print('--- %d map lines in %s' % (n, sys.argv[2]))
+PY
   ;;
 test)
   # Specs go AFTER the ipl by default.  A literal `--` splits them: everything
