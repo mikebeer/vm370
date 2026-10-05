@@ -172,6 +172,7 @@ EXPECTS = [
     (r'^/cp start',           r'Ready',                             60),
     (r'^/readcard',           r'Ready',                             120),
     (r'^/cpacc',              r'Ready',                             120),
+    (r'^/exec vmsetup cms',   r'Ready',                             120),
     (r'^/vmfmac',             r'Ready',                             600),
     (r'^/vmfasm',             r'Ready',                             900),
     (r'^/asmdmk',             r'Ready',                             1800),
@@ -372,17 +373,27 @@ def main():
     # decks, and nothing a `cmd:` might do is harmed by the CP disks being
     # there.  The VMFMAC/VMFASM block still follows, so a command can set
     # something up for an assembly.
+    # `--cms`: the CMS build (M5a).  VMSETUP CMS accesses 593/093/193/393 and
+    # the S disk instead of CP's; the control file is DMSLCL (593, CE's empty
+    # local level) and VMFASM writes DMSxxx TXTLCL to A.  The nucleus goes
+    # where DMSINIW's prompts say (the memo's x90: 190 production, 290 CMSTEST).  Same build, as
+    # 26-BUILDING-CMS.md says, different library and different LDT.
+    cms = '--cms' in sys.argv
+    lcl = 'dmslcl' if cms else 'dmklcl'
     if '--bare' not in sys.argv:
         # 25 -> 15.  Measured at 8 seconds on 3 October (pacing.py over
         # n1.log), and a failed CPACC is caught loudly: every later readcard
         # and vmfasm fails and `asmchk` says so.  I-193.
-        rc.append('/cpacc\npause 15\n')
+        if cms:
+            rc.append('/exec vmsetup cms\npause 10\n')
+        else:
+            rc.append('/cpacc\npause 15\n')
     for text, secs, guest in cmd:
         rc.append('%s%s\npause %d\n' % ('/' if guest else '', text, secs))
     for lib in mac:
         rc.append('/vmfmac %s %s\npause 90\n' % (lib.lower(), lib.lower()))
     for mod in asm:
-        rc.append('/vmfasm %s dmklcl\npause 75\n' % mod.lower())
+        rc.append('/vmfasm %s %s\npause 75\n' % (mod.lower(), lcl))
     for text, secs in post:
         rc.append('/%s\npause %d\n' % (text, secs))
     if '--bare' in sys.argv:

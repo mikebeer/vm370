@@ -313,6 +313,57 @@ stage)
   asmchk s1 || exit 1
   echo "--- slice staged $# spec(s)"
   ;;
+cmsstage)
+  # M5a: the CMS build.  Same slice as `stage`, library DMSLCL, disks by
+  # VMSETUP CMS (593 E, 093 F, 193 G, 393 H, S disk I).  Specs as for stage:
+  # DMSxxx:XA00nnDK, asm:DMSxxx, read:MEMBER:TYPE, mac:DMSLCL.  TXTLCL lands
+  # on MAINT's A disk, where VMFLOAD CMSLOAD DMSLCL finds it first.
+  # Runs under OUR CP: the pack holds the ESA/390 nucleus (SNAP-I244) and the
+  # CMS build does not touch 6A1, so no restore -- and every assembly is a
+  # regression of the AMODE-31 CP under a real workload.
+  shift
+  arch ESA/390
+  mk s1 --cms "$@" || exit 1
+  run s1 || exit 1; chk s1 ESA/390 || exit 1
+  asmchk s1 || exit 1
+  echo "--- CMS slice staged $# spec(s)"
+  ;;
+cmswrite)
+  # M5a: write the CMS nucleus to the CMSTEST disk (290; `cmswrite 190` for
+  # production) exactly as MAINT.MEMO step 7 does by hand: VMFLOAD CMSLOAD
+  # DMSLCL punches the IPL deck to MAINT's own reader, IPL 00C CLEAR runs
+  # DMSLD00E + DMSINIW, and DMSINIW's eight prompts are answered from the
+  # log -- the one dialogue a timed rc could never hold, and the reason the
+  # build is driven now.  Then SAVESYS is a separate run (`cmssave`).
+  w || exit 1
+  arch ESA/390
+  sd=${2:-290}
+  mk c1 --cms "cmd:cp spool pun *:5" "cmd:cp spool prt *:5" "cmd:cp purge rdr all:5" || exit 1
+  python3 - "$C/c1.json" "$sd" <<'PY'
+import json, sys
+p, sd = sys.argv[1], sys.argv[2]
+st = json.load(open(p))
+tail = st[-2:]                      # /cp shutdown, exit
+st = st[:-2] + [
+ {"send": "/vmfload cmsload dmslcl", "expect": "PUN FILE|Ready", "timeout": 600, "cont": True},
+ {"send": "/cp ipl 00c clear", "expect": "SYSTEM DISK ADDRESS", "timeout": 120, "cont": True},
+ {"send": "/" + sd, "expect": "Y-DISK ADDRESS", "timeout": 60, "cont": True},
+ {"send": "/19e", "expect": "REWRITE THE NUCLEUS", "timeout": 60, "cont": True},
+ {"send": "/yes", "expect": "IPL DEVICE ADDRESS", "timeout": 60, "cont": True},
+ {"send": "/" + sd, "expect": "NUCLEUS CYL ADDRESS", "timeout": 60, "cont": True},
+ {"send": "/59", "expect": "ALSO IPL CYLINDER 0", "timeout": 60, "cont": True},
+ {"send": "/yes", "expect": "VERSION IDENTIFICATION", "timeout": 120, "cont": True},
+ {"send": "/", "expect": "INSTALLATION HEADING", "timeout": 60, "cont": True},
+ {"send": "/", "expect": "VM Community Edition|Ready", "timeout": 300, "cont": True},
+ {"send": "/cp close prt", "expect": "Ready|PRT FILE", "timeout": 60, "cont": True},
+] + tail
+json.dump(st, open(p, 'w'), indent=1)
+PY
+  run c1 || exit 1; chk c1 ESA/390 || exit 1
+  grep -E "VM Community Edition|DMSINI6|PUN FILE" "$C/c1.log" | tail -4
+  grep -q "DMSINI612R" "$C/c1.log" || { echo "### CMS NUCLEUS WRITE DID NOT COMPLETE"; exit 1; }
+  echo "--- CMS nucleus written to $sd"
+  ;;
 asmonly)
   # The assembly pass over modules already on the disk, no restore, no staging.
   shift
