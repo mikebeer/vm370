@@ -133,6 +133,49 @@ def owners(filename):
     return {m.group(1)} if m else None
 
 
+def macro_users(filename, updates=UPDATES):
+    """The patched modules whose decks invoke a macro the file defines, or
+    COPY the member -- the modules a change to that shared file can reach
+    through OUR decks.  None when the file is not a MACRO or COPY we wrote, or
+    when a base ASSEMBLE might invoke it too (XAOPS defines ESA/390 opcodes
+    only our decks use; XAIO/XAIOB/XABLOKS likewise).  A shared input whose
+    users are all proven by a derived build is covered by that build, and the
+    snapshot is valid without a human assertion; one with other users still
+    needs `full` or SHARED_ADDITIVE.  I-229 (XAIOB changed with DMKCNS and
+    DMKIOT both restaged)."""
+    m = re.match(r'(XA[A-Z0-9]+)\.(MACRO|COPY)$', filename)
+    if not m:
+        return None
+    path = os.path.join(updates, filename)
+    if not os.path.exists(path):
+        return None
+    names = set()
+    if m.group(2) == 'COPY':
+        names.add(m.group(1))
+    else:
+        lines = open(path, encoding='latin1').read().split('\n')
+        for i, l in enumerate(lines):
+            if l[:72].strip() == 'MACRO' and i + 1 < len(lines):
+                proto = lines[i + 1][:72].split()
+                if proto:
+                    # prototype: [&NAME] MNEMONIC operands
+                    names.add(proto[1] if proto[0].startswith('&') else proto[0])
+    if not names:
+        return None
+    pat = re.compile(r'^\S*\s+(%s)\b' % '|'.join(map(re.escape, sorted(names))), re.M)
+    copypat = re.compile(r'\bCOPY\s+(%s)\b' % '|'.join(map(re.escape, sorted(names))))
+    users = set()
+    for name in os.listdir(updates):
+        mm = re.match(r'(DMK[A-Z0-9]+)\.XA\d+DK$', name)
+        if not mm:
+            continue
+        text = open(os.path.join(updates, name), encoding='latin1').read()
+        text = '\n'.join(l[:72] for l in text.split('\n'))
+        if pat.search(text) or copypat.search(text):
+            users.add(mm.group(1))
+    return users
+
+
 def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
     """Reasons this log does not prove the state the snapshot claims to be.
 
@@ -194,6 +237,8 @@ def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
     # alone proves something was assembled.  Together they prove this run did it.
     need = patched_modules(updates) if purpose == 'build' else []
     validate.proven = set()
+    validate.accepted = {}
+    validate.now = getattr(validate, 'now', None)
     if purpose == 'build':
         for m in patched_modules(updates):
             if re.search(r"APPLYING '%s XA\d+DK" % m, text) \
@@ -209,9 +254,23 @@ def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
         # assemblies unusable, and that is the one derived case that stays
         # invalid.  I-198, corrected after SNAP-I203 was refused for a deck
         # that merely existed, unassembled, when it was taken.
-        now = fingerprints(updates)
+        now = validate.now or fingerprints(updates)
         for k in set(now) | set(parent_inputs):
             if parent_inputs.get(k) != now.get(k) and owners(k) is None:
+                u = macro_users(k, updates)
+                if u is not None and u <= validate.proven:
+                    # Every module our decks reach through this macro was
+                    # reassembled in this build: the change is covered.
+                    validate.accepted[k] = ('covered: every user reassembled '
+                                            '(%s)' % ' '.join(sorted(u)))
+                    continue
+                if k in additive():
+                    # A human says the change is additive -- a new macro no
+                    # parent-proved module invokes (XAOPS gained IPM, I-228).
+                    # Recorded, not silent: the manifest names the file and
+                    # the reason, and derived_inputs takes the new fingerprint.
+                    validate.accepted[k] = additive()[k]
+                    continue
                 bad.append('shared input %s changed since the parent, which '
                            'invalidates every module the parent proved' % k)
         return bad
@@ -230,7 +289,19 @@ def validate(log, updates=UPDATES, purpose='build', parent_inputs=None):
     return bad
 
 
-def derived_inputs(parent_inputs, proven, updates=UPDATES):
+def additive():
+    """SHARED_ADDITIVE='XAOPS.MACRO=added the IPM macro; nothing proven uses it'
+    -- shared inputs whose change a human vouches for as additive.  Several
+    are separated by ';;'.  The assertion is recorded in the manifest."""
+    out = {}
+    for item in os.environ.get('SHARED_ADDITIVE', '').split(';;'):
+        if '=' in item:
+            k, v = item.split('=', 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+def derived_inputs(parent_inputs, proven, updates=UPDATES, accepted=()):
     """The input fingerprints a derived snapshot INCORPORATES: the parent's,
     plus the current ones for modules this build proved.  Anything else that
     changed stays at the parent's value, so check() reports it stale by
@@ -241,6 +312,9 @@ def derived_inputs(parent_inputs, proven, updates=UPDATES):
         o = owners(k)
         if o is None or o <= proven:
             out[k] = v
+    for k in accepted:
+        if k in now:
+            out[k] = now[k]
     return out
 
 
@@ -294,8 +368,11 @@ def take(ce, name, log, purpose='build', parent=None):
             print('      - %s' % b, file=sys.stderr)
         return 1
     if parent_inputs is not None:
-        man['inputs'] = derived_inputs(parent_inputs, validate.proven)
+        man['inputs'] = derived_inputs(parent_inputs, validate.proven,
+                                       accepted=validate.accepted)
         man['proven'] = sorted(validate.proven)
+    if validate.accepted:
+        man['shared_accepted'] = dict(validate.accepted)
     man['state'] = 'valid'
     man['reason'] = []
     man['evidence'] = {'modules_with_text': len(man['modules']),
@@ -379,6 +456,59 @@ def read_manifest(d):
             return json.load(f)
     except (OSError, ValueError):
         return None
+
+
+def revalidate(ce, name, log):
+    """Re-run the checks on a snapshot that stayed INVALID, against its own
+    log.  The only way it can turn valid is through a changed input accepted
+    by name (SHARED_ADDITIVE), which the manifest then records.  The shadow
+    files are not touched."""
+    d = os.path.join(ce, 'disks', name)
+    man = read_manifest(d)
+    if man is None:
+        print('### %s has no manifest' % name, file=sys.stderr)
+        return 2
+    parent_inputs = None
+    if man.get('parent'):
+        pman = read_manifest(os.path.join(ce, 'disks', man['parent']))
+        if pman is None or pman.get('state') != 'valid':
+            print('### parent %s is not VALID' % man['parent'], file=sys.stderr)
+            return 2
+        parent_inputs = pman.get('inputs', {})
+    # The inputs as they were WHEN THE SNAPSHOT WAS TAKEN -- take() records
+    # fingerprints() first -- not as they are now; decks changed since then
+    # are check()'s business, reported as stale.
+    taken = man.get('inputs', {})
+    validate.now = taken
+    try:
+        bad = validate(log, purpose=man.get('purpose', 'build'),
+                       parent_inputs=parent_inputs)
+    finally:
+        validate.now = None
+    if bad:
+        man['reason'] = bad
+        write_manifest(d, man)
+        print('### %s stays INVALID:' % name, file=sys.stderr)
+        for b in bad:
+            print('      - %s' % b, file=sys.stderr)
+        return 1
+    if parent_inputs is not None:
+        out = dict(parent_inputs)
+        for k, v in taken.items():
+            o = owners(k)
+            if o is None or o <= validate.proven or k in validate.accepted:
+                out[k] = v
+        man['inputs'] = out
+        man['proven'] = sorted(validate.proven)
+    if validate.accepted:
+        man['shared_accepted'] = dict(validate.accepted)
+    man['state'] = 'valid'
+    man['reason'] = []
+    man['revalidated'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+    write_manifest(d, man)
+    print('--- %s is VALID (revalidated; accepted: %s)'
+          % (name, ', '.join(validate.accepted) or 'nothing'))
+    return 0
 
 
 def check(ce, name, want=None):
@@ -466,6 +596,8 @@ def main():
         opts = a[4:]
         parent = opts[opts.index('--parent') + 1] if '--parent' in opts else None
         return adopt(a[1], a[2], a[3], parent=parent)
+    if verb == 'revalidate' and len(a) == 4:
+        return revalidate(a[1], a[2], a[3])
     if verb == 'check' and len(a) in (3, 4):
         return check(a[1], a[2], a[3] if len(a) == 4 else None)
     if verb == 'list' and len(a) == 2:
