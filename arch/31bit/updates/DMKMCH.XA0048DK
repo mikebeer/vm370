@@ -1,0 +1,10 @@
+./ R 01252000          $ 01252100 100                                           
+         DC    X'80',AL3(ENBHARD) AMODE 31 (I-224)             XA0048DK         
+./ R 01255000          $ 01255100 100                                           
+         DC    X'80',AL3(MCHTERM2) HARD MCKS IN TERM, 31       XA0048DK         
+./ R 01258000          $ 01258100 100                                           
+         DC    X'80',AL3(SPFMSG)  AMODE 31                     XA0048DK         
+./ R 01261000          $ 01261100 100                                           
+         DC    X'80',AL3(SPFTERMA) AMODE 31                    XA0048DK         
+./ R 01264000          $ 01264100 100                                           
+         DC    X'80',AL3(TERM)    SECONDARY HANDLER, 31        XA0048DK         

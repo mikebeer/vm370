@@ -93,6 +93,7 @@ XA44 = 'XA0044DK'
 XA45 = 'XA0045DK'
 XA46 = 'XA0046DK'
 XA47 = 'XA0047DK'
+XA48 = 'XA0048DK'
 
 
 def psa():
@@ -4200,6 +4201,41 @@ AMODEMODS = {
     ],
 }
 
+# M2 step 2, part 2: CP's own PSWs carry the AMODE 31 bit.  Every path into
+# CP after initialisation is an interrupt -- external, SVC, program, machine
+# check, I/O, restart -- and DMKCPI installs those new PSWs from CPIPSWS, a
+# table of A(mask,entry) pairs.  Bit 32 of a PSW is the addressing mode, which
+# is bit 0 of the second word, so the entry address goes in as X'80' plus a
+# 3-byte adcon -- the form DMKWRM uses for AL1(flags),AL3(DMKRSPPR), which the
+# nucleus loader relocates as a 3-byte field with no question about a bit-0
+# RLD.  SVC 8/12 need nothing: DMKSVC saves the SVC old PSW's address word in
+# SAVERETN and loads it back, mode bit and all.  Dispatching a guest is LPSW
+# RUNPSW with the guest's own PSW, bit 32 off, so S/370 guests stay 24-bit.
+# The CPEXBLOK unstack's LPSW TEMPSAVE is AP-only (AIF (NOT &AP)); on this UP
+# system the unstack is BR R15 in the current mode.  DMKCPI's own init runs
+# in AMODE 24 until its first interrupt -- harmless now that part 1 made CP's
+# code mode-independent, and every DMKCPI probe that points PRNPSW+4 at a
+# local label (six sites) keeps working.  DMKMCH's five PSWs for the
+# machine-check paths get the bit too.  The initial machine-check new PSW
+# (01914000, a disabled wait) is left as it is.  I-224.
+PSWMODS = {
+    'DMKCPI': [
+        ('01911000', ["CPIPSWS  DC    A(MCHEKENB),X'80',AL3(DMKPSAEX) EXT, AMODE 31"]),
+        ('01912000', ["         DC    A(MCHEKENB),X'80',AL3(DMKSVCIN) SVC, AMODE 31"]),
+        ('01913000', ["         DC    A(MCHEKENB),X'80',AL3(DMKPRGIN) PROG, AMODE 31"]),
+        ('01915000', ["         DC    A(MCHEKENB),X'80',AL3(DMKIOTIN) I/O, AMODE 31"]),
+        ('01916000', ["MCKPSW   DC    A(XMODEON),X'80',AL3(DMKMCHIN) MCK, AMODE 31"]),
+        ('01917000', ["RESTPSW  DC    A(MCHEKENB),X'80',AL3(DMKPSADU) RESTART, 31"]),
+    ],
+    'DMKMCH': [
+        ('01252000', ["         DC    X'80',AL3(ENBHARD) AMODE 31 (I-224)"]),
+        ('01255000', ["         DC    X'80',AL3(MCHTERM2) HARD MCKS IN TERM, 31"]),
+        ('01258000', ["         DC    X'80',AL3(SPFMSG)  AMODE 31"]),
+        ('01261000', ["         DC    X'80',AL3(SPFTERMA) AMODE 31"]),
+        ('01264000', ["         DC    X'80',AL3(TERM)    SECONDARY HANDLER, 31"]),
+    ],
+}
+
 SHRMODS = {
     'DMKCFG': [
         # PAGBLDTB extends a small machine's tables to reach the saved
@@ -6955,6 +6991,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA45, 'NAMED SYSTEMS SHARED BY FRAME: MODEL TABLES, COPIES')])
         print('%-8s %-9s %3d cards  %s' % (m, XA45, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(PSWMODS):
+        dk = datdeck(m, PSWMODS[m], ident=XA48)
+        path = os.path.join(HERE, '%s.%s' % (m, XA48))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA48, 'CP AT AMODE 31: THE NEW PSWS CARRY BIT 32 (I-224)')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA48, n,
               'OK' if not verify(path) else 'BAD'))
 
     # The strip sweep LAST of the module decks: it skips every record an
