@@ -3081,6 +3081,16 @@ def dmkbld():
     # the card that made the segment table sixteen times longer than the machine,
     # which let DMKPGS's PGOUT2 scan run past VMSIZE, where DMKPTRAN's
     # `LA R1,0(,R1)  STRIP HIGH BYTE` turned 16 MB into 0 and the loop closed.
+    #
+    # I-221.  The page range arrives packed, start page in the high halfword
+    # and end page in the low one, and the end page was masked with F4095 --
+    # twelve bits, 4096 pages, 16 MB.  DEF STOR 32M therefore built a 16-entry
+    # segment table (STL 0; CR1 = 00FFD000 in the w59 trace) and every LRA
+    # above 16 MB took CC3.  The halfword is the real limit: 65,536 pages,
+    # 256 MB, which is I-185/I-203's ceiling and the mask that was hiding it.
+    one('00197000', [
+        "         N     R5,=A(X'FFFF') END PAGE IS A HALFWORD I-221",
+    ])
     one('00207000', Deck.comment(
         "WAS SRDL R0,8. R0 ARRIVES AS A PAGE COUNT AND LEAVES AS A COUNT OF "
         "64-BYTE UNITS, WHICH IS WHAT STL COUNTS AND WHAT 00262000 STORES "
