@@ -146,7 +146,12 @@ def drive(ce, name, steps, herc='hercules', hold=False):
     # runs at start-up, colliding with ours (the first driven run IPLed twice
     # and ignored `exit` while the rc was mid-pause).  Replace it with the one
     # line we want run unattended.
-    with open(os.path.join(ce, 'hercules.rc'), 'w') as f:
+    rc = os.path.join(ce, 'hercules.rc')
+    if os.path.exists(rc):
+        # keep mkrun's script as <name>.rc: incomplete() counts the readcards
+        # and assemblies the run was asked for from it (build.sh run()).
+        shutil.copy(rc, os.path.join(ce, name + '.rc'))
+    with open(rc, 'w') as f:
         f.write('panrate 1000\n')
     # The HTTP server is the command channel.  Run from a copy of the config
     # with HTTPPORT added, so the build's own config is untouched.

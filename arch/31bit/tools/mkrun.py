@@ -53,6 +53,7 @@ the `TEXT` decks -- and can also set something up for an assembly that follows.
 """
 import os
 import sys
+import re
 
 UPDATES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        '..', 'updates')
@@ -147,6 +148,62 @@ def card(text, src=''):
             'read the next card as a continuation and flag IT, not this one:\n'
             '  %s\n  %s^' % (src, text, ' ' * 71))
     return '%-80s\n' % text
+
+
+# What each kind of command prints when it is done.  The rc's pauses were
+# sized to the slowest case ever seen (I-33, I-148, I-193); a build spent
+# 15 s per card file and 75 s per VMFASM waiting for work that takes 1 s
+# and 40 s.  With an expect pattern the wait ends when the log says so, and
+# the timeout is only a cap -- generous, because reaching it is a failure
+# the post-checks (incomplete, asmchk) report, not a pacing choice.
+EXPECTS = [
+    (r'^ipl ',                r'Start \(\(Warm',                   180),
+    (r'^/$',                  r'Start \(\(Warm|Ready',             60),
+    (r'^/cold$',              r'DMKCPI966I',                        120),
+    (r'^/cp disc',            r'DISCONNECT AT',                     60),
+    (r'^/logon ',             r'Ready|LOGON AT|RECONNECT',          180),
+    (r'^/cp purge',           r'Ready',                             60),
+    (r'^/cp spool',           r'Ready',                             60),
+    (r'^devinit ',            r'HHCPN098I|initialized',             30),
+    (r'^/cp start',           r'Ready',                             60),
+    (r'^/readcard',           r'Ready',                             120),
+    (r'^/cpacc',              r'Ready',                             120),
+    (r'^/vmfmac',             r'Ready',                             600),
+    (r'^/vmfasm',             r'Ready',                             900),
+    (r'^/asmdmk',             r'Ready',                             1800),
+    (r'^/vmfload',            r'Ready|SYSTEM LOAD DECK COMPLETE',   600),
+    (r'^/cp shutdown',        r'HHCCP011I|SHUTDOWN COMPLETE',       120),
+    (r'^/cp ipl 00c',         r'00000012|DISABLED WAIT',            300),
+    (r'^/cp ',                r'Ready',                             120),
+]
+
+
+def steps_from_rc(text):
+    """drive.py steps for an rc: the pauses become expects (EXPECTS above);
+    a command no pattern knows keeps its pause as a settle."""
+    steps, pending = [], None
+    for raw in text.split('\n'):
+        line = raw.strip()
+        if not line or line.startswith('#') or line == 'panrate 1000':
+            continue
+        if line.startswith('pause '):
+            if pending is not None and 'expect' not in pending:
+                pending['settle'] = int(line.split()[1])
+            continue
+        if line == 'exit':
+            steps.append({'send': 'exit'})
+            pending = None
+            continue
+        st = {'send': line}
+        for pat, exp, to in EXPECTS:
+            if re.match(pat, line):
+                st['expect'] = exp
+                st['timeout'] = to
+                st['cont'] = True
+                break
+        steps.append(st)
+        pending = st
+    return steps
 
 
 def main():
@@ -331,6 +388,12 @@ def main():
 
     with open(os.path.join(ce, 'hercules.rc'), 'w') as f:
         f.write(''.join(rc))
+    # The same dialogue as drive.py steps: each command waits for the answer
+    # the log shows instead of for a number of seconds.  build.sh run() uses
+    # this when it exists; hercules.rc stays as the record incomplete() reads.
+    import json
+    with open(os.path.join(ce, '%s.json' % run), 'w') as f:
+        json.dump(steps_from_rc(''.join(rc)), f, indent=1)
     print('%d card files, %d modules to assemble: %s'
           % (n, len(asm), ' '.join(asm)))
     print('cd %s && nohup hercules -f vm370ce.conf > %s.log 2>&1 &'
@@ -485,7 +548,9 @@ def incomplete(ce, run):
     missing.
     """
     import os
-    rc = os.path.join(ce, 'hercules.rc')
+    rc = os.path.join(ce, '%s.rc' % run)       # drive.py's copy of the script
+    if not os.path.exists(rc):
+        rc = os.path.join(ce, 'hercules.rc')
     lg = os.path.join(ce, '%s.log' % run)
     if not os.path.exists(rc) or not os.path.exists(lg):
         return 'no %s.log or hercules.rc to compare' % run
