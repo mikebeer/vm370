@@ -1,10 +1,10 @@
 # cREXX on VM/370 CE — where things stand
 
-Last updated **4 October 2026, 19:20 UTC**. **Read this first in a new session.**
+Last updated **5 October 2026, 02:00 UTC**. **Read this first in a new session.**
 
 ---
 
-## Current position, 4 October — CMS reaches `Ready;` under VM/370+ in ESA/390 mode
+## Current position, 5 October — CMS runs; a 32M machine stores and displays above 16 MB from the console (SNAP-I231)
 
 ```
 /(0009) ipl 190
@@ -37,6 +37,7 @@ takes a typed command and answers it from the file system.
 | 27 | DMKPRV's key simulation located the swap entry with 64 KB geometry and stored guest keys into the I/O new PSW → `PRG006` | **closed** `I-200` |
 | 28 | DMKPRV SEGOK (XA0036DK) computed the STO in R6, the guest address the two LRAs need → ISK/SSK worked the wrong frame → `DMSITP141T` in DMSREX; REXX dead | **closed** `I-202` — profile completes, REXX runs |
 | 24b | DCSS in the same megabyte (GCCLIB, 13-of-16-page group): LOADSYS via the same model/copy path; DMKBLD keeps a full table and lets SWPSHR copies go | **closed** `I-214`, `I-215` — CE's complete init (AUTOLOG1 → CPWATCH, CMSBATCH, WAKEUP) runs |
+| 30 | **Virtual storage above 16 MB (I-208, M2 first step).** CP runs AMODE 24, so `LRA` and DMKPTRAN saw every guest address modulo 16 MB. Seven findings on the way (I-216 – I-223): the inline `BSM` wrapper cost DMKMON its literal pool → a stub in the PSA; `N R1,=X'7FFFFFFF'` before ENTER read a literal off the caller's R10; CP's callers hand TRANS CCW/CAW words with byte 0 in use, so a 24-bit guest's addresses are rightly masked and only `OPT=AMODE31` callers (console STORE/DISPLAY, DMKPGS's release walk) are 31-bit; the flag test must follow ENTER; DMKBLDRT's `F4095` end-page mask built 16-entry segment tables; SAVEWRK9's byte 0 is a switch. | **closed** w62/w63 5 Oct 01:55 — `st s1ff0000 deadbeef` lands at 1FF0000 only, IPL CMS/LOGOFF/SHUTDOWN clean, GCCLIB regression unchanged. SNAP-I231. |
 | 29 | DMKPGS CKSEG's end-of-segment test was off by one page (XA0036DK); the release loop ran off every page/swap table into free storage → `PGT005` at LOGOFF and at `DEF STOR` after IPL | **closed** `I-206` |
 
 **V0.1 saved** (tag `v0.1`, `32-V0.1.md`). Since then: `DEF STOR 32M` and

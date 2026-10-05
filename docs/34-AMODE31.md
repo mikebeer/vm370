@@ -151,8 +151,30 @@ read those bits (DMKPRG, trace) must stop expecting. `tools/idiom.py` lists
 the sites. Only needed when CP's own control blocks or the guest's real frames
 live above 16 MB — i.e. with step 3 (M5), not before.
 
-## Verification planned for step 1
+## Verification of step 1 — done, 5 October 01:54 UTC (w62, SNAP-I231)
 
-`def stor 32m`; `st s1ff0000 deadbeef`; `d ff0000.10` shows zeros;
-`d 1ff0000.10` shows `DEADBEEF`; `st s1000000 cafe0001`; `d 0.10` unchanged;
-then the IPL CMS regression (w46) unchanged.
+`def stor 32m` → `STORAGE = 32768K`; `st s1ff0000 deadbeef` → `d ff0000.10`
+all zeros, `d 1ff0000.10` = `DEADBEEF`; `st s1000000 cafe0001` → `d 0.10`
+unchanged, `d 1000000.10` = `CAFE0001`; `d k1ff0000` → `01FF0000 TO 01FF07FF
+KEY = 06`; a store at 1FF0FF8 lands at 1FF0FF8; `d 2000000.10` → `EXCEEDS
+STORAGE`; then `IPL CMS`, `QUERY DISK`, `LOGOFF`, operator `SHUTDOWN`, all
+clean. w63: the 15M GCCLIB / autolog regression unchanged. Known cosmetic
+leftover: `d 1ffffff.10` parses its range in 24 bits (`INVALID RANGE -
+FFFFFF-00000E`) and the non-addressable "TO" address uses `XPAGNUM`
+(X'00FFF000') — both for the I-126 sweep.
+
+## The seven things step 1 had to learn (I-216 – I-223)
+
+| | Finding | Rule |
+|---|---|---|
+| I-216 | +16 bytes a TRANS site cost DMKMON (X'FF8' on one base) its literal pool | call-site size is a hard constraint; shared stub in the PSA |
+| I-218 | `N R1,=X'7FFFFFFF'` as DMKPTRAN's entry instruction read the literal off the caller's R10 | no literal, no R10 reference, before ENTER in a two-base module |
+| I-219 | callers hand TRANS CCW/CAW words with byte 0 in use; CMS lost its minidisks without the strip | a 24-bit guest's addresses are masked to 24 bits; only `OPT=AMODE31` callers are 31-bit |
+| I-220 | `TM SAVER2+3` at the entry instruction read the previous caller's R2 | SAVER2 is written by ENTER; test after it |
+| I-221 | `DEF STOR 32M` built a 16-entry segment table (CR1 STL 0) | DMKBLDRT's end page is a halfword, not `F4095` |
+| I-222 | `DMKPTR410W` on every first touch above 16 MB | SAVEWRK9 byte 0 is the page-in error switch; clear it with XC, not with the address |
+| I-223 | CP looped in DMKPGS's release walk on the next IPL | addresses CP computed over the whole machine are 31-bit and say so (AMODE31) |
+
+Each was found by a Hercules breakpoint, register dump or instruction trace
+over the HTTP console, not by reading; the first three guesses of the
+evening were all wrong.
