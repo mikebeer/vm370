@@ -15,6 +15,17 @@ them all, with what the sweep needs to know about each one:
          CC -- N sets the CC, LA did not, so such a site needs the shift pair
          SLL 8 / SRL 8 (+4) or a different home for the mask.
 
+Two more kinds, found by running rather than by this scan (I-228, I-229) and
+listed since so the scan is complete:
+
+         balr0     BALR Rx,0 / BALR Rx,R0    byte 0 of Rx held ILC, CC and
+                   mask in AMODE 24; nothing in AMODE 31.  Those followed by
+                   SPM Rx (or STCM Rx,8) are CC saves -> IPM Rx (XAOPS); the
+                   rest only establish a base and are harmless.
+         spm       every SPM Rx, with the instruction that last set Rx
+                   -- a BALR (I-228), a BAL link register (I-229: the trace
+                   subroutines), or an IPM once converted.
+
 Usage: strips.py [--csv out.csv] [--module DMKxxx]
 """
 import csv, glob, os, re, sys
@@ -29,6 +40,51 @@ BRANCH_CC = re.compile(r'^\S*\s+(BC|BCR|BE|BNE|BZ|BNZ|BH|BL|BNH|BNL|BO|BNO|BM|BP
 
 def reg(s):
     return s if s.startswith('R') else 'R' + s
+
+BALR0 = re.compile(r'^\S*\s+BALR\s+(R\d+|\d+),(0|R0)\b')
+SPM = re.compile(r'^\S*\s+SPM\s+(R\d+|\d+)\b')
+
+def cc_saved(lines, i, r):
+    """Is the BALR's register later handed to SPM or STCM ..,8 (a CC save),
+    before it is reloaded?  Looks ahead one screen; a long gap is reported as
+    not saved and must be read by hand."""
+    for j in range(i + 1, min(i + 60, len(lines))):
+        t = lines[j]
+        if t.startswith('*') or not t.strip():
+            continue
+        if re.match(r'^\S*\s+SPM\s+%s\b' % r, t) or \
+           re.match(r'^\S*\s+STCM\s+%s,(8|B\'1000\'),' % r, t) or \
+           re.match(r'^\S*\s+ST\s+%s,' % r, t):
+            return True
+        if re.match(r'^\S*\s+(L|LR|LA|LH|IC|ICM|LM|SR|SLR|BAL|BALR)\s+%s\b' % r, t) \
+           or re.match(r'^\S*\s+(L|LR|LA|LH|LM)\s+%s,' % r, t):
+            return False
+    return False
+
+def cc_source(lines, i, r):
+    """What last set the register SPM restores from: 'balr', 'bal-link'
+    (the register is a BAL link into this subroutine -- the I-229 class),
+    'ipm', 'load' (restored from storage), or '?'."""
+    for j in range(i - 1, max(i - 80, -1), -1):
+        t = lines[j]
+        if t.startswith('*') or not t.strip():
+            continue
+        if re.match(r'^\S*\s+BALR\s+%s,(0|R0)\b' % r, t):
+            return 'balr'
+        if re.match(r'^\S*\s+IPM\s+%s\b' % r, t):
+            return 'ipm'
+        if re.match(r'^\S*\s+L\s+%s,' % r, t):
+            return 'load'
+        if re.match(r'^\S*\s+(BAL|BALR)\s+%s,' % r, t):
+            return 'bal-link'
+        if re.match(r'^\S+\s+(EQU|DS)\s', t) and re.match(r'^[A-Z]', t):
+            # a labelled entry with no setter above it in this block: the
+            # register came in from the caller -- a BAL link if the block
+            # ends with B 2(,Rx), else the caller's own BALR (DMKVSJ's R0).
+            tail = ' '.join(lines[i:i + 3])
+            return 'bal-link' if re.search(r'\bB\s+2\(,?%s\)' % r, tail) \
+                or re.search(r'\bB\s+2\(0,%s\)' % r, tail) else 'caller'
+    return '?'
 
 def cc_sensitive(lines, i):
     """Does a CC-test follow before any instruction that sets the CC?"""
@@ -64,6 +120,10 @@ def scan(path):
             kind = 'xpagnum'
         elif ICM3.search(t):
             kind = 'icm3' if 'ICM' in t.split()[1:2] or ' ICM ' in t else 'stcm3'
+        elif BALR0.match(t):
+            kind = 'balr0'
+        elif SPM.match(t):
+            kind = 'spm'
         if not kind:
             continue
         parts = t.split(None, 3) if not t.startswith(' ') else t.split(None, 2)
@@ -72,8 +132,14 @@ def scan(path):
             comment = (t.split(None, 3)[3] if len(t.split(None, 3)) > 3 else '').strip()
         else:
             comment = (t.split(None, 2)[2] if len(t.split(None, 2)) > 2 else '').strip()
-        out.append(dict(module=mod, seq=seq, kind=kind,
-                        cc='Y' if kind.startswith('LA') and cc_sensitive(lines, i) else '',
+        cc = ''
+        if kind.startswith('LA'):
+            cc = 'Y' if cc_sensitive(lines, i) else ''
+        elif kind == 'balr0':
+            cc = 'Y' if cc_saved(lines, i, reg(BALR0.match(t).group(1))) else ''
+        elif kind == 'spm':
+            cc = cc_source(lines, i, reg(SPM.match(t).group(1)))
+        out.append(dict(module=mod, seq=seq, kind=kind, cc=cc,
                         text=t.strip()[:60], comment=comment[:50]))
     return out
 
