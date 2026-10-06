@@ -29,7 +29,7 @@ S120ERR  TM    EGPR15+3,X'01'     FAILED FREEMAIN:             XA0051DK
          BO    CMSRET             RC 4 (BAD RELEASE)           XA0051DK         
 S120LOWG MVC   EGPR1,=X'80000000' SVC 10 GETMAIN: R1 BYTE 0    XA0051DK         
 S120LOW  L     R1,OSTEMP          AS THE SVC 10 DISPATCH DOES  XA0051DK         
-         L     R3,SAVR14                                       XA0051DK         
+         L     R3,SAVR14-TEMPSPC(,R1)                          XA0051DK         
          LA    R0,TEMPLNT                                      XA0051DK         
          DMSFRET DWORDS=(0),LOC=(1),TYPCALL=BALR               XA0051DK         
          LR    R14,R3                                          XA0051DK         

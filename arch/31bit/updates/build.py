@@ -4499,7 +4499,7 @@ ECMODS = {
             "         BO    CMSRET             RC 4 (BAD RELEASE)",
             "S120LOWG MVC   EGPR1,=X'80000000' SVC 10 GETMAIN: R1 BYTE 0",
             "S120LOW  L     R1,OSTEMP          AS THE SVC 10 DISPATCH DOES",
-            "         L     R3,SAVR14",
+            "         L     R3,SAVR14-TEMPSPC(,R1)",
             "         LA    R0,TEMPLNT",
             "         DMSFRET DWORDS=(0),LOC=(1),TYPCALL=BALR",
             "         LR    R14,R3",
