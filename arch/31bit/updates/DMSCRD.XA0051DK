@@ -1,0 +1,2 @@
+./ R 00392000          $ 00392100 100                                           
+WAITPSW  DC    X'000E0000',X'00',CL3'CON' EC WAIT, BYTE 4 = 0  XA0051DK         

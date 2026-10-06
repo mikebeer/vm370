@@ -4450,7 +4450,8 @@ CORSWMODS = {
 # Command modules (TYPE, LISTFILE, TAPE, ...) are rebuilt with CMSGEND.
 ECMODS = {
     'DMSINI': [
-        ('00192000', ["RDERRPSW DC    X'000E0000',CL4' INI'  EC, MCK, WAIT"]),
+        ('00134000', ["         LH    R0,X'BA'       IPL DEVICE ADDRESS (EC: AT BA)"]),
+        ('00192000', ["RDERRPSW DC    X'000E0000',X'00',CL3'INI' EC WAIT, BYTE 4 = 0"]),
         ('00246000', ["ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)"]),
         ('00275000', ["WAKEHERE LH    R13,X'BA'      THE INTERRUPTING DEVICE (EC)"]),
         ('00613000', ["         DC    X'000C0000',V(EXTINT)   EC, MCK ON"]),
@@ -4463,6 +4464,9 @@ ECMODS = {
         ('00621000', ["WAKEPSW  DC    X'000C0000',A(WAKEHERE) EC, MCK ON"]),
         ('00764900', ["         DC    X'000C0000',A(DMSINIR)    00 EC MODE"]),
         ('00765200', ["         DC    X'000C0000',A(DMSINIR)    68 EC MODE"]),
+    ],
+    'DMSCRD': [
+        ('00392000', ["WAITPSW  DC    X'000E0000',X'00',CL3'CON' EC WAIT, BYTE 4 = 0"]),
     ],
     'DMSINS': [
         ('00699000', ["         DC    X'000C0000'    EC, MCK ON (WAS H'4,0')"]),

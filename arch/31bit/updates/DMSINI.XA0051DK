@@ -1,5 +1,7 @@
+./ R 00134000          $ 00134100 100                                           
+         LH    R0,X'BA'       IPL DEVICE ADDRESS (EC: AT BA)   XA0051DK         
 ./ R 00192000          $ 00192100 100                                           
-RDERRPSW DC    X'000E0000',CL4' INI'  EC, MCK, WAIT            XA0051DK         
+RDERRPSW DC    X'000E0000',X'00',CL3'INI' EC WAIT, BYTE 4 = 0  XA0051DK         
 ./ R 00246000          $ 00246010 010                                           
 ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)       XA0051DK         
 ./ R 00275000          $ 00275100 100                                           
