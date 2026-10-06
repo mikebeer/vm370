@@ -4459,6 +4459,10 @@ ECMODS = {
         ('00134000', ["         LH    R0,X'BA'       IPL DEVICE ADDRESS (EC: AT BA)"]),
         ('00192000', ["RDERRPSW DC    X'000E0000',X'00',CL3'INI' EC WAIT, BYTE 4 = 0"]),
         ('00246000', ["ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)"]),
+        # DMSINIW, the nucleus-loader entry, arrives in BC mode too
+        ('00257000', ["         LPSW  ECPSW2         DISABLED, EC MODE (M5B)",
+                      "         CNOP  0,8",
+                      "ECPSW2   DC    X'000C0000',A(ECPSW2+8) RESUME BELOW"]),
         ('00275000', ["WAKEHERE LH    R13,X'BA'      THE INTERRUPTING DEVICE (EC)"]),
         ('00613000', ["         DC    X'000C0000',V(EXTINT)   EC, MCK ON"]),
         ('00614000', ["         DC    X'000C0000',V(DMSITS1)  EC, MCK ON"]),

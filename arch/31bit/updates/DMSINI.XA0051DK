@@ -8,6 +8,10 @@ ECPSW    DC    X'000C0000',A(ECPSW+8) RESUME BELOW             XA0051DK
 RDERRPSW DC    X'000E0000',X'00',CL3'INI' EC WAIT, BYTE 4 = 0  XA0051DK         
 ./ R 00246000          $ 00246010 010                                           
 ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)       XA0051DK         
+./ R 00257000          $ 00257100 100                                           
+         LPSW  ECPSW2         DISABLED, EC MODE (M5B)          XA0051DK         
+         CNOP  0,8                                             XA0051DK         
+ECPSW2   DC    X'000C0000',A(ECPSW2+8) RESUME BELOW            XA0051DK         
 ./ R 00275000          $ 00275100 100                                           
 WAKEHERE LH    R13,X'BA'      THE INTERRUPTING DEVICE (EC)     XA0051DK         
 ./ R 00613000          $ 00613100 100                                           
