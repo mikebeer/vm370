@@ -398,6 +398,16 @@ def check(mod):
         syms = member_symbols(mem)
         if syms:
             reach |= syms
+    # An introduced name that some deck declares ENTRY is an external symbol:
+    # another module reaches it by EXTRN, V-con or =A() through the loader,
+    # not by assembly scope (M4c: DMKSCHTE/DMKSCHTK in DMKSCH, named from the
+    # PSA's ATIMEMU and from DMKCPI).
+    entries = set()
+    for d in glob.glob(os.path.join(UPDATES, '*.XA*DK')):
+        for _, _, _, lines in deck_cards(d):
+            for l in lines:
+                if not iscomment(l) and l[9:].split()[:1] == ['ENTRY']:
+                    entries.update(NAME.findall(l[15:].split()[0].upper()))
     for deck in decks:
         for op, frm, to, lines in deck_cards(deck):
             for l in lines:
@@ -408,6 +418,8 @@ def check(mod):
                     continue
                 for cand in NAME.findall(parts[1].split()[0].upper()):
                     if cand in reach or cand not in introduced:
+                        continue
+                    if cand in entries:
                         continue
                     bad.append((
                         'SCOPE', frm,

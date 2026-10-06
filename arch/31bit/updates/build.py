@@ -108,6 +108,7 @@ XA48 = 'XA0048DK'
 XA49 = 'XA0049DK'
 XA50 = 'XA0050DK'
 XA51 = 'XA0051DK'
+XA52 = 'XA0052DK'
 
 
 def psa():
@@ -4463,6 +4464,151 @@ CORSWMODS = {
 # disable mask become an honest X'00' -- a borrowed X'58' would have set DAT.
 # 133 SSM sites in 23 modules, 16 decode sites, PSW constants in 9 modules.
 # Command modules (TYPE, LISTFILE, TAPE, ...) are rebuilt with CMSGEND.
+# M4c / I-250: ESA/390 has no interval timer.  VM/370 CP time-slices with
+# the S/370 interval timer at real X'50' (TIMER, QUANTUM, QUANTUMR); the
+# hardware decremented it and an external interrupt (X'0080') ended the
+# slice.  Under ESA/390 Hercules leaves X'50' alone, so a compute-bound
+# virtual machine was never preempted (CPWATCH starved CMSUSER, w240/w248)
+# and virtual interval timers stood still.  Emulation: DMKSCHTE decrements
+# TIMER by the TOD time since its last call, in interval-timer units
+# (bit 31 = 1/76800 s: TOD * 3 / 160000, remainder carried), at every CP entry that
+# snapshots it (the SVC, program, I/O and external FLIHs); a value already
+# negative is left alone.  DMKSCHTK, a 10 ms clock-comparator TRQBLOK set
+# up by DMKCPI, guarantees those entries while a guest computes; the
+# dispatcher then sees TIMER <= 0 exactly as before (VMTSEND).  DMKCPI has
+# no room left (CPIATABL past its base), so DMKSCHTI's first 30-second
+# sample starts the tick (DMKSCHTS).
+TMRMODS = {
+    'PSA': [
+        ('00301464', ["TSAVSVC  DS    2F             R14-R15 ACROSS TIMEMU, SVC",
+                      "TSAVPRG  DS    2F             ... PROGRAM FLIH",
+                      "TSAVIOT  DS    2F             ... I/O FLIH"]),
+        ('00301500', ["ATIMEMU  DC    V(DMKSCHTE)    INTERVAL TIMER EMULATION"]),
+        ('00301545', ["TSAVEXT  DS    2F             ... EXTERNAL FLIH"]),
+    ],
+    'DMKSVC': [('00335000', ['         STM   R14,R15,TSAVSVC R14-R15 ACROSS THE CALL', '         L     R15,ATIMEMU    INTERVAL TIMER EMULATION', '         BALR  R14,R15        (I-250)', '         LM    R14,R15,TSAVSVC ...'] + ["         MVC   QUANTUMR,TIMER SAVE INTERVAL TIMER"])],
+    'DMKPRG': [('00240000', ['         STM   R14,R15,TSAVPRG R14-R15 ACROSS THE CALL', '         L     R15,ATIMEMU    INTERVAL TIMER EMULATION', '         BALR  R14,R15        (I-250)', '         LM    R14,R15,TSAVPRG ...'] + ["         MVC   QUANTUMR,TIMER SAVE INTERVAL TIMER"])],
+    'DMKIOT': [('00229000', ['         STM   R14,R15,TSAVIOT R14-R15 ACROSS THE CALL', '         L     R15,ATIMEMU    INTERVAL TIMER EMULATION', '         BALR  R14,R15        (I-250)', '         LM    R14,R15,TSAVIOT ...'] + ["         MVC   QUANTUMR,TIMER SAVE INTERVAL TIMER"])],
+    'DMKPSA': [('00466000', ['         STM   R14,R15,TSAVEXT R14-R15 ACROSS THE CALL', '         L     R15,ATIMEMU    INTERVAL TIMER EMULATION', '         BALR  R14,R15        (I-250)', '         LM    R14,R15,TSAVEXT ...'] + ["         MVC   QUANTUMR,TIMER SAVE INTERVAL TIMER"])],
+    'DMKSCH': [
+        ('00152000', ["         ENTRY DMKSCHMD",
+                      "         ENTRY DMKSCHTK,DMKSCHTE,DMKSCHTS  M4C"]),
+        ('01358010', [
+            "SETTRQ   DS    0H",
+            "*  M4C: THE FIRST 30-SECOND SAMPLE STARTS THE 10 MS TICK",
+            "         CLI   TKSTARTD,0     TICK RUNNING?",
+            "         BNE   SETTRQ1        YES",
+            "         MVI   TKSTARTD,1",
+            "         L     R15,ATKSTART   DMKSCHTS",
+            "         BALR  R14,R15",
+            "SETTRQ1  DS    0H"]),
+        ('01401000', [
+            "OUT      GOTO  DMKDSPCH",
+            "*  M4C: 10 MS TICK.  RE-ARMS ITSELF; ITS ONLY JOB IS A CP",
+            "*  ENTRY, SO DMKSCHTE RUNS AND THE DISPATCHER SEES TIMER.",
+            "DMKSCHTK EQU   *",
+            "         USING TRQBLOK,R10",
+            "         USING *,R12",
+            "         DROP  R13",
+            "         LM    R12,R13,ASCHDL",
+            "         USING DMKSCHDL,R12,R13",
+            "         LR    R1,R10         THE TRQBLOK FOR DMKSCHST",
+            "         STCK  TRQBTOD        NOW",
+            "         BC    7,OUT          CLOCK NOT SET: NO TICK",
+            "         LM    R4,R5,TRQBTOD",
+            "         AL    R5,TICKLEN     + 10 MS",
+            "         BC    12,*+8",
+            "         AL    R4,F1",
+            "         STM   R4,R5,TRQBVAL",
+            "         CALL  DMKSCHST       TICK",
+            "         B     OUT",
+            "TKSTARTD DC    X'00'          TICK STARTED",
+            "         DS    0F",
+            "ATKSTART DC    A(DMKSCHTS)",
+            "*  M4C: START THE TICK.  BALR R14,R15; ALL REGISTERS KEPT.",
+            "DMKSCHTS DS    0H",
+            "         USING *,R15",
+            "         STM   R0,R15,TSSAVE",
+            "         LR    R12,R15",
+            "         DROP  R15",
+            "         USING DMKSCHTS,R12",
+            "         LA    R0,TRQBSIZE",
+            "         L     R15,AFRE52",
+            "         BALR  R14,R15        DMKFREE",
+            "         LR    R2,R1",
+            "         USING TRQBLOK,R2",
+            "         XC    TRQBLOK(TRQBSIZE*8),TRQBLOK",
+            "         MVC   TRQBUSER,ASYSVM",
+            "         MVC   TRQBIRA,ATK",
+            "         STCK  TRQBTOD",
+            "         LM    R4,R5,TRQBTOD",
+            "         AL    R5,TICKLEN",
+            "         BC    12,*+8",
+            "         AL    R4,F1",
+            "         STM   R4,R5,TRQBVAL",
+            "         LR    R1,R2",
+            "         L     R15,ASCHST",
+            "         BALR  R14,R15        DMKSCHST",
+            "         DROP  R2",
+            "         LM    R0,R15,TSSAVE  (DMKSCHST KEPT R12)",
+            "         BR    R14",
+            "         DROP  R12",
+            "TSSAVE   DS    16F",
+            "AFRE52   DC    V(DMKFREE)",
+            "TICKLEN  DC    F'40960000'    10 MS IN TOD UNITS",
+            "ASCHST   DC    A(DMKSCHST)",
+            "ATK      DC    A(DMKSCHTK)",
+            "*  M4C: INTERVAL TIMER EMULATION.  BALR R14,R15 FROM A",
+            "*  FLIH, DISABLED; CALLER SAVES R14-R15.  R0-R1 KEPT.",
+            "DMKSCHTE DS    0H",
+            "         DROP  R13",
+            "         USING DMKSCHTE,R15",
+            "         STM   R0,R1,TESAVE",
+            "         STCK  TENOW",
+            "         BC    7,TEOUT        CLOCK NOT SET",
+            "         LM    R0,R1,TENOW    ELAPSED = NOW - LAST",
+            "         SL    R1,TELAST+4",
+            "         BC    3,TENB         NO BORROW",
+            "         BCTR  R0,0",
+            "TENB     SL    R0,TELAST",
+            "         MVC   TELAST(8),TENOW",
+            "         LTR   R0,R0          OVER 2**31 TOD UNITS",
+            "         BNZ   TEBIG          (0.5 S): SATURATE",
+            "         LTR   R1,R1",
+            "         BM    TEBIG",
+            "*  UNITS = (TOD * 3 + REMAINDER) / 160000, REMAINDER KEPT:",
+            "*  ENTRIES COME EVERY FEW MICROSECONDS, ONE UNIT IS 13.",
+            "         M     R0,TE3",
+            "         AL    R1,TEREM",
+            "         BC    12,*+8",
+            "         AL    R0,TEONE",
+            "         D     R0,TE160K",
+            "         ST    R0,TEREM",
+            "         B     TESUB",
+            "TEBIG    L     R1,TEMAX",
+            "         XC    TEREM,TEREM",
+            "TESUB    L     R0,TIMER",
+            "         LTR   R0,R0          ALREADY NEGATIVE:",
+            "         BM    TEOUT          LEAVE IT (NO WRAP)",
+            "         SR    R0,R1",
+            "         ST    R0,TIMER",
+            "TEOUT    LM    R0,R1,TESAVE",
+            "         BR    R14",
+            "         DROP  R15",
+            "         DS    0D",
+            "TENOW    DS    D",
+            "TELAST   DC    XL8'00'",
+            "TESAVE   DS    2F",
+            "TE3      DC    F'3'",
+            "TE160K   DC    F'160000'",
+            "TEREM    DC    F'0'",
+            "TEONE    DC    F'1'",
+            "TEMAX    DC    X'7FFFFFFF'",
+            "         USING DMKSCHDL,R12,R13",
+        ]),
+    ],
+}
+
 ECMODS = {
     # M5d: SVC 120 (GETMAIN/FREEMAIN RU, LOC=ANY) from HIGHSTOR.  CE's
     # HRC380DS placeholder returned the fixed X'04100000' for S/380 Hercules
@@ -7682,6 +7828,15 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA51, 'CMS IN EC MODE: PSWS, INTERRUPT CODES, MASKS (M5B)')])
         print('%-8s %-9s %3d cards  %s' % (m, XA51, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m in sorted(TMRMODS):
+        dk = datdeck(m, TMRMODS[m], ident=XA52)
+        path = os.path.join(HERE, '%s.%s' % (m, XA52))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA52, 'INTERVAL TIMER EMULATED FROM THE TOD CLOCK (I-250)')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA52, n,
               'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(CORSWMODS):

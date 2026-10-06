@@ -1,0 +1,115 @@
+./ R 00152000          $ 00152100 100                                           
+         ENTRY DMKSCHMD                                        XA0052DK         
+         ENTRY DMKSCHTK,DMKSCHTE,DMKSCHTS  M4C                 XA0052DK         
+./ R 01358010          $ 01358020 010                                           
+SETTRQ   DS    0H                                              XA0052DK         
+*  M4C: THE FIRST 30-SECOND SAMPLE STARTS THE 10 MS TICK       XA0052DK         
+         CLI   TKSTARTD,0     TICK RUNNING?                    XA0052DK         
+         BNE   SETTRQ1        YES                              XA0052DK         
+         MVI   TKSTARTD,1                                      XA0052DK         
+         L     R15,ATKSTART   DMKSCHTS                         XA0052DK         
+         BALR  R14,R15                                         XA0052DK         
+SETTRQ1  DS    0H                                              XA0052DK         
+./ R 01401000          $ 01401001 001                                           
+OUT      GOTO  DMKDSPCH                                        XA0052DK         
+*  M4C: 10 MS TICK.  RE-ARMS ITSELF; ITS ONLY JOB IS A CP      XA0052DK         
+*  ENTRY, SO DMKSCHTE RUNS AND THE DISPATCHER SEES TIMER.      XA0052DK         
+DMKSCHTK EQU   *                                               XA0052DK         
+         USING TRQBLOK,R10                                     XA0052DK         
+         USING *,R12                                           XA0052DK         
+         DROP  R13                                             XA0052DK         
+         LM    R12,R13,ASCHDL                                  XA0052DK         
+         USING DMKSCHDL,R12,R13                                XA0052DK         
+         LR    R1,R10         THE TRQBLOK FOR DMKSCHST         XA0052DK         
+         STCK  TRQBTOD        NOW                              XA0052DK         
+         BC    7,OUT          CLOCK NOT SET: NO TICK           XA0052DK         
+         LM    R4,R5,TRQBTOD                                   XA0052DK         
+         AL    R5,TICKLEN     + 10 MS                          XA0052DK         
+         BC    12,*+8                                          XA0052DK         
+         AL    R4,F1                                           XA0052DK         
+         STM   R4,R5,TRQBVAL                                   XA0052DK         
+         CALL  DMKSCHST       TICK                             XA0052DK         
+         B     OUT                                             XA0052DK         
+TKSTARTD DC    X'00'          TICK STARTED                     XA0052DK         
+         DS    0F                                              XA0052DK         
+ATKSTART DC    A(DMKSCHTS)                                     XA0052DK         
+*  M4C: START THE TICK.  BALR R14,R15; ALL REGISTERS KEPT.     XA0052DK         
+DMKSCHTS DS    0H                                              XA0052DK         
+         USING *,R15                                           XA0052DK         
+         STM   R0,R15,TSSAVE                                   XA0052DK         
+         LR    R12,R15                                         XA0052DK         
+         DROP  R15                                             XA0052DK         
+         USING DMKSCHTS,R12                                    XA0052DK         
+         LA    R0,TRQBSIZE                                     XA0052DK         
+         L     R15,AFRE52                                      XA0052DK         
+         BALR  R14,R15        DMKFREE                          XA0052DK         
+         LR    R2,R1                                           XA0052DK         
+         USING TRQBLOK,R2                                      XA0052DK         
+         XC    TRQBLOK(TRQBSIZE*8),TRQBLOK                     XA0052DK         
+         MVC   TRQBUSER,ASYSVM                                 XA0052DK         
+         MVC   TRQBIRA,ATK                                     XA0052DK         
+         STCK  TRQBTOD                                         XA0052DK         
+         LM    R4,R5,TRQBTOD                                   XA0052DK         
+         AL    R5,TICKLEN                                      XA0052DK         
+         BC    12,*+8                                          XA0052DK         
+         AL    R4,F1                                           XA0052DK         
+         STM   R4,R5,TRQBVAL                                   XA0052DK         
+         LR    R1,R2                                           XA0052DK         
+         L     R15,ASCHST                                      XA0052DK         
+         BALR  R14,R15        DMKSCHST                         XA0052DK         
+         DROP  R2                                              XA0052DK         
+         LM    R0,R15,TSSAVE  (DMKSCHST KEPT R12)              XA0052DK         
+         BR    R14                                             XA0052DK         
+         DROP  R12                                             XA0052DK         
+TSSAVE   DS    16F                                             XA0052DK         
+AFRE52   DC    V(DMKFREE)                                      XA0052DK         
+TICKLEN  DC    F'40960000'    10 MS IN TOD UNITS               XA0052DK         
+ASCHST   DC    A(DMKSCHST)                                     XA0052DK         
+ATK      DC    A(DMKSCHTK)                                     XA0052DK         
+*  M4C: INTERVAL TIMER EMULATION.  BALR R14,R15 FROM A         XA0052DK         
+*  FLIH, DISABLED; CALLER SAVES R14-R15.  R0-R1 KEPT.          XA0052DK         
+DMKSCHTE DS    0H                                              XA0052DK         
+         DROP  R13                                             XA0052DK         
+         USING DMKSCHTE,R15                                    XA0052DK         
+         STM   R0,R1,TESAVE                                    XA0052DK         
+         STCK  TENOW                                           XA0052DK         
+         BC    7,TEOUT        CLOCK NOT SET                    XA0052DK         
+         LM    R0,R1,TENOW    ELAPSED = NOW - LAST             XA0052DK         
+         SL    R1,TELAST+4                                     XA0052DK         
+         BC    3,TENB         NO BORROW                        XA0052DK         
+         BCTR  R0,0                                            XA0052DK         
+TENB     SL    R0,TELAST                                       XA0052DK         
+         MVC   TELAST(8),TENOW                                 XA0052DK         
+         LTR   R0,R0          OVER 2**31 TOD UNITS             XA0052DK         
+         BNZ   TEBIG          (0.5 S): SATURATE                XA0052DK         
+         LTR   R1,R1                                           XA0052DK         
+         BM    TEBIG                                           XA0052DK         
+*  UNITS = (TOD * 3 + REMAINDER) / 160000, REMAINDER KEPT:     XA0052DK         
+*  ENTRIES COME EVERY FEW MICROSECONDS, ONE UNIT IS 13.        XA0052DK         
+         M     R0,TE3                                          XA0052DK         
+         AL    R1,TEREM                                        XA0052DK         
+         BC    12,*+8                                          XA0052DK         
+         AL    R0,TEONE                                        XA0052DK         
+         D     R0,TE160K                                       XA0052DK         
+         ST    R0,TEREM                                        XA0052DK         
+         B     TESUB                                           XA0052DK         
+TEBIG    L     R1,TEMAX                                        XA0052DK         
+         XC    TEREM,TEREM                                     XA0052DK         
+TESUB    L     R0,TIMER                                        XA0052DK         
+         LTR   R0,R0          ALREADY NEGATIVE:                XA0052DK         
+         BM    TEOUT          LEAVE IT (NO WRAP)               XA0052DK         
+         SR    R0,R1                                           XA0052DK         
+         ST    R0,TIMER                                        XA0052DK         
+TEOUT    LM    R0,R1,TESAVE                                    XA0052DK         
+         BR    R14                                             XA0052DK         
+         DROP  R15                                             XA0052DK         
+         DS    0D                                              XA0052DK         
+TENOW    DS    D                                               XA0052DK         
+TELAST   DC    XL8'00'                                         XA0052DK         
+TESAVE   DS    2F                                              XA0052DK         
+TE3      DC    F'3'                                            XA0052DK         
+TE160K   DC    F'160000'                                       XA0052DK         
+TEREM    DC    F'0'                                            XA0052DK         
+TEONE    DC    F'1'                                            XA0052DK         
+TEMAX    DC    X'7FFFFFFF'                                     XA0052DK         
+         USING DMKSCHDL,R12,R13                                XA0052DK         

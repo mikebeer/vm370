@@ -1,0 +1,6 @@
+./ R 00240000          $ 00240100 100                                           
+         STM   R14,R15,TSAVPRG R14-R15 ACROSS THE CALL         XA0052DK         
+         L     R15,ATIMEMU    INTERVAL TIMER EMULATION         XA0052DK         
+         BALR  R14,R15        (I-250)                          XA0052DK         
+         LM    R14,R15,TSAVPRG ...                             XA0052DK         
+         MVC   QUANTUMR,TIMER SAVE INTERVAL TIMER              XA0052DK         
