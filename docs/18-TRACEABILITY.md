@@ -41,7 +41,8 @@ mostly environment facts and one-off authoring slips.
 
 | Issue | | Risk | Milestone | Status |
 |---|---|---|---|---|
-| **I-01** | CP's `MSG` macro under z390 | R-13 | continuous | z390 only |
+| **I-01** | CP's `MSG` macro under z390 | R-13 | M7 ESA/390 guests | **planned** 6 Oct (user decision) — target: IPL Linux/390 (31-bit) under VM/370+ | guest channel-subsystem I/O simulation (SSCH/TSCH/STSCH/MSCH/TPI, subchannels, ISC) in DMKPRV/DMKVIO/DMKVSI/DMKCCW; ESA/390-format guest DAT shadowing (DMKVAT); ESA/390 virtual control registers, lowcore and interruption codes; guest machine mode per directory (cf. VM/XA S/370 vs XA guests) | new | — |
+| continuous | z390 only |
 | **I-02** | `DMKCPI` U+E000 encoding | **R-04** | M1 / M2 | fix known |
 | **I-03** | `DMKDSP` duplicate `USING` | R-13 | continuous | z390 only |
 | **I-04** | `XATEST` listing never checked | R-17 | M0 | fixed |
@@ -126,7 +127,8 @@ the issues it opened and closed. `13-ISSUES.md` holds the issue text,
 | M3c shared by frame | done 4 Oct | DMKCFG, DMKPGS, DMKVMA, DMKBLD XA0045DK | R-06 retired | I-195, I-210, I-211, I-212 closed; increment 2 open (`33-FRAME-SHARING.md`) |
 | M4 two guests, keys | largely done | DMKPRV (ISKE/SSKE), DMKCDB (DISPLAY K) | R-12 measured (CMS sets both halves alike) | I-29 superseded |
 | M4b real storage up to 2 GB | **planned** 6 Oct (user decision) — before or alongside M5c | DMKCPI (storage sizing, CORTABLE), the flag-in-byte-0 fields (CORSWPNT/CPEXADD family, I-236/I-238 patterns), I-185 (16-bit page numbers), DMKCDB/DMKCDS DISPLAY/STORE (I-207); test: Hercules mainsize 64M → 256M → 2G, paging workload at each step | R-01, R-05 | I-185, I-207; 64-bit (z/Architecture) explicitly out of scope |
-| M5 31-bit CMS, real > 16 MB | **in progress** 5 Oct as XA-CMS-light (`36-M5-CMS31.md`): M5a build route running under the ESA/390 CP (`cmsstage`/`cmswrite`) ✔; M5b EC-mode nucleus ✔ 6 Oct (XA0051DK, 30 modules; I-241 in CP) — command modules and directory ECMODE open; M5c–M5e to come | DMSINI, DMSITS, DMSITE, DMSITP, DMSIOW, DMSFRE, DMSINS; DMSLCL control file | R-10 | I-203 (256 MB ceiling), I-204, I-235 (leaving a named system; M3 increment 2), I-241 (DMKVMI is guest code) |
+| M5 31-bit CMS, real > 16 MB | **in progress** as XA-CMS-light (`36-M5-CMS31.md`): M5a build route ✔ 5 Oct; M5b EC-mode nucleus ✔ 6 Oct; M5c HIGHSTOR (storage above 16 MB) ✔; M5d SVC 120 GETMAIN/FREEMAIN RU, GCC380 runs AMODE 31 ✔ (LOC=BELOW stays low, I-248); M5e cREXX: 24-bit build with GCC370 running (w235); 31-bit blocked — GCC380's S/380 PDPCLIB passes high addresses to CMS OS services (BLDL), see M5f | DMSINI, DMSITS, DMSITE, DMSITP, DMSIOW, DMSFRE, DMSINS, DMSSVT, DMSEXC; HIGHSTOR; DMSLCL control file | R-10 | I-203, I-204, I-235, I-241, I-242–I-248 |
+| M5f 31-bit C toolchain | **planned** 6 Oct: GCC `-m31` (mainline s390, e.g. Ubuntu `gcc-s390x-linux-gnu`) or Adrian's GCC 16 SDK, cross on the PC; ELF → CMS TEXT/MODULE; runtime from Adrian's newlib CMS adapters (`cms20-esa31-v1` shape: high heap, one bridge that copies plists/buffers below the line and calls CMS in AMODE 24) on HIGHSTOR / SVC 120. Target: cREXX with a 24 MB+ heap | new: bridge, storage, loader | R-10 | — |
 | M6 31-bit CMS proper | **deferred** — not required for cREXX | the CMS nucleus itself at AMODE 31: FSCBs, PLISTs and DIAG plists above the line, the 156 `LA` strips and 34 ICM-3 sites in nucleus code, DMKPRV's ISKE/SSKE/RRBE simulation (I-46) | R-10 | — |
 | continuous | — | build tools: `mkrun`, `snapshot`, `replchk`, `mkdeck`, `drive` | R-11, R-13, R-16, R-18, R-20, R-21 | I-197, I-198, I-205, I-210 closed |
 | 64-bit | later | — | — | I-28 |
