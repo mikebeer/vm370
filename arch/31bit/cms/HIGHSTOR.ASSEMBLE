@@ -1,0 +1,275 @@
+***********************************************************************
+* HIGHSTOR -- STORAGE ABOVE 16 MB FOR AN EC-MODE CMS (M5C)            *
+*                                                                     *
+* LOADED AS A NUCLEUS EXTENSION, CALLED BY SVC 202:                   *
+*                                                                     *
+*   PLIST  DC  CL8'HIGHSTOR',CL8'OBTAIN',F'BYTES',A(0)  -> ADDRESS    *
+*          DC  CL8'HIGHSTOR',CL8'RELEASE',F'BYTES',A(ADDRESS)         *
+*          DC  CL8'HIGHSTOR',CL8'QUERY'    TYPES THE REGION STATE     *
+*          DC  CL8'HIGHSTOR',CL8'RESET'    FREES EVERYTHING           *
+*                                                                     *
+* THE REGION IS 16 MB TO THE VIRTUAL MACHINE SIZE (DIAG X'60').  IT   *
+* IS KEPT AS A PAGE BITMAP HERE, BELOW THE LINE, SO THIS CODE NEVER   *
+* TOUCHES A HIGH PAGE AND RUNS AMODE 24 -- EXCEPT TO SET THE STORAGE  *
+* KEYS OF THE PAGES IT HANDS OUT (USER KEY E), WHICH NEEDS A 31-BIT   *
+* SSK.  CMS ITSELF NEVER SEES THESE PAGES: DMSFRE, THE NUCLEUS, FSCBS *
+* AND PLISTS STAY BELOW 16 MB (36-M5-CMS31.MD, XA-CMS-LIGHT).         *
+*                                                                     *
+* RETURN CODES (R15):  0 OK   1 NO SUCH STORAGE   4 BAD SIZE          *
+*                      6 BAD RELEASE   8 BAD FUNCTION                 *
+***********************************************************************
+HIGHSTOR CSECT
+         USING HIGHSTOR,R12
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         IPK   ,              CALLER'S KEY TO R2
+         SPKA  0              KEY 0: OUR DATA IS NUCLEUS-KEY
+         ST    R2,SAVEKEY
+         ST    R13,SAVE+4
+         LA    R13,SAVE
+         LR    R11,R1         THE PLIST
+         CLI   INITDONE,1
+         BE    DISPATCH
+         BAL   R10,INIT
+DISPATCH CLC   8(8,R11),=CL8'OBTAIN'
+         BE    OBTAIN
+         CLC   8(8,R11),=CL8'RELEASE'
+         BE    RELEASE
+         CLC   8(8,R11),=CL8'QUERY'
+         BE    QUERY
+         CLC   8(8,R11),=CL8'RESET'
+         BE    RESET
+         CLI   8(R11),X'FF'   NO FUNCTION: QUERY
+         BE    QUERY
+         LA    R15,8
+         B     EXIT
+*
+* INIT: THE REGION, AND A CLEAR BITMAP.
+*
+INIT     MVI   INITDONE,1
+         DC    X'83F00060'    DIAG R15,R0,X'0060': VM SIZE IN R15
+         ST    R15,VMSIZE
+         CL    R15,=A(X'01000000')
+         BNH   INITNONE       16 MB OR LESS: NO REGION
+         SL    R15,=A(X'01000000')
+         SRL   R15,12         PAGES ABOVE 16 MB
+         C     R15,=A(MAXPAGES)
+         BNH   *+8
+         L     R15,=A(MAXPAGES)
+         ST    R15,NPAGES
+         ST    R15,NFREE
+         B     INITCLR
+INITNONE SR    R15,R15
+         ST    R15,NPAGES
+         ST    R15,NFREE
+INITCLR  LA    R2,BITMAP      CLEAR THE BITMAP
+         L     R3,=A(MAXPAGES/8)
+         SR    R4,R4
+         SR    R5,R5
+         MVCL  R2,R4
+         BR    R10
+*
+* OBTAIN: FIRST FIT OF N CONTIGUOUS FREE PAGES.
+*
+OBTAIN   L     R7,16(,R11)    BYTES
+         LTR   R7,R7
+         BNP   BADSIZE
+         AL    R7,=F'4095'
+         SRL   R7,12          N PAGES
+         C     R7,NFREE
+         BH    NOSTOR
+         SR    R6,R6          CANDIDATE START PAGE
+OBT1     LR    R8,R6          FIRST PAGE OF THE CANDIDATE RUN
+         LR    R9,R7          PAGES STILL NEEDED
+OBT2     C     R8,NPAGES      PAST THE END?
+         BNL   NOSTOR
+         BAL   R10,TESTBIT    CC 0: PAGE R8 IS FREE
+         BNZ   OBT3           IN USE: RESTART AFTER IT
+         LA    R8,1(,R8)
+         BCT   R9,OBT2
+         B     OBT4           R6.. R6+N-1 ARE FREE
+OBT3     LA    R6,1(,R8)
+         B     OBT1
+OBT4     LR    R8,R6          MARK THEM
+         LR    R9,R7
+OBT5     BAL   R10,SETBIT
+         LA    R8,1(,R8)
+         BCT   R9,OBT5
+         L     R1,NFREE
+         SR    R1,R7
+         ST    R1,NFREE
+         LR    R2,R6          ADDRESS = 16 MB + PAGE * 4096
+         SLL   R2,12
+         AL    R2,=A(X'01000000')
+         ST    R2,20(,R11)
+         LR    R3,R7          BYTES TO KEY = N * 4096
+         SLL   R3,12
+         BAL   R10,SETKEYS
+         SR    R15,R15
+         B     EXIT
+*
+* RELEASE: ADDRESS AND BYTES MUST NAME PAGES THAT ARE ALL IN USE.
+*
+RELEASE  L     R7,16(,R11)    BYTES
+         LTR   R7,R7
+         BNP   BADSIZE
+         AL    R7,=F'4095'
+         SRL   R7,12
+         L     R6,20(,R11)    ADDRESS
+         SL    R6,=A(X'01000000')
+         BM    BADREL
+         LR    R1,R6
+         N     R1,=F'4095'    PAGE ALIGNED?
+         BNZ   BADREL
+         SRL   R6,12
+         LR    R1,R6
+         AR    R1,R7
+         C     R1,NPAGES
+         BH    BADREL
+         LR    R8,R6          ALL IN USE?
+         LR    R9,R7
+REL1     BAL   R10,TESTBIT
+         BZ    BADREL         A FREE PAGE IN THE RANGE
+         LA    R8,1(,R8)
+         BCT   R9,REL1
+         LR    R8,R6          FREE THEM
+         LR    R9,R7
+REL2     BAL   R10,CLRBIT
+         LA    R8,1(,R8)
+         BCT   R9,REL2
+         L     R1,NFREE
+         AR    R1,R7
+         ST    R1,NFREE
+         SR    R15,R15
+         B     EXIT
+*
+RESET    BAL   R10,INITCLR
+         L     R1,NPAGES
+         ST    R1,NFREE
+         SR    R15,R15
+         B     EXIT
+*
+* QUERY: HIGHSTOR 16384K-65536K TOTAL NNNNNNNK FREE NNNNNNNK
+*
+QUERY    L     R1,VMSIZE
+         SRL   R1,10
+         CVD   R1,DWORD
+         MVC   QTOP,PAT7
+         ED    QTOP,DWORD+4
+         L     R1,NPAGES
+         SLL   R1,2           PAGES * 4 = K
+         CVD   R1,DWORD
+         MVC   QTOT,PAT7
+         ED    QTOT,DWORD+4
+         L     R1,NFREE
+         SLL   R1,2
+         CVD   R1,DWORD
+         MVC   QFREE,PAT7
+         ED    QFREE,DWORD+4
+         WRTERM QLINE,QLEN
+         SR    R15,R15
+         B     EXIT
+*
+BADSIZE  LA    R15,4
+         B     EXIT
+NOSTOR   LA    R15,1
+         B     EXIT
+BADREL   LA    R15,6
+EXIT     L     R13,SAVE+4
+         L     R1,SAVEKEY
+         SPKA  0(R1)          BACK TO THE CALLER'S KEY
+         L     R14,12(,R13)
+         LM    R0,R12,20(R13)
+         BR    R14
+*
+* BIT ROUTINES: R8 = PAGE INDEX.  USE R1, R2.
+*
+TESTBIT  LR    R1,R8
+         SRL   R1,3
+         LA    R1,BITMAP(R1)  BYTE (BITMAP < 16 MB, AMODE 24)
+         LR    R2,R8
+         N     R2,=F'7'
+         IC    R2,MASKS(R2)
+         EX    R2,TMBIT
+         BR    R10
+SETBIT   LR    R1,R8
+         SRL   R1,3
+         LA    R1,BITMAP(R1)
+         LR    R2,R8
+         N     R2,=F'7'
+         IC    R2,MASKS(R2)
+         EX    R2,OIBIT
+         BR    R10
+CLRBIT   LR    R1,R8
+         SRL   R1,3
+         LA    R1,BITMAP(R1)
+         LR    R2,R8
+         N     R2,=F'7'
+         IC    R2,NMASKS(R2)
+         EX    R2,NIBIT
+         BR    R10
+TMBIT    TM    0(R1),0
+OIBIT    OI    0(R1),0
+NIBIT    NI    0(R1),0
+*
+* SETKEYS: R2 = ADDRESS, R3 = BYTES.  STORAGE KEY E (USER) ON EVERY
+* 2 KB BLOCK, IN AMODE 31 -- A 24-BIT SSK CANNOT NAME A BLOCK ABOVE
+* 16 MB.  CP SIMULATES SSK; WITH I-244 IT TAKES THE GUEST'S AMODE FROM
+* THE PSW OF THE INTERCEPTED INSTRUCTION, SO THE BSM BELOW IS ENOUGH.
+* R4/R5 USED.  INTERRUPTS STAY AS THEY ARE: CMS'S HANDLERS SAVE AND
+* RESTORE THE WHOLE EC PSW, BIT 32 INCLUDED.
+*
+SETKEYS  LA    R4,USERKEY
+         L     R5,=A(KEYS31)
+         O     R5,=X'80000000' AMODE 31 BIT
+         DC    X'0B05'        BSM 0,R5: TO AMODE 31
+KEYS31   SSK   R4,R2
+         AL    R2,=F'2048'
+         S     R3,=F'2048'
+         BP    KEYS31
+         L     R5,=A(KEYS24)
+         DC    X'0B05'        BSM 0,R5: BACK TO AMODE 24
+KEYS24   BR    R10
+*
+USERKEY  EQU   X'E0'
+MAXPAGES EQU   520192         (2 GB - 16 MB) / 4 KB
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R3       EQU   3
+R4       EQU   4
+R5       EQU   5
+R6       EQU   6
+R7       EQU   7
+R8       EQU   8
+R9       EQU   9
+R10      EQU   10
+R11      EQU   11
+R12      EQU   12
+R13      EQU   13
+R14      EQU   14
+R15      EQU   15
+*
+         LTORG
+SAVE     DS    18F
+DWORD    DS    D
+SAVEKEY  DC    F'0'
+VMSIZE   DC    F'0'
+NPAGES   DC    F'0'
+NFREE    DC    F'0'
+INITDONE DC    X'00'
+MASKS    DC    X'8040201008040201'
+NMASKS   DC    X'7FBFDFEFF7FBFDFE'
+PAT7     DC    X'4020202020202120'
+QLINE    DC    C'HIGHSTOR 16384K-'
+QTOP     DS    CL8
+         DC    C'K TOTAL '
+QTOT     DS    CL8
+         DC    C'K FREE '
+QFREE    DS    CL8
+         DC    C'K'
+QLEN     EQU   *-QLINE
+         DS    0D
+BITMAP   DS    XL(MAXPAGES/8)
+         END
+

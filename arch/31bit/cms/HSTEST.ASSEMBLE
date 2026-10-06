@@ -1,0 +1,119 @@
+***********************************************************************
+* HSTEST -- M5C OBSERVABLE: TAKE 40 MB ABOVE THE LINE, USE IT IN      *
+* AMODE 31 FROM A USER-KEY PROGRAM, GIVE IT BACK.                     *
+*   1. HIGHSTOR QUERY                                                 *
+*   2. HIGHSTOR OBTAIN 40 MB  -> ADDRESS                              *
+*   3. BSM TO AMODE 31, STORE EACH PAGE'S OWN ADDRESS INTO ITS FIRST  *
+*      WORD AND X'5A' INTO ITS LAST BYTE, THEN READ ALL BACK          *
+*   4. BSM TO AMODE 24, HIGHSTOR QUERY, RELEASE, QUERY                *
+* TYPES 'HSTEST OK ...' OR 'HSTEST FAIL ...'; RC 0 OR 8.              *
+***********************************************************************
+HSTEST   CSECT
+         USING HSTEST,R12
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         ST    R13,SAVE+4
+         LA    R13,SAVE
+         LA    R1,QRYPL
+         SVC   202
+         DC    AL4(FAILQ)
+         LA    R1,OBTPL
+         SVC   202
+         DC    AL4(FAILO)
+         L     R2,OBTADR      FIRST BYTE OF THE 40 MB
+         ST    R2,SAVADR
+         L     R3,=A(NBYTES/4096) PAGES
+         L     R5,=A(AM31)
+         O     R5,=X'80000000'
+         DC    X'0B05'        BSM 0,R5
+AM31     LR    R6,R2          WRITE PASS
+         LR    R7,R3
+WLOOP    ST    R6,0(,R6)      THE PAGE'S OWN ADDRESS
+         MVI   4095(R6),X'5A' AND ITS LAST BYTE
+         AL    R6,=F'4096'
+         BCT   R7,WLOOP
+         LR    R6,R2          READ PASS
+         LR    R7,R3
+RLOOP    C     R6,0(,R6)
+         BNE   BADRD
+         CLI   4095(R6),X'5A'
+         BNE   BADRD
+         AL    R6,=F'4096'
+         BCT   R7,RLOOP
+         SR    R9,R9          OK
+         B     BACK24
+BADRD    LR    R9,R6          FAILING PAGE
+BACK24   L     R5,=A(AM24)
+         DC    X'0B05'        BSM 0,R5
+AM24     LTR   R9,R9
+         BNZ   FAILR
+         LA    R1,QRYPL       SHOW IT IN USE
+         SVC   202
+         DC    AL4(FAILQ)
+         MVC   RELADR,SAVADR
+         LA    R1,RELPL
+         SVC   202
+         DC    AL4(FAILL)
+         LA    R1,QRYPL
+         SVC   202
+         DC    AL4(FAILQ)
+         L     R1,SAVADR
+         ST    R1,DWORD
+         UNPK  WORK(9),DWORD(5)
+         TR    WORK(8),HEXTAB-240
+         MVC   OKADR,WORK
+         WRTERM OKMSG,OKLEN
+         SR    R15,R15
+         B     EXIT
+FAILQ    MVC   FWHAT,=CL8'QUERY'
+         B     FAIL
+FAILO    MVC   FWHAT,=CL8'OBTAIN'
+         B     FAIL
+FAILL    MVC   FWHAT,=CL8'RELEASE'
+         B     FAIL
+FAILR    MVC   FWHAT,=CL8'READBACK'
+FAIL     WRTERM FMSG,FLEN
+         LA    R15,8
+EXIT     L     R13,SAVE+4
+         L     R14,12(,R13)
+         LM    R0,R12,20(R13)
+         BR    R14
+*
+NBYTES   EQU   41943040       40 MB
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R3       EQU   3
+R4       EQU   4
+R5       EQU   5
+R6       EQU   6
+R7       EQU   7
+R8       EQU   8
+R9       EQU   9
+R10      EQU   10
+R11      EQU   11
+R12      EQU   12
+R13      EQU   13
+R14      EQU   14
+R15      EQU   15
+         LTORG
+SAVE     DS    18F
+DWORD    DS    D
+WORK     DS    CL9
+SAVADR   DS    F
+QRYPL    DC    CL8'HIGHSTOR',CL8'QUERY',8X'FF'
+OBTPL    DC    CL8'HIGHSTOR',CL8'OBTAIN'
+         DC    A(NBYTES)
+OBTADR   DC    A(0)
+RELPL    DC    CL8'HIGHSTOR',CL8'RELEASE'
+         DC    A(NBYTES)
+RELADR   DC    A(0)
+OKMSG    DC    C'HSTEST OK: 40 MB AT X'''
+OKADR    DS    CL8
+         DC    C''' WRITTEN AND READ BACK IN AMODE 31, RELEASED'
+OKLEN    EQU   *-OKMSG
+FMSG     DC    C'HSTEST FAIL IN '
+FWHAT    DC    CL8' '
+FLEN     EQU   *-FMSG
+HEXTAB   DC    C'0123456789ABCDEF'
+         END

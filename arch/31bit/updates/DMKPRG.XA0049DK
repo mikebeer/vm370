@@ -1,0 +1,6 @@
+./ R 00290000          $ 00290100 100                                           
+         ST    R1,VMPSW+4     SAVE PSW ADDRESS                 XA0049DK         
+         NI    VMFSTAT,255-VMAM31 MODE FROM THE REAL PSW       XA0049DK         
+         LTR   R1,R1          BIT 32 = AMODE 31 ?              XA0049DK         
+         BNM   *+8            NO                               XA0049DK         
+         OI    VMFSTAT,VMAM31 YES (M5C, NATIVE BSM)            XA0049DK         

@@ -333,6 +333,50 @@ cmsstage)
   asmchk s1 || exit 1
   echo "--- CMS slice staged $# spec(s)"
   ;;
+cpstage)
+  # M5c, 6 October: a CP slice staged under OUR ESA/390 CP, like cmsstage.
+  # `stage` boots the stock S/370 CE nucleus, which a written pack no longer
+  # has (I-191), so every CP fix used to start with `reset` -- a restore of
+  # the WHOLE pack that also discards the CMS work done since (the 290
+  # nucleus, command modules, 19E, the directory).  Our CP has run CMS and
+  # the assembler since M3b, so the assemblies can run here, and every CP
+  # build is then also a regression run of the CP it replaces.
+  shift
+  arch ESA/390
+  mk s1 "$@" || exit 1
+  run s1 || exit 1; chk s1 ESA/390 || exit 1
+  asmchk s1 || exit 1
+  echo "--- CP slice staged under ESA/390: $# spec(s)"
+  ;;
+cpwrite)
+  # `write`, under our ESA/390 CP: VMFLOAD and the nucleus loader run in
+  # MAINT's virtual machine and write the next nucleus to 6A1 while the
+  # current one runs -- the ordinary VM way to regenerate CP.  Same checks.
+  w || exit 1
+  arch ESA/390
+  mk n1 --unshared "herc:devinit 000d io/nucleus.deck:5" \
+        "cmd:cp purge rdr all:10" \
+        "cmd:cp start 00d class a:5" "cmd:cp spool punch class a nocont:5" \
+        "cmd:vmfload cpload dmklcl:40" "cmd:cp close punch:15" "cmd:cp drain 00d:5" \
+        "cmd:cp spool punch to *:10" \
+        "cmd:vmfload cpload dmklcl:40" "cmd:cp close punch:15" \
+        "cmd:cp ipl 00c:60" || exit 1
+  run n1 || exit 1; chk n1 ESA/390 || exit 1
+  python3 "$T/deckscan.py" "$C/io/nucleus.deck" --map > "$C/cpnuc.map" 2>&1 \
+    && python3 - "$C/cpnuc.map" "$C/nucsyms.txt" <<'PY'
+import re, sys
+rows = re.findall(r'^([A-Z0-9@#$]+) +([0-9A-F]+) +([0-9A-F]+)', open(sys.argv[1]).read(), re.M)
+with open(sys.argv[2], 'w') as f:
+    for s, a, b in rows:
+        f.write('%s %s\n' % (s, a))
+print('--- load map: %d CSECTs in %s' % (len(rows), sys.argv[2]))
+PY
+  grep -E "Nucleus loaded|LOAD DECK COMPLETE|DISABLED WAIT" "$C/n1.log" | tail -3
+  grep -q "LOAD DECK COMPLETE" "$C/n1.log" || {
+    echo "### VMFLOAD DID NOT COMPLETE -- raise its pause"; exit 1; }
+  grep -q "00000012" "$C/n1.log" || { echo "### NUCLEUS WRITE FAILED"; exit 1; }
+  : > "$C/.written"
+  ;;
 cmswrite)
   # M5a: write the CMS nucleus to the CMSTEST disk (290; `cmswrite 190` for
   # production) exactly as MAINT.MEMO step 7 does by hand: VMFLOAD CMSLOAD

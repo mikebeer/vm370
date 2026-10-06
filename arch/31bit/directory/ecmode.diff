@@ -1,5 +1,5 @@
 --- USER.DIRECT.orig	2026-10-06 05:59:47.150914497 +0000
-+++ USER.DIRECT	2026-10-06 05:59:47.154271651 +0000
++++ USER.DIRECT	2026-10-06 15:53:27.592735042 +0000
 @@ -76,6 +76,7 @@
   MDISK   191 3350 464 020 VM50-7 MR   ALL      WRITE    MULT            00760000
                                                                          00770000
@@ -24,10 +24,12 @@
   IPL CMS PARM BATCH                                                     01130000
   CONSOLE 009 3215                                                       01140000
   SPOOL 00E 1403 A                                                       01150000
-@@ -122,6 +125,7 @@
+@@ -121,7 +124,8 @@
+  MDISK   192 3350 241 010 VM50-3 MR   ALL      WRITE    MULT            01210000
   MDISK   195 3350 251 050 VM50-3 MR   ALL      WRITE    MULT            01220000
                                                                          01230000
- USER CMSUSER CMSUSER 15M 16M G                                          01240000
+-USER CMSUSER CMSUSER 15M 16M G                                          01240000
++USER CMSUSER CMSUSER 16M 64M G                                          01240000
 + OPTION ECMODE                                                                  
   IPL CMS                                                                01250000
   CONSOLE 009 3215                                                       01260000
@@ -56,6 +58,15 @@
   IPL CMS PARM AUTOCR
   CONSOLE 009 3215
   SPOOL 00C 2540 READER *
+@@ -247,7 +254,7 @@
+  MDISK 194 3350 000 555 VSAMIN MR ALL WRITE MULT
+  MDISK 195 3350 150 035 KICKS0 MR ALL WRITE MULT
+                                                                         02330000
+-USER MAINT CPCMS 15M 16M ABCDEFGH                                       02340000
++USER MAINT CPCMS 16M 64M ABCDEFGH                                       02340000
+  OPTION ECMODE LNKNOPAS                                                 02350000
+  IPL CMS                                                                02360000
+  CONSOLE 009 3215                                                       02370000
 @@ -368,6 +375,7 @@
   MDISK   19C 3350 451 050 GCCBRX MR   ALL      WRITE    MULT            03390000
                                                                          03400000

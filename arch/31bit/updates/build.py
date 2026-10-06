@@ -4142,6 +4142,19 @@ SWEEP_EXCEPT = {('DMKPRV', '00395100'), ('DMKPRV', '00903000'),
                 ('DMKPSA', '00272000'), ('DMKPSA', '00279000'),
                 ('DMKHVC', '00617000'), ('DMKHVC', '00789000')}
 G31MODS = {
+    # M5c: a guest that switches mode natively (BSM/BASSM) is invisible to
+    # the PSW gatekeepers, so VMAM31 stays stale and the next simulated
+    # privileged op (SSK above 16 MB, DIAG with a high address) is decoded
+    # as 24-bit.  Every such simulation enters through DMKPRG, which copies
+    # the real program old PSW's address word into VMPSW+4 here: take the
+    # mode from the same word (EC-mode guests only; BC has no bit 32).
+    'DMKPRG': [
+        ('00290000', ["         ST    R1,VMPSW+4     SAVE PSW ADDRESS",
+                      "         NI    VMFSTAT,255-VMAM31 MODE FROM THE REAL PSW",
+                      "         LTR   R1,R1          BIT 32 = AMODE 31 ?",
+                      "         BNM   *+8            NO",
+                      "         OI    VMFSTAT,VMAM31 YES (M5C, NATIVE BSM)"]),
+    ],
     'DMKPSA': [
         # TRL31, the TRANS macro's AMODE 31 LRA, out of the PSA's reserved
         # words (where it no longer fits) into the live code at X'800'.

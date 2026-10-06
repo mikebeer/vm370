@@ -252,7 +252,10 @@ def main():
     # nothing to purge.  Everything still comes from specs rather than a
     # hand-edited rc, which is the rule run33 taught.
     rc = [] if '--bare' in sys.argv else [BOOT]
-    if '--cms' in sys.argv:
+    # `--unshared` (6 October, cpwrite): the same boot for a CP build that
+    # IPLs the nucleus loader from 00C -- it leaves CMS too, and from the
+    # shared system CP stops it with 'SHARED PAGE ... ALTERED'.
+    if '--cms' in sys.argv or '--unshared' in sys.argv:
         # MAINT's directory IPL is the saved system CMS, shared by frame
         # (XA0045DK).  A user who then IPLs something ELSE -- VMFLOAD's deck
         # from 00C, or 190 -- leaves the named system, and that bookkeeping is
