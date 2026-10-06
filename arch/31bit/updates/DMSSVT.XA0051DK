@@ -43,4 +43,5 @@ S120R0   DS    F                  M5D: SVC 120 WORK            XA0051DK
 S120R1   DS    F                                               XA0051DK         
 S120R15  DS    F                                               XA0051DK         
 S120PL   DS    6F                 HIGHSTOR PLIST               XA0051DK         
+         DS    0D                 TEMPLNT ROUNDS DOWN (I-249)  XA0051DK         
 TEMPSEND EQU   *                                               XA0051DK         

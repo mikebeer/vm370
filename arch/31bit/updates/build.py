@@ -4514,6 +4514,7 @@ ECMODS = {
             "S120R1   DS    F",
             "S120R15  DS    F",
             "S120PL   DS    6F                 HIGHSTOR PLIST",
+            "         DS    0D                 TEMPLNT ROUNDS DOWN (I-249)",
             "TEMPSEND EQU   *",
         ]),
     ],
