@@ -7,11 +7,34 @@
          CLI   X'8B',202      IS THIS SVC 202? (EC CODE)       XA0051DK         
 ./ R 00330000          $ 00330100 100                                           
          CLI   X'8B',203      IS THIS SVC 203? (EC CODE)       XA0051DK         
+./ R 00537260          $ 00537261 001                                           
+         STC   R2,ITSPSW+1    SET THE PSW KEY BYTE             XA0051DK         
+         OI    ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)       XA0051DK         
+./ R 00549000          $ 00549100 100                                           
+         MVC   RET(2),=X'030C' EC PSW, I/O+EXT ENABLED (M5B)   XA0051DK         
+./ R 00703000          $ 00703100 100                                           
+         MVC   OLDPSW,SVCOPSW COPY SVC OLD PSW INTO AREA       XA0051DK         
+         MVC   OLDPSW+2(2),X'8A' SVC CODE INTO BC POSITION     XA0051DK         
 ./ R 00706000          $ 00706100 100                                           
          TM    X'89',X'04'    EXECUTE (4-BYTE)? ILC AT 89      XA0051DK         
 ./ R 00749000          $ 00749100 100                                           
          IC    XR,X'8B'       GET SVC NUMBER (EC CODE)         XA0051DK         
+./ R 00833000          $ 00833100 100                                           
+         XC    ITSPSW(8),ITSPSW START WITH ZERO PSW            XA0051DK         
+         MVI   ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)       XA0051DK         
+./ R 00839000          $ 00839100 100                                           
+         MVI   ITSPSW,X'03'   I/O+EXT ENABLED (EC)             XA0051DK         
 ./ R 00850000          $ 00850100 100                                           
          CLI   X'8B',S203     IS THIS AN SVC 203? (EC)         XA0051DK         
+./ R 00894000          $ 00894100 100                                           
+         MVC   SVCSAVE(8),OLDPSW SET RETURN PSW                XA0051DK         
+         XC    SVCSAVE+2(2),SVCSAVE+2 DROP SVC CODE (EC)       XA0051DK         
+./ R 00930000          $ 00930100 100                                           
+         MVC   SVCSAVE(8),OLDPSW SET FIRST TO OLDPSW           XA0051DK         
+         XC    SVCSAVE+2(2),SVCSAVE+2 DROP SVC CODE (EC)       XA0051DK         
 ./ R 01067000          $ 01067100 100                                           
          CLI   X'8B',201      SVC 201? (EC CODE)               XA0051DK         
+./ R 01069000          $ 01069100 100                                           
+         CLC   ITSPSW(2),=X'000C' DISABLED EC PSW?     V0211   XA0051DK         
+./ R 01292000          $ 01292100 100                                           
+         MVC   RET(2),=X'000C' FORM EC PSW AT RET              XA0051DK         

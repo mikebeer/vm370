@@ -1,2 +1,6 @@
+./ R 00098475          $ 00098476 001                                           
+         MVI   0(0),X'03'         SET PSW ENABLED (EC)         XA0051DK         
+./ R 00098480          $ 00098481 001                                           
+         OI    1(0),X'EC'         USER KEY, EC MODE            XA0051DK         
 ./ R 00098685          $ 00098686 001                                           
          SSM   =X'00'         DISABLE INTERRUPTS (EC)          XA0051DK         
