@@ -4493,10 +4493,16 @@ ECMODS = {
         # startup PSWs (ITSPSW/RET) must be EC: byte0 03=I/O+EXT, byte1 0C=EC+MCK
         ('00328000', ["         CLI   X'8B',202      IS THIS SVC 202? (EC CODE)"]),
         ('00330000', ["         CLI   X'8B',203      IS THIS SVC 203? (EC CODE)"]),
+        # SCBPSW+4 of a nucleus extension carries flags in byte 0 (DMSREX:
+        # X'20'); BC ignored it, EC requires bits 32-39 zero
+        ('00537200', ["         MVC   ITSPSW+4(4),SCBPSW+4 SET THE ADDRESS",
+                      "         MVI   ITSPSW+4,0     AMODE 24, EC BITS 32-39"]),
         ('00537260', ["         STC   R2,ITSPSW+1    SET THE PSW KEY BYTE",
                       "         OI    ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)"]),
         # bytes 2-3 of RET are whatever STM R11,R13,RET left there; BC
         # ignored them on LPSW, EC takes a specification exception (bit 17)
+        ('00548000', ["         ST    R15,RET+4      USE LOWCORE AREA FOR CONSTRUCTON",
+                      "         MVI   RET+4,0        AMODE 24, EC BITS 32-39"]),
         ('00549000', ["         MVC   RET(4),=X'030C0000' EC PSW, ENABLED (M5B)"]),
         ('00703000', ["         MVC   OLDPSW,SVCOPSW COPY SVC OLD PSW INTO AREA",
                       "         MVC   OLDPSW+2(2),X'8A' SVC CODE INTO BC POSITION"]),
