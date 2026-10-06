@@ -7329,7 +7329,7 @@ def main():
     vmi = dmkvmi()
     vmi.write(os.path.join(HERE, 'DMKVMI.%s' % XA11))
     aux(os.path.join(HERE, 'DMKVMI.AUXLCL'),
-        [(XA11, 'GUEST IPL DEVICE ADDRESS STAYS AT X\'BA\' (I-47 REVISED, I-241)')])
+        [(XA11, 'GUEST IPL DEVICE STAYS AT X\'BA\' (I-241)')])
 
     iot = dmkiot()
     iot.write(os.path.join(HERE, 'DMKIOT.%s' % XA12))
