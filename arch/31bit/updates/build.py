@@ -4495,7 +4495,9 @@ ECMODS = {
         ('00330000', ["         CLI   X'8B',203      IS THIS SVC 203? (EC CODE)"]),
         ('00537260', ["         STC   R2,ITSPSW+1    SET THE PSW KEY BYTE",
                       "         OI    ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)"]),
-        ('00549000', ["         MVC   RET(2),=X'030C' EC PSW, I/O+EXT ENABLED (M5B)"]),
+        # bytes 2-3 of RET are whatever STM R11,R13,RET left there; BC
+        # ignored them on LPSW, EC takes a specification exception (bit 17)
+        ('00549000', ["         MVC   RET(4),=X'030C0000' EC PSW, ENABLED (M5B)"]),
         ('00703000', ["         MVC   OLDPSW,SVCOPSW COPY SVC OLD PSW INTO AREA",
                       "         MVC   OLDPSW+2(2),X'8A' SVC CODE INTO BC POSITION"]),
         ('00706000', ["         TM    X'89',X'04'    EXECUTE (4-BYTE)? ILC AT 89"]),
@@ -4510,7 +4512,7 @@ ECMODS = {
                       "         XC    SVCSAVE+2(2),SVCSAVE+2 DROP SVC CODE (EC)"]),
         ('01067000', ["         CLI   X'8B',201      SVC 201? (EC CODE)"]),
         ('01069000', ["         CLC   ITSPSW(2),=X'000C' DISABLED EC PSW?     V0211"]),
-        ('01292000', ["         MVC   RET(2),=X'000C' FORM EC PSW AT RET"]),
+        ('01292000', ["         MVC   RET(4),=X'000C0000' FORM EC PSW AT RET"]),
     ],
     'DMSITE': [
         ('00084000', ["         CLI   X'87',X'80'    INTERRUPT-CODE = TIMER? (EC)"]),

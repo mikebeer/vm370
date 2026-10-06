@@ -11,7 +11,7 @@
          STC   R2,ITSPSW+1    SET THE PSW KEY BYTE             XA0051DK         
          OI    ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)       XA0051DK         
 ./ R 00549000          $ 00549100 100                                           
-         MVC   RET(2),=X'030C' EC PSW, I/O+EXT ENABLED (M5B)   XA0051DK         
+         MVC   RET(4),=X'030C0000' EC PSW, ENABLED (M5B)       XA0051DK         
 ./ R 00703000          $ 00703100 100                                           
          MVC   OLDPSW,SVCOPSW COPY SVC OLD PSW INTO AREA       XA0051DK         
          MVC   OLDPSW+2(2),X'8A' SVC CODE INTO BC POSITION     XA0051DK         
@@ -37,4 +37,4 @@
 ./ R 01069000          $ 01069100 100                                           
          CLC   ITSPSW(2),=X'000C' DISABLED EC PSW?     V0211   XA0051DK         
 ./ R 01292000          $ 01292100 100                                           
-         MVC   RET(2),=X'000C' FORM EC PSW AT RET              XA0051DK         
+         MVC   RET(4),=X'000C0000' FORM EC PSW AT RET          XA0051DK         
