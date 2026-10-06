@@ -1,0 +1,42 @@
+
+&CONTROL OFF NOMSG
+* Uncomment next line to use statically linked MODULES
+*&GOTO -CKSYNS
+
+*
+* system profile extension
+
+* check if MECAFF tool synonyms can be registered
+* First, look for a resident GCCLIB Nucleus Extension
+MAKEBUF
+&BNO = &RETCODE
+*
+SENTRIES
+&LINES1 = &RETCODE
+NUCXMAP GCCLIB ( STACK LIFO
+SENTRIES
+&LINES2 = &RETCODE
+DROPBUF &BNO
+&I = &LINES2 - &LINES1
+* Use static versions if no GCCLIB Nucleus Extension
+&IF &I = 0 &GOTO -CKSYNS
+
+STATE MECAFF$D SYNONYM *
+&IF &RETCODE NE 0 &GOTO -CKSYNS
+SYNONYM MECAFF$D SYNONYM *
+&GOTO -NEXT1
+*
+-CKSYNS
+STATE MECAFF$S SYNONYM *
+&IF &RETCODE NE 0 &GOTO -NEXT1
+SYNONYM MECAFF$S SYNONYM *
+&GOTO -NEXT1
+
+* process next SYSPROF extension
+-NEXT1
+* M5C: STORAGE ABOVE 16 MB FOR AN EC-MODE CMS (HIGHSTOR)
+STATE HIGHSTOR TEXT *
+&IF &RETCODE EQ 0 NUCXTEXT HIGHSTOR ( SYSTEM PERM
+
+* done SYSPROF extension
+&EXIT 0

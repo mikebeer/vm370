@@ -168,7 +168,14 @@ def drive(ce, name, steps, herc='hercules', hold=False):
     stamp = lambda: '%6.1fs' % (time.time() - t0)
 
     def wait_file(path, pattern, start, timeout):
-        rx = re.compile(pattern, re.M)
+        try:
+            rx = re.compile(pattern, re.M)
+        except re.error:
+            # A bad pattern used to kill the driver mid-run and leave
+            # Hercules up with a half-typed dialogue (w204: expect '*').
+            # Match it literally instead and say so.
+            print('  (expect %r is not a regex; matching it literally)' % pattern)
+            rx = re.compile(re.escape(pattern), re.M)
         deadline = time.time() + timeout
         while time.time() < deadline:
             try:

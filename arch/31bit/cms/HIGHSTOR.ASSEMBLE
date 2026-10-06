@@ -49,6 +49,8 @@ DISPATCH CLC   8(8,R11),=CL8'OBTAIN'
 INIT     MVI   INITDONE,1
          DC    X'83F00060'    DIAG R15,R0,X'0060': VM SIZE IN R15
          ST    R15,VMSIZE
+         TM    X'21',X'08'    SVC OLD PSW: EC FORMAT (BIT 12)?
+         BZ    INITNONE       BC-MODE CMS: NO REGION, NO BSM
          CL    R15,=A(X'01000000')
          BNH   INITNONE       16 MB OR LESS: NO REGION
          SL    R15,=A(X'01000000')
