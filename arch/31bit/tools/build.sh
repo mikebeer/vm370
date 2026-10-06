@@ -156,9 +156,14 @@ missing = [m for m in mods if m not in created]
 errs = {}
 mod = None
 for line in t.splitlines():
-    m = re.match(r'^EXEC VMFASM (\S+)', line)
+    # The module name comes from `EXEC VMFASM DMKxxx` in a batch build, or
+    # from the typed `/(0009) vmfasm dmkxxx dmslcl` in a staged slice.  The
+    # first version knew only the former, so a slice's IFO188 (DMKVMI,
+    # I-241: an undefined symbol assembled as four zero bytes, deck
+    # created) passed as clean.
+    m = re.match(r'^(?:EXEC VMFASM|/\(\d+\) vmfasm) (\S+)', line, re.I)
     if m:
-        mod = m.group(1); continue
+        mod = m.group(1).upper(); continue
     d = re.match(r'^(IFO\d{3}) (?:\*\*\* )?(.*?)(?: \*\*\*)?\s*$', line)
     if d and mod and d.group(1) != 'IFO197':
         errs.setdefault(mod, []).append(d.group(1))
