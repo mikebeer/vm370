@@ -1,5 +1,5 @@
 --- USER.DIRECT.orig	2026-10-06 05:59:47.150914497 +0000
-+++ USER.DIRECT	2026-10-06 15:53:27.592735042 +0000
++++ USER.DIRECT	2026-10-06 16:37:39.656838196 +0000
 @@ -76,6 +76,7 @@
   MDISK   191 3350 464 020 VM50-7 MR   ALL      WRITE    MULT            00760000
                                                                          00770000
@@ -29,7 +29,7 @@
   MDISK   195 3350 251 050 VM50-3 MR   ALL      WRITE    MULT            01220000
                                                                          01230000
 -USER CMSUSER CMSUSER 15M 16M G                                          01240000
-+USER CMSUSER CMSUSER 16M 64M G                                          01240000
++USER CMSUSER CMSUSER 16M 256M G                                         01240000
 + OPTION ECMODE                                                                  
   IPL CMS                                                                01250000
   CONSOLE 009 3215                                                       01260000

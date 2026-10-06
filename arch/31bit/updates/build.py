@@ -4464,6 +4464,57 @@ CORSWMODS = {
 # 133 SSM sites in 23 modules, 16 decode sites, PSW constants in 9 modules.
 # Command modules (TYPE, LISTFILE, TAPE, ...) are rebuilt with CMSGEND.
 ECMODS = {
+    # M5d: SVC 120 (GETMAIN/FREEMAIN RU, LOC=ANY) from HIGHSTOR.  CE's
+    # HRC380DS placeholder returned the fixed X'04100000' for S/380 Hercules
+    # to back; on VM/370+ the storage is real and managed (I-245).
+    'DMSSVT': [
+        ('02667100', '02667450', [
+            "*  M5D: GETMAIN/FREEMAIN RU (SVC 120).  R0 = LENGTH, R1 =",
+            "*  ADDRESS (FREEMAIN), R15 FLAGS: X'01' = FREEMAIN (GCC380:",
+            "*  X'72' GET, X'03' FREE; W209).  ABOVE THE LINE FROM",
+            "*  HIGHSTOR FOR AN AMODE 31 CALLER (LOC=ANY); EVERYTHING ELSE",
+            "*  IS AN ORDINARY GETMAIN/FREEMAIN R, HANDED TO DMSSMN10 AS",
+            "*  THE SVC 10 DISPATCH WOULD (I-245).",
+            "         L     R6,OSTEMP          TEMPSPC (REENTRANT WORK)",
+            "         STM   R0,R1,S120R0-TEMPSPC(R6)",
+            "         MVC   S120PL-TEMPSPC(8,R6),=CL8'HIGHSTOR'",
+            "         MVC   S120PL+16-TEMPSPC(8,R6),S120R0-TEMPSPC(R6)",
+            "         TM    EGPR15+3,X'01'     FREEMAIN?",
+            "         BZ    S120GET",
+            "         CL    R1,=A(X'01000000') ABOVE THE LINE?",
+            "         BL    S120LOW            NO: DMSSMN'S STORAGE",
+            "         MVC   S120PL+8-TEMPSPC(8,R6),=CL8'RELEASE'",
+            "         B     S120HS",
+            "S120GET  TM    OLDPSW+4,X'80'     CALLER IN AMODE 31?",
+            "         BZ    S120LOWG           NO: BELOW THE LINE",
+            "         MVC   S120PL+8-TEMPSPC(8,R6),=CL8'OBTAIN'",
+            "S120HS   LA    R1,S120PL-TEMPSPC(,R6)",
+            "         SVC   202",
+            "         DC    AL4(S120ERR)",
+            "         L     R1,S120PL+20-TEMPSPC(R6)  THE ADDRESS",
+            "         ST    R1,EGPR1           FOR THE CALLER",
+            "         SR    R15,R15",
+            "         B     CMSRET",
+            "S120ERR  TM    EGPR15+3,X'01'     FAILED FREEMAIN:",
+            "         BO    CMSRET             RC 4 (BAD RELEASE)",
+            "S120LOWG MVC   EGPR1,=X'80000000' SVC 10 GETMAIN: R1 BYTE 0",
+            "S120LOW  L     R1,OSTEMP          AS THE SVC 10 DISPATCH DOES",
+            "         L     R3,SAVR14",
+            "         LA    R0,TEMPLNT",
+            "         DMSFRET DWORDS=(0),LOC=(1),TYPCALL=BALR",
+            "         LR    R14,R3",
+            "         LM    R0,R1,EGPR0",
+            "         L     R12,=V(DMSSMN10)",
+            "         BR    R12",
+        ]),
+        ('02782000', [
+            "S120R0   DS    F                  M5D: SVC 120 WORK",
+            "S120R1   DS    F",
+            "S120R15  DS    F",
+            "S120PL   DS    6F                 HIGHSTOR PLIST",
+            "TEMPSEND EQU   *",
+        ]),
+    ],
     'DMSINI': [
         # a reader IPL arrives from the card loader in BC mode: switch here
         ('00133000', ["         LPSW  ECPSW          DISABLED, EC MODE (M5B)",

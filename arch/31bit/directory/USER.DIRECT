@@ -124,7 +124,7 @@ USER CMSBATCH CMSBATCH 8M 8M G                                          01120000
  MDISK   192 3350 241 010 VM50-3 MR   ALL      WRITE    MULT            01210000
  MDISK   195 3350 251 050 VM50-3 MR   ALL      WRITE    MULT            01220000
                                                                         01230000
-USER CMSUSER CMSUSER 16M 64M G                                          01240000
+USER CMSUSER CMSUSER 16M 256M G                                         01240000
  OPTION ECMODE                                                                  
  IPL CMS                                                                01250000
  CONSOLE 009 3215                                                       01260000
