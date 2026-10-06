@@ -984,7 +984,7 @@ def dmkvmi():
         "WHERE A S/370 EC-MODE IPL LEAVES THE IPL DEVICE ADDRESS AND WHERE "
         "AN EC-MODE CMS (DMSINI, M5B) READS IT. THE EARLIER I-47 CARD WROTE "
         "SYSIPLDV HERE, WHICH IN GUEST STORAGE IS NOTHING -- I-241.") + [
-        "         STH   R13,INTTIO     GUEST IPL DEVICE, EC MODE",
+        "         STH   R13,G370TIO    GUEST IPL DEVICE, EC MODE",
     ])
     return d
     return d
