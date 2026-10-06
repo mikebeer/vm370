@@ -405,3 +405,45 @@ hours went into a "completions never processed" theory). To see who owns
 real storage at a wait, dump the top 256 KB in 15.5 KB `r` calls (the HTTP
 reply truncates near 1000 lines), read CR1, and walk the segment table
 offline — that is what found I-240 in one run.
+
+## EC-mode CMS (6 October)
+
+- **DMKVMI is guest code.** CP's IPL simulator is a pageable CP module, but
+  DMKCFG pages it into the *virtual machine* at X'20000' and it runs there.
+  Every PSA reference inside it is the guest's page 0, so the rule "rename
+  the architected S/370 slots so nothing uses them by accident" does not
+  apply to it: its `STH R13,INTTIO` is where a S/370 EC-mode IPL leaves the
+  IPL device address for the guest (`G370TIO` in our PSA). I-47 got this
+  wrong, I-241 undid it. The same question — whose low core is this? — is
+  worth asking at every `X-PSA(,Rn)` site.
+- **An undefined symbol is four zero bytes, not an error you will see.** XF
+  flags IFO188 and still writes the deck. `asmchk` is the gate, and it only
+  knew `EXEC VMFASM` lines until I-241: a staged slice types `vmfasm` at the
+  console. Check the gate when the result is impossible.
+- **A S/370 EC PSW is strict where BC was not.** Bits 24–31 and 32–39 must
+  be zero: `CL4' INI'` in a wait PSW's address, a return PSW with an SVC
+  code in bytes 2–3, bit 32 as a "31-bit" marker — each is a specification
+  exception, and since the program new PSW points back at the loader, a
+  wait becomes a restart loop with no message. Our CP's TM X'7F' on byte 4
+  (bit 32 = AMODE) is the one deliberate relaxation.
+- **Who builds the PSW?** Converting every `DC` PSW constant misses the PSWs
+  code constructs (`MVI ITSPSW,ON` / `XC ITSPSW(8)` / `STC key`). grep for
+  `MVI|OI|NI|STC|XC .*PSW` and for `LPSW` of a work area, not just `X'FF06'`.
+- **A reader IPL and a disk IPL arrive in different modes.** The disk IPL
+  record carries the EC PSW; the card loader branches under its own BC PSW.
+  Code that must run in EC mode switches itself (`LPSW` to the next
+  instruction) rather than trusting the IPL path.
+- **`cmswrite`'s 300-second wait after the heading prompt** is the one place
+  the build cannot poll: an abend prints `CMS` and waits for a command. When
+  the dialogue fails, read `c1.log` after `DMSINI612R`; the nucleus is
+  already written by then, so a following `IPL 290` tests the same code.
+- **CP TRACE as a debugger.** `CP TRACE SVC` / `TRACE PROG` (RUN off) stop
+  the VM at each event with the terminal in CP mode; `IPL xxx STOP` stops at
+  the IPL PSW. A test json can `D G`, `D PSW`, `D 0.C0` at each stop and `B`
+  on. For "what did the guest see at its first SVC" this beats Hercules
+  `t+`, which filters on real addresses.
+- **`build.sh reset` + `write` restore the whole pack**, MAINT's 191 (the
+  staged TXTLCLs) and the 290 nucleus included. Stage CP, write, then stage
+  CMS and `cmswrite`, and take the snapshot after the CMS write — or the
+  next reset silently hands back the pristine CMSTEST nucleus ("VM/CMS Test
+  System"), which boots in BC mode and looks like success.
