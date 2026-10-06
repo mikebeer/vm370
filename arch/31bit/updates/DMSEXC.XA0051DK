@@ -2,5 +2,8 @@
          MVI   0(0),X'03'         SET PSW ENABLED (EC)         XA0051DK         
 ./ R 00098480          $ 00098481 001                                           
          OI    1(0),X'EC'         USER KEY, EC MODE            XA0051DK         
+./ R 00098485          $ 00098486 001                                           
+         MVC   4(4,0),NUCBREXX    SET PSW ADDRESS              XA0051DK         
+         MVI   4(0),0             AMODE 24, EC BITS 32-39      XA0051DK         
 ./ R 00098685          $ 00098686 001                                           
          SSM   =X'00'         DISABLE INTERRUPTS (EC)          XA0051DK         

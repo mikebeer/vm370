@@ -4554,6 +4554,10 @@ ECMODS = {
     'DMSEXC': [
         ('00098475', ["         MVI   0(0),X'03'         SET PSW ENABLED (EC)"]),
         ('00098480', ["         OI    1(0),X'EC'         USER KEY, EC MODE"]),
+        # NUCBREXX carries a flag in byte 0 (X'20'); BC put CC/ILC there,
+        # EC requires bits 32-39 zero
+        ('00098485', ["         MVC   4(4,0),NUCBREXX    SET PSW ADDRESS",
+                      "         MVI   4(0),0             AMODE 24, EC BITS 32-39"]),
         ('00098685', ["         SSM   =X'00'         DISABLE INTERRUPTS (EC)"])],
     'DMSEXT': [('02356000', ["ON       DC    X'03'          ENABLE I/O, EXT (EC)"])],
     'DMSINT': [('00253000', ["         SSM   =X'03'         ENABLE I/O AND EXTERNAL"])],
