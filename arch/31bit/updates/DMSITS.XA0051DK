@@ -7,9 +7,15 @@
          CLI   X'8B',202      IS THIS SVC 202? (EC CODE)       XA0051DK         
 ./ R 00330000          $ 00330100 100                                           
          CLI   X'8B',203      IS THIS SVC 203? (EC CODE)       XA0051DK         
+./ R 00537200          $ 00537201 001                                           
+         MVC   ITSPSW+4(4),SCBPSW+4 SET THE ADDRESS            XA0051DK         
+         MVI   ITSPSW+4,0     AMODE 24, EC BITS 32-39          XA0051DK         
 ./ R 00537260          $ 00537261 001                                           
          STC   R2,ITSPSW+1    SET THE PSW KEY BYTE             XA0051DK         
          OI    ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)       XA0051DK         
+./ R 00548000          $ 00548100 100                                           
+         ST    R15,RET+4      LOWCORE PSW CONSTRUCTION         XA0051DK         
+         MVI   RET+4,0        AMODE 24, EC BITS 32-39          XA0051DK         
 ./ R 00549000          $ 00549100 100                                           
          MVC   RET(4),=X'030C0000' EC PSW, ENABLED (M5B)       XA0051DK         
 ./ R 00703000          $ 00703100 100                                           

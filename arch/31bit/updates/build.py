@@ -4501,7 +4501,7 @@ ECMODS = {
                       "         OI    ITSPSW+1,X'0C' EC MODE, MCK ENABLED (M5B)"]),
         # bytes 2-3 of RET are whatever STM R11,R13,RET left there; BC
         # ignored them on LPSW, EC takes a specification exception (bit 17)
-        ('00548000', ["         ST    R15,RET+4      USE LOWCORE AREA FOR CONSTRUCTON",
+        ('00548000', ["         ST    R15,RET+4      LOWCORE PSW CONSTRUCTION",
                       "         MVI   RET+4,0        AMODE 24, EC BITS 32-39"]),
         ('00549000', ["         MVC   RET(4),=X'030C0000' EC PSW, ENABLED (M5B)"]),
         ('00703000', ["         MVC   OLDPSW,SVCOPSW COPY SVC OLD PSW INTO AREA",
