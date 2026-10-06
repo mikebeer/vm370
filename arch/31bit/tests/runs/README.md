@@ -14,5 +14,10 @@ test user logs on). Only the operator issues `shutdown`.
 | `guest31-tape.json` | M2 step 3: `devinit 480 io/g31.aws` (built by `../guest31/mkipl31.py`), ATTACH as 181, directory recompiled to 64M, `DEF STOR 32M`, `IPL 181`: the guest runs in AMODE 31, stores `AMODE 31` at 1FF0000 and `HI31` at 1000000, takes an SVC with a 31-bit PSW (old PSW `00080000 8000041E` at 1FF0010) and waits `000A0000 00000031`; displayed from CP | the `Online` wait; `ATTACHED` arrives on the user's terminal, not the operator's |
 | `gcclib-15m.json` | the 15M GCCLIB / autolog regression: `IPL CMS`, `SEGMENT LOAD GCCLIB` ("already defined"), the key map of F00000–FFFFFF, AUTOLOG CMSUSER, `IND`, FORCE | the `Online` wait |
 
-Last run clean: 5 October 2026 14:45 UTC on SNAP-I241's nucleus (w109, w111,
+Last run clean: 6 October 2026 23:55 UTC on the M4c nucleus (XA0052DK,
+interval timer emulated, I-250) — rguest31-tape, ramode31-32m, ripl190-16m,
+rgcclib-15m. Extra timeouts that are environment drift, not failures: the
+live directory already says `16M 64M`/`16M 256M` (the `change` steps find
+nothing to change), and `q names` lists users before `USERS =` arrives.
+Previous: 5 October 2026 14:45 UTC on SNAP-I241's nucleus (w109, w111,
 w112) — CP in AMODE 31 (`34-AMODE31.md`).
