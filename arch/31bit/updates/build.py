@@ -979,12 +979,14 @@ def dmkvmi():
     d = Deck(XA11)
     d.replace('00806000', first='00806100', inc=100, limit='00807000',
               lines=Deck.comment(
-        "SYSIPLDV IS CP'S OWN FIELD FOR THIS AND ALWAYS WAS -- SEE DMKCPI "
-        "00484000. WRITING IT HERE REPLACES A COPY INTO THE ARCHITECTED I/O "
-        "INTERRUPTION CODE, WHICH ON ESA/390 IS THE SUBSYSTEM ID WORD AND MUST "
-        "NOT HOLD A DEVICE ADDRESS. NO SEMANTIC CHANGE. I-47.") + [
-        "         STH   R13,SYSIPLDV   SET IPL DEVICE ADDRESS",
+        "DMKVMI RUNS INSIDE THE VIRTUAL MACHINE (DMKCFP COPIES IT TO THE "
+        "GUEST'S X'20000'), SO THIS INTTIO IS THE GUEST'S X'BA': THE PLACE "
+        "WHERE A S/370 EC-MODE IPL LEAVES THE IPL DEVICE ADDRESS AND WHERE "
+        "AN EC-MODE CMS (DMSINI, M5B) READS IT. THE EARLIER I-47 CARD WROTE "
+        "SYSIPLDV HERE, WHICH IN GUEST STORAGE IS NOTHING -- I-241.") + [
+        "         STH   R13,INTTIO     GUEST IPL DEVICE, EC MODE",
     ])
+    return d
     return d
 
 
@@ -7327,7 +7329,7 @@ def main():
     vmi = dmkvmi()
     vmi.write(os.path.join(HERE, 'DMKVMI.%s' % XA11))
     aux(os.path.join(HERE, 'DMKVMI.AUXLCL'),
-        [(XA11, 'IPL DEVICE ADDRESS GOES IN SYSIPLDV, NOT LOWCORE')])
+        [(XA11, 'GUEST IPL DEVICE ADDRESS STAYS AT X\'BA\' (I-47 REVISED, I-241)')])
 
     iot = dmkiot()
     iot.write(os.path.join(HERE, 'DMKIOT.%s' % XA12))
