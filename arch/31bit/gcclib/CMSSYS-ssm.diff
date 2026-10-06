@@ -1,0 +1,42 @@
+--- CMSSYS.ASSEMBLE.orig	2026-10-06 05:48:04.586257020 +0000
++++ CMSSYS.ASSEMBLE	2026-10-06 05:48:04.589064081 +0000
+@@ -77,10 +77,10 @@
+          L     R3,4(R1)       get Value                                 00076000
+          IPK   ,                                                        00077000
+          SPKA  0                                                        00078000
+-         SSM   *+1                                                      00079000
++         STNSM 16(R13),X'00'  SAVE MASK IN R15 SLOT, DISABLE (EC/BC)    00079000
+          ST    R3,0(R5)       Save Value                                00080000
+          SPKA  0(R2)                                                    00081000
+-         SSM   =X'FF'                                                   00082000
++         SSM   16(R13)        RESTORE CALLER'S MASK (EC/BC)             00082000
+          L     R14,12(R13)    restore our return address                00083000
+          LM    R0,R12,20(R13) restore the registers                     00084000
+          BR    R14            return to our caller                      00085000
+@@ -104,7 +104,7 @@
+          BZ    SETFOFF        branch to reset flag                      00103000
+          IPK   ,                                                        00104000
+          SPKA  0                                                        00105000
+-         SSM   *+1                                                      00106000
++         STNSM 16(R13),X'00'  SAVE MASK IN R15 SLOT, DISABLE (EC/BC)    00106000
+          IC    R4,EXECFLAG    Get Flag                                  00107000
+          OR    R4,R5          Set Flag On                               00108000
+          STC   R4,EXECFLAG    Save Flag                                 00109000
+@@ -112,7 +112,7 @@
+ SETFOFF  DS    0H                                                       00111000
+          IPK   ,                                                        00112000
+          SPKA  0                                                        00113000
+-         SSM   *+1                                                      00114000
++         STNSM 16(R13),X'00'  SAVE MASK IN R15 SLOT, DISABLE (EC/BC)    00114000
+          LA    R6,X'FF'       For Anding the Flag                       00115000
+          SR    R6,R5                                                    00116000
+          IC    R4,EXECFLAG    Get Flag                                  00117000
+@@ -120,7 +120,7 @@
+          STC   R4,EXECFLAG    Save Flag                                 00119000
+ SETFDONE DS    0H                                                       00120000
+          SPKA  0(R2)                                                    00121000
+-         SSM   =X'FF'                                                   00122000
++         SSM   16(R13)        RESTORE CALLER'S MASK (EC/BC)             00122000
+          L     R14,12(R13)    restore our return address                00123000
+          LM    R0,R12,20(R13) restore the registers                     00124000
+          BR    R14            return to our caller                      00125000

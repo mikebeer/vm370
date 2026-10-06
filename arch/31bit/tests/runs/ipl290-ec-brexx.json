@@ -1,0 +1,321 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "DMKCPI966I|Start \\(\\(Warm",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I|\\?CP",
+  "timeout": 90,
+  "cont": true,
+  "settle": 8
+ },
+ {
+  "send": "/cp disc",
+  "expect": "DISCONNECT AT",
+  "timeout": 60
+ },
+ {
+  "send": "/logon maint cpcms noipl",
+  "expect": "Ready|LOGON AT|RECONNECT",
+  "timeout": 180
+ },
+ {
+  "send": "/cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/ipl 190",
+  "expect": "VM Community|Ready",
+  "timeout": 120
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cp purge rdr all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp purge printer all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/gcclib-text.rdr eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/readcard gcclib text a",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/gcclib-txtlib.rdr eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/readcard gcclib txtlib a",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/brexx-text.rdr eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/readcard brexx text a",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "/listfile * * a (date",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/access 19e d",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/rename gcclib text d gcclib textorig d",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/rename gcclib txtlib d gcclib txtlorig d",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/rename brexx text d brexx textorig d",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/copyfile gcclib text a = = d2",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/copyfile gcclib txtlib a = = d2",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/copyfile brexx text a = = d2",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/listfile gcclib * d (date",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/listfile brexx * d (date",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/erase gcclib text a",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/erase gcclib txtlib a",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/erase brexx text a",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/release d",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon cmsuser cmsuser noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp set ecmode on",
+  "expect": "CP|Ready|STORAGE",
+  "timeout": 20,
+  "cont": true
+ },
+ {
+  "term": "cp link maint 290 290 rr",
+  "expect": "Ready|DMK|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp trace prog",
+  "expect": "TRACE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 290",
+  "expect": "PROG|Ready|DMS",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|PROG|DMS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp d psw",
+  "expect": "PSW",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp d g",
+  "expect": "GPR",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp d 28.8",
+  "expect": "000028",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp trace end",
+  "expect": "Ready|TRACE|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp b",
+  "expect": "Ready|DMS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "q disk",
+  "expect": "Ready|DMS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "listfile * exec y",
+  "expect": "Ready|DMS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "rexxtry say 'hello from EC-mode CMS'",
+  "expect": "Ready|DMS|hello",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "#cp d psw",
+  "expect": "PSW",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE|SHUTDOWN",
+  "timeout": 40,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]
