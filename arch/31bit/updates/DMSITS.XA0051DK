@@ -44,3 +44,6 @@
          CLC   ITSPSW(2),=X'000C' DISABLED EC PSW?     V0211   XA0051DK         
 ./ R 01292000          $ 01292100 100                                           
          MVC   RET(4),=X'000C0000' FORM EC PSW AT RET          XA0051DK         
+./ R 01293000          $ 01293100 100                                           
+         ST    R1,RET+4       BRANCH ADDRESS (FROM A BAL)      XA0051DK         
+         MVI   RET+4,0        DROP ILC/CC/MASK: EC (I-247)     XA0051DK         

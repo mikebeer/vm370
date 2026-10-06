@@ -13,26 +13,26 @@
 &IF &INDEX = 0 &GOTO -Tell
 &IF &1 = ( &GOTO -Tell
 &FN = &1
-&ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10 &11 &12 &13 &14 &15 &16 &17 &18 &19 &20
+&ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10
 
 * Now get the filetype.
 &IF &INDEX = 0 &GOTO -Compile
 &IF &1 = ( &GOTO -Parms
 &FT = &1
-&ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10 &11 &12 &13 &14 &15 &16 &17 &18 &19 &20
+&ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10
 
 * And now the filemode.
 &IF &INDEX = 0 &GOTO -Compile
 &IF &1 = ( &GOTO -Parms
 &FM = &1
-&ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10 &11 &12 &13 &14 &15 &16 &17 &18 &19 &20
+&ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10
 
 * Loop to check the options
 -Parms
 &IF &INDEX = 0 &GOTO -Compile
 &IF &1 NE ( &GOTO -BadArgs
 &LOOP -EndLoop &INDEX
-   &ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10 &11 &12 &13 &14 &15 &16 &17 &18 &19 &20
+   &ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10
    &IF &INDEX = 0 &GOTO -Compile
    * ASM option
    &IF &1 NE ASM &GOTO -NxtOp1
@@ -58,7 +58,7 @@
    &IF &1 NE LIB &GOTO -NxtOp5
    &IF &INDEX = 1 &GOTO -NoLib
    &LIB = &2
-   &ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10 &11 &12 &13 &14 &15 &16 &17 &18 &19 &20
+   &ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10
    &GOTO -EndLoop
    -NxtOp5
    * NOASM option
@@ -85,7 +85,7 @@
    &IF &1 NE PARM &GOTO -NxtOp10
    &IF &INDEX = 1 &GOTO -NoParm
    &PARM = &2
-   &ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10 &11 &12 &13 &14 &15 &16 &17 &18 &19 &20
+   &ARGS &2 &3 &4 &5 &6 &7 &8 &9 &10
    &GOTO -EndLoop
    -NxtOp10
    &GOTO -BadOpt
@@ -120,6 +120,7 @@ FILEDEF SYSPARM DISK &PARM PARM *
 FILEDEF OUT DISK &FN WORK &FM (LRECL 80 RECFM F
 FILEDEF SYSIN DISK &FN &FT &FM
 * GCC31: VM/370+ RUNS GCC380 (AMODE 31, HEAP ABOVE 16 MB BY SVC 120)
+* GCC31: &ARGS STOPS AT &10 -- &11..&20 SHIFT IN STALE TOKENS (W220)
 &GCC = GCC380
 &TYPE GCC31: running &GCC
 
@@ -266,6 +267,7 @@ in a PARM file.
 &ENDTYPE
 FILEDEF SYSPRINT TERM (LRECL 80
 * GCC31: VM/370+ RUNS GCC380 (AMODE 31, HEAP ABOVE 16 MB BY SVC 120)
+* GCC31: &ARGS STOPS AT &10 -- &11..&20 SHIFT IN STALE TOKENS (W220)
 &GCC = GCC380
 &TYPE GCC31: running &GCC
 &GCC

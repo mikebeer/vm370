@@ -4583,6 +4583,8 @@ ECMODS = {
         ('01067000', ["         CLI   X'8B',201      SVC 201? (EC CODE)"]),
         ('01069000', ["         CLC   ITSPSW(2),=X'000C' DISABLED EC PSW?     V0211"]),
         ('01292000', ["         MVC   RET(4),=X'000C0000' FORM EC PSW AT RET"]),
+        ('01293000', ["         ST    R1,RET+4       BRANCH ADDRESS (FROM A BAL)",
+                      "         MVI   RET+4,0        DROP ILC/CC/MASK: EC (I-247)"]),
     ],
     'DMSITE': [
         ('00084000', ["         CLI   X'87',X'80'    INTERRUPT-CODE = TIMER? (EC)"]),
