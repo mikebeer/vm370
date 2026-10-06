@@ -1,0 +1,219 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "DMKCPI966I|Start \\(\\(Warm",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I|\\?CP",
+  "timeout": 90,
+  "cont": true,
+  "settle": 8
+ },
+ {
+  "send": "/cp disc",
+  "expect": "DISCONNECT AT",
+  "timeout": 60
+ },
+ {
+  "send": "/logon maint cpcms noipl",
+  "expect": "Ready|LOGON AT|RECONNECT",
+  "timeout": 180
+ },
+ {
+  "send": "/cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/ipl 190",
+  "expect": "VM Community|Ready",
+  "timeout": 120
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cp purge rdr all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp purge printer all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/copyfile user direct a user dirorig a (olddate",
+  "expect": "Ready|DMS",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/user-direct.txt ascii eof trunc",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/readcard user direct a",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/listfile user * a (date",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/direct user direct a",
+  "expect": "Ready|EOJ|DMK",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon cmsuser cmsuser noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp q set",
+  "expect": "ECMODE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp trace prog",
+  "expect": "TRACE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 190",
+  "expect": "PROG|Ready|DMS",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|PROG|DMS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp trace end",
+  "expect": "Ready|TRACE|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "rexxtry say 'hello from BC-mode CMS'",
+  "expect": "Ready|DMS|hello",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "#cp d psw",
+  "expect": "PSW",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp link maint 290 290 rr",
+  "expect": "Ready|DMK|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp trace prog",
+  "expect": "TRACE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 290",
+  "expect": "PROG|Ready|DMS",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready|PROG|DMS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "#cp trace end",
+  "expect": "Ready|TRACE|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "rexxtry say 'hello from EC-mode CMS'",
+  "expect": "Ready|DMS|hello",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "#cp d psw",
+  "expect": "PSW",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE|SHUTDOWN",
+  "timeout": 40,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]

@@ -1,0 +1,90 @@
+--- USER.DIRECT.orig	2026-10-06 05:59:47.150914497 +0000
++++ USER.DIRECT	2026-10-06 05:59:47.154271651 +0000
+@@ -76,6 +76,7 @@
+  MDISK   191 3350 464 020 VM50-7 MR   ALL      WRITE    MULT            00760000
+                                                                         00770000
+ USER ASSIST ASSIST 15M 16M G                                            00780000
++ OPTION ECMODE                                                                  
+  IPL CMS                                                                00790000
+  CONSOLE 009 3215                                                       00800000
+  SPOOL 00C 2540 READ A                                                  00810000
+@@ -91,6 +92,7 @@
+  MDISK   194 3350 466 020 VM50-3 MR   ALL      WRITE    MULT            00910000
+                                                                         00920000
+ USER AUTOLOG1 AUTOLOG1 2M 16M ABCDEFGH                                  00930000
++ OPTION ECMODE                                                                  
+  IPL CMS                                                                00940000
+  CONSOLE 009 3215                                                       00950000
+  SPOOL 00C 2540 READ A                                                  00960000
+@@ -110,6 +112,7 @@
+  MDISK   191 3350 156 050 VM50-7 MR   ALL      WRITE    MULT            01100000
+                                                                         01110000
+ USER CMSBATCH CMSBATCH 8M 8M G                                          01120000
++ OPTION ECMODE                                                                  
+  IPL CMS PARM BATCH                                                     01130000
+  CONSOLE 009 3215                                                       01140000
+  SPOOL 00E 1403 A                                                       01150000
+@@ -122,6 +125,7 @@
+  MDISK   195 3350 251 050 VM50-3 MR   ALL      WRITE    MULT            01220000
+                                                                         01230000
+ USER CMSUSER CMSUSER 15M 16M G                                          01240000
++ OPTION ECMODE                                                                  
+  IPL CMS                                                                01250000
+  CONSOLE 009 3215                                                       01260000
+  SPOOL 00E 1403 A                                                       01270000
+@@ -138,6 +142,7 @@
+  MDISK   195 3350 461 094 VM50U0 MR   ALL      WRITE    MULT            01380000
+                                                                         01390000
+ USER CMS67 CMS67 512K 8M G                                              01400000
++ OPTION ECMODE                                                                  
+  IPL CMS67                                                              01410000
+  CONSOLE 009 3215                                                       01420000
+  SPOOL 00E 1403 A                                                       01430000
+@@ -149,6 +154,7 @@
+  MDISK   191 2314   1 050 VM14-0 MR   ALL      WRITE    MULT            01490000
+                                                                         01500000
+ USER CMS67M CMS67M 512K 16M ABCDEG                                      01510000
++ OPTION ECMODE                                                                  
+  IPL 190                                                                01520000
+  CONSOLE 009 3215                                                       01530000
+  SPOOL 00E 1403 A                                                       01540000
+@@ -232,6 +238,7 @@
+  MDISK   891 3350 370 040 VM50-7 MR   ALL      WRITE    MULT            02320000
+ *
+ USER KICKS KICKS 14M 16M G
++ OPTION ECMODE                                                                  
+  IPL CMS PARM AUTOCR
+  CONSOLE 009 3215
+  SPOOL 00C 2540 READER *
+@@ -368,6 +375,7 @@
+  MDISK   19C 3350 451 050 GCCBRX MR   ALL      WRITE    MULT            03390000
+                                                                         03400000
+ USER MECAFF MECAFF 14M 16M G                                            03410000
++ OPTION ECMODE                                                                  
+  IPL CMS PARM AUTOCR                                                    03420000
+  CONSOLE 009 3215                                                       03430000
+  LINK MAINT 190 190 RR                                                  03440000
+@@ -382,6 +390,7 @@
+  MDISK   394 3350 361 005 VM50-3 WR   ALL      WRITE    MULT            03530000
+                                                                         03540000
+ USER OPERATOR OPERATOR 2M 16M ABCDEFGH                                  03550000
++ OPTION ECMODE                                                                  
+  IPL CMS PARM AUTOCR                                                    03560000
+  CONSOLE 009 3215                                                       03570000
+  LINK MAINT 190 190 RR                                                  03580000
+@@ -398,6 +407,7 @@
+  MDISK   191 3350 206 014 VM50-7 MR   ALL      WRITE    MULT            03690000
+                                                                         03700000
+ USER PASCAL PASCAL 8M 8M G                                              03710000
++ OPTION ECMODE                                                                  
+  IPL CMS PARM AUTOCR                                                    03720000
+  CONSOLE 009 3215                                                       03730000
+  LINK MAINT 190 190 RR                                                  03740000
+@@ -470,6 +480,7 @@
+  MDISK   191 3350 335 035 VM50-7 MR   ALL      WRITE    MULT            04410000
+                                                                         04420000
+ USER WAKEUP WAKEUP 15M 16M ABCDEG                                       04430000
++ OPTION ECMODE                                                                  
+  IPL CMS                                                                04440000
+  CONSOLE 009 3215                                                       04450000
+  SPOOL 00E 1403 A                                                       04460000

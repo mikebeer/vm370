@@ -1,0 +1,589 @@
+*********************************************************************** 00010000
+* This is the VM directory for the VM/370 Community Edition           * 00020000
+*********************************************************************** 00030000
+DIRECTORY 6A1 3350 VM50-1                                               00040000
+                                                                        00050000
+*********************************************************************** 00060000
+* Next are the locked out areas for ease of mapping.  They mark       * 00070000
+* things such as the perm area used by DMKSNT - the area for temp     * 00080000
+* minidisks ($TDSK$) and also the spool/page area ($TEMP$).  The      * 00090000
+* directory area is also mapped out this way.  The password of NOLOG  * 00100000
+* prevents them being logged on.                                      * 00110000
+*********************************************************************** 00120000
+                                                                        00130000
+USER $ALLOC$ NOLOG                                                      00140000
+*        cuu type adr num volser mode readpw   writepw  multpw          00150000
+ MDISK   101 3350 000 001 VM50-1 R                                      00160000
+ MDISK   102 3350 000 001 VM50-2 R                                      00170000
+ MDISK   103 3350 000 001 VM50-3 R                                      00180000
+ MDISK   104 3350 000 001 VM50-4 R                                      00190000
+ MDISK   105 3350 000 001 VM50-5 R                                      00200000
+ MDISK   106 3350 000 001 VM50-6 R                                      00210000
+ MDISK   107 3350 000 001 VM50-7 R                                      00220000
+ MDISK   108 3350 000 001 VM50-8 R                                      00230000
+ MDISK   110 3350 000 001 GCCBRX R                                      00240000
+                                                                        00250000
+USER $TDSK$ NOLOG                                                       00260000
+*        cuu type adr num volser mode readpw   writepw  multpw          00270000
+ MDISK   100 3350 080 020 VM50-1 R                                      00280000
+ MDISK   102 3350 510 041 VM50-2 R                                      00290000
+ MDISK   103 3350 001 100 VM50-3 R                                      00300000
+ MDISK   104 3350 101 100 VM50-4 R                                      00310000
+                                                                        00320000
+USER $TEMP$ NOLOG                                                       00330000
+ *       cuu type adr num volser mode readpw   writepw  multpw          00340000
+ MDISK   100 3350 020 060 VM50-1 R                                      00350000
+ MDISK   101 3350 466 044 VM50-2 R                                      00360000
+ MDISK   102 3350 101 100 VM50-3 R                                      00370000
+ MDISK   103 3350 001 100 VM50-4 R                                      00380000
+                                                                        00390000
+USER $DCSS$ NOLOG                                                       00400000
+ *       cuu type adr num volser mode readpw   writepw  multpw          00410000
+ MDISK   101 3350 001 010 VM50-1 R                                      00420000
+                                                                        00430000
+USER $DIRECT$ NOLOG                                                     00440000
+ *       cuu type adr num volser mode readpw   writepw  multpw          00450000
+ MDISK   101 3350 011 002 VM50-1 R                                      00460000
+                                                                        00470000
+USER $NUC    NOLOG                                                      00480000
+*        cuu type adr num volser mode readpw   writepw  multpw          00490000
+ MDISK   101 3350 530 019 VM50-1 R                                      00500000
+                                                                        00510000
+USER $NUCALT NOLOG                                                      00520000
+*        cuu type adr num volser mode readpw   writepw  multpw          00530000
+ MDISK   101 3350 530 019 VM50-3 R                                      00540000
+                                                                        00550000
+USER $ERROR$ NOLOG                                                      00560000
+*        cuu type adr num volser mode readpw   writepw  multpw          00570000
+ MDISK   101 3350 549 002 VM50-1 R                                      00580000
+                                                                        00590000
+USER $SYSWRM$ NOLOG                                                     00600000
+*        cuu type adr num volser mode readpw   writepw  multpw          00610000
+ MDISK   101 3350 551 002 VM50-1 R                                      00620000
+                                                                        00630000
+USER $SYSCKP$ NOLOG                                                     00640000
+*        cuu type adr num volser mode readpw   writepw  multpw          00650000
+ MDISK   101 3350 553 002 VM50-1 R                                      00660000
+                                                                        00670000
+*********************************************************************** 00680000
+* Here are the definitions for all of our userids.  Some are just     * 00690000
+* used to store files on their minidisks, and are not meant to be     * 00700000
+* logged on.                                                          * 00710000
+*********************************************************************** 00720000
+                                                                        00730000
+USER ALGOL NOLOG 2M 2M G                                                00740000
+*        cuu type adr num volser mode readpw   writepw  multpw          00750000
+ MDISK   191 3350 464 020 VM50-7 MR   ALL      WRITE    MULT            00760000
+                                                                        00770000
+USER ASSIST ASSIST 15M 16M G                                            00780000
+ IPL CMS                                                                00790000
+ CONSOLE 009 3215                                                       00800000
+ SPOOL 00C 2540 READ A                                                  00810000
+ SPOOL 00D 2540 PUNCH A                                                 00820000
+ SPOOL 00E 1403 A                                                       00830000
+ LINK MAINT 190 190 RR                                                  00840000
+ LINK MAINT 19D 19D RR                                                  00850000
+ LINK MAINT 19E 19E RR                                                  00860000
+*        cuu type adr num volser mode readpw   writepw  multpw          00870000
+ MDISK   191 3350 416 030 VM50-3 MR   ALL      WRITE    MULT            00880000
+ MDISK   192 3350 446 010 VM50-3 MR   ALL      WRITE    MULT            00890000
+ MDISK   193 3350 456 010 VM50-3 MR   ALL      WRITE    MULT            00900000
+ MDISK   194 3350 466 020 VM50-3 MR   ALL      WRITE    MULT            00910000
+                                                                        00920000
+USER AUTOLOG1 AUTOLOG1 2M 16M ABCDEFGH                                  00930000
+ IPL CMS                                                                00940000
+ CONSOLE 009 3215                                                       00950000
+ SPOOL 00C 2540 READ A                                                  00960000
+ SPOOL 00D 2540 PUNCH A                                                 00970000
+ SPOOL 00E 1403 A                                                       00980000
+ LINK MAINT 190 190 RR                                                  00990000
+ LINK MAINT 19E 19E RR                                                  01000000
+*        cuu type adr num volser mode readpw   writepw  multpw          01010000
+ MDISK   191 3350 191 005 VM50-2 MR   ALL      WRITE    MULT            01020000
+                                                                        01030000
+USER BREXX NOLOG 15M 16M BG                                             01040000
+*        cuu type adr num volser mode readpw   writepw  multpw          01050000
+ MDISK   191 3350 106 050 VM50-7 MR   ALL      WRITE    MULT            01060000
+                                                                        01070000
+USER FORTRAN NOLOG 15M 16M BG                                           01080000
+*        cuu type adr num volser mode readpw   writepw  multpw          01090000
+ MDISK   191 3350 156 050 VM50-7 MR   ALL      WRITE    MULT            01100000
+                                                                        01110000
+USER CMSBATCH CMSBATCH 8M 8M G                                          01120000
+ IPL CMS PARM BATCH                                                     01130000
+ CONSOLE 009 3215                                                       01140000
+ SPOOL 00E 1403 A                                                       01150000
+ SPOOL 00C 2540 READ *                                                  01160000
+ SPOOL 00D 2540 PUNCH A                                                 01170000
+ LINK MAINT 190 190 RR                                                  01180000
+ LINK MAINT 19E 19E RR                                                  01190000
+*        cuu type adr num volser mode readpw   writepw  multpw          01200000
+ MDISK   192 3350 241 010 VM50-3 MR   ALL      WRITE    MULT            01210000
+ MDISK   195 3350 251 050 VM50-3 MR   ALL      WRITE    MULT            01220000
+                                                                        01230000
+USER CMSUSER CMSUSER 15M 16M G                                          01240000
+ IPL CMS                                                                01250000
+ CONSOLE 009 3215                                                       01260000
+ SPOOL 00E 1403 A                                                       01270000
+ SPOOL 00C 2540 READ *                                                  01280000
+ SPOOL 00D 2540 PUNCH A                                                 01290000
+ LINK MAINT 190 190 RR                                                  01300000
+ LINK MAINT 19D 19D RR                                                  01310000
+ LINK MAINT 19E 19E RR                                                  01320000
+*        cuu type adr num volser mode readpw   writepw  multpw          01330000
+ MDISK   191 3350 001 115 VM50U0 MR   ALL      WRITE    MULT            01340000
+ MDISK   192 3350 116 115 VM50U0 MR   ALL      WRITE    MULT            01350000
+ MDISK   193 3350 231 115 VM50U0 MR   ALL      WRITE    MULT            01360000
+ MDISK   194 3350 346 115 VM50U0 MR   ALL      WRITE    MULT            01370000
+ MDISK   195 3350 461 094 VM50U0 MR   ALL      WRITE    MULT            01380000
+                                                                        01390000
+USER CMS67 CMS67 512K 8M G                                              01400000
+ IPL CMS67                                                              01410000
+ CONSOLE 009 3215                                                       01420000
+ SPOOL 00E 1403 A                                                       01430000
+ SPOOL 00C 2540 READ *                                                  01440000
+ SPOOL 00D 2540 PUNCH A                                                 01450000
+ SPECIAL 0FF TIMER                                                      01460000
+ LINK CMS67M 190 190 RR                                                 01470000
+*        cuu type adr num volser mode readpw   writepw  multpw          01480000
+ MDISK   191 2314   1 050 VM14-0 MR   ALL      WRITE    MULT            01490000
+                                                                        01500000
+USER CMS67M CMS67M 512K 16M ABCDEG                                      01510000
+ IPL 190                                                                01520000
+ CONSOLE 009 3215                                                       01530000
+ SPOOL 00E 1403 A                                                       01540000
+ SPOOL 00C 2540 READ *                                                  01550000
+ SPOOL 00D 2540 PUNCH A                                                 01560000
+ SPECIAL 0FF TIMER                                                      01570000
+*        cuu type adr num volser mode readpw   writepw  multpw          01580000
+ MDISK   191 2314  51 050 VM14-0 MR   ALL      WRITE    MULT            01590000
+ MDISK   192 2314   1 050 VM14-2 MR   ALL      WRITE    MULT            01600000
+ MDISK   190 2314  51 055 VM14-2 MR   ALL      WRITE    MULT            01610000
+ MDISK   195 2314 106 035 VM14-2 MR   ALL      WRITE    MULT            01620000
+                                                                        01630000
+USER COBOL NOLOG 8M 8M G                                                01640000
+*        cuu type adr num volser mode readpw   writepw  multpw          01650000
+ MDISK   191 3350 001 105 VM50-7 MR   ALL      WRITE    MULT            01660000
+                                                                        01670000
+USER CPWATCH CPWATCH 4M 4M EG                                           01680000
+ OPTION ECMODE                                                          01690000
+ IPL CMS PARM AUTOCR                                                    01700000
+ CONSOLE 009 3215                                                       01710000
+ SPOOL 00C 2540 READ A                                                  01720000
+ SPOOL 00D 2540 PUNCH A                                                 01730000
+ SPOOL 00E 1403 A                                                       01740000
+ LINK MAINT 190 190 RR                                                  01750000
+ LINK MAINT 194 192 RR                                                  01760000
+ LINK MAINT 19E 19E RR                                                  01770000
+*        cuu type adr num volser mode readpw   writepw  multpw          01780000
+ MDISK   191 3350 181 010 VM50-2 MW   ALL      WRITE    MULT            01790000
+                                                                        01800000
+USER DOSSTART DOSSTART 2M 16M G                                         01810000
+ ACCOUNT DOSSTART DOSSTART                                              01820000
+ OPTION ECMODE REALTIMER CPUID 000611                                   01830000
+ CONSOLE 01F 3215                                                       01840000
+ SPOOL 00C 2540 READER A                                                01850000
+ SPOOL 00D 2540 PUNCH A                                                 01860000
+ SPOOL 00E 1403 A                                                       01870000
+*        cuu type adr num volser mode readpw   writepw  multpw          01880000
+ MDISK   148 3350 000 555 SYSRES MW   READ     WRITE    ALL             01890000
+                                                                        01900000
+                                                                        01910000
+USER DOSVS DOSVS 8M 16M G                                               01920000
+ OPTION ECMODE REALTIMER                                                01930000
+ IPL CMS                                                                01940000
+ CONSOLE 009 3215                                                       01950000
+ SPOOL 00C 2540 READ A                                                  01960000
+ SPOOL 00D 2540 PUNCH A                                                 01970000
+ SPOOL 00E 1403 A                                                       01980000
+ DEDICATE 360 360                                                       01990000
+ DEDICATE 361 361                                                       02000000
+ DEDICATE 362 362                                                       02010000
+ DEDICATE 363 363                                                       02020000
+ DEDICATE 364 364                                                       02030000
+ SPECIAL 01F 3270                                                       02040000
+ SPECIAL 51F 3270                                                       02050000
+ LINK MAINT 190 190 RR                                                  02060000
+ LINK MAINT 19D 19D RR                                                  02070000
+ LINK MAINT 19E 19E RR                                                  02080000
+*        cuu type adr num volser mode readpw   writepw  multpw          02090000
+ MDISK   191 3350 301 010 VM50-3 MR   ALL      WRITE    MULT            02100000
+                                                                        02110000
+USER GCCCMS GCCCMS 15M 16M BG                                           02120000
+ OPTION ECMODE                                                          02130000
+ IPL CMS                                                                02140000
+ CONSOLE 009 3215                                                       02150000
+ SPOOL 00C 2540 READER A                                                02160000
+ SPOOL 00D 2540 PUNCH A                                                 02170000
+ SPOOL 00E 1403 A                                                       02180000
+ LINK MAINT 190 190 RR                                                  02190000
+ LINK MAINT 19D 19D RR                                                  02200000
+ LINK MAINT 19E 19E RR                                                  02210000
+*        cuu type adr num volser mode readpw   writepw  multpw          02220000
+ MDISK   191 3350 001 100 VM50-5 MR   ALL      WRITE    MULT            02230000
+ MDISK   201 3350 444 010 VM50-7 MR   ALL      WRITE    MULT            02240000
+ MDISK   202 3350 454 010 VM50-7 MR   ALL      WRITE    MULT            02250000
+ MDISK   291 3350 101 115 VM50-5 MR   ALL      WRITE    MULT            02260000
+ MDISK   391 3350 216 115 VM50-5 MR   ALL      WRITE    MULT            02270000
+ MDISK   491 3350 331 115 VM50-5 MR   ALL      WRITE    MULT            02280000
+ MDISK   591 3350 410 034 VM50-7 MR   ALL      WRITE    MULT            02290000
+ MDISK   691 3350 446 045 VM50-5 MR   ALL      WRITE    MULT            02300000
+ MDISK   791 3350 491 064 VM50-5 MR   ALL      WRITE    MULT            02310000
+ MDISK   891 3350 370 040 VM50-7 MR   ALL      WRITE    MULT            02320000
+*
+USER KICKS KICKS 14M 16M G
+ IPL CMS PARM AUTOCR
+ CONSOLE 009 3215
+ SPOOL 00C 2540 READER *
+ SPOOL 00D 2540 PUNCH A
+ SPOOL 00E 1403 A
+ LINK MAINT 190 190 RR
+ LINK MAINT 19D 19D RR
+ LINK MAINT 19E 19E RR
+*        cuu type adr num volser mode readpw   writepw  multpw          02220000
+ MDISK 191 3350 001 049 KICKS0 MR ALL WRITE MULT
+ MDISK 192 3350 050 050 KICKS0 MR ALL WRITE MULT
+ MDISK 193 3350 100 050 KICKS0 MR ALL WRITE MULT
+ MDISK 194 3350 000 555 VSAMIN MR ALL WRITE MULT
+ MDISK 195 3350 150 035 KICKS0 MR ALL WRITE MULT
+                                                                        02330000
+USER MAINT CPCMS 15M 16M ABCDEFGH                                       02340000
+ OPTION ECMODE LNKNOPAS                                                 02350000
+ IPL CMS                                                                02360000
+ CONSOLE 009 3215                                                       02370000
+ SPOOL 00C 2540 READ A                                                  02380000
+ SPOOL 00D 2540 PUNCH A                                                 02390000
+ SPOOL 00E 1403 A                                                       02400000
+*        cuu type adr num volser mode readpw   writepw  multpw          02410000
+ MDISK   191 3350 201 030 VM50-4 MR   ALL      WRITE    MULT            02420000
+ MDISK   199 3350 361 050 VM50-2 MR   ALL      WRITE    MULT            02420000
+ * New fullscreen HELP system
+ MDISK   19D 3350 411 030 VM50-2 MR   ALL      WRITE    MULT            02430000
+ * Backup of old HELP system
+ MDISK   29D 3350 001 070 VM50-2 MR   ALL      WRITE    MULT            02430000
+ MDISK   19E 3350 071 070 VM50-2 MR   ALL      WRITE    MULT            02440000
+******                                                                  02450000
+*        CMS System disk from the Sixpack 1.3                           02460000
+ MDISK   390 3350 292 061 VM50-4 MR   ALL      WRITE    MULT            02470000
+*        CMS Test System disk                                           02480000
+ MDISK   290 3350 231 061 VM50-4 MR   ALL      WRITE    MULT            02490000
+*        CMS System disk                                                02500000
+ MDISK   190 3350 103 061 VM50-1 MR   ALL      WRITE    MULT            02510000
+******                                                                  02520000
+*        MAINT Tool disks for executables                               02530000
+ MDISK   5E5 3350 383 030 VM50-4 MR   ALL      WRITE    MULT            02540000
+*        MAINT Tool disks source code: MATCH, SFBROWSE, RXLDEV          02550000
+ MDISK   5E6 3350 353 030 VM50-4 MR   ALL      WRITE    MULT            02560000
+*        MAINT Tool disks source code for RXUSERFN from SAS             02570000
+ MDISK   5E7 3350 513 005 VM50-1 MR   ALL      WRITE    MULT            02580000
+*        MAINT Tool disks source code for BLOCKTAP                      02590000
+ MDISK   5E8 3350 518 005 VM50-1 MR   ALL      WRITE    MULT            02600000
+*        MAINT Tool disks source code for TAPEMAP
+ MDISK   5E9 3350 523 007 VM50-1 MR   ALL      WRITE    MULT
+******                                                                  02610000
+*        CP code disks for system build                                 02620000
+ MDISK   594 3350 196 050 VM50-2 MR   ALL      WRITE    MULT            02630000
+ MDISK   094 3350 481 040 VM50-4 MR   ALL      WRITE    MULT            02640000
+ MDISK   194 3350 178 035 VM50-1 MR   ALL      WRITE    MULT            02650000
+ MDISK   294 3350 333 035 VM50-1 MR   ALL      WRITE    MULT            02660000
+ MDISK   394 3350 368 110 VM50-1 MR   ALL      WRITE    MULT            02670000
+******                                                                  02680000
+*        CMS code disks for system build                                02690000
+ MDISK   593 3350 246 050 VM50-2 MR   ALL      WRITE    MULT            02700000
+ MDISK   093 3350 441 040 VM50-4 MR   ALL      WRITE    MULT            02710000
+ MDISK   193 3350 213 035 VM50-1 MR   ALL      WRITE    MULT            02720000
+ MDISK   393 3350 248 085 VM50-1 MR   ALL      WRITE    MULT            02730000
+******                                                                  02740000
+*        RSCS code disks for system build                               02750000
+ MDISK   59F 3350 296 050 VM50-2 MR   ALL      WRITE    MULT            02760000
+ MDISK   09F 3350 166 015 VM50-2 MR   ALL      WRITE    MULT            02770000
+ MDISK   39F 3350 146 015 VM50-2 WR   ALL      WRITE    MULT            02780000
+*        RSCS 191                                                       02790000
+ MDISK   591 3350 141 005 VM50-2 MR   ALL      WRITE    MULT            02800000
+*        RSCS1 191                                                      02810000
+ MDISK   691 3350 161 005 VM50-2 MR   ALL      WRITE    MULT            02820000
+*        RSCSTST 191                                                    02830000
+ MDISK   791 3350 356 005 VM50-2 MR   ALL      WRITE    MULT            02840000
+******                                                                  02850000
+*        Sixpack 1.3 MAINT 191                                          02860000
+ MDISK   291 3350 478 035 VM50-1 MR   ALL      WRITE    MULT            02870000
+*        Unknown                                                        02880000
+ MDISK   299 3350 164 014 VM50-1 WR   ALL      WRITE    MULT            02890000
+*                                                                       02900000
+*                                                                       02910000
+*        Pack map disks for dumps - building the system etc.            02920000
+ MDISK   6A0 3350 000 555 GCCBRX MW                                     02930000
+ MDISK   6A1 3350 000 555 VM50-1 MW                                     02940000
+ MDISK   6A2 3350 000 555 VM50-2 MW                                     02950000
+ MDISK   6A3 3350 000 555 VM50-3 MW                                     02960000
+ MDISK   6A4 3350 000 555 VM50-4 MW                                     02970000
+ MDISK   6A5 3350 000 555 VM50-5 MW                                     02980000
+ MDISK   6A6 3350 000 555 VM50-6 MW                                     02990000
+ MDISK   6A7 3350 000 555 VM50-7 MW                                     03000000
+ MDISK   6A8 3350 000 555 VM50-8 MW                                     03010000
+ MDISK   6AC 3350 000 555 KICKS0 RR                                     03010000
+ MDISK   6AD 3350 000 555 VSAMIN RR                                     03010000
+ MDISK   6B0 3350 000 555 VM50U0 MW                                     03020000
+ MDISK   6B1 3350 000 555 VM50U1 MW                                     03030000
+ MDISK   6D0 2314 000 203 VM14-0 MW                                     03040000
+ MDISK   6D1 2314 000 203 VM14-1 MW                                     03050000
+ MDISK   6D2 2314 000 203 VM14-2 MW                                     03060000
+ MDISK   6D3 2314 000 203 VM14-3 MW                                     03070000
+                                                                        03080000
+USER MAINTC MAINTC 15M 16M G                                            03090000
+ OPTION ECMODE                                                          03100000
+ IPL CMS                                                                03110000
+ CONSOLE 009 3215                                                       03120000
+ SPOOL 00C 2540 READER A                                                03130000
+ SPOOL 00D 2540 PUNCH A                                                 03140000
+ SPOOL 00E 1403 A                                                       03150000
+ LINK MAINT 190 190 RR                                                  03160000
+ LINK MAINT 19D 19D RR                                                  03170000
+ LINK MAINT 19E 19E RR                                                  03180000
+*        cuu type adr num volser mode readpw   writepw  multpw          03190000
+*        Work disk and build target                                     03200000
+ MDISK   191 3350 101 050 GCCBRX MR   ALL      WRITE    MULT            03210000
+*                                                                       03220000
+*        GCCLIB object TEXT files                                       03230000
+ MDISK   194 3350 201 050 GCCBRX MR   ALL      WRITE    MULT            03240000
+*        GCCLIB source code files                                       03250000
+ MDISK   394 3350 151 050 GCCBRX MR   ALL      WRITE    MULT            03260000
+*                                                                       03220000
+*        PDPCLIB object TEXT files                                      03230000
+ MDISK   195 3350 501 050 GCCBRX MR   ALL      WRITE    MULT            03240000
+*        PDPCLIB source code build specifications                       03250000
+ MDISK   295 3350 551 001 GCCBRX MR   ALL      WRITE    MULT            03280000
+*        PDPCLIB source code files (copy of GCCCMS 691)                 03250000
+ MDISK   395 3350 251 050 GCCBRX MR   ALL      WRITE    MULT            03280000
+*                                                                       03290000
+*        BREXX object TEXT files (compiled without DEBUG)               03300000
+ MDISK   193 3350 351 050 GCCBRX MR   ALL      WRITE    MULT            03310000
+*        BREXX object TEXT files (compiled with DEBUG)                  03320000
+ MDISK   293 3350 051 050 GCCBRX MR   ALL      WRITE    MULT            03330000
+*        BREXX source code files                                        03340000
+ MDISK   393 3350 301 050 GCCBRX MR   ALL      WRITE    MULT            03350000
+*        BREXX spare disk for possible future use.                      03360000
+ MDISK   493 3350 401 050 GCCBRX MR   ALL      WRITE    MULT            03370000
+*        Tools disk for MAINTC                                          03380000
+ MDISK   19C 3350 451 050 GCCBRX MR   ALL      WRITE    MULT            03390000
+                                                                        03400000
+USER MECAFF MECAFF 14M 16M G                                            03410000
+ IPL CMS PARM AUTOCR                                                    03420000
+ CONSOLE 009 3215                                                       03430000
+ LINK MAINT 190 190 RR                                                  03440000
+ LINK MAINT 19E 19E RR                                                  03450000
+ LINK MAINT 19D 19D RR                                                  03460000
+ SPOOL 00C 2540 READ A                                                  03470000
+ SPOOL 00D 2540 PUNCH A                                                 03480000
+ SPOOL 00E 1403 A                                                       03490000
+*        cuu type adr num volser mode readpw   writepw  multpw          03500000
+ MDISK   191 3350 311 050 VM50-3 WR   ALL      WRITE    MULT            03510000
+ MDISK   294 3350 366 050 VM50-3 WR   ALL      WRITE    MULT            03520000
+ MDISK   394 3350 361 005 VM50-3 WR   ALL      WRITE    MULT            03530000
+                                                                        03540000
+USER OPERATOR OPERATOR 2M 16M ABCDEFGH                                  03550000
+ IPL CMS PARM AUTOCR                                                    03560000
+ CONSOLE 009 3215                                                       03570000
+ LINK MAINT 190 190 RR                                                  03580000
+ LINK MAINT 19E 19E RR                                                  03590000
+ LINK MAINT 19D 19D RR                                                  03600000
+ SPOOL 00C 2540 READ A                                                  03610000
+ SPOOL 00D 2540 PUNCH A                                                 03620000
+ SPOOL 00E 1403 A                                                       03630000
+*        cuu type adr num volser mode readpw   writepw  multpw          03640000
+ MDISK   191 3350 100 003 VM50-1 WR   ALL      WRITE    MULT            03650000
+                                                                        03660000
+USER OSBASIC NOLOG 8M 8M G                                              03670000
+*        cuu type adr num volser mode readpw   writepw  multpw          03680000
+ MDISK   191 3350 206 014 VM50-7 MR   ALL      WRITE    MULT            03690000
+                                                                        03700000
+USER PASCAL PASCAL 8M 8M G                                              03710000
+ IPL CMS PARM AUTOCR                                                    03720000
+ CONSOLE 009 3215                                                       03730000
+ LINK MAINT 190 190 RR                                                  03740000
+ LINK MAINT 19E 19E RR                                                  03750000
+ LINK MAINT 19D 19D RR                                                  03760000
+ SPOOL 00C 2540 READ A                                                  03770000
+ SPOOL 00D 2540 PUNCH A                                                 03780000
+ SPOOL 00E 1403 A                                                       03790000
+*        cuu type adr num volser mode readpw   writepw  multpw          03800000
+ MDISK   191 3350 001 005 VM50-8 MR   ALL      WRITE    MULT            03810000
+ MDISK   192 3350 006 020 VM50-8 MR   ALL      WRITE    MULT            03820000
+ MDISK   193 3350 026 060 VM50-8 MR   ALL      WRITE    MULT            03830000
+                                                                        03840000
+USER PLI NOLOG 8M 8M G                                                  03850000
+*        cuu type adr num volser mode readpw   writepw  multpw          03860000
+ MDISK   191 3350 220 025 VM50-7 MR   ALL      WRITE    MULT            03870000
+                                                                        03880000
+USER PL360 NOLOG 2M 2M G                                                03890000
+*        cuu type adr num volser mode readpw   writepw  multpw          03900000
+ MDISK   191 3350 245 020 VM50-7 MR   ALL      WRITE    MULT            03910000
+                                                                        03920000
+USER RPG NOLOG 2M 2M G                                                  03930000
+*        cuu type adr num volser mode readpw   writepw  multpw          03940000
+ MDISK   191 3350 265 035 VM50-7 MR   ALL      WRITE    MULT            03950000
+                                                                        03960000
+USER RSCS RSCS 2M 16M                                                   03970000
+ IPL 191                                                                03980000
+ OPTION ECMODE BMX                                                      03990000
+ CONSOLE 009 3215                                                       04000000
+ SPOOL 001 2540 READ A                                                  04010000
+ SPOOL 00C 2540 READ A                                                  04020000
+ SPOOL 00D 2540 PUNCH A                                                 04030000
+ SPOOL 00E 1403 A                                                       04040000
+ DEDICATE 040 040                                                       04050000
+*DEDICATE 041 041                                                       04060000
+*DEDICATE 042 042                                                       04070000
+*DEDICATE 043 043                                                       04080000
+ LINK MAINT 190 190 RR                                                  04090000
+ LINK MAINT 19E 19E RR                                                  04100000
+* The 191 minidisk is owned by MAINT                                    04110000
+ LINK MAINT 591 191 RR                                                  04120000
+                                                                        04130000
+USER RSCS1 RSCS1 2M 16M G                                               04140000
+ IPL 191                                                                04150000
+ OPTION ECMODE BMX                                                      04160000
+ CONSOLE 009 3215                                                       04170000
+*DEDICATE 044 044                                                       04180000
+*DEDICATE 045 045                                                       04190000
+ LINK MAINT 190 190 RR                                                  04200000
+ LINK MAINT 19E 19E RR                                                  04210000
+* The 191 minidisk is owned by MAINT                                    04220000
+ LINK MAINT 691 191 RR                                                  04230000
+                                                                        04240000
+USER RSCSTST RSCSTST 2M 16M G                                           04250000
+ IPL 191                                                                04260000
+ OPTION ECMODE BMX                                                      04270000
+ CONSOLE 009 3215                                                       04280000
+*DEDICATE 046 046                                                       04290000
+*DEDICATE 047 047                                                       04300000
+ LINK MAINT 190 190 RR                                                  04310000
+* The 191 minidisk is owned by MAINT                                    04320000
+ LINK MAINT 791 191 RR                                                  04330000
+                                                                        04340000
+USER SCRIPT NOLOG 8M 8M G                                               04350000
+*        cuu type adr num volser mode readpw   writepw  multpw          04360000
+ MDISK   191 3350 300 035 VM50-7 MR   ALL      WRITE    MULT            04370000
+                                                                        04380000
+USER TAPEMAP NOLOG 2M 10M G                                             04390000
+*        cuu type adr num volser mode readpw   writepw  multpw          04400000
+ MDISK   191 3350 335 035 VM50-7 MR   ALL      WRITE    MULT            04410000
+                                                                        04420000
+USER WAKEUP WAKEUP 15M 16M ABCDEG                                       04430000
+ IPL CMS                                                                04440000
+ CONSOLE 009 3215                                                       04450000
+ SPOOL 00E 1403 A                                                       04460000
+ SPOOL 00C 2540 READ *                                                  04470000
+ SPOOL 00D 2540 PUNCH A                                                 04480000
+ LINK MAINT 190 190 RR                                                  04490000
+ LINK MAINT 19E 19E RR                                                  04500000
+ LINK MAINT 19D 19D RR                                                  04510000
+*        cuu type adr num volser mode readpw   writepw  multpw          04520000
+ MDISK   191 3350 346 010 VM50-2 MR   READ     WRITE    MULT            04530000
+                                                                        04540000
+USER WATFIV NOLOG 4M 16M G                                              04550000
+*        cuu type adr num volser mode readpw   writepw  multpw          04560000
+ MDISK   191 3350 484 040 VM50-7 MR   ALL      WRITE    MULT            04570000
+                                                                        04580000
+USER XCOMPARE NOLOG 2M 8M G                                             04590000
+*        cuu type adr num volser mode readpw   writepw  multpw          04600000
+ MDISK   191 3350 551 004 VM50-2 MR   ALL      WRITE    MULT            04610000
+                                                                        04620000
+*********************************************************************** 04630000
+* MVS is a guest operating system and has only dedicated DASD.        * 04640000
+* A dedicated 0C1 device is no longer needed as a console!            * 04650000
+* LOGON MVS and the logon terminal becomes the MVS console.           * 04660000
+*********************************************************************** 04670000
+USER MVS MVS 8M 16M G                                                   04680000
+ OPTION ECMODE VIRT=REAL STFIRST                                        04690000
+ IPL 148                                                                04700000
+ CONSOLE 009 3215                                                       04710000
+ SPOOL 00C 2540 READER *                                                04720000
+ SPOOL 00D 2540 PUNCH A                                                 04730000
+ SPOOL 00E 1403 A                                                       04740000
+ SPOOL 00F 1403 A                                                       04750000
+ SPOOL 30E 1403 A                                                       04760000
+* Dedicated 2703 lines for NJE                                          04770000
+  DEDICATE 090 090                                                      04780000
+  DEDICATE 091 091                                                      04790000
+  DEDICATE 092 092                                                      04800000
+  DEDICATE 093 093                                                      04810000
+  DEDICATE 094 094                                                      04820000
+  DEDICATE 095 095                                                      04830000
+  DEDICATE 096 096                                                      04840000
+  DEDICATE 097 097                                                      04850000
+* Dedicated Tape Devices                                                04860000
+  DEDICATE 480 480                                                      04870000
+* Dedicated DASD                                                        04880000
+  DEDICATE 131 131                                                      04890000
+  DEDICATE 132 132                                                      04900000
+  DEDICATE 133 133                                                      04910000
+  DEDICATE 134 134                                                      04920000
+  DEDICATE 135 135                                                      04930000
+  DEDICATE 136 136                                                      04940000
+  DEDICATE 140 140                                                      04950000
+  DEDICATE 148 148                                                      04960000
+  DEDICATE 149 149                                                      04970000
+  DEDICATE 14A 14A                                                      04980000
+  DEDICATE 14B 14B                                                      04990000
+  DEDICATE 14C 14C                                                      05000000
+  DEDICATE 152 152                                                      05010000
+  DEDICATE 160 160                                                      05020000
+  DEDICATE 161 161                                                      05030000
+  DEDICATE 170 170                                                      05040000
+  DEDICATE 180 180                                                      05050000
+  DEDICATE 190 190                                                      05060000
+  DEDICATE 191 191                                                      05070000
+  DEDICATE 240 240                                                      05080000
+  DEDICATE 241 241                                                      05090000
+  DEDICATE 248 248                                                      05100000
+  DEDICATE 270 270                                                      05110000
+  DEDICATE 271 271                                                      05120000
+  DEDICATE 280 280                                                      05130000
+  DEDICATE 281 281                                                      05140000
+  DEDICATE 290 290                                                      05150000
+  DEDICATE 291 291                                                      05160000
+  DEDICATE 340 340                                                      05170000
+  DEDICATE 341 341                                                      05180000
+  DEDICATE 342 342                                                      05190000
+  DEDICATE 343 343                                                      05200000
+  DEDICATE 348 348                                                      05210000
+  DEDICATE 349 349                                                      05220000
+  DEDICATE 34A 34A                                                      05230000
+  DEDICATE 34B 34B                                                      05240000
+  SPECIAL  0C0 3270                                                     05250000
+  SPECIAL  0C1 3270                                                     05260000
+  SPECIAL  0C2 3270                                                     05270000
+  SPECIAL  0C3 3270                                                     05280000
+  SPECIAL  0C4 3270                                                     05290000
+  SPECIAL  0C5 3270                                                     05300000
+  SPECIAL  0C6 3270                                                     05310000
+  SPECIAL  0C7 3270                                                     05320000
+
+USER XNET XNET 16M 16M G
+ OPTION ECMODE
+ IPL 190
+ CONSOLE 009 3215
+ SPOOL 00C 2540 READER *
+ SPOOL 00D 2540 PUNCH A
+ SPOOL 00E 1403 A
+ LINK MAINT 190 190 RR
+ LINK MAINT 19D 19D RR
+ LINK MAINT 19E 19E RR
+*DEDICATE 066 066
+*DEDICATE 067 067
+ DEDICATE 09E 09E
+ DEDICATE 09F 09F
+ DEDICATE 500 500
+ SPECIAL 0C8 3270
+ SPECIAL 0C9 3270
+ SPECIAL 0CA 3270
+ SPECIAL 0CB 3270
+ SPECIAL 0CC 3270
+ SPECIAL 0CD 3270
+ SPECIAL 0CE 3270
+ SPECIAL 0CF 3270
+* userid cuu type adr num volser mode readpw writepw multpw
+  MDISK  191 3350 524 002 VM50-7 MR   ALL    WRITE   MULT
+* XNET source and updates
+  MDISK  193 3350 526 002 VM50-7 MR   ALL    WRITE   MULT
