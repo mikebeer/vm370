@@ -1,3 +1,7 @@
+./ R 00133000          $ 00133010 010                                           
+         LPSW  ECPSW          DISABLED, EC MODE (M5B)          XA0051DK         
+         CNOP  0,8                                             XA0051DK         
+ECPSW    DC    X'000C0000',A(ECPSW+8) RESUME BELOW             XA0051DK         
 ./ R 00134000          $ 00134100 100                                           
          LH    R0,X'BA'       IPL DEVICE ADDRESS (EC: AT BA)   XA0051DK         
 ./ R 00192000          $ 00192100 100                                           

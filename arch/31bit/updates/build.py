@@ -4452,6 +4452,10 @@ CORSWMODS = {
 # Command modules (TYPE, LISTFILE, TAPE, ...) are rebuilt with CMSGEND.
 ECMODS = {
     'DMSINI': [
+        # a reader IPL arrives from the card loader in BC mode: switch here
+        ('00133000', ["         LPSW  ECPSW          DISABLED, EC MODE (M5B)",
+                      "         CNOP  0,8",
+                      "ECPSW    DC    X'000C0000',A(ECPSW+8) RESUME BELOW"]),
         ('00134000', ["         LH    R0,X'BA'       IPL DEVICE ADDRESS (EC: AT BA)"]),
         ('00192000', ["RDERRPSW DC    X'000E0000',X'00',CL3'INI' EC WAIT, BYTE 4 = 0"]),
         ('00246000', ["ENABLED  DC    X'03'          I/O AND EXTERNAL (EC MODE)"]),
