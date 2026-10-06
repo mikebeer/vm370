@@ -1,8 +1,8 @@
-./ R 02667100 02667450 $ 02667110 010                                           
+./ R 02667100 02667450 $ 02667101 001                                           
 *  M5D: GETMAIN/FREEMAIN RU (SVC 120).  R0 = LENGTH, R1 =      XA0051DK         
 *  ADDRESS (FREEMAIN), R15 FLAGS: X'01' = FREEMAIN (GCC380:    XA0051DK         
 *  X'72' GET, X'03' FREE; W209).  ABOVE THE LINE FROM          XA0051DK         
-*  HIGHSTOR FOR AN AMODE 31 CALLER (LOC=ANY); EVERYTHING ELSE  XA0051DK         
+*  HIGHSTOR FOR LOC=ANY FROM AN AMODE 31 CALLER; ALL ELSE      XA0051DK         
 *  IS AN ORDINARY GETMAIN/FREEMAIN R, HANDED TO DMSSMN10 AS    XA0051DK         
 *  THE SVC 10 DISPATCH WOULD (I-245).                          XA0051DK         
          L     R6,OSTEMP          TEMPSPC (REENTRANT WORK)     XA0051DK         
@@ -15,7 +15,9 @@
          BL    S120LOW            NO: DMSSMN'S STORAGE         XA0051DK         
          MVC   S120PL+8-TEMPSPC(8,R6),=CL8'RELEASE'            XA0051DK         
          B     S120HS                                          XA0051DK         
-S120GET  TM    OLDPSW+4,X'80'     CALLER IN AMODE 31?          XA0051DK         
+S120GET  TM    EGPR15+3,X'20'     LOC=ANY (VIRTUAL)?           XA0051DK         
+         BZ    S120LOWG           NO: BELOW (I-248)            XA0051DK         
+         TM    OLDPSW+4,X'80'     CALLER IN AMODE 31?          XA0051DK         
          BZ    S120LOWG           NO: BELOW THE LINE           XA0051DK         
          MVC   S120PL+8-TEMPSPC(8,R6),=CL8'OBTAIN'             XA0051DK         
 S120HS   LA    R1,S120PL-TEMPSPC(,R6)                          XA0051DK         
