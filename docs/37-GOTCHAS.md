@@ -447,3 +447,17 @@ offline — that is what found I-240 in one run.
   CMS and `cmswrite`, and take the snapshot after the CMS write — or the
   next reset silently hands back the pristine CMSTEST nucleus ("VM/CMS Test
   System"), which boots in BC mode and looks like success.
+
+## EXEC 1 `&ARGS` and `&11`..`&20` (w220)
+
+`&ARGS &2 &3 ... &20` (the shift idiom in GCC EXEC) does not null the
+positions past `&INDEX`: on the second shift stale tokens come back in
+(`X C D ( CMS PARM P` → `D ( CMS PARM P D`). Seen in BC and EC CMS alike, so it
+is CE's EXEC 1, not ours. Shift with `&2 ... &10` only. This is why GCC
+EXEC (and GCC31) failed with `Invalid option C` for `fn C D (CMS PARM x`.
+
+## Never run drive.py in the foreground of a timed tool call
+
+The tool's timeout kills the process group, Hercules included (w216).
+Start drive.py with `nohup ... &` and poll. Afterwards check the shadows with
+`cckdcdsk -3 -ro` (all 16 were rc 0 after w216).
