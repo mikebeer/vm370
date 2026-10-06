@@ -138,7 +138,36 @@ class Terminal:
             pass
 
 
+def herc_running():
+    """Hercules processes on this machine (any engine), by /proc cmdline."""
+    n = 0
+    for pid in os.listdir('/proc'):
+        if not pid.isdigit():
+            continue
+        try:
+            cmd = open('/proc/%s/cmdline' % pid, 'rb').read().split(b'\0')
+        except OSError:
+            continue
+        if cmd and os.path.basename(cmd[0]) == b'hercules':
+            try:
+                st = open('/proc/%s/stat' % pid).read().split(')')[-1].split()
+            except OSError:
+                continue
+            if st and st[0] != 'Z':
+                n += 1
+    return n
+
+
 def drive(ce, name, steps, herc='hercules', hold=False):
+    # Mike: never two Hercules on one pack.  A previous run may still be
+    # writing its shadows on the way out; wait for it, and refuse if it
+    # does not go.
+    for _ in range(60):
+        if herc_running() == 0:
+            break
+        time.sleep(2)
+    else:
+        sys.exit('### %s: a Hercules is still running -- refusing to start a second' % name)
     log = os.path.join(ce, name + '.log')
     if os.path.exists(log):
         os.remove(log)
