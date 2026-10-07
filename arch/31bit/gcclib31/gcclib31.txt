@@ -4048,6 +4048,18 @@ z. */
             strcat(result, work);                                               
         }                                                                       
     }                                                                           
+    if (cnvtype == 'g' || cnvtype == 'G') {                                     
+        /* %g drops trailing zeros and a bare point (C89 7.9.6.1); GCCLIB       
+           printed 0.1 as 0.10000000000000 (cREXX 'say 0.1', w265) */           
+        char *dot = result, *e;                                                 
+        while (*dot && *dot != '.') dot++;                                      
+        if (*dot) {                                                             
+            e = dot + strlen(dot);                                              
+            while (e > dot + 1 && e[-1] == '0') e--;                            
+            if (e == dot + 1) e--;                                              
+            *e = 0;                                                             
+        }                                                                       
+    }                                                                           
     if (format ==                                                               
         0) {                                                      /* exp format\
  - put exp on end */                                                            
@@ -24511,10 +24523,10 @@ END
 SAY 'GCLB31: GCCLIB31 TXTLIB BUILT, ' BAD 'TXTLIB ERRORS'                       
 EXIT BAD                                                                        
                                                                                 
-/* GCC370 (THE 24-BIT COMPILER): ITS OUTPUT IS THE SAME AS GCC380'S,  */        
-/* AND GCC380 ABENDS 80A ON CMSIO (W264, I-252).  THE CSECT IS NAMED */         
-/* WITH EDIT: GCCCSECT TOOK AN OPERATION EXCEPTION AT 000002 WHEN RUN  */       
-/* FROM THIS EXEC (W264), AND TXTLIB REFUSES UNNAMED CSECTS.          */        
+/* GCC370 (THE 24-BIT COMPILER): ITS OUTPUT IS THE SAME AS GCC380'S   */        
+/* (WHICH ABENDED 80A HERE UNTIL I-252).  THE CSECT IS NAMED WITH     */        
+/* EDIT: TXTLIB REFUSES UNNAMED CSECTS, AND GCCCSECT TOOK AN          */        
+/* OPERATION EXCEPTION AT 000002 WHEN RUN FROM THIS EXEC (W264).      */        
 COMPILE: PROCEDURE                                                              
   ARG F                                                                         
   'ERASE' F 'WORK A'                                                            

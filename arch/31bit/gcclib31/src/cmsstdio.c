@@ -500,6 +500,18 @@ dblcvt(double num, char cnvtype, size_t nwidth, size_t nprecision, char *result)
             strcat(result, work);
         }
     }
+    if (cnvtype == 'g' || cnvtype == 'G') {
+        /* %g drops trailing zeros and a bare point (C89 7.9.6.1); GCCLIB
+           printed 0.1 as 0.10000000000000 (cREXX 'say 0.1', w265) */
+        char *dot = result, *e;
+        while (*dot && *dot != '.') dot++;
+        if (*dot) {
+            e = dot + strlen(dot);
+            while (e > dot + 1 && e[-1] == '0') e--;
+            if (e == dot + 1) e--;
+            *e = 0;
+        }
+    }
     if (format ==
         0) {                                                      /* exp format - put exp on end */
         work[0] = 'E';

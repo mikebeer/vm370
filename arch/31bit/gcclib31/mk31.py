@@ -34,6 +34,8 @@ The design (docs/36-M5-CMS31.md, XA-CMS-light):
    16 KB were sized '(size + 4) && 0xFFF000' (logical AND -> 1), so a
    large frame ran off its bin into the heap.
  * CMSSETNU/CMSSETFL: the M5b SSM fix (STNSM/SSM of the caller's mask).
+ * printf %g: trailing zeros dropped (upstream printed 0.1 as
+   0.10000000000000).
 Restrictions: pointers handed directly to the other CMSxxx() calls
 (CMSconsoleWrite, CMSfileOpen buffers, rexxsaa SHVBLOCKs, ...) must be
 below 16 MB -- stack, static or _lmalloc() storage, not malloc().
@@ -453,11 +455,30 @@ int __mcmp31(const void *s1, const void *s2, size_t n);
 """, 1, 'string.h')
 
 
+def cmsstdio(t):
+    old = """    if (format ==
+        0) {                                                      /* exp format - put exp on end */"""
+    new = """    if (cnvtype == 'g' || cnvtype == 'G') {
+        /* %g drops trailing zeros and a bare point (C89 7.9.6.1); GCCLIB
+           printed 0.1 as 0.10000000000000 (cREXX 'say 0.1', w265) */
+        char *dot = result, *e;
+        while (*dot && *dot != '.') dot++;
+        if (*dot) {
+            e = dot + strlen(dot);
+            while (e > dot + 1 && e[-1] == '0') e--;
+            if (e == dot + 1) e--;
+            *e = 0;
+        }
+    }
+""" + old
+    return edit(t, old, new, 1, 'cmsstdio.c')
+
+
 EDITS = {
     'cmssys.assemble': cmssys, 'cmsentry.assemble': cmsentry,
     'dynstk.assemble': dynstk, 'cmsruntm.h': cmsruntm_h,
     'cmsruntm.c': cmsruntm_c, 'cmsstdlb.c': cmsstdlb, 'cmsio.c': cmsio,
-    'cmssysc.c': cmssysc, 'malloc.c': malloc_c, 'string.c': string_c, 'string.h': string_h,
+    'cmssysc.c': cmssysc, 'malloc.c': malloc_c, 'string.c': string_c, 'string.h': string_h, 'cmsstdio.c': cmsstdio,
 }
 for d in ('condrv.c', 'dskdrv.c', 'prtdrv.c', 'pundrv.c', 'rdrdrv.c'):
     EDITS[d] = (lambda name: lambda t: driver(t, name))(d)

@@ -1,0 +1,301 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "DMKCPI966I|Start \\(\\(Warm",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I|\\?CP",
+  "timeout": 90,
+  "cont": true,
+  "settle": 8
+ },
+ {
+  "send": "/cp disc",
+  "expect": "DISCONNECT AT",
+  "timeout": 60
+ },
+ {
+  "send": "/logon maint cpcms noipl",
+  "expect": "Ready|LOGON AT|RECONNECT",
+  "timeout": 180
+ },
+ {
+  "send": "/cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/ipl 190",
+  "expect": "VM Community|Ready",
+  "timeout": 120
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cp purge rdr all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp purge printer all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/gcclib31.txt ascii eof trunc",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "/cp q rdr cmsuser all",
+  "expect": "Ready|RDR|NO",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon cmsuser cmsuser noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 256m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp link maint 290 290 rr",
+  "expect": "Ready|DMK|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 290",
+  "expect": "VM Community|DMS",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "access 195 a",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "access 191 b",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "erase * * a",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "readcard *",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 600,
+  "cont": true
+ },
+ {
+  "term": "exec gclb31",
+  "expect": "TXTLIB ERRORS|FAILED|DMSABN|DMSITP",
+  "timeout": 1800,
+  "cont": true
+ },
+ {
+  "term": "highstor reset",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "exec gcc31 m5g2 c a ( lib gcc31 parm m5g",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 600,
+  "cont": true
+ },
+ {
+  "term": "global txtlib gcclib31",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "load m5g2",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "genmod m5g2",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "m5g2 a b",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "highstor query",
+  "expect": "HIGHSTOR",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "m5g2 EXIT",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "highstor query",
+  "expect": "HIGHSTOR",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "access 191 a",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "access 195 g",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/crxmk31.txt ascii eof trunc",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "settle": 5
+ },
+ {
+  "term": "readcard *",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "copyfile cms h a = = d (replace",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "erase cms h a",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "highstor reset",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "exec crxmk31",
+  "expect": "RXBVMN -V[^R]*Ready|BUILD ERRORS|DMSABN|DMSITP",
+  "timeout": 1800,
+  "cont": true
+ },
+ {
+  "term": "rxcn basic",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxasn basic",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvmn basic",
+  "expect": "Ready\\(|Ready;|CP ENTERED",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "highstor query",
+  "expect": "HIGHSTOR",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE|SHUTDOWN",
+  "timeout": 40,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]
