@@ -1,0 +1,7 @@
+./ I 02622000 $ 02622100 100                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST USING       XA0054DK         
+         BZ    VSPL370        THE CHANNEL SUBSYSTEM: SSCH      XA0054DK         
+         TM    VMLCLRSV,X'80'  CC 0, THE STATUS AS AN          XA0054DK         
+         BO    VSPEXITX       I/O INTERRUPTION                 XA0054DK         
+VSPL370  DS    0H                                              XA0054DK         

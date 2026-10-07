@@ -4,6 +4,12 @@ VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK
          BZ    PRVB2          STAP AND B230-B23F GO            XA0054DK         
          CLI   VMINST+1,X'12' TO DMKVCS                        XA0054DK         
          BE    PRVVCS                                          XA0054DK         
+         CLI   VMINST+1,X'B1' STFL TOO                         XA0054DK         
+         BE    PRVVCS                                          XA0054DK         
+         CLI   VMINST+1,X'7D' STSI TOO                         XA0054DK         
+         BE    PRVVCS                                          XA0054DK         
+         CLI   VMINST+1,X'20' SERVC TOO                        XA0054DK         
+         BE    PRVVCS                                          XA0054DK         
          CLI   VMINST+1,X'30'                                  XA0054DK         
          BL    PRVB2                                           XA0054DK         
          CLI   VMINST+1,X'3F'                                  XA0054DK         

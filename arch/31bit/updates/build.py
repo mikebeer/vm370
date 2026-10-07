@@ -1737,6 +1737,12 @@ VCSCODE = [
     "         OI    VMVCSFL,X'80'  FROM NOW ON: ESA/390 I/O",
     "         CLI   VMINST+1,X'12' STAP",
     "         BE    VCSSTAP",
+    "         CLI   VMINST+1,X'B1' STFL",
+    "         BE    VCSSTFL",
+    "         CLI   VMINST+1,X'7D' STSI: NO SYSTEM",
+    "         BE    VCSCC3         INFORMATION, CC 3",
+    "         CLI   VMINST+1,X'20' SERVC: NO SERVICE",
+    "         BE    VCSCC3         PROCESSOR, CC 3",
     "         CLI   VMINST+1,X'36' TPI",
     "         BE    VCSTPI",
     "         CLI   VMINST+1,X'39' STCRW",
@@ -1772,6 +1778,14 @@ VCSCODE = [
     "VCSSTAP  BAL   R9,OPADDR      STAP: CPU ADDRESS 0",
     "         TRANS 2,1,OPT=(BRING,DEFER,AMODE31),ADEX=VCSEXIT",
     "         XC    0(2,R2),0(R2)",
+    "         B     VCSEXIT",
+    "*",
+    "VCSSTFL  MVC   VCSBUF(4),STFLN3  STFL: N3 ONLY, AT X'C8'",
+    "         LA    R5,200         (THE INSTRUCTIONS AN ESA/390",
+    "         LA    R6,VCSBUF      KERNEL BUILT FOR Z900 USES;",
+    "         LA    R4,1           HERCULES HAS THEM IN ESA/390",
+    "         SR    R0,R0          MODE)",
+    "         BAL   R9,GUESTIO",
     "         B     VCSEXIT",
     "*",
     "VCSSTCRW XC    VCSBUF(4),VCSBUF  STCRW: NO CRW PENDING",
@@ -2098,6 +2112,8 @@ VCSCODE = [
     "         BZ    TSCL2",
     "         TM    ENTCSW+4(R3),X'04'  DEVICE END?",
     "         BO    TSCL2",
+    "         TM    ENTCSW+4(R3),X'08'  NOR CHANNEL END (UNIT",
+    "         BZ    TSCL2          CHECK ALONE): ENDED TOO",
     "         OI    ENTFLG2(R3),ENTPRIM",
     "         NI    ENTFLG(R3),255-ENTSOL",
     "         BR    R9",
@@ -2324,6 +2340,7 @@ VCSCODE = [
     "         BR    R9",
     "*",
     "AVCSSE   DC    A(DMKVCS)",
+    "STFLN3   DC    X'80000000'",
     "AVCSIN   DC    A(DMKVCS)",
     "AVCSSN   DC    A(DMKVCS)",
     "VCSSAVI  DS    16F",
@@ -2412,6 +2429,12 @@ def m7decks():
         "         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S",
         "         BZ    PRVB2          STAP AND B230-B23F GO",
         "         CLI   VMINST+1,X'12' TO DMKVCS",
+        "         BE    PRVVCS",
+        "         CLI   VMINST+1,X'B1' STFL TOO",
+        "         BE    PRVVCS",
+        "         CLI   VMINST+1,X'7D' STSI TOO",
+        "         BE    PRVVCS",
+        "         CLI   VMINST+1,X'20' SERVC TOO",
         "         BE    PRVVCS",
         "         CLI   VMINST+1,X'30'",
         "         BL    PRVB2",
@@ -2617,6 +2640,24 @@ def m7decks():
         "IOCCW    DS    2D",
     ])
     decks['DMKVMI'] = d
+
+    d = Deck(XA54)
+    # A spooled reader with no file ends an SIO at its first CCW with
+    # unit check (intervention required), and DMKVSP answers that with
+    # condition code 1 itself, past DMKVSJ's TESTEC: DMKVCS never saw it
+    # (lx2: the guest's own cc 2 from SLR left in place, the chain left
+    # converted, the subchannel busy). A channel subsystem starts the
+    # function and presents the unit check as an interruption, which is
+    # what Linux's iplstart expects when it looks for a parameter file.
+    d.insert('02622000', first='02622100', inc=100,
+             limit=next_seq(src('DMKVSP'), '02622000'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST USING",
+        "         BZ    VSPL370        THE CHANNEL SUBSYSTEM: SSCH",
+        "         TM    VMLCLRSV,X'80'  CC 0, THE STATUS AS AN",
+        "         BO    VSPEXITX       I/O INTERRUPTION",
+        "VSPL370  DS    0H",
+    ])
+    decks['DMKVSP'] = d
 
     d = Deck(XA54)
     d.insert('00665313', first='00665320', inc=10,
