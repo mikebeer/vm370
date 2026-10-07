@@ -1,0 +1,44 @@
+./ I 00454000 $ 00454100 100                                                    
+         L     R5,CPEXR5      M4B.2: SLOT ABOVE 16 MB?         XA0053DK         
+         CLI   SWPCODE,X'FF'                                   XA0053DK         
+         BE    XSTIO          YES: MVCL, NO I/O                XA0053DK         
+./ I 01010000 $ 01010001 001                                                    
+*                                                              XA0053DK         
+* M4B.2: A PAGE WHOSE SLOT IS IN STORAGE ABOVE 16 MB MOVES BY  XA0053DK         
+* MVCL (CP RUNS AMODE 31), AND ITS REQUESTER IS STACKED AS IF  XA0053DK         
+* THE PAGING I/O HAD COMPLETED WITHOUT ERROR.                  XA0053DK         
+*                                                              XA0053DK         
+XSTIO    DS    0H                                              XA0053DK         
+         SR    R2,R2          SLOT NUMBER = CYL*128            XA0053DK         
+         ICM   R2,B'0011',SWPCYL                               XA0053DK         
+         SLL   R2,7                                            XA0053DK         
+         SR    R0,R0          + PAGE-1                         XA0053DK         
+         IC    R0,SWPDPAGE                                     XA0053DK         
+         BCTR  R0,0                                            XA0053DK         
+         OR    R2,R0                                           XA0053DK         
+         SLL   R2,12          FRAME = 16 MB + SLOT*4096        XA0053DK         
+         AL    R2,=X'01000000'                                 XA0053DK         
+         L     R4,CPEXR7      THE FRAME BELOW THE LINE         XA0053DK         
+         SL    R4,ACORETBL                                     XA0053DK         
+         SLL   R4,8                                            XA0053DK         
+         L     R3,=F'4096'                                     XA0053DK         
+         LR    R5,R3                                           XA0053DK         
+         LR    R7,R3                                           XA0053DK         
+         LA    R15,XSTIO31    MVCL IN AMODE 31: DMKPAG MAY     XA0053DK         
+         O     R15,=X'80000000'  RUN 24-BIT, AND A 24-BIT      XA0053DK         
+         DC    X'0BEF'        MVCL TO 16 MB WROTE THE PSA      XA0053DK         
+XSTIO31  CLI   CPEXR0+3,X'05' (R4B5) -- WRITE?                 XA0053DK         
+         BE    XSTIOW                                          XA0053DK         
+         LR    R6,R2          READ: SLOT TO FRAME              XA0053DK         
+         MVCL  R4,R6                                           XA0053DK         
+         B     XSTIOD                                          XA0053DK         
+XSTIOW   LR    R6,R4          WRITE: FRAME TO SLOT             XA0053DK         
+         LR    R4,R2                                           XA0053DK         
+         MVCL  R4,R6                                           XA0053DK         
+XSTIOD   LA    R15,XSTIO24    BACK TO THE CALLER'S MODE        XA0053DK         
+         N     R14,=X'80000000'                                XA0053DK         
+         OR    R15,R14                                         XA0053DK         
+         DC    X'0B0F'        BSM 0,R15                        XA0053DK         
+XSTIO24  MVI   CPEXADD,0      NO ERROR                         XA0053DK         
+         CALL  DMKSTKCP       THE REQUESTER CONTINUES          XA0053DK         
+         B     GETQ           NEXT REQUEST                     XA0053DK         

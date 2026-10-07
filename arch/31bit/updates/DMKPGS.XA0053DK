@@ -1,0 +1,7 @@
+./ R 00801000          $ 00801100 100                                           
+         LA    R15,VMPDRUM-VMBLOK  M4B.2: SLOT ABOVE           XA0053DK         
+         CLI   SWPCODE,X'FF'  16 MB: A DRUM PAGE               XA0053DK         
+         BE    PGSXST                                          XA0053DK         
+         IC    R2,SWPCODE     GET VOLUME INDEX CODE            XA0053DK         
+./ R 00812000          $ 00812100 100                                           
+PGSXST   LH    R0,0(R15,R4)   DECREMENT                        XA0053DK         

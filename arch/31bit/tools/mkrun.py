@@ -502,6 +502,12 @@ def archmode(conf, mode, mb=None):
             # from the one the milestone describes.  I-157.
             'ESA/390': [('ARCHMODE', 'ESA/390'), ('CPUMODEL', '3090'),
                         ('ECPSVM', 'NO'),        ('MAINSIZE', '16')]}[mode]
+    # ESA390_MB: one build command at another size (M4b.2, 7 October: a
+    # nucleus whose 16 MB path is broken is replaced by building under it at
+    # 128 MB).  Environment, not config: the next run without it is 16 again.
+    import os
+    if mb is None and mode == 'ESA/390' and os.environ.get('ESA390_MB'):
+        mb = int(os.environ['ESA390_MB'])
     if mb is not None:
         want = [(k, str(mb) if k == 'MAINSIZE' else v) for k, v in want]
     text = open(conf).read()

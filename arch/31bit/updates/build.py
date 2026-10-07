@@ -1647,9 +1647,10 @@ def m4bcpi():
         "* M4B: THE CORTABLE FOR ALL OF REAL STORAGE, AT THE TOP",
         "* OF THE LOW 16 MB.  BALR R14,R15 IN AMODE 24, REAL SIZE",
         "* IN DMKSYSRM.  RETURNS THE LOW REGION UNDER THE TABLE IN",
-        "* DMKSYSRV.  FRAMES ABOVE 16 MB OFFLINE UNTIL M4B.2.",
+        "* DMKSYSRV.  FRAMES ABOVE 16 MB: DMKPGT'S PAGING STORE.",
         "*",
         "DMKCPIB  CSECT",
+        "         EXTRN DMKPGTXT",
         "         USING PSA,R0",
         "         STM   R0,R14,CPIBSAVE-DMKCPIB(R15)",
         "         BALR  R11,0",
@@ -1664,7 +1665,11 @@ def m4bcpi():
         "         CLR   R5,R10",
         "         BNL   CPIB1",
         "         LR    R10,R5         UNDER 16 MB: ALL",
-        "CPIB1    LR    R7,R10         TOP OF THE LOW REGION",
+        "CPIB1    L     R3,=A(DMKPGTXT)  M4B.2: STORAGE ABOVE 16 MB",
+        "         CLR   R5,R10         IS DMKPGT'S PAGING STORE",
+        "         BNH   CPIB1A",
+        "         ST    R5,0(,R3)      ITS TOP",
+        "CPIB1A   LR    R7,R10         TOP OF THE LOW REGION",
         "         SLR   R7,R6          TABLE ORIGIN",
         "         ST    R7,ACORETBL    EVERY MODULE LOOKS HERE",
         "         LR    R8,R7          CLEAR THE TABLE",
@@ -1702,6 +1707,248 @@ def m4bcpi():
         "         LTORG",
     ])
     return d
+
+
+XSTSLOT = [   # R2 = slot frame address from the CCPD at SWPTABLE R5
+    "         SR    R2,R2          SLOT NUMBER = CYL*128",
+    "         ICM   R2,B'0011',SWPCYL",
+    "         SLL   R2,7",
+    "         SR    R0,R0          + PAGE-1",
+    "         IC    R0,SWPDPAGE",
+    "         BCTR  R0,0",
+    "         OR    R2,R0",
+    "         SLL   R2,12          FRAME = 16 MB + SLOT*4096",
+    "         AL    R2,=X'01000000'",
+]
+
+
+def m4bslots():
+    """M4b.2: real storage above 16 MB as CP's paging store.
+
+    Frames above the line hold no guest page and no CP data, so nothing that
+    keeps a real address in 24 bits (CCWs, control-block fields with a flag
+    in byte 0 -- docs/38-M4B-REAL2G.md) can ever see one.  Instead they are
+    page SLOTS, as a paging device's are: DMKPGTPG hands one out before any
+    DASD slot, DMKPAG moves the page with MVCL instead of an I/O, and the
+    page comes back into a frame below the line on the next page fault.
+    This is what VM/XA did with expanded storage.
+
+    A slot's CCPD (SWPCYL/SWPDPAGE/SWPCODE) is CYL = slot/128, PAGE =
+    slot//128 + 1 (never 0, which means 'never written'), CODE = X'FF'
+    (no OWNDLIST entry; the owned list has at most a few dozen).  Slot n is
+    the frame at 16 MB + n*4096.  Allocation pops a free stack threaded
+    through the free frames themselves (CP runs AMODE 31) or takes the next
+    never-used frame; release pushes.  A slot counts as a drum page
+    (VMPDRUM), and every place that finds the device of a slot to keep the
+    drum/disk counters -- DMKPGT, DMKPGS, DMKATS, DMKCPP -- or to decide
+    on arm optimisation -- DMKPTR -- treats code X'FF' as a drum.
+    """
+    decks = {}
+    src = lambda m: SRC + '/%s.ASSEMBLE' % m
+
+    d = Deck(XA53)
+    d.insert('00035000', first='00035100', inc=100,
+             limit=next_seq(src('DMKPGT'), '00035000'), lines=[
+        "         ENTRY DMKPGTXT       M4B.2: TOP OF THE PAGING STORE",
+    ])
+    d.replace('00597000', first='00597100', inc=100,
+              limit=next_seq(src('DMKPGT'), '00597000'), lines=[
+        "SPOOLDEL EQU   *",
+        "         CLI   SWPCODE,X'FF'  M4B.2: SLOT ABOVE 16 MB?",
+        "         BE    XSTREL",
+    ])
+    d.insert('01292000', first='01292001', inc=1,
+             limit=next_seq(src('DMKPGT'), '01292000'), lines=[
+        "*",
+        "* M4B.2: THE PAGING STORE ABOVE 16 MB. XSTGET: R2 = CCPD OF A",
+        "* FREE SLOT, OR 0.  XSTREL: RELEASE THE SLOT AT SWPTABLE R5.",
+        "*",
+        "XSTGET   L     R2,XSTFREE     A RELEASED SLOT?",
+        "         LTR   R2,R2",
+        "         BZ    XSTGET2",
+        "         LA    R15,XSTG31     ITS SUCCESSOR, KEPT IN IT:",
+        "         O     R15,=X'80000000'  READ IN AMODE 31 (R4B5:",
+        "         DC    X'0B4F'        BSM R4,R15  DMKPAG RAN 24-BIT)",
+        "XSTG31   L     R0,0(,R2)",
+        "         LA    R15,XSTG24",
+        "         N     R4,=X'80000000'  BACK TO THE CALLER'S MODE",
+        "         OR    R15,R4",
+        "         DC    X'0B0F'        BSM 0,R15",
+        "XSTG24   DS    0H",
+        "         ST    R0,XSTFREE",
+        "         B     XSTGET3",
+        "XSTGET2  L     R2,XSTHWM      A NEVER-USED SLOT?",
+        "         CL    R2,XSTTOP",
+        "         BNL   XSTNONE",
+        "         LR    R0,R2",
+        "         AL    R0,=F'4096'",
+        "         ST    R0,XSTHWM",
+        "XSTGET3  SL    R2,=X'01000000'  SLOT NUMBER",
+        "         SRL   R2,12",
+        "         LR    R0,R2",
+        "         N     R0,=F'127'     PAGE = SLOT//128 + 1",
+        "         AL    R0,=F'1'",
+        "         SRL   R2,7           CYL = SLOT/128",
+        "         SLL   R2,8",
+        "         OR    R2,R0",
+        "         SLL   R2,8",
+        "         O     R2,=F'255'     DEVICE CODE X'FF'",
+        "         BR    R14",
+        "XSTNONE  SR    R2,R2",
+        "         BR    R14",
+        "* DMKPGTPX: DMKPGTPG FOR A USER PAGE-OUT (DMKPTR ONLY).",
+        "* DMKPGTPG ITSELF ALSO SERVES DMKCPI, DMKSST AND DMKCDS,",
+        "* WHOSE PAGES DMKRPA WRITES WITH ITS OWN CHANNEL PROGRAMS --",
+        "* THOSE MUST STAY ON DASD (R4B4: PROGRAM CHECK LOOP AT IPL).",
+        "         ENTRY DMKPGTPX",
+        "         DROP  R12",
+        "         USING *,R15",
+        "DMKPGTPX STM   R0,R15,BALRSAVE",
+        "         L     R12,=A(DMKPGT)",
+        "         DROP  R15",
+        "         USING DMKPGT,R12",
+        "         CLC   CPID,=C'CPCP'  SYSTEM RUNNING?",
+        "         BNE   XSTPX1",
+        "         BAL   R14,XSTGET     A SLOT ABOVE 16 MB?",
+        "         LTR   R2,R2",
+        "         BNZ   XSTGOT         YES",
+        "XSTPX1   L     R15,=A(DMKPGTPG)  NO: THE DASD ALLOCATOR",
+        "         ST    R15,BALRSAVE+60  (LOADED BEFORE LM: AFTER IT",
+        "         LM    R0,R15,BALRSAVE  R12 IS THE CALLER'S BASE)",
+        "         BR    R15",
+        "XSTGOT   LH    R3,VMPDRUM-VMBLOK(,R11)  COUNTS AS DRUM",
+        "         LA    R3,1(,R3)",
+        "         STH   R3,VMPDRUM-VMBLOK(,R11)",
+        "         B     SETADDR",
+        "XSTREL   DS    0H",
+    ] + XSTSLOT + [
+        "         L     R0,XSTFREE     PUSH IT ON THE FREE STACK",
+        "         LA    R15,XSTR31     (STORE IN AMODE 31)",
+        "         O     R15,=X'80000000'",
+        "         DC    X'0B4F'        BSM R4,R15",
+        "XSTR31   ST    R0,0(,R2)",
+        "         LA    R15,XSTR24",
+        "         N     R4,=X'80000000'",
+        "         OR    R15,R4",
+        "         DC    X'0B0F'        BSM 0,R15",
+        "XSTR24   ST    R2,XSTFREE",
+        "         OI    SWPFLAG,SWPRECMP",
+        "         XC    SWPCYL(4),SWPCYL",
+        "         TM    UCTL,UCTLDR    PAGING ACCOUNTING?",
+        "         BZ    XSTREL2",
+        "         LR    R4,R11",
+        "         TM    UCTL,UCTLSYS   AGAINST THE SYSTEM?",
+        "         BZ    *+8",
+        "         L     R4,ASYSVM",
+        "         LH    R3,VMPDRUM-VMBLOK(,R4)",
+        "         S     R3,F1",
+        "         BM    XSTREL2",
+        "         STH   R3,VMPDRUM-VMBLOK(,R4)",
+        "XSTREL2  MVI   UCTL,X'00'",
+        "         LM    R0,R15,BALRSAVE",
+        "         BR    R14",
+        "DMKPGTXT DS    0F",
+        "XSTTOP   DC    A(X'01000000')  SET BY DMKCPI: REAL SIZE",
+        "XSTHWM   DC    A(X'01000000')  NEXT NEVER-USED SLOT",
+        "XSTFREE  DC    A(0)           RELEASED SLOTS",
+    ])
+    decks['DMKPGT'] = d
+
+    d = Deck(XA53)
+    d.insert('00454000', first='00454100', inc=100,
+             limit=next_seq(src('DMKPAG'), '00454000'), lines=[
+        "         L     R5,CPEXR5      M4B.2: SLOT ABOVE 16 MB?",
+        "         CLI   SWPCODE,X'FF'",
+        "         BE    XSTIO          YES: MVCL, NO I/O",
+    ])
+    d.insert('01010000', first='01010001', inc=1,
+             limit=next_seq(src('DMKPAG'), '01010000'), lines=[
+        "*",
+        "* M4B.2: A PAGE WHOSE SLOT IS IN STORAGE ABOVE 16 MB MOVES BY",
+        "* MVCL (CP RUNS AMODE 31), AND ITS REQUESTER IS STACKED AS IF",
+        "* THE PAGING I/O HAD COMPLETED WITHOUT ERROR.",
+        "*",
+        "XSTIO    DS    0H",
+    ] + XSTSLOT + [
+        "         L     R4,CPEXR7      THE FRAME BELOW THE LINE",
+        "         SL    R4,ACORETBL",
+        "         SLL   R4,8",
+        "         L     R3,=F'4096'",
+        "         LR    R5,R3",
+        "         LR    R7,R3",
+        "         LA    R15,XSTIO31    MVCL IN AMODE 31: DMKPAG MAY",
+        "         O     R15,=X'80000000'  RUN 24-BIT, AND A 24-BIT",
+        "         DC    X'0BEF'        MVCL TO 16 MB WROTE THE PSA",
+        "XSTIO31  CLI   CPEXR0+3,X'05' (R4B5) -- WRITE?",
+        "         BE    XSTIOW",
+        "         LR    R6,R2          READ: SLOT TO FRAME",
+        "         MVCL  R4,R6",
+        "         B     XSTIOD",
+        "XSTIOW   LR    R6,R4          WRITE: FRAME TO SLOT",
+        "         LR    R4,R2",
+        "         MVCL  R4,R6",
+        "XSTIOD   LA    R15,XSTIO24    BACK TO THE CALLER'S MODE",
+        "         N     R14,=X'80000000'",
+        "         OR    R15,R14",
+        "         DC    X'0B0F'        BSM 0,R15",
+        "XSTIO24  MVI   CPEXADD,0      NO ERROR",
+        "         CALL  DMKSTKCP       THE REQUESTER CONTINUES",
+        "         B     GETQ           NEXT REQUEST",
+    ])
+    decks['DMKPAG'] = d
+
+    d = Deck(XA53)
+    d.replace('01533000', first='01533100', inc=100,
+              limit=next_seq(src('DMKPTR'), '01533000'), lines=[
+        "         CLI   SWPCODE,X'FF'  M4B.2: SLOT ABOVE 16 MB:",
+        "         BE    QWRITE         KEEP IT, AS ON A DRUM",
+        "         SR    R1,R1          CLEAR VOLUME INDEX",
+    ])
+    d.replace('01562000', first='01562100', inc=100,
+              limit=next_seq(src('DMKPTR'), '01562000'), lines=[
+        "         EXTRN DMKPGTPX       M4B.2: STORAGE SLOT FIRST",
+        "         CALL  DMKPGTPX       GET NEW DASD PAGE ADDRESS",
+    ])
+    decks['DMKPTR'] = d
+
+    d = Deck(XA53)
+    d.replace('00801000', first='00801100', inc=100,
+              limit=next_seq(src('DMKPGS'), '00801000'), lines=[
+        "         LA    R15,VMPDRUM-VMBLOK  M4B.2: SLOT ABOVE",
+        "         CLI   SWPCODE,X'FF'  16 MB: A DRUM PAGE",
+        "         BE    PGSXST",
+        "         IC    R2,SWPCODE     GET VOLUME INDEX CODE",
+    ])
+    d.replace('00812000', first='00812100', inc=100,
+              limit=next_seq(src('DMKPGS'), '00812000'), lines=[
+        "PGSXST   LH    R0,0(R15,R4)   DECREMENT",
+    ])
+    decks['DMKPGS'] = d
+
+    d = Deck(XA53)
+    d.replace('00547000', first='00547100', inc=100,
+              limit=next_seq(src('DMKATS'), '00547000'), lines=[
+        "         LA    R14,VMPDRUM-VMBLOK  M4B.2: SLOT ABOVE",
+        "         CLI   SWPCODE,X'FF'  16 MB: A DRUM PAGE",
+        "         BE    ATSXST",
+        "         IC    R1,SWPCODE     GET VOLUME INDEX CODE",
+    ])
+    d.replace('00559000', first='00559100', inc=100,
+              limit=next_seq(src('DMKATS'), '00559000'), lines=[
+        "ATSXST   LH    R1,0(R14,R15)  GET OLD OWNERS COUNT",
+    ])
+    decks['DMKATS'] = d
+
+    d = Deck(XA53)
+    d.replace('59400000', first='59410000', inc=10000,
+              limit=next_seq(src('DMKCPP'), '59400000'), lines=[
+        "         LA    R15,VMPDRUM-VMBLOK  M4B.2: SLOT ABOVE",
+        "         CLI   SWPCODE,X'FF'  16 MB: A DRUM PAGE",
+        "         BE    DRUM",
+        "         IC    R2,SWPCODE     GET VOLUME INDEX CODE",
+    ])
+    decks['DMKCPP'] = d
+    return decks
 
 
 def dmksys():
@@ -7967,6 +8214,14 @@ def main():
         [(XA53, 'M4B: REAL STORAGE ABOVE 16 MB, CORTABLE BUILT AT IPL')])
     print('%-8s %-9s %3d cards  %s' % ('DMKCPI', XA53, n,
           'OK' if not verify(path) else 'BAD'))
+
+    for m, dk in sorted(m4bslots().items()):
+        path = os.path.join(HERE, '%s.%s' % (m, XA53))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA53, 'M4B: STORAGE ABOVE 16 MB AS THE PAGING STORE')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA53, n,
+              'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(TMRMODS):
         dk = datdeck(m, TMRMODS[m], ident=XA52)

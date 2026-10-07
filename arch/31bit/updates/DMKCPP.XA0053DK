@@ -1,0 +1,5 @@
+./ R 59400000          $ 59410000 10000                                         
+         LA    R15,VMPDRUM-VMBLOK  M4B.2: SLOT ABOVE           XA0053DK         
+         CLI   SWPCODE,X'FF'  16 MB: A DRUM PAGE               XA0053DK         
+         BE    DRUM                                            XA0053DK         
+         IC    R2,SWPCODE     GET VOLUME INDEX CODE            XA0053DK         

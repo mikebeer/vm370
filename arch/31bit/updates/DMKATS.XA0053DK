@@ -1,0 +1,7 @@
+./ R 00547000          $ 00547100 100                                           
+         LA    R14,VMPDRUM-VMBLOK  M4B.2: SLOT ABOVE           XA0053DK         
+         CLI   SWPCODE,X'FF'  16 MB: A DRUM PAGE               XA0053DK         
+         BE    ATSXST                                          XA0053DK         
+         IC    R1,SWPCODE     GET VOLUME INDEX CODE            XA0053DK         
+./ R 00559000          $ 00559100 100                                           
+ATSXST   LH    R1,0(R14,R15)  GET OLD OWNERS COUNT             XA0053DK         

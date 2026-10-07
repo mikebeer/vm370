@@ -1,0 +1,107 @@
+./ I 00035000 $ 00035100 100                                                    
+         ENTRY DMKPGTXT       M4B.2: TOP OF THE PAGING STORE   XA0053DK         
+./ R 00597000          $ 00597100 100                                           
+SPOOLDEL EQU   *                                               XA0053DK         
+         CLI   SWPCODE,X'FF'  M4B.2: SLOT ABOVE 16 MB?         XA0053DK         
+         BE    XSTREL                                          XA0053DK         
+./ I 01292000 $ 01292001 001                                                    
+*                                                              XA0053DK         
+* M4B.2: THE PAGING STORE ABOVE 16 MB. XSTGET: R2 = CCPD OF A  XA0053DK         
+* FREE SLOT, OR 0.  XSTREL: RELEASE THE SLOT AT SWPTABLE R5.   XA0053DK         
+*                                                              XA0053DK         
+XSTGET   L     R2,XSTFREE     A RELEASED SLOT?                 XA0053DK         
+         LTR   R2,R2                                           XA0053DK         
+         BZ    XSTGET2                                         XA0053DK         
+         LA    R15,XSTG31     ITS SUCCESSOR, KEPT IN IT:       XA0053DK         
+         O     R15,=X'80000000'  READ IN AMODE 31 (R4B5:       XA0053DK         
+         DC    X'0B4F'        BSM R4,R15  DMKPAG RAN 24-BIT)   XA0053DK         
+XSTG31   L     R0,0(,R2)                                       XA0053DK         
+         LA    R15,XSTG24                                      XA0053DK         
+         N     R4,=X'80000000'  BACK TO THE CALLER'S MODE      XA0053DK         
+         OR    R15,R4                                          XA0053DK         
+         DC    X'0B0F'        BSM 0,R15                        XA0053DK         
+XSTG24   DS    0H                                              XA0053DK         
+         ST    R0,XSTFREE                                      XA0053DK         
+         B     XSTGET3                                         XA0053DK         
+XSTGET2  L     R2,XSTHWM      A NEVER-USED SLOT?               XA0053DK         
+         CL    R2,XSTTOP                                       XA0053DK         
+         BNL   XSTNONE                                         XA0053DK         
+         LR    R0,R2                                           XA0053DK         
+         AL    R0,=F'4096'                                     XA0053DK         
+         ST    R0,XSTHWM                                       XA0053DK         
+XSTGET3  SL    R2,=X'01000000'  SLOT NUMBER                    XA0053DK         
+         SRL   R2,12                                           XA0053DK         
+         LR    R0,R2                                           XA0053DK         
+         N     R0,=F'127'     PAGE = SLOT//128 + 1             XA0053DK         
+         AL    R0,=F'1'                                        XA0053DK         
+         SRL   R2,7           CYL = SLOT/128                   XA0053DK         
+         SLL   R2,8                                            XA0053DK         
+         OR    R2,R0                                           XA0053DK         
+         SLL   R2,8                                            XA0053DK         
+         O     R2,=F'255'     DEVICE CODE X'FF'                XA0053DK         
+         BR    R14                                             XA0053DK         
+XSTNONE  SR    R2,R2                                           XA0053DK         
+         BR    R14                                             XA0053DK         
+* DMKPGTPX: DMKPGTPG FOR A USER PAGE-OUT (DMKPTR ONLY).        XA0053DK         
+* DMKPGTPG ITSELF ALSO SERVES DMKCPI, DMKSST AND DMKCDS,       XA0053DK         
+* WHOSE PAGES DMKRPA WRITES WITH ITS OWN CHANNEL PROGRAMS --   XA0053DK         
+* THOSE MUST STAY ON DASD (R4B4: PROGRAM CHECK LOOP AT IPL).   XA0053DK         
+         ENTRY DMKPGTPX                                        XA0053DK         
+         DROP  R12                                             XA0053DK         
+         USING *,R15                                           XA0053DK         
+DMKPGTPX STM   R0,R15,BALRSAVE                                 XA0053DK         
+         L     R12,=A(DMKPGT)                                  XA0053DK         
+         DROP  R15                                             XA0053DK         
+         USING DMKPGT,R12                                      XA0053DK         
+         CLC   CPID,=C'CPCP'  SYSTEM RUNNING?                  XA0053DK         
+         BNE   XSTPX1                                          XA0053DK         
+         BAL   R14,XSTGET     A SLOT ABOVE 16 MB?              XA0053DK         
+         LTR   R2,R2                                           XA0053DK         
+         BNZ   XSTGOT         YES                              XA0053DK         
+XSTPX1   L     R15,=A(DMKPGTPG)  NO: THE DASD ALLOCATOR        XA0053DK         
+         ST    R15,BALRSAVE+60  (LOADED BEFORE LM: AFTER IT    XA0053DK         
+         LM    R0,R15,BALRSAVE  R12 IS THE CALLER'S BASE)      XA0053DK         
+         BR    R15                                             XA0053DK         
+XSTGOT   LH    R3,VMPDRUM-VMBLOK(,R11)  COUNTS AS DRUM         XA0053DK         
+         LA    R3,1(,R3)                                       XA0053DK         
+         STH   R3,VMPDRUM-VMBLOK(,R11)                         XA0053DK         
+         B     SETADDR                                         XA0053DK         
+XSTREL   DS    0H                                              XA0053DK         
+         SR    R2,R2          SLOT NUMBER = CYL*128            XA0053DK         
+         ICM   R2,B'0011',SWPCYL                               XA0053DK         
+         SLL   R2,7                                            XA0053DK         
+         SR    R0,R0          + PAGE-1                         XA0053DK         
+         IC    R0,SWPDPAGE                                     XA0053DK         
+         BCTR  R0,0                                            XA0053DK         
+         OR    R2,R0                                           XA0053DK         
+         SLL   R2,12          FRAME = 16 MB + SLOT*4096        XA0053DK         
+         AL    R2,=X'01000000'                                 XA0053DK         
+         L     R0,XSTFREE     PUSH IT ON THE FREE STACK        XA0053DK         
+         LA    R15,XSTR31     (STORE IN AMODE 31)              XA0053DK         
+         O     R15,=X'80000000'                                XA0053DK         
+         DC    X'0B4F'        BSM R4,R15                       XA0053DK         
+XSTR31   ST    R0,0(,R2)                                       XA0053DK         
+         LA    R15,XSTR24                                      XA0053DK         
+         N     R4,=X'80000000'                                 XA0053DK         
+         OR    R15,R4                                          XA0053DK         
+         DC    X'0B0F'        BSM 0,R15                        XA0053DK         
+XSTR24   ST    R2,XSTFREE                                      XA0053DK         
+         OI    SWPFLAG,SWPRECMP                                XA0053DK         
+         XC    SWPCYL(4),SWPCYL                                XA0053DK         
+         TM    UCTL,UCTLDR    PAGING ACCOUNTING?               XA0053DK         
+         BZ    XSTREL2                                         XA0053DK         
+         LR    R4,R11                                          XA0053DK         
+         TM    UCTL,UCTLSYS   AGAINST THE SYSTEM?              XA0053DK         
+         BZ    *+8                                             XA0053DK         
+         L     R4,ASYSVM                                       XA0053DK         
+         LH    R3,VMPDRUM-VMBLOK(,R4)                          XA0053DK         
+         S     R3,F1                                           XA0053DK         
+         BM    XSTREL2                                         XA0053DK         
+         STH   R3,VMPDRUM-VMBLOK(,R4)                          XA0053DK         
+XSTREL2  MVI   UCTL,X'00'                                      XA0053DK         
+         LM    R0,R15,BALRSAVE                                 XA0053DK         
+         BR    R14                                             XA0053DK         
+DMKPGTXT DS    0F                                              XA0053DK         
+XSTTOP   DC    A(X'01000000')  SET BY DMKCPI: REAL SIZE        XA0053DK         
+XSTHWM   DC    A(X'01000000')  NEXT NEVER-USED SLOT            XA0053DK         
+XSTFREE  DC    A(0)           RELEASED SLOTS                   XA0053DK         

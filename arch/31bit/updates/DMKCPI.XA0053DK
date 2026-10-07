@@ -16,9 +16,10 @@
 * M4B: THE CORTABLE FOR ALL OF REAL STORAGE, AT THE TOP        XA0053DK         
 * OF THE LOW 16 MB.  BALR R14,R15 IN AMODE 24, REAL SIZE       XA0053DK         
 * IN DMKSYSRM.  RETURNS THE LOW REGION UNDER THE TABLE IN      XA0053DK         
-* DMKSYSRV.  FRAMES ABOVE 16 MB OFFLINE UNTIL M4B.2.           XA0053DK         
+* DMKSYSRV.  FRAMES ABOVE 16 MB: DMKPGT'S PAGING STORE.        XA0053DK         
 *                                                              XA0053DK         
 DMKCPIB  CSECT                                                 XA0053DK         
+         EXTRN DMKPGTXT                                        XA0053DK         
          USING PSA,R0                                          XA0053DK         
          STM   R0,R14,CPIBSAVE-DMKCPIB(R15)                    XA0053DK         
          BALR  R11,0                                           XA0053DK         
@@ -33,7 +34,11 @@ DMKCPIB  CSECT                                                 XA0053DK
          CLR   R5,R10                                          XA0053DK         
          BNL   CPIB1                                           XA0053DK         
          LR    R10,R5         UNDER 16 MB: ALL                 XA0053DK         
-CPIB1    LR    R7,R10         TOP OF THE LOW REGION            XA0053DK         
+CPIB1    L     R3,=A(DMKPGTXT)  M4B.2: STORAGE ABOVE 16 MB     XA0053DK         
+         CLR   R5,R10         IS DMKPGT'S PAGING STORE         XA0053DK         
+         BNH   CPIB1A                                          XA0053DK         
+         ST    R5,0(,R3)      ITS TOP                          XA0053DK         
+CPIB1A   LR    R7,R10         TOP OF THE LOW REGION            XA0053DK         
          SLR   R7,R6          TABLE ORIGIN                     XA0053DK         
          ST    R7,ACORETBL    EVERY MODULE LOOKS HERE          XA0053DK         
          LR    R8,R7          CLEAR THE TABLE                  XA0053DK         

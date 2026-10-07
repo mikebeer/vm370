@@ -1,0 +1,7 @@
+./ R 01533000          $ 01533100 100                                           
+         CLI   SWPCODE,X'FF'  M4B.2: SLOT ABOVE 16 MB:         XA0053DK         
+         BE    QWRITE         KEEP IT, AS ON A DRUM            XA0053DK         
+         SR    R1,R1          CLEAR VOLUME INDEX               XA0053DK         
+./ R 01562000          $ 01562100 100                                           
+         EXTRN DMKPGTPX       M4B.2: STORAGE SLOT FIRST        XA0053DK         
+         CALL  DMKPGTPX       GET NEW DASD PAGE ADDRESS        XA0053DK         
