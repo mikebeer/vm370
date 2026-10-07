@@ -30,3 +30,16 @@ Result (w255, Hercules 4.9.1, CMSUSER 128M, EC-mode CMS from 290):
     HELLO31X: 40 MB AT 01000000 WRITTEN/READ, PAGES=10240 BAD=0 SUM=00000059FEC00000
 
 (sum of the page addresses: 10240*X'01000000' + 4096*52423680 = X'59FEC00000')
+
+## C runtime and cREXX (7 October 2026)
+
+`crt.sh OUT.text a.c ...` compiles with GCC 13 `-m31 -msoft-float
+-mlong-double-64`, links `entry31.s` + `cmsrt.c` + newlib 4.4 (`libc.a`,
+`libm.a`) + `softfp/libsoftfp.a` + the 31-bit libgcc, and exports a TEXT deck.
+`crexx/build.sh` builds RXC, RXAS, RXBVM, RXDAS from the 2022 tree.
+
+On VM/370+ (Hercules 4.9.1), `tests/runs/crexx31-install.json` reads the
+decks, `LOAD`/`GENMOD`s RXC31 etc., runs RXC31 -> RXAS31 -> RXBVM31 on
+BASIC REXX; `crexx31-tests.json` runs the 2022 tests that pass on a host
+build too (test, main, sextest, testbge/bgt/ble/blt, testneeq, func1, func2,
+length): every output identical to the host's (w259).

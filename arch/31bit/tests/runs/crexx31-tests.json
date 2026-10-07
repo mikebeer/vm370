@@ -1,0 +1,369 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "DMKCPI966I|Start \\(\\(Warm",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I|\\?CP",
+  "timeout": 90,
+  "cont": true,
+  "settle": 8
+ },
+ {
+  "send": "/cp disc",
+  "expect": "DISCONNECT AT",
+  "timeout": 60
+ },
+ {
+  "send": "/logon maint cpcms noipl",
+  "expect": "Ready|LOGON AT|RECONNECT",
+  "timeout": 180
+ },
+ {
+  "send": "/cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/ipl 190",
+  "expect": "VM Community|Ready",
+  "timeout": 120
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cp purge rdr all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp purge printer all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/x31t2.txt ascii eof trunc",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "/cp q rdr cmsuser all",
+  "expect": "Ready|RDR|NO",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon cmsuser cmsuser noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 128m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp link maint 290 290 rr",
+  "expect": "Ready|DMK|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 290",
+  "expect": "VM Community|DMS",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "q disk",
+  "expect": "Ready",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "readcard *",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "highstor reset",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== test",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxc31 test",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxas31 test",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 test",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== main",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 main",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 main",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== sextest",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 sextest",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 sextest",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== testbge",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 testbge",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 testbge",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== testbgt",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 testbgt",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 testbgt",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== testble",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 testble",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 testble",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== testblt",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 testblt",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 testblt",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== testneeq",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 testneeq",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 testneeq",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== func1",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 func1",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 func1",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== func2",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 func2",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 func2",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== length",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "rxas31 length",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "rxbvm31 length",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 300,
+  "cont": true
+ },
+ {
+  "term": "cp msg cmsuser ==== end",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "highstor query",
+  "expect": "HIGHSTOR",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp shutdown",
+  "expect": "HHCCP011I|HHC00809I|SHUTDOWN",
+  "timeout": 40,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]
