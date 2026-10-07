@@ -37,8 +37,12 @@ int main(int argc, char *argv[])
     if (!q) return 9;
     memset(q, 0, 20000000);
     memcpy(q, p + 5000000, 20000000);
-    printf("M5G2: memcpy 20000000 q=%08lX q[19999999] %02X\n",
-           (unsigned long)q, (unsigned char)q[19999999]);
+    printf("M5G2: memcpy 20000000 q=%08lX q[0] %02X q[16773120] %02X"
+           " q[19999999] %02X\n", (unsigned long)q, (unsigned char)q[0],
+           (unsigned char)q[16773120], (unsigned char)q[19999999]);
+    q[19999999] = 1;
+    printf("M5G2: memcmp 20000000 %d (-1 expected)\n",
+           memcmp(q, p, 20000000));
     for (i = 0; i < 20000; i++) {
         s = malloc(100 + i % 400);
         if (!s) { printf("M5G2: small malloc %d failed\n", i); return 12; }

@@ -86,7 +86,7 @@ static void __mvclset(void *s, int c, size_t sz) {
 
 #define MVCLMAX 0x00FFF000
 
-void *memcpy(void *s1, const void *s2, size_t sz) {
+static void *__copy31(void *s1, const void *s2, size_t sz) {
     char *d = s1;
     const char *s = s2;
     if (!s1) return 0;
@@ -102,6 +102,25 @@ void *memcpy(void *s1, const void *s2, size_t sz) {
     __mvcl(d, s, sz);
     return s1;
 }
+
+void *memcpy(void *s1, const void *s2, size_t sz) {
+    return __copy31(s1, s2, sz);
+}
+
+/* string.h maps memcpy/memset/memcmp here: GCC's inline expansions of
+   the builtins use MVCL/CLCL with the length in 24 bits */
+void *__mcpy31(void *s1, const void *s2, size_t sz) {
+    return __copy31(s1, s2, sz);
+}
+
+int __mcmp31(const void *s1, const void *s2, size_t n) {
+    const unsigned char *a = s1;
+    const unsigned char *b = s2;
+    for (; n; n--, a++, b++)
+        if (*a != *b) return *a < *b ? -1 : 1;
+    return 0;
+}
+#define MEMCPY31 __copy31
 #else
 void *memcpy(void *s1, const void *s2, size_t sz) {
     if (!s1) return 0;
@@ -123,6 +142,7 @@ void *memcpy(void *s1, const void *s2, size_t sz) {
     return s1;
 }
 
+#define MEMCPY31 memcpy
 #endif
 
 #ifdef memmove
@@ -135,9 +155,9 @@ void *memmove(void *s1, const void *s2, size_t sz) {
     if (!sz) return s1;
     if (s1 == s2) return s1;
     if (s1 < s2)
-        return memcpy(s1, s2, sz); /* So called non-destructive overlap */
+        return MEMCPY31(s1, s2, sz); /* So called non-destructive overlap */
     int delta = s1 - s2;
-    if (delta >= sz) return memcpy(s1, s2, sz); /* No Overlap */
+    if (delta >= sz) return MEMCPY31(s1, s2, sz); /* No Overlap */
 
     s1 += sz;
     s2 += sz;
@@ -201,7 +221,7 @@ void *memmove(void *s1, const void *s2, size_t sz) {
 #endif
 
 #ifdef __GCC31__
-void *memset(void *s, int c, size_t sz) {
+static void *__set31(void *s, int c, size_t sz) {
     char *d = s;
     if (!s) return 0;
     if (!sz) return s;
@@ -212,6 +232,14 @@ void *memset(void *s, int c, size_t sz) {
     }
     __mvclset(d, c, sz);
     return s;
+}
+
+void *memset(void *s, int c, size_t sz) {
+    return __set31(s, c, sz);
+}
+
+void *__mset31(void *s, int c, size_t sz) {
+    return __set31(s, c, sz);
 }
 #else
 void *memset(void *s, int c, size_t sz) {

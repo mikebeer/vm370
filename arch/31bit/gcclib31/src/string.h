@@ -113,8 +113,14 @@ void * _Builtin __memmove(void *s1, const void *s2, size_t n);
 #endif
 
 #if defined (__GNUC__) && __GNUC__ >= 3
-#define memcpy(a, b, c) (__builtin_memcpy((a),(b),(c)))
-#define memcmp(s1, s2, n) (__builtin_memcmp((s1),(s2),(n)))
+/* GCCLIB31: not the builtins -- GCC expands them inline as MVCL/CLCL
+   with a 24-bit length, so a 20 MB memcpy moved 3 MB (w264) */
+void *__mcpy31(void *s1, const void *s2, size_t n);
+void *__mset31(void *s, int c, size_t n);
+int __mcmp31(const void *s1, const void *s2, size_t n);
+#define memcpy(a, b, c) (__mcpy31((a),(b),(c)))
+#define memset(s, c, n) (__mset31((s),(c),(n)))
+#define memcmp(s1, s2, n) (__mcmp31((s1),(s2),(n)))
 #endif
 
 /* We don't activate these GCC builtins, because they

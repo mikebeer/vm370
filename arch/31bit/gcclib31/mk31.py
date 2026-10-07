@@ -25,7 +25,9 @@ The design (docs/36-M5-CMS31.md, XA-CMS-light):
    (C locals are handed to CMS all the time) -- comes from _lmalloc(),
    which is DMSFREE (__dmsfre/__dmsfrt).
  * CMScommand / system() and CMSfunction* copy high strings below the line.
- * memcpy/memset: MVCL lengths are 24 bits, so moves over 16 MB loop.
+ * memcpy/memset: MVCL lengths are 24 bits, so moves over 16 MB loop;
+   string.h sends memcpy/memset/memcmp to the library, not to GCC's
+   inline MVCL/CLCL builtins (24-bit lengths too).
  * DYNSTK: 'LA R11,0(,R11)' clears only bit 0 in AMODE 31 -- the stack
    flag byte (X'01', X'06') stayed in the address; SLL/SRL 8 instead.
  * Upstream bug, fixed for both builds: dynamic stack bins for frames over
@@ -361,7 +363,7 @@ static void __mvclset(void *s, int c, size_t sz) {
 
 #define MVCLMAX 0x00FFF000
 
-void *memcpy(void *s1, const void *s2, size_t sz) {
+static void *__copy31(void *s1, const void *s2, size_t sz) {
     char *d = s1;
     const char *s = s2;
     if (!s1) return 0;
@@ -377,9 +379,27 @@ void *memcpy(void *s1, const void *s2, size_t sz) {
     __mvcl(d, s, sz);
     return s1;
 }
+
+void *memcpy(void *s1, const void *s2, size_t sz) {
+    return __copy31(s1, s2, sz);
+}
+
+/* string.h maps memcpy/memset/memcmp here: GCC's inline expansions of
+   the builtins use MVCL/CLCL with the length in 24 bits */
+void *__mcpy31(void *s1, const void *s2, size_t sz) {
+    return __copy31(s1, s2, sz);
+}
+
+int __mcmp31(const void *s1, const void *s2, size_t n) {
+    const unsigned char *a = s1;
+    const unsigned char *b = s2;
+    for (; n; n--, a++, b++)
+        if (*a != *b) return *a < *b ? -1 : 1;
+    return 0;
+}
 '''
 
-STRING_SET = r'''void *memset(void *s, int c, size_t sz) {
+STRING_SET = r'''static void *__set31(void *s, int c, size_t sz) {
     char *d = s;
     if (!s) return 0;
     if (!sz) return s;
@@ -391,6 +411,14 @@ STRING_SET = r'''void *memset(void *s, int c, size_t sz) {
     __mvclset(d, c, sz);
     return s;
 }
+
+void *memset(void *s, int c, size_t sz) {
+    return __set31(s, c, sz);
+}
+
+void *__mset31(void *s, int c, size_t sz) {
+    return __set31(s, c, sz);
+}
 '''
 
 
@@ -398,18 +426,38 @@ def string_c(t):
     n = 'string.c'
     a = t.index('void *memcpy(void *s1, const void *s2, size_t sz) {')
     b = t.index('#ifdef memmove')
-    t = t[:a] + '#ifdef __GCC31__\n' + STRING_MVCL + '#else\n' + t[a:b] + '#endif\n\n' + t[b:]
+    t = t[:a] + '#ifdef __GCC31__\n' + STRING_MVCL + '#define MEMCPY31 __copy31\n#else\n' + \
+        t[a:b] + '#define MEMCPY31 memcpy\n#endif\n\n' + t[b:]
+    t = edit(t, 'return memcpy(s1, s2, sz);', 'return MEMCPY31(s1, s2, sz);', 2, n)
     a = t.index('void *memset(void *s, int c, size_t sz) {')
     b = t.index('#ifdef strcat')
     t = t[:a] + '#ifdef __GCC31__\n' + STRING_SET + '#else\n' + t[a:b] + '#endif\n\n' + t[b:]
     return t
 
 
+def string_h(t):
+    return edit(t, """#if defined (__GNUC__) && __GNUC__ >= 3
+#define memcpy(a, b, c) (__builtin_memcpy((a),(b),(c)))
+#define memcmp(s1, s2, n) (__builtin_memcmp((s1),(s2),(n)))
+#endif
+""", """#if defined (__GNUC__) && __GNUC__ >= 3
+/* GCCLIB31: not the builtins -- GCC expands them inline as MVCL/CLCL
+   with a 24-bit length, so a 20 MB memcpy moved 3 MB (w264) */
+void *__mcpy31(void *s1, const void *s2, size_t n);
+void *__mset31(void *s, int c, size_t n);
+int __mcmp31(const void *s1, const void *s2, size_t n);
+#define memcpy(a, b, c) (__mcpy31((a),(b),(c)))
+#define memset(s, c, n) (__mset31((s),(c),(n)))
+#define memcmp(s1, s2, n) (__mcmp31((s1),(s2),(n)))
+#endif
+""", 1, 'string.h')
+
+
 EDITS = {
     'cmssys.assemble': cmssys, 'cmsentry.assemble': cmsentry,
     'dynstk.assemble': dynstk, 'cmsruntm.h': cmsruntm_h,
     'cmsruntm.c': cmsruntm_c, 'cmsstdlb.c': cmsstdlb, 'cmsio.c': cmsio,
-    'cmssysc.c': cmssysc, 'malloc.c': malloc_c, 'string.c': string_c,
+    'cmssysc.c': cmssysc, 'malloc.c': malloc_c, 'string.c': string_c, 'string.h': string_h,
 }
 for d in ('condrv.c', 'dskdrv.c', 'prtdrv.c', 'pundrv.c', 'rdrdrv.c'):
     EDITS[d] = (lambda name: lambda t: driver(t, name))(d)
