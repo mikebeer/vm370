@@ -1,0 +1,16 @@
+******************************************************************
+* PDPEPIL ASSEMBLE                                               *
+* The GCC exit epilog macro                                      *
+*                                                                *
+* Part of GCCLIB - VM/370 CMS Native Std C Library;              *
+*                  A Historic Computing Toy                      *
+*                                                                *
+* Proud Contributors: See contrib memo                           *
+*                                                                *
+* Released to the public domain.                                 *
+******************************************************************
+         MACRO
+&N       PDPEPIL
+&N       L     5,=V(@DSTAKOT)
+         BR    5
+         MEND

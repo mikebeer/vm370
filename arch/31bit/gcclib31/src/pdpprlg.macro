@@ -1,0 +1,44 @@
+******************************************************************
+* PDPPRLG ASSEMBLE                                               *
+* The GCC entry prolog macro                                     *
+*                                                                *
+* Part of GCCLIB - VM/370 CMS Native Std C Library;              *
+*                  A Historic Computing Toy                      *
+*                                                                *
+* Proud Contributors: See contrib memo                           *
+*                                                                *
+* Released to the public domain.                                 *
+******************************************************************
+* Syntax is:                                                     *
+*                                                                *
+* name  PDPPRLG CINDEX=index,FRAME=frame,BASER=base,ENTRY=entry  *
+*                                                                *
+* where:                                                         *
+*    name     is the entry  name of the routine, if the ENTRY    *
+*             parameter is specified.                            *
+*                                                                *
+*    BASER    specifies the register to be used as a base reg    *
+*                                                                *
+*    CINDEX   is ignored.                                        *
+*                                                                *
+*    ENTRY    is YES or NO.  If YES, 'name' is used as the entry *
+*             point for the routine.                             *
+*                                                                *
+*    FRAME    specifies the number of bytes to be allocated on   *
+*             the stack frame for the CMSCRAB and the local      *
+*             variables of the routine.                          *
+*                                                                *
+******************************************************************
+         MACRO
+&N       PDPPRLG &CINDEX=,&FRAME=,&BASER=,&ENTRY=
+         AIF     ('&ENTRY' EQ 'NO').NENT
+         ENTRY   &N
+.NENT    ANOP
+&N       DS    0H
+         USING *,&BASER       establish addressability
+         STM   14,12,12(13)   save the caller's registers
+         LR    &BASER,15      copy the base register from R15
+         L     9,=A(&FRAME)   stack space requested
+         L     5,=V(@DSTAKIN)
+         BALR  14,5
+         MEND

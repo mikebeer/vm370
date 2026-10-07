@@ -1,0 +1,111 @@
+******************************************************************
+* CMSENTRY ASSEMBLE                                              *
+* The main entry point for a module produced by GCC and other    *
+* assembler stubs to be linked to the users program (rather than *
+* resident).                                                     *
+*                                                                *
+* Part of GCCLIB - VM/370 CMS Native Std C Library;              *
+*                  A Historic Computing Toy                      *
+*                                                                *
+* Proud Contributors: See contrib memo                           *
+*                                                                *
+* Released to the public domain.                                 *
+******************************************************************
+CMSENTRY CSECT
+         ENTRY @@CRT0
+***********************************************************************
+* @@CRT0 Entry Point                                                  *
+* We enter here from CMS.  This is the main entry point for a module  *
+* compiled by GCC.  Allocate the bootstrap GCC stack, and call        *
+* __cstub which prepares for the RESLIB hyperjump, which calls __ctart*
+* which sets up the runtime strucures & parameters, which finally     *
+* calls main().                                                       *
+* On return it frees the bootstrap stack and returns to CMS.          *
+***********************************************************************
+@@CRT0   DS    0H
+         USING CMSCRAB,R13
+         STM   R14,R12,GR14
+         LR    R12,R15
+         USING @@CRT0,R12     establish addressability
+         LA    R4,18*4(,R13)  Point to a plist build area
+*                               just past our saved registers
+*                                 in our R13 13 Dword area
+         ST    R1,0(,R4)      Set entry PLIST ptr as parm 1
+         ST    R0,4(,R4)      Set entry EPLIST ptr as parm 2
+* --------------------------------------------------------------------
+* Set up the bootstrap GCC stack.
+* --------------------------------------------------------------------
+         LA    R0,STACKLEN/8  stack length in doublewords
+         DMSFREE DWORDS=(0),ERR=NOMEM,TYPCALL=SVC,TYPE=USER
+         ST    R1,FORWARD     chain backward (our save area)
+         ST    R13,BACK-CMSCRAB(,R1) Chain forward
+*                                       (caller's save area)
+         LR    R13,R1         establish initial stack frame
+         USING CMSCRAB,R13
+         LA    R2,MAINSTK     where the GCC stack begins
+         ST    R2,STACKNXT    next available spot in stack
+         L     R2,=A(STACKLEN)
+         LA    R2,0(R2,R13)   Point past the stack end
+         ST    R2,DSTACK      Dynamic stack control
+         MVI   DSTACK,X'01'   Set flag to 01 = static stack
+* ---------------------------------------------------------------------
+* Now we build the parameters for the user's main program.
+* ---------------------------------------------------------------------
+LAUNCH   DS    0H
+         LR    R1,R4          address of parameters for __cstub
+* ---------------------------------------------------------------------
+* At last we call the user's C main program.
+* ---------------------------------------------------------------------
+         L     R15,=V(@@CSTUB)
+         O     R15,=X'80000000'  GCCLIB31: C RUNS AMODE 31
+         DC    X'0CEF'        BASSM R14,R15: BACK IN AMODE 24
+* ---------------------------------------------------------------------
+* Normal return from the user's program.  Clean up and return to CMS.
+* ---------------------------------------------------------------------
+         LR    R9,R15         save the return code from user program
+         LA    R15,@@EXIT     adjust addressability
+         B     THATSALL       branch to clean up
+         SPACE
+NOMEM    DS    0H             memory allocation failed
+         LA    R15,57         perhaps should issue an error message
+         B     RETURN
+         LTORG
+         EJECT
+***********************************************************************
+* @@EXIT Entry Point                                                  *
+* We enter here when the user program calls the exit() function, and  *
+* branch here after a normal return from the user program.  Now we    *
+* free the program stack and return to CMS.                           *
+***********************************************************************
+         ENTRY @@EXIT
+@@EXIT   DS    0H
+         L     R9,0(R1)       get return code from parameter list
+* Join here after normal return from user's program.
+THATSALL DS    0H
+         LR    R12,R15
+         USING @@EXIT,R12     establish addressiblity
+         LA    R2,EXIT24      GCCLIB31: EXIT() COMES FROM AMODE 31
+         DC    X'0B02'        BSM 0,R2: AMODE 24 FOR CMS
+EXIT24   DS    0H
+         USING CMSCRAB,R13    save area is a CMSCRAB
+         L     R5,GCCCRABA    get the GCCCRAB
+         USING GCCCRAB,R5
+         L     R13,ROOTCMSC   get the rootcmscrab
+         DROP  R5
+         LA    R0,STACKLEN/8  Stack length in doublewords
+         LR    R1,R13
+         L     R13,BACK       go back to our save area
+         DMSFRET DWORDS=(0),LOC=(1),ERR=*,TYPCALL=SVC
+         LR    R15,R9         set return code
+RETURN   DS    0H
+         L     R14,GR14       restore return address
+         LM    R0,R12,GR0     restore our caller's registers
+         BR    R14            return to CMS
+         EJECT
+         LTORG
+         SPACE
+         REGEQU
+         CMSCRAB
+         GCCCRAB
+         NUCON
+         END

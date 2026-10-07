@@ -1,0 +1,1388 @@
+*********************************************************************** 00010000
+* CMSSYS contains C interfaces to CMS system services:                * 00020000
+*    @@DEBUG  A dummy routine callable from C (set breakpoint here).  * 00030000
+*    @@ATTN   Place a line on the CMS console stack.                  * 00040000
+*    @@SVC202 Invoke a CMS system service or command.                 * 00050000
+*    @@DMSFRE Allocate free memory.                                   * 00060000
+*    @@DMSFRT Release allocated memory.                               * 00070000
+*    @@FSCLOS Close an open file and save it to disk.                 * 00080000
+*    @@FSERAS Delete a CMS file.                                      * 00090000
+*    @@FSOPEN Open a CMS file for reading or writing.                 * 00100000
+*    @@FSPOIN Set the next item in a file to be read or written.      * 00110000
+*    @@FSREAD Read a record from an open file.                        * 00120000
+*    @@FSSTAT Determine whether a file exists.                        *
+*    @@FSWRIT Write a record to an open file.                         *
+*    @@GETCLK Get the system clock time.                              *
+*    @@PRINTL Write a line to the virtual printer.                    *
+*    @@PUNCHC Write a line to the virtual card punch.                 *
+*    @@RDCARD Read a line from the virtual card reader.               *
+*    @@RDDRCT Read a line from the virtual console, bypassing stack.  *
+* #  @@RDTAPE Read a record from a virtual tape drive.                *
+*    @@RDTERM Read a line from the stack or, if empty, the console.   *
+*    @@RENAME Rename a CMS file.                                      *
+*    @@STACKN Return number of lines in the CMS console stack.        *
+* #  @@TAPCTL Position the tape on a virtual tape drive.              *
+* #  @@WAITD  Wait for the next interrupt on a device.                *
+*    @@WAITT  Wait for terminal I/O to complete.                      *
+* #  @@WRTAPE Write a record to a virtual tape drive.                 *
+*    @@WRTERM Display a line on the terminal.                         *
+* # not yet implemented.                                              *
+*                                                                     *
+* This version will run in 24-bit mode only.  Support for 31-bit      *
+* addressing is a future objective.                                   *
+*                                                                     *
+* TODO:  Detect if we are in resident memory, and if so, BALR to the  *
+*        system functions instead of using SVC 202...                 *
+*                                                                     *
+* This code is not yet reentrant, but it is reuseable.                *
+*                                                                     *
+* Robert O'Hara, Redmond Washington, July 2010.                       *
+* Released to the public domain.                                      *
+***********************************************************************
+CMSSYS   CSECT
+         USING CMSSYS,R12
+         USING CMSCRAB,R13    map the save area
+         USING FSCBD,R8       CMS File System Control Block
+         SPACE 3
+***********************************************************************
+* @@DEBUG Entry Point                                                 *
+* Return to caller.  This is a place to set a breakpoint.             *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __DEBUG(int retcode)                                         *
+* where:                                                              *
+*    retcode   is a number to be returned to the caller.              *
+* returns:                                                            *
+*    (int)     The number passed to this function.                    *
+***********************************************************************
+         ENTRY @@DEBUG
+@@DEBUG  DS    0H
+         L     R15,0(R1)      get the desired return code
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* CMSSetNU                                                            *
+* void CMSSetNUCON(void *address, int value)                         *
+*                                                                     *
+* Set memory in NUCON                                                 *
+***********************************************************************
+         ENTRY CMSSETNU
+CMSSETNU DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,CMSSETNU-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING NUCON,0
+         L     R5,0(R1)       get Address
+         L     R3,4(R1)       get Value
+         IPK   ,
+         SPKA  0
+         STNSM 16(R13),X'00'  SAVE MASK IN R15 SLOT, DISABLE (EC/BC)
+         ST    R3,0(R5)       Save Value
+         SPKA  0(R2)
+         SSM   16(R13)        RESTORE CALLER'S MASK (EC/BC)
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* void CMSSetFlag(int flag, int value) - thanks to Bob Bolch          *
+*                                                                     *
+* Set the value of the CMS Flag (TRACEFLAG or HALTFLAG)               *
+* Args flag and value (0 or 1)                                        *
+***********************************************************************
+         ENTRY CMSSETFL
+CMSSETFL DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,CMSSETFL-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING NUCON,0
+         L     R5,0(R1)       get Flag
+         L     R3,4(R1)       get Value
+         LTR   R3,R3
+         BZ    SETFOFF        branch to reset flag
+         IPK   ,
+         SPKA  0
+         STNSM 16(R13),X'00'  SAVE MASK IN R15 SLOT, DISABLE (EC/BC)
+         IC    R4,EXECFLAG    Get Flag
+         OR    R4,R5          Set Flag On
+         STC   R4,EXECFLAG    Save Flag
+         B     SETFDONE
+SETFOFF  DS    0H
+         IPK   ,
+         SPKA  0
+         STNSM 16(R13),X'00'  SAVE MASK IN R15 SLOT, DISABLE (EC/BC)
+         LA    R6,X'FF'       For Anding the Flag
+         SR    R6,R5
+         IC    R4,EXECFLAG    Get Flag
+         NR    R4,R6          Set Flag Off
+         STC   R4,EXECFLAG    Save Flag
+SETFDONE DS    0H
+         SPKA  0(R2)
+         SSM   16(R13)        RESTORE CALLER'S MASK (EC/BC)
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@ATTN  Entry Point                                                 *
+* Place a line on the CMS console stack.                              *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __ATTN(char * line, int order)                               *
+* where:                                                              *
+*    line      is a pointer to the line to be stacked.  It must be no *
+*              more than 130 on VM/370, no more than 256 on VM/SP or  *
+*              z/VM.                                                  *
+*    order     is 0 if the line is to be stacked 'LIFO', anything     *
+*              else if it is to be stacked 'FIFO'.                    *
+* returns:                                                            *
+*    (int)     Return code from the ATTN function, always 0.          *
+***********************************************************************
+@@ATTN   PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@ATTN-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         MVC   ATTNPL,=CL8'ATTN'
+         L     R6,0(R1)       R6 is start of line to stack
+         LA    R3,LINELEN(R6) last possible char to stack
+         LA    R2,1           loop increment
+         LR    R4,R6          start of line to stack
+ATTN1    DS    0H             determine the length of the line
+         CLI   0(R4),X'00'    look for end of the C string
+         BE    ATTN2          found it
+         BXLE  R4,R2,ATTN1    keep looping if not
+ATTN2    DS    0H             we have the end of the line
+         SR    R4,R6          length of line to stack
+         ST    R6,ATTNLN      put line addr in ATTN plist
+         STC   R4,ATTNLN      put line length in ATTN plist
+* Now check for FIFO or LIFO.
+         L     R2,4(R1)       get 'order'
+         LTR   R2,R2          FIFO or LIFO?
+         BZ    ATTN3          LIFO it is
+         MVC   ATTNOD(4),=C'FIFO'
+         B     ATTN4
+ATTN3    DS    0H
+         MVC   ATTNOD(4),=C'LIFO'
+ATTN4    DS    0H
+* Use the ATTN function to stack the line.
+         LA    R1,ATTNPL
+         SVC   202            stack the line
+         DC    AL4(ATTNRT)    go here if an error
+ATTNRT   DS    0H
+         SR    R15,R15        zero return code
+         PDPEPIL
+         EJECT
+***********************************************************************
+* @@SVC202  Entry Point                                               *
+* Invoke a CMS system service or command.  Both a standard and        *
+* extended parameter list are passed to the command.                  *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __SVC202(void *plist , void* eplist, int calltype)           *
+* where:                                                              *
+*    plistr, eplist pointers to the parameters in both formats        *
+*    calltype  specifies the type of call:                            *
+*               0   indicates the command is to be invoked as a       *
+*                   function. (REALLY? CHECK!)                        *
+*               1   indicates the command is invoked as if from a CMS *
+*                   EXEC.  For example, if you want to invoke ABC     *
+*                   EXEC you must                                     *
+*                   code 'EXEC ABC'.                                  *
+*              11   indicates the command is invoked as if typed by   *
+*                   the user at the terminal.                         *
+* returns:                                                            *
+*    (int)     Return code from the invoked service or command.       *
+***********************************************************************
+         ENTRY @@SVC202
+@@SVC202 DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@SVC202-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         LR    R2,R1          save C parameter list
+         L     R1,0(R2)       plist
+         L     R0,4(R2)       eplist
+         ICM   R1,8,11(R2)    CALLTYPE flag byte
+         SVC   202            call the command
+         DC    AL4(*+4)       error address
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @DMSFREE                                                            *
+* DMSFREE Stub                                                        *
+* Allocate free memory.                                               *
+*                                                                     *
+* Syntax is:                                                          *
+*    _DMSFREE(int doublewords)                                        *
+* returns:                                                            *
+*    (int)     Address of the allocated memory, or 0 if the memory    *
+*              could not be allocated.                                *
+***********************************************************************
+         ENTRY @DMSFREE
+@DMSFREE DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@DMSFREE-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         L     R0,0(R1)       get number of dounlewords to allocate
+* Use DMSFREE to allocate the memory.
+         DMSFREE DWORDS=(0),TYPE=USER,ERR=DMSFREE2
+         LTR   R15,R15        did we get the memory?
+         BNZ   DMSFREE2       no, quit now
+         LR    R15,R1
+DMSFREE1 DS    0H
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+DMSFREE2 DS    0H             no memory
+         SR    R15,R15        indicate no memory allocated
+         B     DMSFREE1
+         EJECT
+***********************************************************************
+* @DMSFRET                                                            *
+* DMSFRET Stub                                                        *
+* Release allocated memory.                                           *
+*                                                                     *
+* Syntax is:                                                          *
+*    int _DMSFRET(void *address, int doublewords)                     *
+* where:                                                              *
+*    memory    is a pointer to the memory to be freed.                *
+* returns:                                                            *
+*     0        Success.                                               *
+*     1        Error.                                                 *
+***********************************************************************
+         ENTRY @DMSFRET
+@DMSFRET DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@DMSFRET-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         L     R0,4(R1)       get doublewords to return
+         L     R1,0(R1)       get address of memory to return
+* Use DMSFRET to return the memory.
+         DMSFRET DWORDS=(0),LOC=(1),ERR=DMSFRET2
+         SR    R15,R15        indicate all OK
+DMSFRET1 DS    0H
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+DMSFRET2 DS    0H             no memory
+         LA    R15,1          indicate error
+         B     DMSFRET1
+         EJECT
+***********************************************************************
+* @@DMSFRE  Entry Point                                               *
+* Allocate free memory.                                               *
+*                                                                     *
+* Syntax is:                                                          *
+*    __DMSFRE(int bytes, int type)                                    *
+* where:                                                              *
+*    bytes     is the number of bytes to be allocated.                *
+*    type      is the type of memory: 0 for NUCLEUS, 1 for USER.      *
+* returns:                                                            *
+*    (int)     Address of the allocated memory, or 0 if the memory    *
+*              could not be allocated.                                *
+* Notes:                                                              *
+* 1. Since CMS allocates memory in doublewords, we divide the bytes   *
+*    requested by 8 then add 2 to effectively round up, and add an    *
+*    additional doubleword which we use in note 2.                    *
+* 2. The first word is used to store the number of doublewords        *
+*    allocated, needed in @@DMSFRT.  The next word is 'GCC' followed  *
+*    by a 0 byte.  This helps detect memory overruns, I hope.         *
+* 3. Memory returned to the caller starts 8 bytes after the memory    *
+*    allocated to us by CMS.                                          *
+* 4. If you allocate NUCLEUS memory, your program must be generated   *
+*    with the SYSTEM option.  Note that if such a program abnormally  *
+*    terminates, CMS does not release this memory.                    *
+***********************************************************************
+@@DMSFRE PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@DMSFRE-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R2,0(R1)       get number of bytes to allocate
+         SRL   R2,3           convert to doublewords
+         LA    R0,2(R2)       round up plus 1 for housekeeping
+         L     R2,4(R1)       get type parameter
+* ---------------------------------------------------------------------
+* For debugging...
+         L     R3,0(R1)       get number of bytes to allocate
+         L     R4,=F'1000000'
+         SR    R4,R3
+         BP    OKAY
+         MVC   LINEDITL(LINEDISZ),LINEDITP Set pattern
+         MVI   OUTBUF,255         Set buffer size in byte 1
+         LINEDIT TEXT='Attempting to allocate ........ bytes',         X
+               SUB=(DEC,(3)),COMP=NO,BUFFA=OUTBUF,                     X
+               MF=(E,LINEDITL)
+         SR    R0,R0
+         SR    R1,R1
+         B     NOMEMORY
+OKAY     DS    0H
+* End of debugging...
+* ---------------------------------------------------------------------
+         LTR   R2,R2
+         BZ    NUCMEM         get nucleus memory
+* Use DMSFREE to allocate the memory.
+         DMSFREE DWORDS=(0),TYPE=USER,ERR=NOMEMORY
+         B     POSTMEM
+NUCMEM   DS    0H
+         DMSFREE DWORDS=(0),TYPE=NUCLEUS,ERR=NOMEMORY
+POSTMEM  DS    0H
+         LTR   R15,R15        did we get the memory?
+         BNZ   NOMEMORY       no, quit now
+         ST    R0,0(R1)       store number of doublewords allocated
+         MVC   4(4,R1),=X'C7C3C300' store marker: "GCC" C string
+         LA    R15,8(R1)      here is where user memory starts
+         B     FREERET        remove this for debugging message
+* ---------------------------------------------------------------------
+* For debugging...
+         LR    R2,R15
+         LR    R3,R0
+         LR    R4,R1
+         MVC   LINEDITL(LINEDISZ),LINEDITP Set pattern
+         MVI   OUTBUF,255         Set buffer size in byte 1
+         LINEDIT TEXT='Allocated ...... dwords of memory at ......',   X
+               SUB=(DEC,(3),HEX,(4)),COMP=NO,                          X
+               MF=(E,LINEDITL)
+         LR    R15,R2
+* End of debugging...
+* ---------------------------------------------------------------------
+FREERET  DS    0H
+         PDPEPIL
+NOMEMORY DS    0H
+         SR    R15,R15        indicate no memory allocated
+         B     FREERET
+         EJECT
+***********************************************************************
+* @@DMSFRT  Entry Point                                               *
+* Release allocated memory.                                           *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __DMSFRT(void * memory)                                      *
+* where:                                                              *
+*    memory    is a pointer to the memory to be freed.                *
+* returns:                                                            *
+*     0        Success.                                               *
+*     5        Returned size not positive (no doubt memory was        *
+*              overwritten.                                           *
+*     6        Memory block overlaps other memory.                    *
+*     7        Returned block is not double-word aligned.             *
+*     8        Illegal code or argument.                              *
+***********************************************************************
+@@DMSFRT PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@DMSFRT-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R1,0(R1)       get address of memory to return
+         LTR   R1,R1          check the address
+         BP    FRTOK
+         MVC   LINEDITL(LINEDISZ),LINEDITP Set pattern
+         MVI   OUTBUF,255         Set buffer size in byte 1
+         LINEDIT TEXT='Invalid address passed to __DMSFRT',            X
+               MF=(E,LINEDITL)
+         LA    R15,8          indicate bad pointer
+         B     FRTEND
+FRTOK    DS    0H
+         S     R1,=F'8'       get to real start of memory
+* Complain if our label has been overwritten.
+         CLC   4(4,R1),=X'C7C3C300'
+         BE    ALLSWELL       looks good
+         LR    R2,R1
+         MVC   LINEDITL(LINEDISZ),LINEDITP Set pattern
+         MVI   OUTBUF,255         Set buffer size in byte 1
+         LINEDIT TEXT='Memory overwrite detected by __DMSFRT at ......'X
+               ,SUB=(HEX,(2)),                                         X
+               MF=(E,LINEDITL)
+         LA    R15,5          indicate memory overwrite
+         B     FRTEND
+ALLSWELL DS    0H
+         L     R0,0(R1)       get doublewords to return
+* Use DMSFRET to return the memory.
+         DMSFRET DWORDS=(0),LOC=(1)
+         B     FRTEND
+* ---------------------------------------------------------------------
+* For debugging...
+         LR    R2,R15
+         LR    R3,R0
+         LR    R4,R1
+         MVC   LINEDITL(LINEDISZ),LINEDITP Set pattern
+         MVI   OUTBUF,255         Set buffer size in byte 1
+         LINEDIT TEXT='Freed     ...... dwords of memory at ......',   X
+               SUB=(DEC,(3),HEX,(4)),COMP=NO,                          X
+               MF=(E,LINEDITL)
+         LR    R15,R2
+* End of debugging...
+* ---------------------------------------------------------------------
+FRTEND   DS    0H
+         PDPEPIL
+         EJECT
+***********************************************************************
+* @@FSCLOS  Entry Point                                               *
+* Close an open file and save it to disk.                             *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSCLOS(FSCB * fscb)                                        *
+* where:                                                              *
+*    fscb      is a pointer to the FSCB returned from __FSOPEN.       *
+* returns:                                                            *
+*     0        Success.                                               *
+*     6        The file is not open.                                  *
+***********************************************************************
+         ENTRY @@FSCLOS
+@@FSCLOS DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@FSCLOS-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         L     R8,0(R1)       get FSCB
+* Use FSCLOSE to close the file.
+         FSCLOSE FSCB=(R8)
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@FSERAS  Entry Point                                               *
+* Delete a CMS file.                                                  *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSERAS(char * fileid)                                      *
+* where:                                                              *
+*    fileid    is a pointer to the CMS fileid, an 18 character field. *
+*              The first 8 characters are the filename, the next 8    *
+*              are the filetype, and the last 2 are the filemode.     *
+*              This string is not NULL terminated.                    *
+* returns:                                                            *
+*     0        Success.                                               *
+*    24        Parameter list error (invalid character in fileid).    *
+*    28        The file was not found.                                *
+*    36        Disk not accessed.                                     *
+***********************************************************************
+@@FSERAS PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@FSERAS-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R2,0(R1)       get address of fileid
+         LA    R8,WORKFSCB    FSCB is built here
+         XC    0(FSCBLEN,R8),0(R8)
+         MVI   FSCBFN,C' '
+         MVC   FSCBFN+1(18-1),FSCBFN blank out fileid
+         OC    FSCBFN(18),0(R2)   copy FILEID and uppercase
+* Use FSERASE to delete the file.
+         FSERASE FSCB=WORKFSCB
+         PDPEPIL
+         EJECT
+***********************************************************************
+* @@FSOPEN  Entry Point                                               *
+* Open a CMS file for reading or writing.                             *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSOPEN(char * fileid, void * buffer, int bsize,            *
+*                 char recfm, int numrec, int recnum, FSCB * fscb)    *
+* where:                                                              *
+*    fileid    is a pointer to the CMS fileid, an 18 character field. *
+*              The first 8 characters are the filename, the next 8    *
+*              are the filetype, and the last 2 are the filemode.     *
+*              This string is not NULL terminated.                    *
+*    buffer    is a pointer to the buffer from which records are read *
+*              from or written to.                                    *
+*    bsize     is the size of the buffer.                             *
+*    recfm     is 'F' if you are writing a file of fixed-length       *
+*              records, 'V' if you are writing a file of variable-    *
+*              length records.  This parameter is ignored if you are  *
+*              reading from the file.                                 *
+*    numrec    is the number of records to be read or written at a    *
+*              time.  This parameter can be greater than 1 only when  *
+*              reading or writing fixed-length records.               *
+*    recnum    is the record number at which to begin reading or      *
+*              writing.                                               *
+*    fscb      is a pointer to an FSCB.  It is updated by FSOPEN.     *
+*              Pass this as an argument to other file I/O functions.  *
+* returns:                                                            *
+*     0        Success.                                               *
+*    20        The fileid is invalid.                                 *
+*    28        The file was not found.                                *
+***********************************************************************
+         ENTRY @@FSOPEN
+@@FSOPEN DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@FSOPEN-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         LM    R2,R8,0(R1)    get address of parameters
+*              R2             address of fileid
+*              R3             buffer address
+*              R4             buffer length
+*              R5             record format
+*              R6             number of records to read or write
+*              R7             record number
+*              R8             FSCB is built here
+         XC    0(FSCBLEN,R8),0(R8)
+         MVI   FSCBFN,C' '
+         MVC   FSCBFN+1(18-1),FSCBFN blank out fileid
+         OC    FSCBFN(18),0(R2)   copy FILEID and uppercase
+* Use FSOPEN to open the file.
+         FSOPEN BUFFER=(R3),BSIZE=(R4),RECFM=(R5),                     *
+               NOREC=(R6),RECNO=(R7),                                  *
+               FSCB=(R8)
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+         ENTRY @@FSPOIN
+***********************************************************************
+* @@FSPOIN  Entry Point                                               *
+* Set the next item number (record) to read or write from a CMS file. *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSPOIN(FSCB * fscb, int recnum, int rw)                    *
+* where:                                                              *
+*    fscb      is a pointer to an FSCB.  It is updated by FSPOINT.    *
+*              Pass this as an argument to other file I/O functions.  *
+*    recnum    is the record number at which to begin reading or      *
+*              writing.                                               *
+*    rw        is 0 to set the read pointer, 1 to set the write       *
+*              pointer.                                               *
+* returns:                                                            *
+*     0        Success.                                               *
+*     1        The file was not found.                                *
+*     2        Parameter list error.                                  *
+* Notes:                                                              *
+* 1. Pointing to an record number greater than the number of records  *
+*    in the file yields unpredictable results.                        *
+***********************************************************************
+@@FSPOIN DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@FSPOIN-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         L     R8,0(,R1)      FSCB
+         LM    R3,R4,0(R1)
+*              R3             record number
+*              R4             read or write flag
+         LTR   R4,R4
+         BZ    POINTRD        set the read pointer
+* Use FSPOINT to set the write pointer
+         FSPOINT FSCB=(R8),WRPNT=(R3)
+         B     POINTED
+POINTRD  DS    0H
+* Use FSPOINT to set the read pointer
+         FSPOINT FSCB=(R8),RDPNT=(R3)
+POINTED  DS    0H
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@FSREAD  Entry Point                                               *
+* Read a record from an open file.                                    *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSREAD(FSCB * fscb, int RECNUM, int * bytesread)           *
+* where:                                                              *
+*    fscb      is a pointer to the FSCB of the open file.             *
+*    recnum    is the record number at which to begin reading.  To    *
+*              read sequential records, specify 1 on the first call   *
+*              to __FSREAD, 0 on subsequent calls.  Alternately,      *
+*              specify 1 as the 'recnum' parameter in __FSOPEN, and   *
+*              set 'recnum' to 0 on all __FSREAD calls.  To use the   *
+*              record number currently set in the FSCB, specify -1.   *
+*    bytesread (returned) is a pointer to the number of bytes         *
+*              actually read.                                         *
+* returns:                                                            *
+*     0        Success.                                               *
+*     1        The file was not found.                                *
+*     2        Invalid buffer address.                                *
+*     3        Permanent I/O error.                                   *
+*     5        Number of records is less than 1, or greater than      *
+*              32,768.                                                *
+*     7        Invalid record format (only checked when file is first *
+*              opened for reading).                                   *
+*     8        Incorrect length.                                      *
+*     9        File open for output.                                  *
+*    11        Number of records greater than 1 for variable-length   *
+*              file.                                                  *
+*    12        End of file reached.                                   *
+*    13        Variable-length file has invalid displacement in the   *
+*              active file table.                                     *
+*    14        Invalid character in filename.                         *
+*    15        Invalid character in filetype.                         *
+* Notes:                                                              *
+* 1. The bytes placed into the FSCB buffer are NOT terminated with a  *
+*    null character.                                                  *
+***********************************************************************
+         ENTRY @@FSREAD
+@@FSREAD DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@FSREAD-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         LR    R2,R1          save our plist pointer
+         L     R8,0(,R1)      FSCB
+         LM    R4,R5,4(R1)
+*              R4             record number
+*              R5             where to store number of bytes read
+         LTR   R4,R4
+         BH    READREC        if record number > 0, use it
+         BL    READNREC       if record number < 0, use FSCB recnum
+* The caller specified 0 as the record number to read.  If the FSCB is
+* set to read record 1, read that, then set the FSCB record number to 0
+* after the FSREAD has completed.
+         LH    R1,FSCBITNO    get the record number from the FSCB
+         C     R1,=F'1'
+         BH    READREC        it was >1, so read next record instead
+READNREC DS    0H
+* Use FSREAD to read from the file, using the recnum in the FSCB
+         FSREAD FSCB=(R8)
+         LTR   R4,R4          did the user specify recnum of 0?
+         BNZ   DONEREAD       no, so we are done
+         STH   R4,FSCBITNO    yes, set the FSCB record number to 0
+         B     DONEREAD
+READREC  DS    0H
+* Use FSREAD to read from the file, specifying the recnum
+         FSREAD FSCB=(R8),RECNO=(R4)
+DONEREAD DS    0H
+         ST    R0,0(R5)       return number of bytes read
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@FSSTAT  Entry Point                                               *
+* Determine whether a file exists.                                    *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSSTAT(char * fileid, FST ** fst)                          *
+* where:                                                              *
+*    fileid    is a pointer to the CMS fileid, an 18 character field. *
+*              The first 8 characters are the filename, the next 8    *
+*              are the filetype, and the last 2 are the filemode.     *
+*              The filename, filetype, and filemode may each be       *
+*              specified as *, in which case the first file           *
+*              satisfying the rest of the fileid is used.  This       *
+*              string is not NULL terminated.                         *
+*    fst       is a handle to a copy of the CMS file state table      *
+*              (FST) for this file.  It provides details of the       *
+*              specified file.                                        *
+* returns:                                                            *
+*     0        Success.                                               *
+*    20        The fileid is invalid.                                 *
+*    24        Invalid filemode.                                      *
+*    28        The file was not found.                                *
+*    36        Disk not accessed.                                     *
+***********************************************************************
+@@FSSTAT PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@FSSTAT-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         LM    R2,R3,0(R1)
+*              R2             address of fileid
+*              R3             address to receive FST ptr
+         LA    R8,WORKFSCB    FSCB is built here
+         XC    0(FSCBLEN,R8),0(R8)
+         MVI   FSCBFN,C' '
+         MVC   FSCBFN+1(18-1),FSCBFN Blank out FILEID
+         OC    FSCBFN(18),0(R2)   copy fileid and uppercase
+* Use FSSTATE to determine if the file exists.
+         FSSTATE FSCB=WORKFSCB
+         ST    R1,0(,R3)      store FST
+         PDPEPIL
+         EJECT
+         ENTRY @@FSWRIT
+***********************************************************************
+* @@FSWRIT  Entry Point                                               *
+* Write a record to an open file.                                     *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __FSWRIT(FSCB fscb, int recnum, int reclen)                  *
+* where:                                                              *
+*    fscb      is a pointer to the FSCB of the open file.             *
+*    recnum    is the record number at which to begin writing.  To    *
+*              write sequential records, specify 1 on the first call  *
+*              to __FSWRIT, 0 on subsequent calls.  To use the record *
+*              number currently set in the FSCB, specify -1.          *
+*    reclen    is the length of the record to be written.             *
+* returns:                                                            *
+*     0        Success.                                               *
+*     2        Invalid buffer address.                                *
+*     4        First character of filemode is illegal.                *
+*     5        Second character of filemode is illegal.               *
+*     6        Record number too large.                               *
+*     7        Attempt to skip over unwritten variable-length record. *
+*     8        Buffer size not specified.                             *
+*     9        File open for input.                                   *
+*    10        Maximum number of files reached.                       *
+*    11        Record format not F or V.                              *
+*    12        Attempt to write on read-only disk.                    *
+*    13        Disk is full.                                          *
+*    14        Number of bytes written is not integrally divisible by *
+*              the number of records to be written.                   *
+*    15        Length of fixed-length recod not the same as previous  *
+*              record.                                                *
+*    16        Record format specified is not the same as that of the *
+*              file.                                                  *
+*    17        Variable-length record is greater than 65K bytes.      *
+*    18        Number of records to write is greater than 1 for a     *
+*              variable length file.                                  *
+*    19        Maximum number of data blocks per file (16060) has     *
+*              been reached.                                          *
+*    20        Invalid character detected in filename.                *
+*    21        Invalid character detected in filetype.                *
+*    22        Virtual storage capacity exceeded.                     *
+*    25        Insufficent free storage available for file directory  *
+*              buffers.                                               *
+* Notes:                                                              *
+* 1. It is possible to overwrite a record within a file.  However,    *
+*    care must be taken that the record being written is the same     *
+*    length as the one it is replacing.  Failing to do this can       *
+*    result in corruption of the file and possibly the entire         *
+*    mini-disk.                                                       *
+* 2. To overwrite an existing file with new records, call             *
+*    @@FSERAS to first erase the file, then open the file and begin   *
+*    writing from record 1.                                           *
+***********************************************************************
+@@FSWRIT DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@FSWRIT-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         LM    R2,R4,0(R1)
+*              R2             FSCB
+*              R3             record number
+*              R4             record length
+* Use FSWRITE to write to the file.
+         LTR   R3,R3
+         BNL   WRECNO         if record number is 0 or higher, use it
+         FSWRITE FSCB=(R2),BSIZE=(R4)
+         B     DONEWRIT
+WRECNO   DS    0H
+         FSWRITE FSCB=(R2),RECNO=(R3),BSIZE=(R4)
+DONEWRIT DS    0H
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@GETCLK  Entry Point                                               *
+* Get the system clock time.                                          *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __GETCLK(clock)                                              *
+* where:                                                              *
+*    clock     is an 8-byte variable into which the clock will be     *
+*              stored.                                                *
+* returns:                                                            *
+*    (int)     The number of seconds since 1/1/1970.                  *
+***********************************************************************
+         ENTRY @@GETCLK
+@@GETCLK DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@GETCLK-CMSSYS
+         SLR   R12,R15
+         L     R2,0(R1)       get address of 'clock'
+         STCK  0(R2)          store the clock there
+         L     R4,0(R2)       calculate seconds since 1/1/1970
+         L     R5,4(R2)
+         SRDL  R4,12
+         SL    R4,=X'0007D910'
+         D     R4,=F'1000000'
+         SL    R5,=F'1220'
+         LR    R15,R5         and return it
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@PRINTL  Entry Point                                               *
+* Write a line to the virtual printer.                                *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __PRINTL(char * line)                                        *
+* where:                                                              *
+*    line      is a pointer to the line to be printed.  The first     *
+*              character of the line must be a carriage control       *
+*              character (a blank skips to a new line).  The string   *
+*              must be NULL terminated.  The maximum length of the    *
+*              line is 133 characters for a virtual 1403 printer (the *
+*              default), 151 characters for a virtual 3211 printer; a *
+*              line longer than this results in an error.             *
+* returns:                                                            *
+*     0        Success.                                               *
+*     1        Line too long.                                         *
+*     2        Channel 12 punch sensed (virtual 3211 only).           *
+*     3        Channel 9 punch sensed (virtual 3211 only).            *
+*     4        Intervention required.                                 *
+*     5        Unknown error.                                         *
+*   100        Printer not attached.                                  *
+* Notes:                                                              *
+* 1. Use the CP CLOSE command to close the virtual printer.  You can  *
+*    issue this via the @@CMSCMD entry point.                         *
+***********************************************************************
+@@PRINTL PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@PRINTL-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R6,0(R1)       R6 is start of line to display
+         LA    R3,151(R6)     last possible char to display
+         LA    R2,1           loop increment
+         LR    R4,R6          start of line to display
+PRINTL1  DS    0H
+* Loop to determine the length of the line to display.
+         CLI   0(R4),X'00'    look for end of the C string
+         BE    PRINTL2        found it
+         BXLE  R4,R2,PRINTL1  keep looping if not
+PRINTL2  DS    0H
+         SR    R4,R6          length of line to display
+* Use PRINTL to display the line.
+*         PRINTL (R6),(R4)
+         MVC   PRINTLE(PRINTLPL),PRINTLP SET PATTERN
+         LA    R9,PRINTLE     BRANCH THERE TO CALL IT
+         BR    R9
+PRINTLND DS    0H             IT RETURNS HERE
+*
+         PDPEPIL
+*
+         DS    0D             ALIGN TO AVOID GENERATED CNOP
+         USING PRINTLP,R9
+PRINTLP  PRINTL (R6),(R4)
+         DROP  R9
+         B     PRINTLND
+PRINTLPL EQU   *-PRINTLP
+         EJECT
+***********************************************************************
+* @@PUNCHC  Entry Point                                               *
+* Write a line to the virtual card punch.                             *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __PUNCHC(char * line)                                        *
+* where:                                                              *
+*    line      is a pointer to the line to be written to the punch.   *
+*              The line must be 80 bytes long.                        *
+* returns:                                                            *
+*     0        Success.                                               *
+*     2        Unit check.                                            *
+*     3        Unknown error.                                         *
+*   100        Punch not attached.                                    *
+* Notes:                                                              *
+* 1. Use the CP CLOSE command to close the virtual card punch.  You   *
+*    can issue this via the @@CMSCMD entry point.                     *
+***********************************************************************
+@@PUNCHC PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@PUNCHC-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R6,0(R1)       R6 is start of line to punch
+* Use PUNCHC to punch the card.
+*        PUNCHC (6)
+         MVC   PUNCHCE(PUNCHCPL),PUNCHCP set pattern
+         LA    R9,PUNCHCE     branch there to call it
+         BR    R9
+PUNCHCND DS    0H             it returns here
+*
+         PDPEPIL
+*
+         DS    0D             align to avoid generated CNOP
+         USING PUNCHCP,R9
+PUNCHCP  PUNCHC (6)
+         DROP  R9
+         B     PUNCHCND
+PUNCHCPL EQU   *-PUNCHCP
+         EJECT
+***********************************************************************
+* @@RDCARD  Entry Point                                               *
+* Read a line from the virtual card reader.                           *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __RDCARD(char * line, int * len)                             *
+* where:                                                              *
+*    line      is a pointer to the buffer into which the line is      *
+*              read.  As it is possible to read printer output files, *
+*              the buffer must be at least 133 bytes in size.  The    *
+*              incoming line is terminated with a null character,     *
+*              forming a C string.                                    *
+*    len       is a pointer to a variable that on:                    *
+*                 input  - holds the line lenght expected             *
+*                 output - the line the number of characters read     *
+* returns:                                                            *
+*     0        Success.                                               *
+*     1        End-of-file.                                           *
+*     2        Unit check.                                            *
+*     3        Unknown error.                                         *
+*     5        Length not equal to requested length.                  *
+*   100        Punch not attached.                                    *
+***********************************************************************
+@@RDCARD PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@RDCARD-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R2,0(R1)       get buffer address
+         L     R4,4(R1)       get address of length variable
+         L     R3,0(R4)       length of line to read
+* Use RDCARD to read the line.
+*        RDCARD (R2),(R3)
+         MVC   RDCARDE(RDCARDPL),RDCARDP set pattern
+         LA    R9,RDCARDE     branch there to call it
+         BR    R9
+RDCARDND DS    0H             it returns here
+*
+         ST    R0,0(R4)       return number of bytes read in 'len'
+         SR    R1,R1
+         STC   R1,0(R3,R2)    place null character at end of line
+         PDPEPIL
+*
+         DS    0D             align to avoid generated CNOP
+         USING RDCARDP,R9
+RDCARDP  RDCARD (R2),(R3)
+         DROP  R9
+         B     RDCARDND
+RDCARDPL EQU   *-RDCARDP
+         EJECT
+***********************************************************************
+* @@RDTERM  Entry Point                                               *
+* Read a line from the stack, or if empty, the virtual console.       *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __RDTERM(char * line)                                        *
+* where:                                                              *
+*    line      is a pointer to the 131-character buffer into which    *
+*              the line is read.  This line will be terminated with a *
+*              null character, forming a C string.                    *
+* returns:                                                            *
+*    (int)     Length of the string placed in the buffer.             *
+***********************************************************************
+@@RDTERM PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@RDTERM-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R2,0(R1)       get buffer address
+* Use RDTERM to read the line.
+*        RDTERM (2),EDIT=NO
+         MVC   RDTERME(RDTERMPL),RDTERMP set pattern
+         LA    R9,RDTERME     branch there to call it
+         BR    R9
+RDTERMND DS    0H             it returns here
+         LH    R0,14(,R1)     Length returned here
+*
+         LR    R15,R0         get number of bytes read as return code
+         SR    R1,R1
+         STC   R1,0(R15,R2)   place null character at end of line
+         PDPEPIL
+*
+         DS    0D             align to avoid generated CNOP
+         USING RDTERMP,R9
+RDTERMP  RDTERM (2),EDIT=NO
+         DROP  R9
+         B     RDTERMND
+RDTERMPL EQU   *-RDTERMP
+         EJECT
+***********************************************************************
+* @@RDDRCT  Entry Point                                               *
+* Read a line from the virtual console, bypassing the stack           *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __RDDRCT(char * line)                                        *
+* where:                                                              *
+*    line      is a pointer to the 131-character buffer into which    *
+*              the line is read.  This line will be terminated with a *
+*              null character, forming a C string.                    *
+* returns:                                                            *
+*    (int)     Length of the string placed in the buffer.             *
+***********************************************************************
+@@RDDRCT PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@RDDRCT-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R2,0(R1)       get buffer address
+* Use RDTERM to read the line.
+*        RDTERM (2),EDIT=NO,TYPE=DIRECT
+         MVC   RDDRCTE(RDDRCTPL),RDDRCTP set pattern
+* Allow assembly on VM Sixpack by manually setting the TYPE=DIRECT
+         LA    R9,RDDRCTE     branch there to call it
+* Remove this later *********
+         MVI   X'19'(R9),C'D' MANUALLY SET TYPE=DIRECT
+* Remove this later *********
+         BR    R9
+RDDRCTND DS    0H             it returns here
+         LH    R0,14(,R1)     Length returned here
+*
+         LR    R15,R0         get number of bytes read as return code
+         SR    R1,R1
+         STC   R1,0(R15,R2)   place null character at end of line
+         PDPEPIL
+*
+         DS    0D             align to avoid generated CNOP
+         USING RDDRCTP,R9
+*RDDRCTP RDTERM (2),EDIT=NO,TYPE=DIRECT
+RDDRCTP  RDTERM (2),EDIT=NO TYPE=DIRECT
+         DROP  R9
+         B     RDTERMND
+RDDRCTPL EQU   *-RDDRCTP
+         EJECT
+***********************************************************************
+* @@RENAME  Entry Point                                               *
+* Rename a CMS file.                                                  *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __RENAME(char * fileid, char * newfileid)                    *
+* where:                                                              *
+*    fileid    is a pointer to the CMS fileid of the file to be       *
+*              renamed.                                               *
+*    newfileid is a pointer to the CMS fileid of the new name for the *
+*              file.                                                  *
+*    Both fileid and newfileid point to an 18 character field.  The   *
+*    first 8 characters are the filename, the next 8 are the          *
+*    filetype, and the last 2 are the filemode.  Neither string is    *
+*    NULL terminated.                                                 *
+* returns:                                                            *
+*     0        Success.                                               *
+*    20        Invalid character detected in filename.                *
+*    24        Parameter list error.                                  *
+*    28        The file was not found, or NEWFILEID already exists.   *
+* Notes:                                                              *
+* 1. This function calls the CMS RENAME command, which executes in    *
+*    the CMS transient area.  Thus this function cannot be called     *
+*    from a C program executing in the transient area.                *
+* 2. The RENAME command may issue error messages for certain errors.  *
+***********************************************************************
+@@RENAME PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@RENAME-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         MVC   RENAMEPL(8),=CL8'RENAME'
+         MVC   RENFENCE(8),=XL8'FFFFFFFFFFFFFFFF'
+         L     R2,0(R1)       get address of old fileid
+         MVI   RENOLDN,C' '
+         MVC   RENOLDN+1(24-1),RENOLDN
+         OC    RENOLDN(18),0(R2) copy fileid and uppercase
+         L     R2,4(R1)       get address of new fileid
+         MVI   RENNEWN,C' '
+         MVC   RENNEWN+1(24-1),RENNEWN
+         OC    RENNEWN(18),0(R2) copy fileid and uppercase
+* Use the RENAME command to rename the file.
+         LA    R1,RENAMEPL
+         SVC   202            rename the file
+         DC    AL4(RENAMERT)  go here if an error
+RENAMERT DS    0H
+         PDPEPIL
+         EJECT
+         ENTRY @@STACKN
+***********************************************************************
+* @@STACKN  Entry Point                                               *
+* Return the number of lines currently in the CMS console stack.      *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __STACKN(void)                                               *
+* returns:                                                            *
+*    (int)     Number of lines in the CMS console stack.              *
+***********************************************************************
+@@STACKN DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@STACKN-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         LA    R1,SENTRIES
+         SVC   202
+         DC    AL4(*+4)
+         LTR   R15,R15
+         BNM   STKDONE
+         USING NUCON,R0
+         LH    R15,NUMFINRD   put number of lines in stack in R15
+STKDONE  DS    0H
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+SENTRIES DS    0D
+         DC    CL8'SENTRIES'
+         DC    8X'FF'
+         EJECT
+         ENTRY @@WAITT
+***********************************************************************
+* @@WAITT   Entry Point                                               *
+* Waits for terminal I/O to complete.                                 *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __WAITT(void)                                                *
+* returns:                                                            *
+*    (int)     Return code from the WAITT function, always 0.         *
+***********************************************************************
+@@WAITT  DS    0H
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         LA    R15,@@WAITT-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         WAITT
+         L     R14,12(R13)    restore our return address
+         LM    R0,R12,20(R13) restore the registers
+         DC    X'0B0E'        BSM 0,R14: BACK IN THE CALLER'S AMODE
+         EJECT
+***********************************************************************
+* @@WRTERM  Entry Point                                               *
+* Display a line on the terminal.                                     *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __WRTERM(char * line, int edit)                              *
+* where:                                                              *
+*    line      is a pointer to the line to be displayed.  The line    *
+*              may contain embedded newline characters (x'15') which  *
+*              are honored.  Normally the line should end with a      *
+*              newline character, unless a subsequent call is to      *
+*              continue writing on the same line.  The string must be *
+*              NULL terminated.  The maximum number of characters to  *
+*              be displayed is 130; a line longer than this is        *
+*              truncated without warning.                             *
+*    edit      is 1 if trailing blanks are to be removed and a        *
+*              newline character added to the end of the line; 0 if   *
+*              not.                                                   *
+* returns:                                                            *
+*    (int)     Return code from the WRTERM function, always 0.        *
+***********************************************************************
+@@WRTERM PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@WRTERM-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         L     R6,0(R1)       R6 is start of line to display
+         L     R7,4(R1)       get edit setting
+         LA    R3,129(R6)     last possible char to display
+         LA    R2,1           loop increment
+         LR    R4,R6          start of line to display
+WRTERM1  DS    0H
+* Loop to determine the length of the line to display.
+         CLI   0(R4),X'00'    look for end of the C string
+         BE    WRTERM2        found it
+         BXLE  R4,R2,WRTERM1  keep looping if not
+WRTERM2  DS    0H
+         SR    R4,R6          length of line to display
+* Use WRTERM to display the line.
+         LTR   R7,R7          edit the line?
+         BZ    WRTERM3        no
+* Use WRTERM to write the line.
+*        WRTERM (R6),(R4),EDIT=YES
+         MVC   WRTRM1E(WRTRM1PL),WRTRM1P set pattern
+         LA    R9,WRTRM1E     branch there to call it
+         BR    R9
+WRTRM1ND DS    0H             it returns here
+         B     WRTERM4
+WRTERM3  DS    0H
+* Use WRTERM to write the line.
+*        WRTERM (6),(4),EDIT=NO
+         MVC   WRTRM2E(WRTRM2PL),WRTRM2P set pattern
+         LA    R9,WRTRM2E     branch there to call it
+         BR    R9
+WRTRM2ND DS    0H             it returns here
+WRTERM4  DS    0H
+         PDPEPIL
+*
+         DS    0D             align to avoid generated CNOP
+         USING WRTRM1P,R9
+WRTRM1P  WRTERM (R6),(R4),EDIT=YES
+         DROP  R9
+         B     WRTRM1ND
+WRTRM1PL EQU   *-WRTRM1P
+*
+         DS    0D             align to avoid generated CNOP
+         USING WRTRM2P,R9
+WRTRM2P  WRTERM (6),(4),EDIT=NO
+         DROP  R9
+         B     WRTRM2ND
+WRTRM2PL EQU   *-WRTRM2P
+         EJECT
+***********************************************************************
+* @@ZONE    Entry Point                                               *
+* Return the offset for the local time zone from GMT.                 *
+* It is the value set in DMSSYSTZ by the SYSTIME MACRO in DMKSYS.     *
+*                                                                     *
+* Syntax is:                                                          *
+*    int __ZONE()                                                     *
+* returns:                                                            *
+*    (int)     Time zone offset in seconds from GMT.                  *
+*              Negative values are west of GMT, positive values are   *
+*              east of GMT.                                           *
+***********************************************************************
+@@ZONE   PDPPRLG CINDEX=0,FRAME=CMSSVALN,BASER=12,ENTRY=YES
+         LA    R15,@@ZONE-CMSSYS
+         SLR   R12,R15
+         DC    X'0DF0'        BASR R15,0     GCCLIB31: CMS IN AMODE 24
+         LA    R15,6(,R15)    BIT 0 OFF: THE BSM'S SUCCESSOR
+         DC    X'0B0F'        BSM  0,R15
+         USING CMSSYS,R12
+         LA    R1,DIAG0BUF
+         LA    R0,40
+         DC    X'83100000'     Issue Diagnose instruction for
+*                               code X'0000' to fetch CP info
+         LTR   R0,R0           Is R0 Positive?
+         BC    2,ZONE1         Yeah R0 > 0 so no time zone info
+         L     R15,DIAG0BUF+32 Return the time zone offset
+         B     ZONE2
+ZONE1    SR    R15,R15
+ZONE2    PDPEPIL
+         EJECT
+* ---------------------------------------------------------------------
+* Literal pool
+* ---------------------------------------------------------------------
+         LTORG ,
+LINEDITP LINEDIT MF=L,MAXSUBS=5
+LINEDISZ EQU   *-LINEDITP
+         EJECT
+* ---------------------------------------------------------------------
+* To do:  try and get addressability to xlate table in DMSCRD!!!!!!!!!!
+* ---------------------------------------------------------------------
+LINELEN  EQU   130            130 for VM/370; 256 for VM/SP or z/VM
+         SPACE
+         CMSCRAB              COntinually addressed by R13
+         ORG   MAINSTK        Local variables start here
+WORKFSCB FSCB  'WORK FILE A'  File System Control Block
+*
+ATTNPL   DS    0D             ATTN parameter list
+         DC    CL8'ATTN'
+ATTNOD   DC    CL4'XXXX'      'FIFO' or 'LIFO'
+ATTNLN   DC    AL1(0)         length of line to be stacked
+ATTNAD   DC    AL3(0)         address of line to be stacked
+*
+LINEDITL LINEDIT MF=L,MAXSUBS=5
+*
+RENAMEPL DS    0D             RENAME parameter list
+         DC    CL8'RENAME'
+RENOLDN  DS    CL18           old fileid
+         DC    CL6'      '
+RENNEWN  DS    CL18           new fileid
+         DC    CL6'      '
+RENFENCE DC    XL8'FFFFFFFFFFFFFFFF'
+*
+PLSTAREA DS    0D             BUILD PLISTS HERE FOR PRINTL, PUNCHL,
+*                                                   RDCARD,
+*                                                   RDTERM, and WRTERM
+         ORG   PLSTAREA
+         USING RDTERME,R9
+RDTERME  RDTERM (2),EDIT=NO
+         DROP  R9
+         B     RDTERMND
+****
+         ORG   PLSTAREA
+         USING RDDRCTE,R9
+*RDDRCTE  RDTERM (2),EDIT=NO,TYPE=DIRECT
+RDDRCTE  RDTERM (2),EDIT=NO TYPE=DIRECT
+         DROP  R9
+         B     RDDRCTND
+****
+         ORG   PLSTAREA
+         USING WRTRM1E,R9
+WRTRM1E  WRTERM (R6),(R4),EDIT=YES
+         DROP  R9
+         B     WRTRM1ND
+****
+         ORG   PLSTAREA
+         USING WRTRM2E,R9
+WRTRM2E  WRTERM (6),(4),EDIT=NO
+         DROP  R9
+         B     WRTRM2ND
+*
+****
+         ORG   PLSTAREA
+         USING RDCARDE,R9
+RDCARDE  RDCARD (R2),(R3)
+         DROP  R9
+         B     RDCARDND
+*
+****
+         ORG   PLSTAREA
+         USING PRINTLE,R9
+PRINTLE  PRINTL (R6),(R4)
+         DROP  R9
+         B     PRINTLND
+*
+****
+         ORG   PLSTAREA
+         USING PUNCHCE,R9
+PUNCHCE  PUNCHC (R6)
+         DROP  R9
+         B     PUNCHCND
+*
+         ORG   PLSTAREA
+DIAG0BUF DS    5D             Diagnose X'00' buffer area
+*
+         ORG   ,
+OUTBUF   DS    CL256          Terminal buffer
+CMSSVALN EQU   *-CMSCRAB      Save area length
+*
+FSCB     FSCBD                File System Control Block
+FSCBLEN  EQU   *-FSCBD        Length of FSCB
+         NUCON ,
+         REGEQU ,
+         END

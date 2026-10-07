@@ -1,0 +1,52 @@
+******************************************************************
+* GCCCRAB MACRO                                                  *
+* The GCCCRAB (C Runtime Anchor Block) defines the area for      *
+* for global veriables used by the GCCLIB run time library       *
+* These are declared / allocated / linked to the user program    *
+* but are made available to code in RESLIB land by passing the   *
+* address up the stack frame                                     *
+*                                                                *
+* Part of GCCLIB - VM/370 CMS Native Std C Library;              *
+*                  A Historic Computing Toy                      *
+*                                                                *
+* Proud Contributors: See contrib memo                           *
+*                                                                *
+* Released to the public domain.                                 *
+******************************************************************
+*
+***********************************************************************
+***   M U S T   B E   S Y N C E D   W I T H   G C C C R A B . H     ***
+***********************************************************************
+*
+         MACRO
+         GCCCRAB
+         SPACE
+*
+GCCCRAB  DSECT                GCCCRAB
+ROOTCMSC DS    F              CMSCRAB *rootcmscrab;
+AUXSTCK  DS    F              CMSCRAB *auxstack;
+DYNMSTCK DS    F              CMSCRAB *dynamicstack;
+EXITFUNC DS    F              EXITFUNC *exitfunc;
+DLMSPACE DS    F              mspace dlmspace;
+STMEMUSE DS    F              size_t startmemoryusage;
+GSTDIO   DS    F              FILE *gstdin;
+GSTDOUT  DS    F              FILE *gstdout;
+GSTDERR  DS    F              FILE *gstderr;
+GERRNO   DS    F              int gerrno;
+HANFLERS DS    F              SIGHANDLER **handlers;
+USREXITS DS    F              USEREXIT **userexits;
+FILEHNDL DS    F              FILE* filehandles;
+STRTOKOL DS    F              char *strtok_old;
+PGLOBAL  DS    F              void *process_global;
+ARGV     DS    F              char **argv;
+ARGBUF   DS    F              char *argbuffer;
+PLIST    DS    F              PLIST *plist;
+EPLIST   DS    F              EPLIST *eplist;
+CALLTYPE DS    F              int calltype;
+EVALBLOK DS    F              EVALBLOK *evalblok;
+ISPROC   DS    F              int isproc;
+ARGC     DS    F              int argc;
+DEBUG    DS    F              int debug;
+         SPACE
+GCCGLEN  EQU   *-GCCCRAB      length of the CRAB / Global Area
+         MEND

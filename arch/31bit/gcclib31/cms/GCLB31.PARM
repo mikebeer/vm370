@@ -1,0 +1,1 @@
+-o dd:out - -w -Wall -pedantic -ansi -O2 -S -DTARGET_CMS -D__CMS__ -D__GCC31__
