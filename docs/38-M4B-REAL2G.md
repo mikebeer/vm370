@@ -100,3 +100,23 @@ Two bugs on the way, both in the new code:
 `ESA390_MB=<mb>` (mkrun.archmode) runs one `build.sh` command at another
 MAINSIZE; it was needed here because the broken nucleus could not page at
 16 MB, so its replacement was built at 128.
+
+## M4b.4: 2 GB (7 October)
+
+Frames above 16 MB never hold a CP or guest page, so nothing needs a
+CORTABLE entry for them. DMKCPIB now stores the detected size as the paging
+store's top (`XSTTOP`) and then sets `DMKSYSRM` to 16 MB: the table covers
+16 MB (64 KB; at 2 GB the M4b.1 table was 8 MB of the low 16 MB), and the
+twenty-odd modules that range-check against `DMKSYSRM` (DMKFRE, DMKPTR,
+DMKCDB/CDS DISPLAY/STORE, DMKCCW, DMKDMP, ...) keep checking against the
+storage CP actually uses. `DMKCPI957I` reports the low region, as it already
+did at 64 MB.
+
+| Run | MAINSIZE | Result |
+|---|---|---|
+| r4b16 | 2048 | `XSTTOP` = X'7FFFF000' (the probe's ceiling), M5G2 OK, 50 MB of slots used |
+| r4b17 | 2048 | the M5g regression (GCCLIB31, M5G2, native cREXX build) |
+
+Not done, and not needed for M7/M8: frames above 16 MB as *frames*
+(M4b.3, the HPO route). `QUERY STORAGE` does not yet show the paging
+store's size.
