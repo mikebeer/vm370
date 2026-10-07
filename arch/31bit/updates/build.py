@@ -3012,6 +3012,22 @@ def m7decks():
         "         TM    VMFSTAT,VMESA390  M7: NO LOCATION 80",
         "         BO    DMKDSPAA       TIMER IN AN ESA/390 MACHINE",
     ])
+    # The fast redispatch reloads CR7-CR13 from the guest's own values:
+    # for an ESA/390 guest in translate mode those are guest STDs, and
+    # its kernel runs in home space (CR13). lx22-25: wrong frames, an
+    # operation exception in the middle of an instruction, then a loop.
+    d.insert('00452000', first='00452100', inc=100,
+             limit=next_seq(src('DMKDSP'), '00452000'), lines=[
+        "         TM    VMFSTAT,VMESA390  M7.3: AN ESA/390 GUEST IN",
+        "         BZ    DSPA2X         TRANSLATE MODE RUNS ON THE",
+        "         TM    VMPSW,TRANMODE  SHADOW CR7 AND CR13 (DMKVAX)",
+        "         BZ    DSPA2X",
+        "         ICM   R15,15,EXTSHSEG-ECBLOK(R2)",
+        "         BZ    DSPA2X",
+        "         LCTL  C7,C7,0(R15)",
+        "         LCTL  C13,C13,4(R15)",
+        "DSPA2X   DS    0H",
+    ])
     d.insert('00669000', first='00669110', inc=10,
              limit=next_seq(src('DMKDSP'), '00669000'), lines=[
         "         TM    VMFSTAT,VMESA390  M7: NO LOCATION 80",
