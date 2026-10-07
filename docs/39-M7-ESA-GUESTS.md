@@ -82,3 +82,22 @@ cross-built with `s390x-linux-gnu-gcc -m31` (present here).
 The ESA/390 PSW survives intact (program old PSW `00080000 80000456`), as
 expected from M2 step 3. So M7.1 is the lowcore/IPL and machine-mode
 question, and M7.2 the four I/O instructions, plus `STAP`.
+
+## M7.2 result: reader IPL the Linux way (g390d17, 7 October 14:30)
+
+`tests/guest390/g390d` is IPLed from the reader with Linux 4.0's own
+`iplstart` protocol: the IPL record's CCWs fill X'18'-X'B7', the
+program reads the IPL subchannel id from X'B8', runs `SSCH` on it with
+format-1 chains of 20 card reads, and handles the I/O interruption with
+`TSCH` until unit exception. Under `SET ESA ON` it now prints
+`LOADED BY SSCH FROM THE READER (M7.2)` on its console with `SSCH`. The
+final IRB is `00804007 ... 0D`: start function, primary + secondary
+status, CE+DE+UE (end of file).
+
+Three CP defects were in the way:
+
+| Run | Symptom | Cause | Fix |
+|---|---|---|---|
+| g390d5-12 | IPL UNIT ERROR, CCW at X'48' destroyed | DMKVMI (the IPL simulator) keeps its CAW at X'48' and gets its CSW at X'40'; Linux's IPL record keeps CCWs there | DMKVMI saves and restores X'48', sends a read into X'40'-X'4F' to a buffer, and copies it home after the I/O |
+| g390d14 | code overlaid, operation exception at X'366' | CP updates the S/370 interval timer at location 80 (X'50') for every guest. That word holds the IPL record's CCW for card 11, so the card landed on the wrong address | DMKDSP skips the location-80 update at both UPVIRT sites when VMESA390 is set (ESA/390 has no interval timer) |
+| g390d15-16 | second `SSCH` cc 2 | VM/370's virtual reader reflects channel end and device end as two interruptions. The subchannel stayed busy after the CE-only IRB | DMKDSP merges a queued DE into the CE status for ESA/390 guests, so there is one status, as a channel subsystem presents it |

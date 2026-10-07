@@ -2436,8 +2436,22 @@ def m7decks():
     decks['DMKVSJ'] = d
 
     d = Deck(XA54)
+    # An ESA/390 machine has no interval timer at X'50': Linux's IPL
+    # record keeps a CCW there, which the S/370 location-80 update
+    # rewrote between loading it and running it (g390d14: the card it
+    # read landed on the test's code).  Both UPVIRT sites skip it.
+    d.insert('00408000', first='00408110', inc=10,
+             limit=next_seq(src('DMKDSP'), '00408000'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  M7: NO LOCATION 80",
+        "         BO    DMKDSPAA       TIMER IN AN ESA/390 MACHINE",
+    ])
+    d.insert('00669000', first='00669110', inc=10,
+             limit=next_seq(src('DMKDSP'), '00669000'), lines=[
+        "         TM    VMFSTAT,VMESA390  M7: NO LOCATION 80",
+        "         BOR   R9             TIMER IN AN ESA/390 MACHINE",
+    ])
     d.replace('01070000', first='01070110', inc=10,
-              limit=next_seq(src('DMKDSP'), '01070000'), lines=M7EQU[:1] + [
+              limit=next_seq(src('DMKDSP'), '01070000'), lines=[
         "         L     R7,EXTCR2-ECBLOK(,R1) CHAN MASK",
         "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST",
         "         BZ    GETPEND        USING THE CHANNEL",
@@ -2453,7 +2467,19 @@ def m7decks():
         "         BZ    DSPS370        USING THE CHANNEL",
         "         TM    VMLCLRSV,X'80'  SUBSYSTEM (NOT DMKVMI)",
         "         BZ    DSPS370",
-        "         L     R15,=V(DMKVCSIN)  STATUS PENDING FOR TSCH,",
+        "         LR    R1,R5          CHANNEL END NOW, DEVICE END",
+        "         SRL   R1,24          ALREADY QUEUED BEHIND IT (THE",
+        "         N     R1,=F'12'      READER): ONE STATUS, AS A",
+        "         C     R1,=F'8'       CHANNEL SUBSYSTEM PRESENTS",
+        "         BNE   DSPM7A         IT; LINUX'S IPL LOOP STARTS",
+        "         TM    VDEVINTS,X'04'  THE NEXT SSCH AT ONCE",
+        "         BZ    DSPM7A",
+        "         O     R5,=X'04000000'",
+        "         NI    VDEVINTS,X'FB'",
+        "         CLI   VDEVINTS,0",
+        "         BNE   DSPM7A",
+        "         NI    VDEVSTAT,X'FF'-VDEVPEND",
+        "DSPM7A   L     R15,=V(DMKVCSIN)  STATUS PENDING FOR TSCH,",
         "         BALR  R14,R15        R1 = SUBCHANNEL, R3 = PARM",
         "         MVC   184(2,R2),=X'0001'  X'B8': SUBSYSTEM ID",
         "         STH   R1,186(,R2)",
