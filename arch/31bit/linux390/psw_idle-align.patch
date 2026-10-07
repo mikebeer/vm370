@@ -1,0 +1,17 @@
+--- a/arch/s390/kernel/entry.S
++++ b/arch/s390/kernel/entry.S
+@@ ENTRY(psw_idle)
+-	st	%r3,__SF_EMPTY(%r15)
++	# VM/370+: LPSW needs a doubleword; __SF_EMPTY is 4 on 31-bit
++	st	%r3,__SF_EMPTY+4(%r15)
+ 	basr	%r1,0
+ 	la	%r1,.Lpsw_idle_lpsw+4-.(%r1)
+-	st	%r1,__SF_EMPTY+4(%r15)
+-	oi	__SF_EMPTY+4(%r15),0x80
++	st	%r1,__SF_EMPTY+8(%r15)
++	oi	__SF_EMPTY+8(%r15),0x80
+ 	stck	__CLOCK_IDLE_ENTER(%r2)
+ 	stpt	__TIMER_IDLE_ENTER(%r2)
+ .Lpsw_idle_lpsw:
+-	lpsw	__SF_EMPTY(%r15)
++	lpsw	__SF_EMPTY+4(%r15)

@@ -19,6 +19,16 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
          MVI   VCSOP,0                                         XA0054DK         
          OI    VMVCSFL,X'80'  FROM NOW ON: ESA/390 I/O         XA0054DK         
+         L     R1,VCRNXT      DIAGNOSTIC RING (DCP DMKVCSRG):  XA0054DK         
+         LA    R2,VCRING(R1)  INSTRUCTION, GR1, PSW ADDRESS,   XA0054DK         
+         MVC   0(4,R2),VMINST  AND THE PSW BYTE 2 AT EXIT      XA0054DK         
+         MVC   4(4,R2),VMGPRS+4                                XA0054DK         
+         MVC   8(4,R2),VMPSW+4                                 XA0054DK         
+         XC    12(4,R2),12(R2)                                 XA0054DK         
+         ST    R2,VCRLAST                                      XA0054DK         
+         LA    R1,16(,R1)                                      XA0054DK         
+         N     R1,=F'511'                                      XA0054DK         
+         ST    R1,VCRNXT                                       XA0054DK         
          CLI   VMINST,X'E5'   TPROT (E501)                     XA0054DK         
          BE    VCSTPROT                                        XA0054DK         
          CLI   VMINST+1,X'12' STAP                             XA0054DK         
@@ -29,6 +39,8 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BE    VCSCC3         INFORMATION, CC 3                XA0054DK         
          CLI   VMINST+1,X'20' SERVC: NO SERVICE                XA0054DK         
          BE    VCSCC3         PROCESSOR, CC 3                  XA0054DK         
+         CLI   VMINST+1,X'5F' CHSC: NOT AVAILABLE              XA0054DK         
+         BE    VCSCC3         (CC 3)                           XA0054DK         
          CLI   VMINST+1,X'11' STPX: PREFIX 0                   XA0054DK         
          BE    VCSSTPX                                         XA0054DK         
          CLI   VMINST+1,X'10' SPX                              XA0054DK         
@@ -68,7 +80,9 @@ VCSCC3   OI    VMPSW+2,X'30'                                   XA0054DK
 VCSCC2   OI    VMPSW+2,X'20'                                   XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 VCSCC1   OI    VMPSW+2,X'10'                                   XA0054DK         
-VCSEXIT  NI    VMRSTAT,255-VMEXWAIT  OUT OF INSTR WAIT         XA0054DK         
+VCSEXIT  L     R1,VCRLAST                                      XA0054DK         
+         MVC   12(1,R1),VMPSW+2                                XA0054DK         
+         NI    VMRSTAT,255-VMEXWAIT  OUT OF INSTR WAIT         XA0054DK         
          GOTO  DMKDSPCH       (AS DMKPRV PRIVRET)              XA0054DK         
 *                                                              XA0054DK         
 VCSSTAP  BAL   R9,OPADDR      STAP: CPU ADDRESS 0              XA0054DK         
@@ -342,6 +356,9 @@ TPEND    MVI   VCSOP,0        TPI                              XA0054DK
 TPENONE  MVI   VCSCC,0                                         XA0054DK         
 SEBACK   NI    VMPSW+2,X'CF'                                   XA0054DK         
          OC    VMPSW+2(1),VCSCC                                XA0054DK         
+         L     R1,VCRLAST                                      XA0054DK         
+         MVC   12(1,R1),VMPSW+2                                XA0054DK         
+         MVI   13(R1),C'S'                                     XA0054DK         
          NI    VMDSTAT,X'FF'-VMTIO                             XA0054DK         
          NI    VMRSTAT,X'FF'-VMEXWAIT                          XA0054DK         
          GOTO  DMKDSPCH                                        XA0054DK         
@@ -721,6 +738,11 @@ FNCHN    LA    R2,2(,R2)                                       XA0054DK
          BR    R9                                              XA0054DK         
 *                                                              XA0054DK         
 AVCSSE   DC    A(DMKVCS)                                       XA0054DK         
+         ENTRY DMKVCSRG                                        XA0054DK         
+DMKVCSRG DC    C'VCRING  '                                     XA0054DK         
+VCRNXT   DC    F'0'                                            XA0054DK         
+VCRLAST  DC    A(VCRING)                                       XA0054DK         
+VCRING   DC    32XL16'00'                                      XA0054DK         
 STFLN3   DC    X'80000000'                                     XA0054DK         
 XPFX     DC    X'7FFFF000'                                     XA0054DK         
 AVCSIN   DC    A(DMKVCS)                                       XA0054DK         

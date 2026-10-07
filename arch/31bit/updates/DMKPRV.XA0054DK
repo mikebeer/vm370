@@ -18,6 +18,8 @@ PRVHI    DS    0H                                              XA0054DK
          BE    PRVVCS                                          XA0054DK         
          CLI   VMINST+1,X'20' SERVC TOO                        XA0054DK         
          BE    PRVVCS                                          XA0054DK         
+         CLI   VMINST+1,X'5F' CHSC TOO                         XA0054DK         
+         BE    PRVVCS                                          XA0054DK         
          CLI   VMINST+1,X'11' STPX TOO                         XA0054DK         
          BE    PRVVCS                                          XA0054DK         
          CLI   VMINST+1,X'10' SPX TOO                          XA0054DK         
