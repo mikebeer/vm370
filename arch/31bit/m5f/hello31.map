@@ -1,0 +1,61 @@
+
+Discarded input sections
+
+ .note.GNU-stack
+                0x00000000        0x0 entry31.o
+ .comment       0x00000000       0x2e hello31.o
+ .note.GNU-stack
+                0x00000000        0x0 hello31.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+                0x00000000                        . = 0x0
+
+.text           0x00000000      0x7b8
+ *(.text.entry)
+ .text.entry    0x00000000       0x58 entry31.o
+                0x00000000                cms_entry
+ *(.text .text.*)
+ .text          0x00000058       0x40 entry31.o
+                0x00000058                cms202
+ .text          0x00000098      0x720 hello31.o
+                0x000003d8                cms_main
+
+.iplt           0x000007b8        0x0
+ .iplt          0x000007b8        0x0 entry31.o
+
+.rodata         0x000007b8      0x178
+ *(.rodata .rodata.*)
+ .rodata        0x000007b8       0xb8 hello31.o
+ .rodata.str1.2
+                0x00000870       0xc0 hello31.o
+
+.rela.dyn       0x00000930        0x0
+ .rela.iplt     0x00000930        0x0 entry31.o
+
+.data           0x00000930        0x0
+ *(.data .data.*)
+ .data          0x00000930        0x0 entry31.o
+ .data          0x00000930        0x0 hello31.o
+
+.igot.plt       0x00000930        0x0
+ .igot.plt      0x00000930        0x0 entry31.o
+
+.bss            0x00000930    0x100b8
+ *(.bss .bss.*)
+ .bss           0x00000930    0x10008 entry31.o
+ .bss           0x00010938       0xb0 hello31.o
+ *(COMMON)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.comment)
+ *(.eh_frame)
+LOAD entry31.o
+LOAD hello31.o
+OUTPUT(hello31.elf elf32-s390)

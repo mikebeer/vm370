@@ -187,10 +187,22 @@ def drive(ce, name, steps, herc='hercules', hold=False):
     conf = os.path.join(ce, 'drive.conf')
     shutil.copy(os.path.join(ce, 'vm370ce.conf'), conf)
     with open(conf, 'a') as f:
-        f.write('HTTPPORT %d NOAUTH\n' % PORT)
+        # Hercules 4 (SDL Hyperion) spells it HTTP PORT ... / HTTP START;
+        # 3.13 rejects that and 4 rejects HTTPPORT, so ask the engine.
+        try:
+            ver = subprocess.run([herc, '--version'], capture_output=True,
+                                 text=True, timeout=20).stdout
+        except Exception:
+            ver = ''
+        if re.search(r'[Vv]ersion 4', ver):
+            f.write('HTTP PORT %d NOAUTH\nHTTP START\n' % PORT)
+        else:
+            f.write('HTTPPORT %d NOAUTH\n' % PORT)
     out = open(log, 'w')
+    # stdin is a pipe held open, not /dev/null: Hercules 4 reads a non-tty
+    # stdin as a script and shuts down at its end of file.
     p = subprocess.Popen([herc, '-f', 'drive.conf'], cwd=ce,
-                         stdin=subprocess.DEVNULL, stdout=out, stderr=out,
+                         stdin=subprocess.PIPE, stdout=out, stderr=out,
                          text=True, bufsize=1, start_new_session=True)
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     t0 = time.time()
@@ -233,7 +245,7 @@ def drive(ce, name, steps, herc='hercules', hold=False):
         raise RuntimeError('could not send %r: %s' % (line, err))
 
     # Hercules is ready when its HTTP listener is up.
-    if not wait_for(r'HHCHT006I Waiting for HTTP requests', 0, 60):
+    if not wait_for(r'HHCHT006I Waiting for HTTP requests|HHC01803I HTTP server waiting', 0, 60):
         print('### Hercules did not come up; tail:\n' + tail(log))
         p.kill()
         return 2
@@ -355,11 +367,16 @@ def drive(ce, name, steps, herc='hercules', hold=False):
         # wait for the disabled wait state CP enters when it is done.
         pos = os.path.getsize(log)
         send('/cp shutdown')
-        if not wait_for(r'HHCCP011I|SHUTDOWN COMPLETE', pos, 30):
+        if not wait_for(r'HHCCP011I|HHC00809I|SHUTDOWN COMPLETE', pos, 30):
             send('/shutdown')
-            wait_for(r'HHCCP011I|SHUTDOWN COMPLETE', pos, 30)
+            wait_for(r'HHCCP011I|HHC00809I|SHUTDOWN COMPLETE', pos, 30)
         send('exit')
     try:
+        if p.stdin:
+            try:
+                p.stdin.close()     # Hercules 4 waits on its stdin pipe
+            except OSError:
+                pass
         p.wait(timeout=90)
     except subprocess.TimeoutExpired:
         print('### hercules did not exit; killing')

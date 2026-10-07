@@ -1,0 +1,13 @@
+--- /home/claude/ml/mainframe-lab-main/tools/elf_to_cms.c	2026-10-05 13:02:09.000000000 +0000
++++ elf_to_cms.c	2026-10-07 00:16:39.858136322 +0000
+@@ -294,6 +294,10 @@
+             uint32_t offset=get32(p), info=get32(p+4), symno=info>>8;
+             uint32_t value, symsec, expected;
+             Section *target=sec+s->info, *symbols=sec+s->link;
++            /* VM/370+ M5f: PC-relative fields (LARL, BRASL, BRAS: PC16DBL 16,
++               PC32DBL 19, PLT32DBL 20, PC32 5) were resolved by the static
++               link and move with the image; only R_390_32 needs an RLD. */
++            if ((info&255)==16 || (info&255)==19 || (info&255)==20 || (info&255)==5) continue;
+             if ((info&255)!=4) fail("only R_390_32 relocation is supported");
+             if (symbols->ent!=16 || symbols->size%16 || !symno || symno>=symbols->size/16)
+                 fail("invalid relocation symbol");
