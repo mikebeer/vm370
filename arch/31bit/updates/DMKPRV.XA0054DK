@@ -1,5 +1,13 @@
-./ I 00638000 $ 00638110 010                                                    
+./ I 00593000 $ 00593100 100                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
+         BZ    PRVHI          TPROT (E501) GOES TO DMKVCS      XA0054DK         
+         CLI   VMINST,X'E5'                                    XA0054DK         
+         BNE   PRVHI                                           XA0054DK         
+         L     R12,=V(DMKVCSEX)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+PRVHI    DS    0H                                              XA0054DK         
+./ I 00638000 $ 00638110 010                                                    
          TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
          BZ    PRVB2          STAP AND B230-B23F GO            XA0054DK         
          CLI   VMINST+1,X'12' TO DMKVCS                        XA0054DK         
@@ -9,6 +17,10 @@ VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK
          CLI   VMINST+1,X'7D' STSI TOO                         XA0054DK         
          BE    PRVVCS                                          XA0054DK         
          CLI   VMINST+1,X'20' SERVC TOO                        XA0054DK         
+         BE    PRVVCS                                          XA0054DK         
+         CLI   VMINST+1,X'11' STPX TOO                         XA0054DK         
+         BE    PRVVCS                                          XA0054DK         
+         CLI   VMINST+1,X'10' SPX TOO                          XA0054DK         
          BE    PRVVCS                                          XA0054DK         
          CLI   VMINST+1,X'30'                                  XA0054DK         
          BL    PRVB2                                           XA0054DK         

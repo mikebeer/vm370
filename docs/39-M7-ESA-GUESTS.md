@@ -101,3 +101,46 @@ Three CP defects were in the way:
 | g390d5-12 | IPL UNIT ERROR, CCW at X'48' destroyed | DMKVMI (the IPL simulator) keeps its CAW at X'48' and gets its CSW at X'40'; Linux's IPL record keeps CCWs there | DMKVMI saves and restores X'48', sends a read into X'40'-X'4F' to a buffer, and copies it home after the I/O |
 | g390d14 | code overlaid, operation exception at X'366' | CP updates the S/370 interval timer at location 80 (X'50') for every guest. That word holds the IPL record's CCW for card 11, so the card landed on the wrong address | DMKDSP skips the location-80 update at both UPVIRT sites when VMESA390 is set (ESA/390 has no interval timer) |
 | g390d15-16 | second `SSCH` cc 2 | VM/370's virtual reader reflects channel end and device end as two interruptions. The subchannel stayed busy after the CE-only IRB | DMKDSP merges a queued DE into the CE status for ESA/390 guests, so there is one status, as a channel subsystem presents it |
+
+## M7.4/M7.5 progress: Linux 4.0 31-bit from the reader (7 October, lx1-lx12)
+
+The Linux 4.0 kernel (31-bit, `allnoconfig` plus 3215 console and initramfs,
+built with gcc 13 `-march=z900`) is punched as a 33,672-card reader deck
+(the image as built is already card-laid-out; an ID card in front) and
+IPLed with `SET ESA ON`, `DEF STOR 64M`, `IPL 00C`. It now loads completely
+and runs through early setup to `paging_init`, where it enables DAT with
+ESA/390-format tables. That is M7.3, the next increment.
+
+What CP had to learn on the way, each found as the next program check
+(`TRACE PROG TERM` set before the IPL stops at the first one):
+
+| Run | Stop | Change |
+|---|---|---|
+| lx2 | iplstart crash after the kernel: SSCH for the parameter file "failed" | DMKVSP answers an empty-reader SIO with cc 1 itself, bypassing DMKVCS. For an ESA/390 guest it now posts the unit check as an I/O interruption (SSCH cc 0), and TSCLEAR ends a unit check alone |
+| lx3 | `STFL` operation exception | DMKVCS stores X'80000000' (N3) at X'C8'; Hercules provides the N3 instructions in ESA/390 mode |
+| lx6 | `STSI` | cc 3 (no system information) |
+| (ahead) | `SERVC` | cc 3 (no SCLP); Linux falls back to `TPROT` sizing |
+| lx9 | `STPX` loop (in `memcpy_absolute` and the early program-check handler) | prefix 0 |
+| lx10 | `TPROT` loop over 2 GB | cc 0 below VMSIZE, cc 3 above; new DMKPRV route for opcode X'E5' |
+| lx11 | `SPX` in `setup_lowcore` | see the limitation below |
+| lx12 | translation specification at `paging_init` (`SSM` turning DAT on) | **M7.3** |
+
+`DIAG X'308'`, `EFPC` and `CSP` program-check too, but Linux probes them
+under exception-table fixups, as it would on hardware without them.
+`CHANGE RDR ALL KEEP NOHOLD` (Linux's DIAG 8 after the IPL) gets "INVALID
+OPTION - KEEP" from VM/370: harmless.
+
+**Limitation: `SPX` without virtual prefixing.** VM/370 has none. The
+kernel is uniprocessor and addresses its lowcore at real 0 (`S390_lowcore`),
+so `SPX P` copies page P to page 0, which stays the lowcore; `STPX` keeps
+answering 0, so `memcpy_absolute` takes its plain path. Writes through
+`lowcore_ptr[0]` after the `SPX` are not seen at real 0. Real prefixing
+(swapping the two page-table entries, with the CORTABLE back pointers and
+swap-table entries) is left for when an SMP or a kernel that relies on it
+needs it.
+
+Also noted: DMKVSIEX clears the condition code with `NI VMPSW+4,X'CF'` as
+well as `VMPSW+2` (BC-mode PSW). For a 31-bit EC/ESA PSW that clears
+address bits 2-3, so a guest instruction address from X'10000000' to
+X'3FFFFFFF' doing I/O would be damaged. Linux at 64 MB is far below that;
+to fix with M7.3.

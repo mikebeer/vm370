@@ -19,6 +19,8 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
          MVI   VCSOP,0                                         XA0054DK         
          OI    VMVCSFL,X'80'  FROM NOW ON: ESA/390 I/O         XA0054DK         
+         CLI   VMINST,X'E5'   TPROT (E501)                     XA0054DK         
+         BE    VCSTPROT                                        XA0054DK         
          CLI   VMINST+1,X'12' STAP                             XA0054DK         
          BE    VCSSTAP                                         XA0054DK         
          CLI   VMINST+1,X'B1' STFL                             XA0054DK         
@@ -27,6 +29,10 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BE    VCSCC3         INFORMATION, CC 3                XA0054DK         
          CLI   VMINST+1,X'20' SERVC: NO SERVICE                XA0054DK         
          BE    VCSCC3         PROCESSOR, CC 3                  XA0054DK         
+         CLI   VMINST+1,X'11' STPX: PREFIX 0                   XA0054DK         
+         BE    VCSSTPX                                         XA0054DK         
+         CLI   VMINST+1,X'10' SPX                              XA0054DK         
+         BE    VCSSPX                                          XA0054DK         
          CLI   VMINST+1,X'36' TPI                              XA0054DK         
          BE    VCSTPI                                          XA0054DK         
          CLI   VMINST+1,X'39' STCRW                            XA0054DK         
@@ -70,6 +76,48 @@ VCSSTFL  MVC   VCSBUF(4),STFLN3  STFL: N3 ONLY, AT X'C8'       XA0054DK
          LA    R4,1           HERCULES HAS THEM IN ESA/390     XA0054DK         
          SR    R0,R0          MODE)                            XA0054DK         
          BAL   R9,GUESTIO                                      XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+VCSSTPX  BAL   R9,OPADDR      STPX: THE ONE CPU'S PREFIX       XA0054DK         
+         LR    R5,R1          IS 0                             XA0054DK         
+         XC    VCSBUF(4),VCSBUF                                XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,1                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+VCSTPROT BAL   R9,OPADDR      TPROT: CC 0 INSIDE THE           XA0054DK         
+         CL    R1,VMSIZE      MACHINE'S STORAGE, CC 3          XA0054DK         
+         BL    VCSEXIT        BEYOND (LINUX SIZES ITS          XA0054DK         
+         B     VCSCC3         MEMORY THIS WAY)                 XA0054DK         
+*                                                              XA0054DK         
+* SPX: ONE CPU, NO VIRTUAL PREFIXING. THE NEW PREFIX PAGE IS   XA0054DK         
+* COPIED TO PAGE 0, WHICH STAYS THE LOWCORE (LINUX UP SETS     XA0054DK         
+* ITS LOWCORE UP AT P, THEN SPX P; IT USES IT AT REAL 0).      XA0054DK         
+VCSSPX   BAL   R9,OPADDR                                       XA0054DK         
+         LR    R5,R1                                           XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,1                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO     THE NEW PREFIX                   XA0054DK         
+         L     R7,VCSBUF                                       XA0054DK         
+         N     R7,XPFX                                         XA0054DK         
+         BZ    VCSEXIT        0: NOTHING TO COPY               XA0054DK         
+         SR    R8,R8          OFFSET                           XA0054DK         
+SPXLOOP  LA    R5,0(R7,R8)                                     XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,4                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         LR    R5,R8                                           XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,4                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         LA    R8,16(,R8)                                      XA0054DK         
+         C     R8,=F'4096'                                     XA0054DK         
+         BL    SPXLOOP                                         XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 *                                                              XA0054DK         
 VCSSTCRW XC    VCSBUF(4),VCSBUF  STCRW: NO CRW PENDING         XA0054DK         
@@ -625,6 +673,7 @@ FNCHN    LA    R2,2(,R2)                                       XA0054DK
 *                                                              XA0054DK         
 AVCSSE   DC    A(DMKVCS)                                       XA0054DK         
 STFLN3   DC    X'80000000'                                     XA0054DK         
+XPFX     DC    X'7FFFF000'                                     XA0054DK         
 AVCSIN   DC    A(DMKVCS)                                       XA0054DK         
 AVCSSN   DC    A(DMKVCS)                                       XA0054DK         
 VCSSAVI  DS    16F                                             XA0054DK         
