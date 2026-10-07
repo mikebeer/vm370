@@ -1,3 +1,70 @@
+./ R 00605000          $ 00605010 010                                           
+         STM   R0,R4,IOSAVE   M7: THE FIRST CCW RUNS FROM A    XA0054DK         
+         MVC   SAVE48,CAW     COPY (A CCW AT X'48' IS THE CAW  XA0054DK         
+         MVC   IOCCW(8),0(R11)  SLOT), TIC TO THE REST;        XA0054DK         
+         MVI   IOCCW+5,0      A READ INTO X'40'-X'4F' GOES     XA0054DK         
+         XC    IOCCW+8(8),IOCCW+8  TO REDBUF, COPIED HOME      XA0054DK         
+         TM    IOCCW+4,X'C0'  AFTER THE CSW IS RESTORED        XA0054DK         
+         BZ    IOCOPY1        (LINUX'S IPL RECORD)             XA0054DK         
+         MVI   IOCCW+8,X'08'                                   XA0054DK         
+         LA    R1,8(,R11)                                      XA0054DK         
+         STCM  R1,7,IOCCW+9                                    XA0054DK         
+IOCOPY1  XC    REDIR,REDIR                                     XA0054DK         
+         IC    R1,IOCCW                                        XA0054DK         
+         N     R1,=F'3'                                        XA0054DK         
+         C     R1,=F'2'       A READ?                          XA0054DK         
+         BNE   IONORED                                         XA0054DK         
+         TM    IOCCW+4,X'84'  DATA CHAINING OR IDA: NO         XA0054DK         
+         BNZ   IONORED                                         XA0054DK         
+         L     R2,IOCCW                                        XA0054DK         
+         LA    R2,0(,R2)      DATA ADDRESS                     XA0054DK         
+         SR    R3,R3                                           XA0054DK         
+         ICM   R3,3,IOCCW+6   COUNT                            XA0054DK         
+         C     R2,=F'80'      FROM X'50' UP: NO                XA0054DK         
+         BNL   IONORED                                         XA0054DK         
+         LA    R4,0(R2,R3)                                     XA0054DK         
+         C     R4,=F'64'      UP TO X'40': NO                  XA0054DK         
+         BNH   IONORED                                         XA0054DK         
+         C     R3,=F'256'                                      XA0054DK         
+         BH    IONORED                                         XA0054DK         
+         ST    R2,REDIR                                        XA0054DK         
+         STH   R3,REDIRN                                       XA0054DK         
+         LA    R4,REDBUF                                       XA0054DK         
+         STCM  R4,7,IOCCW+1   THE COPY READS INTO REDBUF       XA0054DK         
+IONORED  ICM   R1,15,REDIR    THE COPY ONLY FOR A REDIRECTED   XA0054DK         
+         BNZ   IOCOPY2        READ OR A CCW IN THE CAW/CSW     XA0054DK         
+         LA    R1,X'40'       SLOTS; OTHERWISE THE CCW         XA0054DK         
+         CR    R11,R1         ITSELF, AS BEFORE (A TIC         XA0054DK         
+         BL    IOORIG         AFTER A TIC IS A PROGRAM         XA0054DK         
+         LA    R1,X'50'       CHECK: IPL 190)                  XA0054DK         
+         CR    R11,R1                                          XA0054DK         
+         BNL   IOORIG                                          XA0054DK         
+IOCOPY2  LA    R1,IOCCW       (NO ADCONS: DMKVMI RUNS          XA0054DK         
+         ST    R1,IOCAW       WHEREVER IT IS COPIED)           XA0054DK         
+         B     IOCAWST                                         XA0054DK         
+IOORIG   ST    R11,IOCAW                                       XA0054DK         
+IOCAWST  LM    R0,R4,IOSAVE                                    XA0054DK         
+         MVC   CAW(4),IOCAW                                    XA0054DK         
+./ R 00640000 00644000 $ 00640010 010                                           
+         STM   R5,R6,CSW      RESTORE SAVED CSW                XA0054DK         
+         CLC   CAW(4),IOCAW   HAS THE CAW BEEN OVERLAYED?      XA0054DK         
+         BE    IOE48          NO: X'48' GETS ITS OWN BACK      XA0054DK         
+         MVC   SAVE48,CAW     YES: THAT IS ITS CONTENT NOW     XA0054DK         
+IOE48    MVC   CAW(4),SAVE48                                   XA0054DK         
+         MVC   SAVECAW,CAW    (LOADNOW RESTORES IT)            XA0054DK         
+IOEND    STM   R0,R4,IOSAVE                                    XA0054DK         
+         ICM   R2,15,REDIR    A REDIRECTED READ: THE           XA0054DK         
+         BZ    IOEND2         DATA WHERE IT BELONGS            XA0054DK         
+         LH    R3,REDIRN                                       XA0054DK         
+         BCTR  R3,0                                            XA0054DK         
+         EX    R3,MVCRED                                       XA0054DK         
+IOEND2   LM    R0,R4,IOSAVE                                    XA0054DK         
+         BR    R12            RETURN TO CALLER                 XA0054DK         
+./ R 00647000          $ 00647010 010                                           
+         CLC   CAW(4),IOCAW   HAS THE CAW BEEN OVERLAID?       XA0054DK         
+./ R 00664000          $ 00664010 010                                           
+         MVC   CAW(4),SAVE48  M7: X'48' BACK, REDIRECTED       XA0054DK         
+         B     IOEND          DATA HOME                        XA0054DK         
 ./ R 00805000          $ 00805010 010                                           
          B     VMIESA9        PAST THE EC-MODE STORE           XA0054DK         
 ./ I 00806600 $ 00806610 010                                                    
@@ -5,3 +72,13 @@
          BE    *+8            YES: X'B8' IS DMKCFG'S           XA0054DK         
 ./ I 00806700 $ 00806710 010                                                    
 VMIESA9  DS    0H                                              XA0054DK         
+./ I 00840000 $ 00840010 010                                                    
+IOCAW    DS    F              M7: THE CAW IO USED,             XA0054DK         
+IOSAVE   DS    5F             ITS REGISTERS,                   XA0054DK         
+SAVE48   DS    F              X'48''S CONTENT, AND THE         XA0054DK         
+REDIR    DS    F              REDIRECTED READ'S ADDRESS,       XA0054DK         
+REDIRN   DS    H              COUNT,                           XA0054DK         
+MVCRED   MVC   0(0,R2),REDBUF                                  XA0054DK         
+REDBUF   DS    XL256          AND DATA                         XA0054DK         
+         DS    0D                                              XA0054DK         
+IOCCW    DS    2D                                              XA0054DK         

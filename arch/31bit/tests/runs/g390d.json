@@ -1,0 +1,117 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 150
+ },
+ {
+  "send": "/",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 60
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I Initialization complete",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "/enable all",
+  "expect": "COMMAND COMPLETE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "expect": "Ready|DMK|$",
+  "timeout": 10,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/g390d.rdr ebcdic eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "STARTED|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon maint cpcms noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 16m",
+  "expect": "STORAGE =|EXCEEDS",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 190",
+  "expect": "Ready; T=",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready; T=",
+  "timeout": 10,
+  "cont": true
+ },
+ {
+  "term": "cp set esa on",
+  "expect": "Ready; T=",
+  "timeout": 20,
+  "cont": true
+ },
+ {
+  "term": "cp ipl 00c",
+  "expect": "DISABLED WAIT|CP ENTERED|DMK",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp d 1000.100",
+  "expect": "1000|DMK",
+  "timeout": 20,
+  "cont": true
+ },
+ {
+  "term": "cp d psw",
+  "expect": "PSW|DMK",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "cp d g",
+  "expect": "GPR|DMK",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT|DMK",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]

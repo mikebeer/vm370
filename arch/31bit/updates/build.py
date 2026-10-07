@@ -2483,6 +2483,88 @@ def m7decks():
     decks['DMKCFG'] = d
 
     d = Deck(XA54)
+    # Linux's IPL record (head.S) keeps CCWs at X'18'-X'B7', so X'40'-X'4F'
+    # -- where this S/370 simulator's CAW and CSW live -- hold CCWs too.
+    # The ST R11,CAW of the next I/O then destroyed the CCW at X'48' and
+    # the TIO's CSW the card data read to X'40' (g390d5: IPL UNIT ERROR,
+    # program check, X'48' holding DMKVMI's own CCW address).  A read
+    # into X'40'-X'4F' now goes to REDBUF and is copied home after the
+    # CSW is restored, and X'48' gets its content back after each I/O.
+    d.replace('00605000', first='00605010', inc=10,
+              limit=next_seq(src('DMKVMI'), '00605000'), lines=[
+        "         STM   R0,R4,IOSAVE   M7: THE FIRST CCW RUNS FROM A",
+        "         MVC   SAVE48,CAW     COPY (A CCW AT X'48' IS THE CAW",
+        "         MVC   IOCCW(8),0(R11)  SLOT), TIC TO THE REST;",
+        "         MVI   IOCCW+5,0      A READ INTO X'40'-X'4F' GOES",
+        "         XC    IOCCW+8(8),IOCCW+8  TO REDBUF, COPIED HOME",
+        "         TM    IOCCW+4,X'C0'  AFTER THE CSW IS RESTORED",
+        "         BZ    IOCOPY1        (LINUX'S IPL RECORD)",
+        "         MVI   IOCCW+8,X'08'",
+        "         LA    R1,8(,R11)",
+        "         STCM  R1,7,IOCCW+9",
+        "IOCOPY1  XC    REDIR,REDIR",
+        "         IC    R1,IOCCW",
+        "         N     R1,=F'3'",
+        "         C     R1,=F'2'       A READ?",
+        "         BNE   IONORED",
+        "         TM    IOCCW+4,X'84'  DATA CHAINING OR IDA: NO",
+        "         BNZ   IONORED",
+        "         L     R2,IOCCW",
+        "         LA    R2,0(,R2)      DATA ADDRESS",
+        "         SR    R3,R3",
+        "         ICM   R3,3,IOCCW+6   COUNT",
+        "         C     R2,=F'80'      FROM X'50' UP: NO",
+        "         BNL   IONORED",
+        "         LA    R4,0(R2,R3)",
+        "         C     R4,=F'64'      UP TO X'40': NO",
+        "         BNH   IONORED",
+        "         C     R3,=F'256'",
+        "         BH    IONORED",
+        "         ST    R2,REDIR",
+        "         STH   R3,REDIRN",
+        "         LA    R4,REDBUF",
+        "         STCM  R4,7,IOCCW+1   THE COPY READS INTO REDBUF",
+        "IONORED  ICM   R1,15,REDIR    THE COPY ONLY FOR A REDIRECTED",
+        "         BNZ   IOCOPY2        READ OR A CCW IN THE CAW/CSW",
+        "         LA    R1,X'40'       SLOTS; OTHERWISE THE CCW",
+        "         CR    R11,R1         ITSELF, AS BEFORE (A TIC",
+        "         BL    IOORIG         AFTER A TIC IS A PROGRAM",
+        "         LA    R1,X'50'       CHECK: IPL 190)",
+        "         CR    R11,R1",
+        "         BNL   IOORIG",
+        "IOCOPY2  LA    R1,IOCCW       (NO ADCONS: DMKVMI RUNS",
+        "         ST    R1,IOCAW       WHEREVER IT IS COPIED)",
+        "         B     IOCAWST",
+        "IOORIG   ST    R11,IOCAW",
+        "IOCAWST  LM    R0,R4,IOSAVE",
+        "         MVC   CAW(4),IOCAW",
+    ])
+    d.replace('00640000', '00644000', first='00640010', inc=10,
+              limit=next_seq(src('DMKVMI'), '00644000'), lines=[
+        "         STM   R5,R6,CSW      RESTORE SAVED CSW",
+        "         CLC   CAW(4),IOCAW   HAS THE CAW BEEN OVERLAYED?",
+        "         BE    IOE48          NO: X'48' GETS ITS OWN BACK",
+        "         MVC   SAVE48,CAW     YES: THAT IS ITS CONTENT NOW",
+        "IOE48    MVC   CAW(4),SAVE48",
+        "         MVC   SAVECAW,CAW    (LOADNOW RESTORES IT)",
+        "IOEND    STM   R0,R4,IOSAVE",
+        "         ICM   R2,15,REDIR    A REDIRECTED READ: THE",
+        "         BZ    IOEND2         DATA WHERE IT BELONGS",
+        "         LH    R3,REDIRN",
+        "         BCTR  R3,0",
+        "         EX    R3,MVCRED",
+        "IOEND2   LM    R0,R4,IOSAVE",
+        "         BR    R12            RETURN TO CALLER",
+    ])
+    d.replace('00647000', first='00647010', inc=10,
+              limit=next_seq(src('DMKVMI'), '00647000'), lines=[
+        "         CLC   CAW(4),IOCAW   HAS THE CAW BEEN OVERLAID?",
+    ])
+    d.replace('00664000', first='00664010', inc=10,
+              limit=next_seq(src('DMKVMI'), '00664000'), lines=[
+        "         MVC   CAW(4),SAVE48  M7: X'48' BACK, REDIRECTED",
+        "         B     IOEND          DATA HOME",
+    ])
     # The BC-mode path's  B *+8  skipped exactly the 4-byte STH; with the
     # guard in between it landed inside the CLC (n1t: op exception at
     # X'2065C', every reader IPL of a BC PSW).  Name the target instead.
@@ -2496,6 +2578,18 @@ def m7decks():
     d.insert('00806700', first='00806710', inc=10,
              limit=next_seq(src('DMKVMI'), '00806700') if False else '00807000',
              lines=["VMIESA9  DS    0H"])
+    d.insert('00840000', first='00840010', inc=10,
+             limit=next_seq(src('DMKVMI'), '00840000'), lines=[
+        "IOCAW    DS    F              M7: THE CAW IO USED,",
+        "IOSAVE   DS    5F             ITS REGISTERS,",
+        "SAVE48   DS    F              X'48''S CONTENT, AND THE",
+        "REDIR    DS    F              REDIRECTED READ'S ADDRESS,",
+        "REDIRN   DS    H              COUNT,",
+        "MVCRED   MVC   0(0,R2),REDBUF",
+        "REDBUF   DS    XL256          AND DATA",
+        "         DS    0D",
+        "IOCCW    DS    2D",
+    ])
     decks['DMKVMI'] = d
 
     d = Deck(XA54)
