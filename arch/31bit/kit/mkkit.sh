@@ -21,6 +21,7 @@ PY
 cp $C/disks/vm50-4.cckd $K/disks/; cp $C/disks/shadows/*_1.shadow $K/disks/shadows/
 cp $R/arch/31bit/kit/README-VM370PLUS.txt $K/
 cp $R/arch/31bit/cms/{GCC31.EXEC,HELLO31.C,HIGHSTOR.ASSEMBLE,HSTEST.ASSEMBLE} $R/arch/31bit/crexx/{CRXMAKE.EXEC,cms.h} $K/vm370plus/
+mkdir -p $K/vm370plus/m5f; cp $R/arch/31bit/m5f/{README.md,cmsrt.c,cp1047.h,entry31.s,crt.sh,image.ld,hello31.c,libctest.c,elf_to_cms-pcrel.patch} $K/vm370plus/m5f/
 mkdir -p $D; cd $W
 zip -qr $D/VM370PLUS-kit-$STAMP-part1.zip VM370CE.V1.R1.2 -x "VM370CE.V1.R1.2/disks/vm50-4.cckd"
 zip -q  $D/VM370PLUS-kit-$STAMP-part2.zip VM370CE.V1.R1.2/disks/vm50-4.cckd

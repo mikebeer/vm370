@@ -1,29 +1,29 @@
 Archive member included to satisfy reference by file (symbol)
 
 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (strtoll)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (strtoll)
 /home/claude/nlbuild/libc.a(libc_a-fread.o)
-                              /tmp/tmp.MslZnTMSKS/platform.o (fread)
+                              /tmp/tmp.9PpV1odZqT/platform.o (fread)
 /home/claude/nlbuild/libc.a(libc_a-vsnprintf.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (vsnprintf)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (vsnprintf)
 /home/claude/nlbuild/libc.a(libc_a-assert.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpopgr.o (__assert_func)
+                              /tmp/tmp.9PpV1odZqT/rxcpopgr.o (__assert_func)
 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
-                              /tmp/tmp.MslZnTMSKS/platform.o (ftell)
+                              /tmp/tmp.9PpV1odZqT/platform.o (ftell)
 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (strtod)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (strtod)
 /home/claude/nlbuild/libc.a(libc_a-lcltime.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpemit.o (localtime)
+                              /tmp/tmp.9PpV1odZqT/rxcpemit.o (localtime)
 /home/claude/nlbuild/libc.a(libc_a-locale.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__global_locale)
 /home/claude/nlbuild/libc.a(libc_a-strcat_chk.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (__strcat_chk)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (__strcat_chk)
 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
                               /home/claude/nlbuild/libc.a(libc_a-vsnprintf.o) (_svfprintf_r)
 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__gethex)
 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
-                              /tmp/tmp.MslZnTMSKS/platform.o (rewind)
+                              /tmp/tmp.9PpV1odZqT/platform.o (rewind)
 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (memcpy)
 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
@@ -35,21 +35,21 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (strncmp)
 /home/claude/nlbuild/libc.a(libc_a-stpcpy_chk.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (__stpcpy_chk)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (__stpcpy_chk)
 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpsymb.o (memmove)
+                              /tmp/tmp.9PpV1odZqT/rxcpsymb.o (memmove)
 /home/claude/nlbuild/libc.a(libc_a-errno.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__errno)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__errno)
 /home/claude/nlbuild/libc.a(libc_a-impure.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (_impure_ptr)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (_impure_ptr)
 /home/claude/nlbuild/libc.a(libc_a-abort.o)
                               /home/claude/nlbuild/libc.a(libc_a-assert.o) (abort)
 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (fputc)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (fputc)
 /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (__ssputs_r)
 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (realloc)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (realloc)
 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (strlen)
 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
@@ -57,9 +57,9 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (_malloc_r)
 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (putchar)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (putchar)
 /home/claude/nlbuild/libc.a(libc_a-strcat.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpemit.o (strcat)
+                              /tmp/tmp.9PpV1odZqT/rxcpemit.o (strcat)
 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (_dtoa_r)
 /home/claude/nlbuild/libc.a(libc_a-freer.o)
@@ -67,31 +67,31 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
                               /home/claude/nlbuild/libc.a(libc_a-rewind.o) (_fseek_r)
 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (fclose)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (fclose)
 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
                               /home/claude/nlbuild/libc.a(libc_a-locale.o) (__ascii_wctomb)
 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (strrchr)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (strrchr)
 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseek.o) (_fseeko_r)
 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (snprintf)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (snprintf)
 /home/claude/nlbuild/libc.a(libc_a-strcpy.o)
                               /home/claude/nlbuild/libc.a(libc_a-strcat.o) (strcpy)
 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (malloc)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (malloc)
 /home/claude/nlbuild/libc.a(libc_a-putc.o)
                               /home/claude/nlbuild/libc.a(libc_a-fputc.o) (_putc_r)
 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (__sseek)
 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (fprintf)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (fprintf)
 /home/claude/nlbuild/libc.a(libc_a-reent.o)
-                              /tmp/tmp.MslZnTMSKS/cmsrt.o (errno)
+                              /tmp/tmp.9PpV1odZqT/cmsrt.o (errno)
 /home/claude/nlbuild/libc.a(libc_a-refill.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (__srefill_r)
 /home/claude/nlbuild/libc.a(libc_a-fputs.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (fputs)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (fputs)
 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
                               /home/claude/nlbuild/libc.a(libc_a-putc.o) (__swbuf_r)
 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
@@ -101,35 +101,35 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (_fstat_r)
 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (fwrite)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (fwrite)
 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (__malloc_lock)
 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
                               /home/claude/nlbuild/libc.a(libc_a-refill.o) (__sglue)
 /home/claude/nlbuild/libc.a(libc_a-puts.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (puts)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (puts)
 /home/claude/nlbuild/libc.a(libc_a-sprintf_chk.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (__sprintf_chk)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (__sprintf_chk)
 /home/claude/nlbuild/libc.a(libc_a-exit.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (exit)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (exit)
 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (memchr)
 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (_ctype_)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (_ctype_)
 /home/claude/nlbuild/libc.a(libc_a-memcpy_chk.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (__memcpy_chk)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (__memcpy_chk)
 /home/claude/nlbuild/libc.a(libc_a-lcltime_r.o)
                               /home/claude/nlbuild/libc.a(libc_a-lcltime.o) (localtime_r)
 /home/claude/nlbuild/libc.a(libc_a-printf.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpmain.o (printf)
+                              /tmp/tmp.9PpV1odZqT/rxcpmain.o (printf)
 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (_sbrk_r)
 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__match)
 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpast.o (fopen)
+                              /tmp/tmp.9PpV1odZqT/rxcpast.o (fopen)
 /home/claude/nlbuild/libc.a(libc_a-time.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpemit.o (time)
+                              /tmp/tmp.9PpV1odZqT/rxcpemit.o (time)
 /home/claude/nlbuild/libc.a(libc_a-closer.o)
                               /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_close_r)
 /home/claude/nlbuild/libc.a(libc_a-signal.o)
@@ -229,15 +229,15 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-iswspace_l.o)
                               /home/claude/nlbuild/libc.a(libc_a-iswspace.o) (iswspace_l)
 /home/claude/nlbuild/libm.a(libm_a-pow.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (pow)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (pow)
 /home/claude/nlbuild/libm.a(libm_a-w_fmod.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (fmod)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (fmod)
 /home/claude/nlbuild/libm.a(libm_a-exp_data.o)
                               /home/claude/nlbuild/libm.a(libm_a-pow.o) (__exp_data)
 /home/claude/nlbuild/libm.a(libm_a-pow_log_data.o)
                               /home/claude/nlbuild/libm.a(libm_a-pow.o) (__pow_log_data)
 /home/claude/nlbuild/libm.a(libm_a-s_floor.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (floor)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (floor)
 /home/claude/nlbuild/libm.a(libm_a-e_fmod.o)
                               /home/claude/nlbuild/libm.a(libm_a-w_fmod.o) (__ieee754_fmod)
 /home/claude/nlbuild/libm.a(libm_a-s_fabs.o)
@@ -245,33 +245,33 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libm.a(libm_a-math_err.o)
                               /home/claude/nlbuild/libm.a(libm_a-pow.o) (__math_uflow)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__adddf3)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__adddf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__divdf3)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__divdf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__eqdf2)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__eqdf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__fixdfdi)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__fixdfdi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (__fixdfsi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__fixunsdfsi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__floatdidf)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__floatdidf)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
                               /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (__floatsidf)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__floatunsidf)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
-                              /tmp/tmp.MslZnTMSKS/rxcpemit.o (__gedf2)
+                              /tmp/tmp.9PpV1odZqT/rxcpemit.o (__gedf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__ledf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__lesf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__muldf3)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__muldf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__subdf3)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__subdf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__truncdfsf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
@@ -281,13 +281,13 @@ Archive member included to satisfy reference by file (symbol)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o) (__clzsi2)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_divdi3.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__divdi3)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__divdi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_moddi3.o)
-                              /tmp/tmp.MslZnTMSKS/rxcp_opt.o (__moddi3)
+                              /tmp/tmp.9PpV1odZqT/rxcp_opt.o (__moddi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
-                              /tmp/tmp.MslZnTMSKS/cmsrt.o (__udivdi3)
+                              /tmp/tmp.9PpV1odZqT/cmsrt.o (__udivdi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
-                              /tmp/tmp.MslZnTMSKS/cmsrt.o (__umoddi3)
+                              /tmp/tmp.9PpV1odZqT/cmsrt.o (__umoddi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o) (__udiv_w_sdiv)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
@@ -295,172 +295,172 @@ Archive member included to satisfy reference by file (symbol)
 
 Discarded input sections
 
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/entry31.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/entry31.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/entry31.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpmain.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpmain.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpmain.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/entry31.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpmain.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpmain.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpmain.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpmain.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpmain.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpast.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpast.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpmain.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpast.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpast.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.prnt_walker_handler
-                0x00000000      0x110 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000      0x110 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.prnt_tok.str1.2
-                0x00000000        0x4 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000        0x4 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.prnt_tok
-                0x00000000       0x48 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000       0x48 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.ast_fstk
-                0x00000000       0x30 /tmp/tmp.MslZnTMSKS/rxcpast.o
- .text.ast_str  0x00000000       0x50 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000       0x30 /tmp/tmp.9PpV1odZqT/rxcpast.o
+ .text.ast_str  0x00000000       0x50 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.ast_ndtp
-                0x00000000       0x28 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000       0x28 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.prt_unex
-                0x00000000       0x10 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000       0x10 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.prnt_ast
-                0x00000000       0x10 /tmp/tmp.MslZnTMSKS/rxcpast.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000000       0x10 /tmp/tmp.9PpV1odZqT/rxcpast.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpast.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpast.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcposcn.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcposcn.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcposcn.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcposcn.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpast.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcposcn.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcposcn.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcposcn.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcposcn.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcposcn.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcposcn.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .text.Opts_Init
-                0x00000000       0x28 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x00000000       0x28 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .text.Opts_Finalize
-                0x00000000      0x138 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x00000000      0x138 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .text.Opts_Fallback
-                0x00000000        0x8 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x00000000        0x8 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopar.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopar.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopar.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpopar.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopar.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopar.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopar.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpopar.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpopar.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rexbscan.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rexbscan.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rexbscan.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rexbscan.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpopar.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rexbscan.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rexbscan.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rexbscan.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rexbscan.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rexbscan.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rexbscan.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .text.RexxBInit
-                0x00000000       0x30 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00000000       0x30 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .text.RexxBFinalize
-                0x00000000      0x138 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00000000      0x138 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .text.RexxBFallback
-                0x00000000        0x8 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00000000        0x8 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbpar.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbpar.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbpar.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpbpar.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbpar.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbpar.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbpar.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpbpar.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbpar.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbval.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbval.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbval.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbpar.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbval.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbval.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbval.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpbval.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpbval.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/platform.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/platform.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/platform.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/platform.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/platform.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/platform.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/platform.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/platform.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/platform.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxvminst.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxvminst.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/platform.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxvminst.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxvminst.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .text.fst_inst
-                0x00000000       0xc8 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0xc8 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .text.nxt_inst
-                0x00000000       0xd0 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0xd0 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .text.get_inst
-                0x00000000       0x30 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x30 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .text.opd_name
-                0x00000000       0x18 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x18 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.exp_opds.str1.2
-                0x00000000       0x3c /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x3c /tmp/tmp.9PpV1odZqT/rxvminst.o
  .text.exp_opds
-                0x00000000      0x170 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000      0x170 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.exp_opds
-                0x00000000       0x10 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x10 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.prt_ops.str1.2
-                0x00000000       0x3a /tmp/tmp.MslZnTMSKS/rxvminst.o
- .text.prt_ops  0x00000000       0x88 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x3a /tmp/tmp.9PpV1odZqT/rxvminst.o
+ .text.prt_ops  0x00000000       0x88 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.str1.2
-                0x00000000       0x2c /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x2c /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.CSWTCH.36
-                0x00000000       0x20 /tmp/tmp.MslZnTMSKS/rxvminst.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00000000       0x20 /tmp/tmp.9PpV1odZqT/rxvminst.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/rxvminst.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/rxvminst.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/avl_tree.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/avl_tree.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/rxvminst.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/avl_tree.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/avl_tree.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/avl_tree.o
  .text.avl_lino
-                0x00000000       0x20 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00000000       0x20 /tmp/tmp.9PpV1odZqT/avl_tree.o
  .text.avl_pino
-                0x00000000       0x80 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00000000       0x80 /tmp/tmp.9PpV1odZqT/avl_tree.o
  .text.avl_remv
-                0x00000000      0x468 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00000000      0x468 /tmp/tmp.9PpV1odZqT/avl_tree.o
  .rodata.avl_remv
-                0x00000000        0x8 /tmp/tmp.MslZnTMSKS/avl_tree.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00000000        0x8 /tmp/tmp.9PpV1odZqT/avl_tree.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/avl_tree.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/avl_tree.o
- .text          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .data          0x00000000        0x0 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss           0x00000000        0x0 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._stat    0x00000000       0x48 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._unlink  0x00000000      0x238 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._execve  0x00000000       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._fork    0x00000000       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._wait    0x00000000       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._link    0x00000000       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._times   0x00000000       0x10 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/avl_tree.o
+ .text          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .data          0x00000000        0x0 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss           0x00000000        0x0 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._stat    0x00000000       0x48 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._unlink  0x00000000      0x238 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._execve  0x00000000       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._fork    0x00000000       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._wait    0x00000000       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._link    0x00000000       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._times   0x00000000       0x10 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .text.gettimeofday
-                0x00000000       0x68 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00000000       0x68 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.gettimeofday
-                0x00000000       0x10 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .comment       0x00000000       0x2e /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00000000       0x10 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .comment       0x00000000       0x2e /tmp/tmp.9PpV1odZqT/cmsrt.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
  .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
  .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
@@ -1440,335 +1440,335 @@ Linker script and memory map
 
 .text           0x00000000    0x5d0c0
  *(.text.entry)
- .text.entry    0x00000000       0x70 /tmp/tmp.MslZnTMSKS/entry31.o
+ .text.entry    0x00000000       0x70 /tmp/tmp.9PpV1odZqT/entry31.o
                 0x00000000                cms_entry
  *(.text .text.*)
- .text          0x00000070       0x58 /tmp/tmp.MslZnTMSKS/entry31.o
+ .text          0x00000070       0x58 /tmp/tmp.9PpV1odZqT/entry31.o
                 0x00000070                cms_exit
                 0x00000088                cms202
  .text.error_and_exit.constprop.0
-                0x000000c8       0x30 /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x000000c8       0x30 /tmp/tmp.9PpV1odZqT/rxcpmain.o
  .text.get_filename_ext
-                0x000000f8       0x40 /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x000000f8       0x40 /tmp/tmp.9PpV1odZqT/rxcpmain.o
                 0x000000f8                get_filename_ext
  .text.startup.main
-                0x00000138      0x610 /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x00000138      0x610 /tmp/tmp.9PpV1odZqT/rxcpmain.o
                 0x00000138                main
  .text.pdot_scope
-                0x00000748       0xb8 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000748       0xb8 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00000748                pdot_scope
  .text.escape_character
-                0x00000800       0xe0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000800       0xe0 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.fix_ast_line_number.part.0
-                0x000008e0      0x110 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000008e0      0x110 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.prt_unex.part.0
-                0x000009f0      0x1d0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000009f0      0x1d0 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.print_error_walker
-                0x00000bc0      0x318 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000bc0      0x318 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .text.pdot_walker_handler
-                0x00000ed8      0x3e0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00000ed8      0x3e0 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00000ed8                pdot_walker_handler
- .text.token_f  0x000012b8       0xb0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.token_f  0x000012b8       0xb0 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000012b8                token_f
- .text.token_r  0x00001368       0x30 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.token_r  0x00001368       0x30 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00001368                token_r
  .text.free_tok
-                0x00001398       0x30 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00001398       0x30 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00001398                free_tok
- .text.ast_ft   0x000013c8      0x100 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.ast_ft   0x000013c8      0x100 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000013c8                ast_ft
- .text.ast_f    0x000014c8       0x30 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.ast_f    0x000014c8       0x30 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000014c8                ast_f
  .text.ast_sstr
-                0x000014f8       0x50 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000014f8       0x50 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000014f8                ast_sstr
- .text.ast_ftt  0x00001548       0x38 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.ast_ftt  0x00001548       0x38 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00001548                ast_ftt
  .text.mknd_err
-                0x00001580       0xf0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00001580       0xf0 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00001580                mknd_err
  .text.ast_fstr
-                0x00001670      0xa20 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00001670      0xa20 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00001670                ast_fstr
- .text.add_ast  0x00002090       0x68 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.add_ast  0x00002090       0x68 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002090                add_ast
- .text.ast_err  0x000020f8       0x70 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.ast_err  0x000020f8       0x70 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000020f8                ast_err
  .text.ast_errh
-                0x00002168       0x78 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00002168       0x78 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002168                ast_errh
  .text.add_sbtr
-                0x000021e0       0x58 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000021e0       0x58 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000021e0                add_sbtr
- .text.ast_rpl  0x00002238       0x60 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.ast_rpl  0x00002238       0x60 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002238                ast_rpl
- .text.ast_del  0x00002298       0x58 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .text.ast_del  0x00002298       0x58 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002298                ast_del
  .text.free_ast
-                0x000022f0       0x90 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000022f0       0x90 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x000022f0                free_ast
  .text.ast_wlkr
-                0x00002380       0xa0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00002380       0xa0 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002380                ast_wlkr
  .text.prnterrs
-                0x00002420       0x38 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00002420       0x38 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002420                prnterrs
  .text.pdot_tree
-                0x00002458       0xd0 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00002458       0xd0 /tmp/tmp.9PpV1odZqT/rxcpast.o
                 0x00002458                pdot_tree
  .text.opt_scan
-                0x00002528     0x9168 /tmp/tmp.MslZnTMSKS/rxcposcn.o
+                0x00002528     0x9168 /tmp/tmp.9PpV1odZqT/rxcposcn.o
                 0x00002528                opt_scan
  .text.yy_pop_parser_stack
-                0x0000b690       0xa8 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0000b690       0xa8 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .text.yyTraceShift
-                0x0000b738       0x80 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0000b738       0x80 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .text.Opts_Trace
-                0x0000b7b8       0x30 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0000b7b8       0x30 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
                 0x0000b7b8                Opts_Trace
  .text.Opts_Alloc
-                0x0000b7e8       0x48 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0000b7e8       0x48 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
                 0x0000b7e8                Opts_Alloc
  .text.Opts_Free
-                0x0000b830      0x148 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0000b830      0x148 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
                 0x0000b830                Opts_Free
- .text.Opts_    0x0000b978      0xbc8 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+ .text.Opts_    0x0000b978      0xbc8 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
                 0x0000b978                Opts_
  .text.opt_pars
-                0x0000c540      0x118 /tmp/tmp.MslZnTMSKS/rxcpopar.o
+                0x0000c540      0x118 /tmp/tmp.9PpV1odZqT/rxcpopar.o
                 0x0000c540                opt_pars
  .text.rexbscan
-                0x0000c658    0x1dcc0 /tmp/tmp.MslZnTMSKS/rexbscan.o
+                0x0000c658    0x1dcc0 /tmp/tmp.9PpV1odZqT/rexbscan.o
                 0x0000c658                rexbscan
  .text.yy_pop_parser_stack
-                0x0002a318       0xa8 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0002a318       0xa8 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .text.yyTraceShift
-                0x0002a3c0       0x80 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0002a3c0       0x80 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .text.yyStackOverflow
-                0x0002a440      0x180 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0002a440      0x180 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .text.RexxBTrace
-                0x0002a5c0       0x30 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0002a5c0       0x30 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
                 0x0002a5c0                RexxBTrace
  .text.RexxBAlloc
-                0x0002a5f0       0x50 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0002a5f0       0x50 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
                 0x0002a5f0                RexxBAlloc
  .text.RexxBFree
-                0x0002a640      0x148 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0002a640      0x148 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
                 0x0002a640                RexxBFree
- .text.RexxB    0x0002a788     0x1f30 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+ .text.RexxB    0x0002a788     0x1f30 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
                 0x0002a788                RexxB
  .text.rexbpars
-                0x0002c6b8      0x1b0 /tmp/tmp.MslZnTMSKS/rxcpbpar.o
+                0x0002c6b8      0x1b0 /tmp/tmp.9PpV1odZqT/rxcpbpar.o
                 0x0002c6b8                rexbpars
  .text.validate_symbols
-                0x0002c868       0x68 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002c868       0x68 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.step1b_walker
-                0x0002c8d0       0x40 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002c8d0       0x40 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.step5_walker
-                0x0002c910      0x1c0 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002c910      0x1c0 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.step2b_walker
-                0x0002cad0       0x90 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002cad0       0x90 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.step2a_walker
-                0x0002cb60      0x220 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002cb60      0x220 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.step1_walker
-                0x0002cd80      0x888 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002cd80      0x888 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.is_node_string.isra.0
-                0x0002d608      0x190 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002d608      0x190 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.node_to_type
-                0x0002d798       0xf0 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002d798       0xf0 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.step4_walker
-                0x0002d888      0x4e8 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002d888      0x4e8 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.validate_symbol_in_scope
-                0x0002dd70      0x240 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002dd70      0x240 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .text.validate
-                0x0002dfb0       0xf8 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0002dfb0       0xf8 /tmp/tmp.9PpV1odZqT/rxcpbval.o
                 0x0002dfb0                validate
  .text.symbol_free
-                0x0002e0a8       0x68 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
- .text.scp_f    0x0002e110      0x120 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002e0a8       0x68 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+ .text.scp_f    0x0002e110      0x120 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e110                scp_f
  .text.scp_4all
-                0x0002e230       0x48 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002e230       0x48 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e230                scp_4all
  .text.scp_free
-                0x0002e278       0x88 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002e278       0x88 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e278                scp_free
- .text.get_reg  0x0002e300       0x38 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+ .text.get_reg  0x0002e300       0x38 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e300                get_reg
- .text.ret_reg  0x0002e338      0x380 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+ .text.ret_reg  0x0002e338      0x380 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e338                ret_reg
  .text.get_regs
-                0x0002e6b8      0x318 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002e6b8      0x318 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e6b8                get_regs
- .text.type_nm  0x0002e9d0       0x28 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+ .text.type_nm  0x0002e9d0       0x28 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e9d0                type_nm
- .text.scp_chd  0x0002e9f8       0x18 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+ .text.scp_chd  0x0002e9f8       0x18 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002e9f8                scp_chd
  .text.scp_noch
-                0x0002ea10       0x10 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002ea10       0x10 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002ea10                scp_noch
- .text.sym_f    0x0002ea20      0x8c0 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+ .text.sym_f    0x0002ea20      0x8c0 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002ea20                sym_f
  .text.sym_rslv
-                0x0002f2e0      0x838 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002f2e0      0x838 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002f2e0                sym_rslv
  .text.sym_lrsv
-                0x0002fb18      0x818 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0002fb18      0x818 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x0002fb18                sym_lrsv
  .text.sym_trnd
-                0x00030330       0x18 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x00030330       0x18 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x00030330                sym_trnd
  .text.sym_lord
-                0x00030348       0x18 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x00030348       0x18 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x00030348                sym_lord
  .text.sym_adnd
-                0x00030360       0xb8 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x00030360       0xb8 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x00030360                sym_adnd
  .text.sym_nond
-                0x00030418       0x10 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x00030418       0x10 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x00030418                sym_nond
  .text.sym_frnm
-                0x00030428      0x458 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x00030428      0x458 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
                 0x00030428                sym_frnm
  .text.encode_line_source
-                0x00030880      0x178 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00030880      0x178 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.encode_line_source_malloc
-                0x000309f8       0x70 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000309f8       0x70 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.printf_malloc
-                0x00030a68       0xb0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00030a68       0xb0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.get_metaline
-                0x00030b18       0xe0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00030b18       0xe0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.encode_print.part.0
-                0x00030bf8      0x2c0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00030bf8      0x2c0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.output_append_text
-                0x00030eb8       0x88 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00030eb8       0x88 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.meta_set_symbol
-                0x00030f40      0x118 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00030f40      0x118 /tmp/tmp.9PpV1odZqT/rxcpemit.o
                 0x00030f40                meta_set_symbol
  .text.type_promotion
-                0x00031058      0x118 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031058      0x118 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.meta_clear_symbol
-                0x00031170       0xa0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031170       0xa0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
                 0x00031170                meta_clear_symbol
  .text.output_fs
-                0x00031210      0x180 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031210      0x180 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.clean_print_node
-                0x00031390      0x228 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031390      0x228 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.format_constant
-                0x000315b8      0x240 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000315b8      0x240 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.get_metaline_token_at.isra.0
-                0x000317f8       0x80 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000317f8       0x80 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.get_metaline_token_after.isra.0
-                0x00031878       0x90 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031878       0x90 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.encode_print_malloc
-                0x00031908       0x78 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031908       0x78 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.register_walker
-                0x00031980      0x868 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00031980      0x868 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .text.f_output
-                0x000321e8       0x28 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000321e8       0x28 /tmp/tmp.9PpV1odZqT/rxcpemit.o
                 0x000321e8                f_output
  .text.node_type
-                0x00032210       0xf0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00032210       0xf0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
                 0x00032210                node_type
  .text.emit_walker
-                0x00032300     0x2be0 /tmp/tmp.MslZnTMSKS/rxcpemit.o
- .text.emit     0x00034ee0       0x58 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x00032300     0x2be0 /tmp/tmp.9PpV1odZqT/rxcpemit.o
+ .text.emit     0x00034ee0       0x58 /tmp/tmp.9PpV1odZqT/rxcpemit.o
                 0x00034ee0                emit
  .text.compare_nodes
-                0x00034f38      0x278 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00034f38      0x278 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.update_string
-                0x000351b0       0xa0 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x000351b0       0xa0 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.propagete_constant_symbols
-                0x00035250       0x68 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035250       0x68 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.opt2_walker
-                0x000352b8       0xa0 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x000352b8       0xa0 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.string2float
-                0x00035358      0x210 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035358      0x210 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.string_to_type
-                0x00035568      0x378 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035568      0x378 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.constant_symbols_in_scope
-                0x000358e0      0x128 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x000358e0      0x128 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.rewrite_to_float_constant
-                0x00035a08       0x78 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035a08       0x78 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.rewrite_to_integer_constant
-                0x00035a80       0x78 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035a80       0x78 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.rewrite_to_boolean_constant
-                0x00035af8       0x80 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035af8       0x80 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.opt1_walker
-                0x00035b78      0x698 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00035b78      0x698 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .text.optimise
-                0x00036210       0x68 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00036210       0x68 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
                 0x00036210                optimise
  .text.file2buf
-                0x00036278       0xa0 /tmp/tmp.MslZnTMSKS/platform.o
+                0x00036278       0xa0 /tmp/tmp.9PpV1odZqT/platform.o
                 0x00036278                file2buf
  .text.openfile
-                0x00036318       0xa0 /tmp/tmp.MslZnTMSKS/platform.o
+                0x00036318       0xa0 /tmp/tmp.9PpV1odZqT/platform.o
                 0x00036318                openfile
- .text.instr_f  0x000363b8      0x170 /tmp/tmp.MslZnTMSKS/rxvminst.o
+ .text.instr_f  0x000363b8      0x170 /tmp/tmp.9PpV1odZqT/rxvminst.o
                 0x000363b8                instr_f
  .text.init_ops
-                0x00036528     0x1ce0 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00036528     0x1ce0 /tmp/tmp.9PpV1odZqT/rxvminst.o
                 0x00036528                init_ops
  .text.src_inst
-                0x00038208       0x90 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00038208       0x90 /tmp/tmp.9PpV1odZqT/rxvminst.o
                 0x00038208                src_inst
  .text.free_ops
-                0x00038298       0x80 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00038298       0x80 /tmp/tmp.9PpV1odZqT/rxvminst.o
                 0x00038298                free_ops
  .text.avl_fino
-                0x00038318       0x20 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00038318       0x20 /tmp/tmp.9PpV1odZqT/avl_tree.o
                 0x00038318                avl_fino
  .text.avl_nino
-                0x00038338       0x80 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00038338       0x80 /tmp/tmp.9PpV1odZqT/avl_tree.o
                 0x00038338                avl_nino
  .text.avl_finp
-                0x000383b8       0x20 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x000383b8       0x20 /tmp/tmp.9PpV1odZqT/avl_tree.o
                 0x000383b8                avl_finp
  .text.avl_ninp
-                0x000383d8       0x28 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x000383d8       0x28 /tmp/tmp.9PpV1odZqT/avl_tree.o
                 0x000383d8                avl_ninp
  .text.avl_bain
-                0x00038400      0x328 /tmp/tmp.MslZnTMSKS/avl_tree.o
+                0x00038400      0x328 /tmp/tmp.9PpV1odZqT/avl_tree.o
                 0x00038400                avl_bain
  .text.set_fscb
-                0x00038728      0x1f8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00038728      0x1f8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .text.read_whole
-                0x00038920      0x870 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text.tflush   0x00039190      0x240 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00038920      0x870 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text.tflush   0x00039190      0x240 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .text.parse_name
-                0x000393d0      0x5c8 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .text._sbrk    0x00039998      0x860 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x000393d0      0x5c8 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .text._sbrk    0x00039998      0x860 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x00039998                _sbrk
- .text._open    0x0003a1f8      0x120 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._open    0x0003a1f8      0x120 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003a1f8                _open
- .text._close   0x0003a318      0xac8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._close   0x0003a318      0xac8 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003a318                _close
- .text._write   0x0003ade0      0x588 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._write   0x0003ade0      0x588 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003ade0                _write
- .text._read    0x0003b368      0x710 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._read    0x0003b368      0x710 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003b368                _read
- .text._lseek   0x0003ba78      0x210 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._lseek   0x0003ba78      0x210 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003ba78                _lseek
- .text._fstat   0x0003bc88       0x78 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._fstat   0x0003bc88       0x78 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bc88                _fstat
- .text._isatty  0x0003bd00       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._isatty  0x0003bd00       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bd00                _isatty
- .text.system   0x0003bd18        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text.system   0x0003bd18        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bd18                system
- .text.write    0x0003bd20        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text.write    0x0003bd20        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bd20                write
- .text._kill    0x0003bd28       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._kill    0x0003bd28       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bd28                _kill
- .text._getpid  0x0003bd40        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._getpid  0x0003bd40        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bd40                _getpid
- .text._exit    0x0003bd48      0x1f8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .text._exit    0x0003bd48      0x1f8 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bd48                _exit
  .text.cms_main
-                0x0003bf40       0xd8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x0003bf40       0xd8 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003bf40                cms_main
  .text._gettimeofday
-                0x0003c018       0x68 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x0003c018       0x68 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0003c018                _gettimeofday
  .text._strtoll_l.isra.0
                 0x0003c080      0x308 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
@@ -2254,275 +2254,275 @@ Linker script and memory map
                 0x0005cf50                __udiv_w_sdiv
 
 .iplt           0x0005d0c0        0x0
- .iplt          0x0005d0c0        0x0 /tmp/tmp.MslZnTMSKS/entry31.o
+ .iplt          0x0005d0c0        0x0 /tmp/tmp.9PpV1odZqT/entry31.o
 
 .rodata         0x0005d0c0    0x26308
  *(.rodata .rodata.*)
  .rodata.error_and_exit.constprop.0.str1.2
-                0x0005d0c0     0x6138 /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x0005d0c0     0x6138 /tmp/tmp.9PpV1odZqT/rxcpmain.o
                                  0x1a (size before relaxing)
  .rodata.get_filename_ext.str1.2
-                0x000631f8        0x2 /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x000631f8        0x2 /tmp/tmp.9PpV1odZqT/rxcpmain.o
  .rodata.main.str1.2
-                0x000631f8      0x97a /tmp/tmp.MslZnTMSKS/rxcpmain.o
- .rodata.main   0x000631f8       0xc8 /tmp/tmp.MslZnTMSKS/rxcpmain.o
+                0x000631f8      0x97a /tmp/tmp.9PpV1odZqT/rxcpmain.o
+ .rodata.main   0x000631f8       0xc8 /tmp/tmp.9PpV1odZqT/rxcpmain.o
  .rodata.pdot_scope.str1.2
-                0x000632c0       0x8e /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000632c0       0x8e /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.escape_character.str1.2
-                0x000632c0        0x6 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000632c0        0x6 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.escape_character
-                0x000632c0      0x180 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000632c0      0x180 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.fix_ast_line_number.part.0.str1.2
-                0x00063440       0x3a /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00063440       0x3a /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.prt_unex.part.0.str1.2
-                0x00063440       0x38 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00063440       0x38 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.prt_unex.part.0
-                0x00063440      0x180 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00063440      0x180 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.prnt_walker_handler.str1.2
-                0x000635c0       0x16 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635c0       0x16 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.print_error_walker.str1.2
-                0x000635c0       0x1c /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635c0       0x1c /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.pdot_walker_handler.str1.2
-                0x000635c0      0x1a2 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635c0      0x1a2 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.pdot_walker_handler
-                0x000635c0        0x8 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635c0        0x8 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.ast_ft.str1.2
-                0x000635c8        0x2 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635c8        0x2 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.ast_ft
-                0x000635c8        0x8 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635c8        0x8 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.ast_fstr.str1.2
-                0x000635d0       0x18 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635d0       0x18 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.ast_fstr
-                0x000635d0        0x8 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635d0        0x8 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.pdot_tree.str1.2
-                0x000635d8       0x22 /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635d8       0x22 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.CSWTCH.63
-                0x000635d8       0x4c /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x000635d8       0x4c /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.CSWTCH.62
-                0x00063624       0x4c /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00063624       0x4c /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.str1.2
-                0x00063670      0x33a /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00063670      0x33a /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.CSWTCH.61
-                0x00063670      0x12c /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x00063670      0x12c /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.CSWTCH.48
-                0x0006379c      0x12c /tmp/tmp.MslZnTMSKS/rxcpast.o
+                0x0006379c      0x12c /tmp/tmp.9PpV1odZqT/rxcpast.o
  .rodata.opt_scan
-                0x000638c8     0x6b10 /tmp/tmp.MslZnTMSKS/rxcposcn.o
+                0x000638c8     0x6b10 /tmp/tmp.9PpV1odZqT/rxcposcn.o
  .rodata.yy_pop_parser_stack.str1.2
-                0x0006a3d8       0x6e /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a3d8       0x6e /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yyTraceShift.str1.2
-                0x0006a3d8       0x3a /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a3d8       0x3a /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.Opts_.str1.2
-                0x0006a3d8      0x2ba /tmp/tmp.MslZnTMSKS/rxcpopgr.o
- .rodata.Opts_  0x0006a3d8       0x28 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a3d8      0x2ba /tmp/tmp.9PpV1odZqT/rxcpopgr.o
+ .rodata.Opts_  0x0006a3d8       0x28 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.__func__.0
-                0x0006a400       0x16 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a400       0x16 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.__func__.1
-                0x0006a416        0xa /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a416        0xa /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.__func__.2
-                0x0006a420        0xa /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a420        0xa /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.__func__.3
-                0x0006a42a       0x16 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a42a       0x16 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.__func__.4
-                0x0006a440        0x6 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a440        0x6 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.__func__.5
-                0x0006a446       0x14 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a446       0x14 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  *fill*         0x0006a45a        0x2 
  .rodata.yyRuleInfoNRhs
-                0x0006a45c       0x10 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a45c       0x10 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yyRuleInfoLhs
-                0x0006a46c       0x10 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a46c       0x10 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.str1.2
-                0x0006a47c      0x28a /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a47c      0x28a /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yyRuleName
-                0x0006a47c       0x40 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a47c       0x40 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yyTokenName
-                0x0006a4bc       0x4c /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a4bc       0x4c /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yy_default
-                0x0006a508       0x14 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a508       0x14 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yy_reduce_ofst
-                0x0006a51c        0x4 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a51c        0x4 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yy_shift_ofst
-                0x0006a520       0x14 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a520       0x14 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yy_lookahead
-                0x0006a534       0x7c /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a534       0x7c /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.yy_action
-                0x0006a5b0       0x70 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x0006a5b0       0x70 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .rodata.opt_pars.str1.2
-                0x0006a620       0x14 /tmp/tmp.MslZnTMSKS/rxcpopar.o
+                0x0006a620       0x14 /tmp/tmp.9PpV1odZqT/rxcpopar.o
  .rodata.rexbscan
-                0x0006a620     0xd5c8 /tmp/tmp.MslZnTMSKS/rexbscan.o
+                0x0006a620     0xd5c8 /tmp/tmp.9PpV1odZqT/rexbscan.o
  .rodata.yy_pop_parser_stack.str1.2
-                0x00077be8       0x6e /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077be8       0x6e /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yyTraceShift.str1.2
-                0x00077be8       0x3a /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077be8       0x3a /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yyStackOverflow.str1.2
-                0x00077be8       0x2e /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077be8       0x2e /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.RexxB.str1.2
-                0x00077be8      0x34c /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
- .rodata.RexxB  0x00077be8      0x360 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077be8      0x34c /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
+ .rodata.RexxB  0x00077be8      0x360 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.__func__.0
-                0x00077f48       0x16 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077f48       0x16 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.__func__.1
-                0x00077f5e        0xa /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077f5e        0xa /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.__func__.2
-                0x00077f68        0xa /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077f68        0xa /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.__func__.3
-                0x00077f72       0x16 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077f72       0x16 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.__func__.4
-                0x00077f88        0x6 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077f88        0x6 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.__func__.5
-                0x00077f8e       0x14 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077f8e       0x14 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  *fill*         0x00077fa2        0x2 
  .rodata.yyRuleInfoNRhs
-                0x00077fa4       0xd8 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00077fa4       0xd8 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yyRuleInfoLhs
-                0x0007807c       0xd8 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0007807c       0xd8 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.str1.2
-                0x00078154     0x2648 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00078154     0x2648 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yyRuleName
-                0x00078154      0x358 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00078154      0x358 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yyTokenName
-                0x000784ac      0x208 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x000784ac      0x208 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yy_default
-                0x000786b4      0x294 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x000786b4      0x294 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yy_reduce_ofst
-                0x00078948      0x104 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00078948      0x104 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yy_shift_ofst
-                0x00078a4c      0x294 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00078a4c      0x294 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yy_lookahead
-                0x00078ce0     0x1f9c /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00078ce0     0x1f9c /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.yy_action
-                0x0007ac7c     0x3eb4 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x0007ac7c     0x3eb4 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .rodata.rexbpars.str1.2
-                0x0007eb30        0xe /tmp/tmp.MslZnTMSKS/rxcpbpar.o
+                0x0007eb30        0xe /tmp/tmp.9PpV1odZqT/rxcpbpar.o
  .rodata.step5_walker.str1.2
-                0x0007eb30       0x4e /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb30       0x4e /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step2b_walker.str1.2
-                0x0007eb30       0x10 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb30       0x10 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step2a_walker.str1.2
-                0x0007eb30       0x20 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb30       0x20 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step2a_walker
-                0x0007eb30       0x48 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb30       0x48 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step1_walker.str1.2
-                0x0007eb78       0xac /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb78       0xac /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step1_walker
-                0x0007eb78        0x8 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb78        0x8 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.is_node_string.isra.0
-                0x0007eb80        0x8 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb80        0x8 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.node_to_type.str1.2
-                0x0007eb88       0x20 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb88       0x20 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step4_walker.str1.2
-                0x0007eb88       0x56 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb88       0x56 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.step4_walker
-                0x0007eb88      0x24c /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007eb88      0x24c /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.validate_symbol_in_scope.str1.2
-                0x0007edd4       0x18 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007edd4       0x18 /tmp/tmp.9PpV1odZqT/rxcpbval.o
  .rodata.promotion
-                0x0007edd4       0xc4 /tmp/tmp.MslZnTMSKS/rxcpbval.o
+                0x0007edd4       0xc4 /tmp/tmp.9PpV1odZqT/rxcpbval.o
                 0x0007edd4                promotion
- .rodata.scp_f  0x0007ee98        0x8 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+ .rodata.scp_f  0x0007ee98        0x8 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.ret_reg.str1.2
-                0x0007eea0       0x2e /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007eea0       0x2e /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.ret_reg
-                0x0007eea0        0x8 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007eea0        0x8 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.get_regs
-                0x0007eea8        0x8 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007eea8        0x8 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.type_nm.str1.2
-                0x0007eeb0        0x6 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
- .rodata.sym_f  0x0007eeb0      0x558 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007eeb0        0x6 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+ .rodata.sym_f  0x0007eeb0      0x558 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.sym_rslv
-                0x0007f408      0x558 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007f408      0x558 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.sym_lrsv
-                0x0007f960      0x558 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007f960      0x558 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.sym_adnd
-                0x0007feb8        0x8 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007feb8        0x8 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.str1.2
-                0x0007fec0       0x28 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007fec0       0x28 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.CSWTCH.74
-                0x0007fec0       0x14 /tmp/tmp.MslZnTMSKS/rxcpsymb.o
+                0x0007fec0       0x14 /tmp/tmp.9PpV1odZqT/rxcpsymb.o
  .rodata.encode_line_source
-                0x0007fed4       0x8c /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x0007fed4       0x8c /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.get_metaline.str1.2
-                0x0007ff60       0x14 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x0007ff60       0x14 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.encode_print.part.0
-                0x0007ff60      0x174 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x0007ff60      0x174 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.meta_set_symbol.str1.2
-                0x000800d4       0x5c /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000800d4       0x5c /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.type_promotion.str1.2
-                0x000800d4       0x18 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000800d4       0x18 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.meta_clear_symbol.str1.2
-                0x000800d4       0x3e /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000800d4       0x3e /tmp/tmp.9PpV1odZqT/rxcpemit.o
  *fill*         0x000800d4        0x4 
  .rodata.clean_print_node
-                0x000800d8        0x8 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000800d8        0x8 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.format_constant.str1.2
-                0x000800e0       0x16 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000800e0       0x16 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.register_walker
-                0x000800e0       0xd8 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000800e0       0xd8 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.node_type.str1.2
-                0x000801b8       0x2e /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000801b8       0x2e /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.node_type
-                0x000801b8       0x10 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000801b8       0x10 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.emit_walker.str1.2
-                0x000801c8      0x86e /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000801c8      0x86e /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.emit_walker
-                0x000801c8      0x130 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000801c8      0x130 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.CSWTCH.63
-                0x000802f8       0x10 /tmp/tmp.MslZnTMSKS/rxcpemit.o
+                0x000802f8       0x10 /tmp/tmp.9PpV1odZqT/rxcpemit.o
  .rodata.compare_nodes
-                0x00080308        0x8 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00080308        0x8 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .rodata.update_string.str1.2
-                0x00080310        0xc /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00080310        0xc /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .rodata.string2float
-                0x00080310        0x8 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00080310        0x8 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .rodata.string_to_type.str1.2
-                0x00080318        0x6 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00080318        0x6 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .rodata.string_to_type
-                0x00080318       0x30 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00080318       0x30 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .rodata.opt1_walker
-                0x00080348       0xe8 /tmp/tmp.MslZnTMSKS/rxcp_opt.o
+                0x00080348       0xe8 /tmp/tmp.9PpV1odZqT/rxcp_opt.o
  .rodata.file2buf.str1.2
-                0x00080430       0x1a /tmp/tmp.MslZnTMSKS/platform.o
+                0x00080430       0x1a /tmp/tmp.9PpV1odZqT/platform.o
  .rodata.openfile.str1.2
-                0x00080430        0xc /tmp/tmp.MslZnTMSKS/platform.o
+                0x00080430        0xc /tmp/tmp.9PpV1odZqT/platform.o
  .rodata.instr_f.str1.2
-                0x00080430       0x1a /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00080430       0x1a /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.init_ops.str1.2
-                0x00080430     0x1b7c /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00080430     0x1b7c /tmp/tmp.9PpV1odZqT/rxvminst.o
  .rodata.read_whole.str1.2
-                0x00080430        0xc /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080430        0xc /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.read_whole
-                0x00080430        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080430        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.tflush.str1.2
-                0x00080438        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080438        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.parse_name.str1.2
-                0x00080438        0xe /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080438        0xe /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._sbrk.str1.2
-                0x00080438       0x12 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .rodata._sbrk  0x00080438        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080438       0x12 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .rodata._sbrk  0x00080438        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._close.str1.2
-                0x00080440        0xc /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080440        0xc /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._close
-                0x00080440        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080440        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._read.str1.2
-                0x00080448        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .rodata._read  0x00080448        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080448        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .rodata._read  0x00080448        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._fstat
-                0x00080450        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080450        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._exit.str1.2
-                0x00080458        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .rodata._exit  0x00080458        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080458        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .rodata._exit  0x00080458        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.cms_main
-                0x00080460        0x8 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080460        0x8 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._gettimeofday
-                0x00080468       0x10 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080468       0x10 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.tries.0
-                0x00080478       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080478       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.rt_e2a
-                0x00080490      0x100 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080490      0x100 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata.rt_a2e
-                0x00080590      0x100 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00080590      0x100 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .rodata._strtoll_l.isra.0
                 0x00080690       0x10 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
  .rodata.__assert_func.str1.2
@@ -2723,8 +2723,8 @@ Linker script and memory map
                 0x000832c8                __clz_tab
 
 .rela.dyn       0x000833c8        0x0
- .rela.iplt     0x000833c8        0x0 /tmp/tmp.MslZnTMSKS/entry31.o
- .rela.got      0x000833c8        0x0 /tmp/tmp.MslZnTMSKS/entry31.o
+ .rela.iplt     0x000833c8        0x0 /tmp/tmp.9PpV1odZqT/entry31.o
+ .rela.got      0x000833c8        0x0 /tmp/tmp.9PpV1odZqT/entry31.o
 
 .data           0x000833c8      0x304
  *(.data .data.*)
@@ -2747,56 +2747,56 @@ Linker script and memory map
                 0x000836c8                environ
 
 .igot.plt       0x000836cc        0x0
- .igot.plt      0x000836cc        0x0 /tmp/tmp.MslZnTMSKS/entry31.o
+ .igot.plt      0x000836cc        0x0 /tmp/tmp.9PpV1odZqT/entry31.o
 
 .got            0x000836cc        0x4
- .got           0x000836cc        0x4 /tmp/tmp.MslZnTMSKS/entry31.o
+ .got           0x000836cc        0x4 /tmp/tmp.9PpV1odZqT/entry31.o
 
 .got.plt        0x000836d0        0xc
- .got.plt       0x000836d0        0xc /tmp/tmp.MslZnTMSKS/entry31.o
+ .got.plt       0x000836d0        0xc /tmp/tmp.9PpV1odZqT/entry31.o
                 0x000836d0                _GLOBAL_OFFSET_TABLE_
 
 .bss            0x000836e0    0x28890
  *(.bss .bss.*)
- .bss           0x000836e0    0x10010 /tmp/tmp.MslZnTMSKS/entry31.o
+ .bss           0x000836e0    0x10010 /tmp/tmp.9PpV1odZqT/entry31.o
                 0x000836e8                cms_exit_sp
- .bss.buffer.0  0x000936f0        0x8 /tmp/tmp.MslZnTMSKS/rxcpast.o
+ .bss.buffer.0  0x000936f0        0x8 /tmp/tmp.9PpV1odZqT/rxcpast.o
  .bss.yyTracePrompt
-                0x000936f8        0x4 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x000936f8        0x4 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .bss.yyTraceFILE
-                0x000936fc        0x4 /tmp/tmp.MslZnTMSKS/rxcpopgr.o
+                0x000936fc        0x4 /tmp/tmp.9PpV1odZqT/rxcpopgr.o
  .bss.yyTracePrompt
-                0x00093700        0x4 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00093700        0x4 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .bss.yyTraceFILE
-                0x00093704        0x4 /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
+                0x00093704        0x4 /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
  .bss.no_instructions
-                0x00093708        0x4 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x00093708        0x4 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .bss.instructions
-                0x0009370c        0x4 /tmp/tmp.MslZnTMSKS/rxvminst.o
+                0x0009370c        0x4 /tmp/tmp.9PpV1odZqT/rxvminst.o
  .bss.instruction_root
-                0x00093710        0x4 /tmp/tmp.MslZnTMSKS/rxvminst.o
- .bss.argv_     0x00093714       0x84 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.argbuf    0x00093798      0x120 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.files     0x000938b8      0x340 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.rec       0x00093bf8     0x8000 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.fscb      0x0009bbf8       0x2c /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x00093710        0x4 /tmp/tmp.9PpV1odZqT/rxvminst.o
+ .bss.argv_     0x00093714       0x84 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.argbuf    0x00093798      0x120 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.files     0x000938b8      0x340 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.rec       0x00093bf8     0x8000 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.fscb      0x0009bbf8       0x2c /tmp/tmp.9PpV1odZqT/cmsrt.o
  .bss.cms_heap_mb
-                0x0009bc24        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x0009bc24        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
                 0x0009bc24                cms_heap_mb
- .bss.low_heap  0x0009bc28    0x10000 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.heap_brk  0x000abc28        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.heap_end  0x000abc2c        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
+ .bss.low_heap  0x0009bc28    0x10000 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.heap_brk  0x000abc28        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.heap_end  0x000abc2c        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .bss.heap_base
-                0x000abc30        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.hsp       0x000abc34       0x18 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.tin_pos   0x000abc4c        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.tin_len   0x000abc50        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.tin       0x000abc54       0x88 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.rdbuf     0x000abcdc       0x84 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.rdpl      0x000abd60       0x10 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.typl      0x000abd70       0x10 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.tlen      0x000abd80        0x4 /tmp/tmp.MslZnTMSKS/cmsrt.o
- .bss.tline     0x000abd84       0x84 /tmp/tmp.MslZnTMSKS/cmsrt.o
+                0x000abc30        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.hsp       0x000abc34       0x18 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.tin_pos   0x000abc4c        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.tin_len   0x000abc50        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.tin       0x000abc54       0x88 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.rdbuf     0x000abcdc       0x84 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.rdpl      0x000abd60       0x10 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.typl      0x000abd70       0x10 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.tlen      0x000abd80        0x4 /tmp/tmp.9PpV1odZqT/cmsrt.o
+ .bss.tline     0x000abd84       0x84 /tmp/tmp.9PpV1odZqT/cmsrt.o
  .bss.__malloc_sbrk_start
                 0x000abe08        0x4 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                 0x000abe08                __malloc_sbrk_start
@@ -2832,23 +2832,23 @@ Linker script and memory map
  *(.note.GNU-stack)
  *(.comment)
  *(.eh_frame)
-LOAD /tmp/tmp.MslZnTMSKS/entry31.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpmain.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpast.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcposcn.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpopgr.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpopar.o
-LOAD /tmp/tmp.MslZnTMSKS/rexbscan.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpbgmr.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpbpar.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpbval.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpsymb.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcpemit.o
-LOAD /tmp/tmp.MslZnTMSKS/rxcp_opt.o
-LOAD /tmp/tmp.MslZnTMSKS/platform.o
-LOAD /tmp/tmp.MslZnTMSKS/rxvminst.o
-LOAD /tmp/tmp.MslZnTMSKS/avl_tree.o
-LOAD /tmp/tmp.MslZnTMSKS/cmsrt.o
+LOAD /tmp/tmp.9PpV1odZqT/entry31.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpmain.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpast.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcposcn.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpopgr.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpopar.o
+LOAD /tmp/tmp.9PpV1odZqT/rexbscan.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpbgmr.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpbpar.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpbval.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpsymb.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcpemit.o
+LOAD /tmp/tmp.9PpV1odZqT/rxcp_opt.o
+LOAD /tmp/tmp.9PpV1odZqT/platform.o
+LOAD /tmp/tmp.9PpV1odZqT/rxvminst.o
+LOAD /tmp/tmp.9PpV1odZqT/avl_tree.o
+LOAD /tmp/tmp.9PpV1odZqT/cmsrt.o
 START GROUP
 LOAD /home/claude/nlbuild/libc.a
 LOAD /home/claude/nlbuild/libm.a

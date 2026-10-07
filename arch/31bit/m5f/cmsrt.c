@@ -7,7 +7,7 @@
  * record buffers and the terminal line are static.
  *
  * The C side is ASCII (Latin-1); CMS is EBCDIC (code page 037).  Text is
- * translated at the boundary: terminal lines, file records, command tokens.
+ * translated at the boundary (IBM-1047, as CE's Hercules CODEPAGE 819/1047): terminal lines, file records, command tokens.
  *
  * Files are whole-file: open for reading reads every record into the heap
  * (text: EBCDIC -> ASCII, F-format trailing blanks dropped, one '\n' per
@@ -27,7 +27,7 @@
 #include <sys/times.h>
 #include <sys/time.h>
 #include <time.h>
-#include "cp037.h"
+#include "cp1047.h"
 
 #undef errno
 extern int errno;

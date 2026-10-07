@@ -1,53 +1,53 @@
 Archive member included to satisfy reference by file (symbol)
 
 /home/claude/nlbuild/libc.a(libc_a-fread.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (fread)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (fread)
 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
-                              /tmp/tmp.w9PbPNAhDQ/platform.o (ftell)
+                              /tmp/tmp.FLttnGSt9A/platform.o (ftell)
 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
-                              /tmp/tmp.w9PbPNAhDQ/platform.o (rewind)
+                              /tmp/tmp.FLttnGSt9A/platform.o (rewind)
 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (memcpy)
 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
                               /home/claude/nlbuild/libc.a(libc_a-ftell.o) (_ftello_r)
 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdadism.o (calloc)
+                              /tmp/tmp.FLttnGSt9A/rxdadism.o (calloc)
 /home/claude/nlbuild/libc.a(libc_a-impure.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (_impure_ptr)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (_impure_ptr)
 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-calloc.o) (_calloc_r)
 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
-                              /tmp/tmp.w9PbPNAhDQ/cmsrt.o (realloc)
+                              /tmp/tmp.FLttnGSt9A/cmsrt.o (realloc)
 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-callocr.o) (_malloc_r)
 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxvminst.o (putchar)
+                              /tmp/tmp.FLttnGSt9A/rxvminst.o (putchar)
 /home/claude/nlbuild/libc.a(libc_a-freer.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (_free_r)
 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
                               /home/claude/nlbuild/libc.a(libc_a-rewind.o) (_fseek_r)
 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (fclose)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (fclose)
 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
-                              /tmp/tmp.w9PbPNAhDQ/cmsrt.o (strrchr)
+                              /tmp/tmp.FLttnGSt9A/cmsrt.o (strrchr)
 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseek.o) (_fseeko_r)
 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdadism.o (snprintf)
+                              /tmp/tmp.FLttnGSt9A/rxdadism.o (snprintf)
 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (malloc)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (malloc)
 /home/claude/nlbuild/libc.a(libc_a-putc.o)
                               /home/claude/nlbuild/libc.a(libc_a-putchar.o) (_putc_r)
 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (__sseek)
 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (fprintf)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (fprintf)
 /home/claude/nlbuild/libc.a(libc_a-reent.o)
-                              /tmp/tmp.w9PbPNAhDQ/cmsrt.o (errno)
+                              /tmp/tmp.FLttnGSt9A/cmsrt.o (errno)
 /home/claude/nlbuild/libc.a(libc_a-refill.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (__srefill_r)
 /home/claude/nlbuild/libc.a(libc_a-fputs.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdadism.o (fputs)
+                              /tmp/tmp.FLttnGSt9A/rxdadism.o (fputs)
 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
                               /home/claude/nlbuild/libc.a(libc_a-putc.o) (__swbuf_r)
 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
@@ -57,23 +57,23 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (_fstat_r)
 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdadism.o (fwrite)
+                              /tmp/tmp.FLttnGSt9A/rxdadism.o (fwrite)
 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (__malloc_lock)
 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
                               /home/claude/nlbuild/libc.a(libc_a-refill.o) (__sglue)
 /home/claude/nlbuild/libc.a(libc_a-puts.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (puts)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (puts)
 /home/claude/nlbuild/libc.a(libc_a-exit.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (exit)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (exit)
 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdamain.o (_ctype_)
+                              /tmp/tmp.FLttnGSt9A/rxdamain.o (_ctype_)
 /home/claude/nlbuild/libc.a(libc_a-printf.o)
-                              /tmp/tmp.w9PbPNAhDQ/rxdadism.o (printf)
+                              /tmp/tmp.FLttnGSt9A/rxdadism.o (printf)
 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (_sbrk_r)
 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
-                              /tmp/tmp.w9PbPNAhDQ/platform.o (fopen)
+                              /tmp/tmp.FLttnGSt9A/platform.o (fopen)
 /home/claude/nlbuild/libc.a(libc_a-closer.o)
                               /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_close_r)
 /home/claude/nlbuild/libc.a(libc_a-openr.o)
@@ -173,9 +173,9 @@ Archive member included to satisfy reference by file (symbol)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o) (__clzsi2)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
-                              /tmp/tmp.w9PbPNAhDQ/cmsrt.o (__udivdi3)
+                              /tmp/tmp.FLttnGSt9A/cmsrt.o (__udivdi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
-                              /tmp/tmp.w9PbPNAhDQ/cmsrt.o (__umoddi3)
+                              /tmp/tmp.FLttnGSt9A/cmsrt.o (__umoddi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o) (__udiv_w_sdiv)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
@@ -183,95 +183,95 @@ Archive member included to satisfy reference by file (symbol)
 
 Discarded input sections
 
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/entry31.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/entry31.o
- .text          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
- .bss           0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
- .comment       0x00000000       0x2e /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/entry31.o
+ .text          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdamain.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdamain.o
+ .bss           0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdamain.o
+ .comment       0x00000000       0x2e /tmp/tmp.FLttnGSt9A/rxdamain.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
- .text          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
- .bss           0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
- .comment       0x00000000       0x2e /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdamain.o
+ .text          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdadism.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdadism.o
+ .bss           0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdadism.o
+ .comment       0x00000000       0x2e /tmp/tmp.FLttnGSt9A/rxdadism.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
- .text          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/platform.o
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/platform.o
- .bss           0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/platform.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxdadism.o
+ .text          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/platform.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/platform.o
+ .bss           0x00000000        0x0 /tmp/tmp.FLttnGSt9A/platform.o
  .rodata.file2buf.str1.2
-                0x00000000       0x1a /tmp/tmp.w9PbPNAhDQ/platform.o
+                0x00000000       0x1a /tmp/tmp.FLttnGSt9A/platform.o
  .text.file2buf
-                0x00000000       0xa0 /tmp/tmp.w9PbPNAhDQ/platform.o
- .comment       0x00000000       0x2e /tmp/tmp.w9PbPNAhDQ/platform.o
+                0x00000000       0xa0 /tmp/tmp.FLttnGSt9A/platform.o
+ .comment       0x00000000       0x2e /tmp/tmp.FLttnGSt9A/platform.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/platform.o
- .text          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
- .bss           0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/platform.o
+ .text          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxvminst.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxvminst.o
+ .bss           0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .text.src_inst
-                0x00000000       0x90 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x90 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .text.fst_inst
-                0x00000000       0xc8 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0xc8 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .text.nxt_inst
-                0x00000000       0xd0 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0xd0 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .text.opd_name
-                0x00000000       0x18 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x18 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.exp_opds.str1.2
-                0x00000000       0x3c /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x3c /tmp/tmp.FLttnGSt9A/rxvminst.o
  .text.exp_opds
-                0x00000000      0x170 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000      0x170 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.exp_opds
-                0x00000000       0x10 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x10 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.prt_ops.str1.2
-                0x00000000       0x3a /tmp/tmp.w9PbPNAhDQ/rxvminst.o
- .text.prt_ops  0x00000000       0x88 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x3a /tmp/tmp.FLttnGSt9A/rxvminst.o
+ .text.prt_ops  0x00000000       0x88 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.str1.2
-                0x00000000       0x2c /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x2c /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.CSWTCH.36
-                0x00000000       0x20 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
- .comment       0x00000000       0x2e /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00000000       0x20 /tmp/tmp.FLttnGSt9A/rxvminst.o
+ .comment       0x00000000       0x2e /tmp/tmp.FLttnGSt9A/rxvminst.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
- .text          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
- .bss           0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/rxvminst.o
+ .text          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/avl_tree.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/avl_tree.o
+ .bss           0x00000000        0x0 /tmp/tmp.FLttnGSt9A/avl_tree.o
  .text.avl_lino
-                0x00000000       0x20 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00000000       0x20 /tmp/tmp.FLttnGSt9A/avl_tree.o
  .text.avl_pino
-                0x00000000       0x80 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00000000       0x80 /tmp/tmp.FLttnGSt9A/avl_tree.o
  .text.avl_remv
-                0x00000000      0x468 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00000000      0x468 /tmp/tmp.FLttnGSt9A/avl_tree.o
  .rodata.avl_remv
-                0x00000000        0x8 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
- .comment       0x00000000       0x2e /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00000000        0x8 /tmp/tmp.FLttnGSt9A/avl_tree.o
+ .comment       0x00000000       0x2e /tmp/tmp.FLttnGSt9A/avl_tree.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
- .text          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .data          0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss           0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._stat    0x00000000       0x48 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._unlink  0x00000000      0x238 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text.system   0x00000000        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._execve  0x00000000       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._fork    0x00000000       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._wait    0x00000000       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text.write    0x00000000        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._link    0x00000000       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._times   0x00000000       0x10 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/avl_tree.o
+ .text          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .data          0x00000000        0x0 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss           0x00000000        0x0 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._stat    0x00000000       0x48 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._unlink  0x00000000      0x238 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text.system   0x00000000        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._execve  0x00000000       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._fork    0x00000000       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._wait    0x00000000       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text.write    0x00000000        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._link    0x00000000       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._times   0x00000000       0x10 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .text.gettimeofday
-                0x00000000       0x68 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00000000       0x68 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.gettimeofday
-                0x00000000       0x10 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00000000       0x10 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .text._gettimeofday
-                0x00000000       0x68 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00000000       0x68 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._gettimeofday
-                0x00000000       0x10 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .comment       0x00000000       0x2e /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00000000       0x10 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .comment       0x00000000       0x2e /tmp/tmp.FLttnGSt9A/cmsrt.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
  .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
  .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
@@ -901,90 +901,90 @@ Linker script and memory map
 
 .text           0x00000000    0x1c150
  *(.text.entry)
- .text.entry    0x00000000       0x70 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .text.entry    0x00000000       0x70 /tmp/tmp.FLttnGSt9A/entry31.o
                 0x00000000                cms_entry
  *(.text .text.*)
- .text          0x00000070       0x58 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .text          0x00000070       0x58 /tmp/tmp.FLttnGSt9A/entry31.o
                 0x00000070                cms_exit
                 0x00000088                cms202
  .text.free_module
-                0x000000c8       0x50 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+                0x000000c8       0x50 /tmp/tmp.FLttnGSt9A/rxdamain.o
  .text.error_and_exit.constprop.0
-                0x00000118       0x30 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+                0x00000118       0x30 /tmp/tmp.FLttnGSt9A/rxdamain.o
  .text.startup.main
-                0x00000148      0x438 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+                0x00000148      0x438 /tmp/tmp.FLttnGSt9A/rxdamain.o
                 0x00000148                main
  .text.get_reg_string.isra.0
-                0x00000580       0x60 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x00000580       0x60 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .text.get_const_string.isra.0
-                0x000005e0      0x3d0 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x000005e0      0x3d0 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .text.output_meta
-                0x000009b0      0x338 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x000009b0      0x338 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .text.disassemble_operand
-                0x00000ce8      0x128 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x00000ce8      0x128 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .text.disassemble
-                0x00000e10      0xfa8 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x00000e10      0xfa8 /tmp/tmp.FLttnGSt9A/rxdadism.o
                 0x00000e10                disassemble
  .text.openfile
-                0x00001db8       0xa0 /tmp/tmp.w9PbPNAhDQ/platform.o
+                0x00001db8       0xa0 /tmp/tmp.FLttnGSt9A/platform.o
                 0x00001db8                openfile
- .text.instr_f  0x00001e58      0x170 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+ .text.instr_f  0x00001e58      0x170 /tmp/tmp.FLttnGSt9A/rxvminst.o
                 0x00001e58                instr_f
  .text.init_ops
-                0x00001fc8     0x1ce0 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00001fc8     0x1ce0 /tmp/tmp.FLttnGSt9A/rxvminst.o
                 0x00001fc8                init_ops
  .text.get_inst
-                0x00003ca8       0x30 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00003ca8       0x30 /tmp/tmp.FLttnGSt9A/rxvminst.o
                 0x00003ca8                get_inst
  .text.free_ops
-                0x00003cd8       0x80 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x00003cd8       0x80 /tmp/tmp.FLttnGSt9A/rxvminst.o
                 0x00003cd8                free_ops
  .text.avl_fino
-                0x00003d58       0x20 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00003d58       0x20 /tmp/tmp.FLttnGSt9A/avl_tree.o
                 0x00003d58                avl_fino
  .text.avl_nino
-                0x00003d78       0x80 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00003d78       0x80 /tmp/tmp.FLttnGSt9A/avl_tree.o
                 0x00003d78                avl_nino
  .text.avl_finp
-                0x00003df8       0x20 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00003df8       0x20 /tmp/tmp.FLttnGSt9A/avl_tree.o
                 0x00003df8                avl_finp
  .text.avl_ninp
-                0x00003e18       0x28 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00003e18       0x28 /tmp/tmp.FLttnGSt9A/avl_tree.o
                 0x00003e18                avl_ninp
  .text.avl_bain
-                0x00003e40      0x328 /tmp/tmp.w9PbPNAhDQ/avl_tree.o
+                0x00003e40      0x328 /tmp/tmp.FLttnGSt9A/avl_tree.o
                 0x00003e40                avl_bain
  .text.set_fscb
-                0x00004168      0x1f8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00004168      0x1f8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .text.read_whole
-                0x00004360      0x870 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text.tflush   0x00004bd0      0x240 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00004360      0x870 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text.tflush   0x00004bd0      0x240 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .text.parse_name
-                0x00004e10      0x5c8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .text._sbrk    0x000053d8      0x860 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00004e10      0x5c8 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .text._sbrk    0x000053d8      0x860 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x000053d8                _sbrk
- .text._open    0x00005c38      0x120 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._open    0x00005c38      0x120 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00005c38                _open
- .text._close   0x00005d58      0xac8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._close   0x00005d58      0xac8 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00005d58                _close
- .text._write   0x00006820      0x588 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._write   0x00006820      0x588 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00006820                _write
- .text._read    0x00006da8      0x710 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._read    0x00006da8      0x710 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00006da8                _read
- .text._lseek   0x000074b8      0x210 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._lseek   0x000074b8      0x210 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x000074b8                _lseek
- .text._fstat   0x000076c8       0x78 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._fstat   0x000076c8       0x78 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x000076c8                _fstat
- .text._isatty  0x00007740       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._isatty  0x00007740       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00007740                _isatty
- .text._kill    0x00007758       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._kill    0x00007758       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00007758                _kill
- .text._getpid  0x00007770        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._getpid  0x00007770        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00007770                _getpid
- .text._exit    0x00007778      0x1f8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .text._exit    0x00007778      0x1f8 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00007778                _exit
  .text.cms_main
-                0x00007970       0xd8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x00007970       0xd8 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x00007970                cms_main
  .text._fread_r
                 0x00007a48      0x1c0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
@@ -1259,73 +1259,73 @@ Linker script and memory map
                 0x0001bfe0                __udiv_w_sdiv
 
 .iplt           0x0001c150        0x0
- .iplt          0x0001c150        0x0 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .iplt          0x0001c150        0x0 /tmp/tmp.FLttnGSt9A/entry31.o
 
 .rodata         0x0001c150     0x3998
  *(.rodata .rodata.*)
  .rodata.error_and_exit.constprop.0.str1.2
-                0x0001c150     0x28aa /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+                0x0001c150     0x28aa /tmp/tmp.FLttnGSt9A/rxdamain.o
                                  0x1c (size before relaxing)
  .rodata.main.str1.2
-                0x0001e9fa      0x6c2 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+                0x0001e9fa      0x6c2 /tmp/tmp.FLttnGSt9A/rxdamain.o
  *fill*         0x0001e9fa        0x6 
- .rodata.main   0x0001ea00       0xb0 /tmp/tmp.w9PbPNAhDQ/rxdamain.o
+ .rodata.main   0x0001ea00       0xb0 /tmp/tmp.FLttnGSt9A/rxdamain.o
  .rodata.get_reg_string.isra.0.str1.2
-                0x0001eab0       0x28 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001eab0       0x28 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.get_const_string.isra.0.str1.2
-                0x0001eab0        0x6 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001eab0        0x6 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.get_const_string.isra.0
-                0x0001eab0      0x180 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001eab0      0x180 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.output_meta.str1.2
-                0x0001ec30       0x82 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001ec30       0x82 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.output_meta
-                0x0001ec30       0x18 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001ec30       0x18 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.disassemble_operand.str1.2
-                0x0001ec48       0x26 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001ec48       0x26 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.disassemble_operand
-                0x0001ec48       0x1c /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001ec48       0x1c /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.disassemble.str1.2
-                0x0001ec64      0x40e /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001ec64      0x40e /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.disassemble
-                0x0001ec64       0x68 /tmp/tmp.w9PbPNAhDQ/rxdadism.o
+                0x0001ec64       0x68 /tmp/tmp.FLttnGSt9A/rxdadism.o
  .rodata.openfile.str1.2
-                0x0001eccc        0xc /tmp/tmp.w9PbPNAhDQ/platform.o
+                0x0001eccc        0xc /tmp/tmp.FLttnGSt9A/platform.o
  .rodata.instr_f.str1.2
-                0x0001eccc       0x1a /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x0001eccc       0x1a /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.init_ops.str1.2
-                0x0001eccc     0x1b7c /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x0001eccc     0x1b7c /tmp/tmp.FLttnGSt9A/rxvminst.o
  .rodata.read_whole.str1.2
-                0x0001eccc        0xc /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001eccc        0xc /tmp/tmp.FLttnGSt9A/cmsrt.o
  *fill*         0x0001eccc        0x4 
  .rodata.read_whole
-                0x0001ecd0        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ecd0        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.tflush.str1.2
-                0x0001ecd8        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ecd8        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.parse_name.str1.2
-                0x0001ecd8        0xe /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ecd8        0xe /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._sbrk.str1.2
-                0x0001ecd8       0x12 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .rodata._sbrk  0x0001ecd8        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ecd8       0x12 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .rodata._sbrk  0x0001ecd8        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._close.str1.2
-                0x0001ece0        0xc /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ece0        0xc /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._close
-                0x0001ece0        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ece0        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._read.str1.2
-                0x0001ece8        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .rodata._read  0x0001ece8        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ece8        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .rodata._read  0x0001ece8        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._fstat
-                0x0001ecf0        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ecf0        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._exit.str1.2
-                0x0001ecf8        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .rodata._exit  0x0001ecf8        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ecf8        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .rodata._exit  0x0001ecf8        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.cms_main
-                0x0001ed00        0x8 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ed00        0x8 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.tries.0
-                0x0001ed08       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ed08       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.rt_e2a
-                0x0001ed20      0x100 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ed20      0x100 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata.rt_a2e
-                0x0001ee20      0x100 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0001ee20      0x100 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .rodata._fseeko_r
                 0x0001ef20       0x10 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
  .rodata.cleanup_stdio
@@ -1432,8 +1432,8 @@ Linker script and memory map
                 0x0001f9e8                __clz_tab
 
 .rela.dyn       0x0001fae8        0x0
- .rela.iplt     0x0001fae8        0x0 /tmp/tmp.w9PbPNAhDQ/entry31.o
- .rela.got      0x0001fae8        0x0 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .rela.iplt     0x0001fae8        0x0 /tmp/tmp.FLttnGSt9A/entry31.o
+ .rela.got      0x0001fae8        0x0 /tmp/tmp.FLttnGSt9A/entry31.o
 
 .data           0x0001fae8      0x2a0
  *(.data .data.*)
@@ -1451,47 +1451,47 @@ Linker script and memory map
                 0x0001fc1c                __global_locale
 
 .igot.plt       0x0001fd88        0x0
- .igot.plt      0x0001fd88        0x0 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .igot.plt      0x0001fd88        0x0 /tmp/tmp.FLttnGSt9A/entry31.o
 
 .got            0x0001fd88        0x4
- .got           0x0001fd88        0x4 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .got           0x0001fd88        0x4 /tmp/tmp.FLttnGSt9A/entry31.o
 
 .got.plt        0x0001fd8c        0xc
- .got.plt       0x0001fd8c        0xc /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .got.plt       0x0001fd8c        0xc /tmp/tmp.FLttnGSt9A/entry31.o
                 0x0001fd8c                _GLOBAL_OFFSET_TABLE_
 
 .bss            0x0001fd98    0x28850
  *(.bss .bss.*)
- .bss           0x0001fd98    0x10010 /tmp/tmp.w9PbPNAhDQ/entry31.o
+ .bss           0x0001fd98    0x10010 /tmp/tmp.FLttnGSt9A/entry31.o
                 0x0001fda0                cms_exit_sp
  .bss.no_instructions
-                0x0002fda8        0x4 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x0002fda8        0x4 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .bss.instructions
-                0x0002fdac        0x4 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
+                0x0002fdac        0x4 /tmp/tmp.FLttnGSt9A/rxvminst.o
  .bss.instruction_root
-                0x0002fdb0        0x4 /tmp/tmp.w9PbPNAhDQ/rxvminst.o
- .bss.argv_     0x0002fdb4       0x84 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.argbuf    0x0002fe38      0x120 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.files     0x0002ff58      0x340 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.rec       0x00030298     0x8000 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.fscb      0x00038298       0x2c /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x0002fdb0        0x4 /tmp/tmp.FLttnGSt9A/rxvminst.o
+ .bss.argv_     0x0002fdb4       0x84 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.argbuf    0x0002fe38      0x120 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.files     0x0002ff58      0x340 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.rec       0x00030298     0x8000 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.fscb      0x00038298       0x2c /tmp/tmp.FLttnGSt9A/cmsrt.o
  .bss.cms_heap_mb
-                0x000382c4        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x000382c4        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
                 0x000382c4                cms_heap_mb
- .bss.low_heap  0x000382c8    0x10000 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.heap_brk  0x000482c8        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.heap_end  0x000482cc        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+ .bss.low_heap  0x000382c8    0x10000 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.heap_brk  0x000482c8        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.heap_end  0x000482cc        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .bss.heap_base
-                0x000482d0        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.hsp       0x000482d4       0x18 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.tin_pos   0x000482ec        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.tin_len   0x000482f0        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.tin       0x000482f4       0x88 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.rdbuf     0x0004837c       0x84 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.rdpl      0x00048400       0x10 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.typl      0x00048410       0x10 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.tlen      0x00048420        0x4 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
- .bss.tline     0x00048424       0x84 /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+                0x000482d0        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.hsp       0x000482d4       0x18 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.tin_pos   0x000482ec        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.tin_len   0x000482f0        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.tin       0x000482f4       0x88 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.rdbuf     0x0004837c       0x84 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.rdpl      0x00048400       0x10 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.typl      0x00048410       0x10 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.tlen      0x00048420        0x4 /tmp/tmp.FLttnGSt9A/cmsrt.o
+ .bss.tline     0x00048424       0x84 /tmp/tmp.FLttnGSt9A/cmsrt.o
  .bss.__malloc_sbrk_start
                 0x000484a8        0x4 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                 0x000484a8                __malloc_sbrk_start
@@ -1513,13 +1513,13 @@ Linker script and memory map
  *(.note.GNU-stack)
  *(.comment)
  *(.eh_frame)
-LOAD /tmp/tmp.w9PbPNAhDQ/entry31.o
-LOAD /tmp/tmp.w9PbPNAhDQ/rxdamain.o
-LOAD /tmp/tmp.w9PbPNAhDQ/rxdadism.o
-LOAD /tmp/tmp.w9PbPNAhDQ/platform.o
-LOAD /tmp/tmp.w9PbPNAhDQ/rxvminst.o
-LOAD /tmp/tmp.w9PbPNAhDQ/avl_tree.o
-LOAD /tmp/tmp.w9PbPNAhDQ/cmsrt.o
+LOAD /tmp/tmp.FLttnGSt9A/entry31.o
+LOAD /tmp/tmp.FLttnGSt9A/rxdamain.o
+LOAD /tmp/tmp.FLttnGSt9A/rxdadism.o
+LOAD /tmp/tmp.FLttnGSt9A/platform.o
+LOAD /tmp/tmp.FLttnGSt9A/rxvminst.o
+LOAD /tmp/tmp.FLttnGSt9A/avl_tree.o
+LOAD /tmp/tmp.FLttnGSt9A/cmsrt.o
 START GROUP
 LOAD /home/claude/nlbuild/libc.a
 LOAD /home/claude/nlbuild/libm.a

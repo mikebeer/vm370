@@ -53,6 +53,16 @@ USE
     Known: RXC -L on a REXX program ends in DLMALLOC PANIC, as on
     stock CE.  vm370plus/ has CRXMAKE.EXEC and the cms.h it needs.
 
+  cREXX cross-compiled on the PC for AMODE 31 (GCC 13 -m31, newlib, the
+  CMS runtime in vm370plus/m5f/), on CMSUSER's A disk -- these need
+  HERCULES 4.x (they use z900-level instructions 3.13 lacks):
+        ipl 290
+        rxc31 basic                BASIC REXX -> BASIC RXAS
+        rxas31 basic               -> BASIC RXBIN
+        rxbvm31 basic              runs it; heap above 16 MB
+        libctest a b               C library check (printf, malloc,
+                                   files, floating point)
+
   Compiling C with the compiler running above 16 MB:
     GCC EXEC chooses GCC370 here (no S/380); GCC380 is the AMODE 31
     build.  vm370plus/GCC31.EXEC in this kit forces GCC380 (and

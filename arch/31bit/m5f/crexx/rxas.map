@@ -1,15 +1,15 @@
 Archive member included to satisfy reference by file (symbol)
 
 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
-                              /tmp/tmp.1Erh3DXJsk/rxaseror.o (strncpy)
+                              /tmp/tmp.9fPPzaq6iY/rxaseror.o (strncpy)
 /home/claude/nlbuild/libc.a(libc_a-fread.o)
-                              /tmp/tmp.1Erh3DXJsk/platform.o (fread)
+                              /tmp/tmp.9fPPzaq6iY/platform.o (fread)
 /home/claude/nlbuild/libc.a(libc_a-assert.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasgrmr.o (__assert_func)
+                              /tmp/tmp.9fPPzaq6iY/rxasgrmr.o (__assert_func)
 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
-                              /tmp/tmp.1Erh3DXJsk/platform.o (ftell)
+                              /tmp/tmp.9fPPzaq6iY/platform.o (ftell)
 /home/claude/nlbuild/libc.a(libc_a-atof.o)
-                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (atof)
+                              /tmp/tmp.9fPPzaq6iY/rxastoke.o (atof)
 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
                               /home/claude/nlbuild/libc.a(libc_a-atof.o) (strtod)
 /home/claude/nlbuild/libc.a(libc_a-locale.o)
@@ -17,7 +17,7 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__gethex)
 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
-                              /tmp/tmp.1Erh3DXJsk/platform.o (rewind)
+                              /tmp/tmp.9fPPzaq6iY/platform.o (rewind)
 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (memcpy)
 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
@@ -27,55 +27,55 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (strncmp)
 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
-                              /tmp/tmp.1Erh3DXJsk/rxas_opt.o (memmove)
+                              /tmp/tmp.9fPPzaq6iY/rxas_opt.o (memmove)
 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (calloc)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (calloc)
 /home/claude/nlbuild/libc.a(libc_a-errno.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__errno)
 /home/claude/nlbuild/libc.a(libc_a-impure.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (_impure_ptr)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (_impure_ptr)
 /home/claude/nlbuild/libc.a(libc_a-abort.o)
                               /home/claude/nlbuild/libc.a(libc_a-assert.o) (abort)
 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-calloc.o) (_calloc_r)
 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasassm.o (realloc)
+                              /tmp/tmp.9fPPzaq6iY/rxasassm.o (realloc)
 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
                               /home/claude/nlbuild/libc.a(libc_a-assert.o) (fiprintf)
 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-callocr.o) (_malloc_r)
 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
-                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (putchar)
+                              /tmp/tmp.9fPPzaq6iY/rxastoke.o (putchar)
 /home/claude/nlbuild/libc.a(libc_a-freer.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (_free_r)
 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
                               /home/claude/nlbuild/libc.a(libc_a-rewind.o) (_fseek_r)
 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
-                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (atoi)
+                              /tmp/tmp.9fPPzaq6iY/rxastoke.o (atoi)
 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
                               /home/claude/nlbuild/libc.a(libc_a-atoi.o) (_strtol_r)
 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (fclose)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (fclose)
 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
                               /home/claude/nlbuild/libc.a(libc_a-locale.o) (__ascii_wctomb)
 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
-                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (strrchr)
+                              /tmp/tmp.9fPPzaq6iY/cmsrt.o (strrchr)
 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseek.o) (_fseeko_r)
 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
-                              /tmp/tmp.1Erh3DXJsk/rxaseror.o (snprintf)
+                              /tmp/tmp.9fPPzaq6iY/rxaseror.o (snprintf)
 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (malloc)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (malloc)
 /home/claude/nlbuild/libc.a(libc_a-putc.o)
                               /home/claude/nlbuild/libc.a(libc_a-putchar.o) (_putc_r)
 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (__sseek)
 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
-                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (atoll)
+                              /tmp/tmp.9fPPzaq6iY/rxastoke.o (atoll)
 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (fprintf)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (fprintf)
 /home/claude/nlbuild/libc.a(libc_a-reent.o)
-                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (errno)
+                              /tmp/tmp.9fPPzaq6iY/cmsrt.o (errno)
 /home/claude/nlbuild/libc.a(libc_a-refill.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (__srefill_r)
 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
@@ -87,25 +87,25 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (_fstat_r)
 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (fwrite)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (fwrite)
 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (__malloc_lock)
 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
                               /home/claude/nlbuild/libc.a(libc_a-refill.o) (__sglue)
 /home/claude/nlbuild/libc.a(libc_a-puts.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (puts)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (puts)
 /home/claude/nlbuild/libc.a(libc_a-exit.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (exit)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (exit)
 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (_ctype_)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (_ctype_)
 /home/claude/nlbuild/libc.a(libc_a-printf.o)
-                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (printf)
+                              /tmp/tmp.9fPPzaq6iY/rxasmain.o (printf)
 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (_sbrk_r)
 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__match)
 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
-                              /tmp/tmp.1Erh3DXJsk/platform.o (fopen)
+                              /tmp/tmp.9fPPzaq6iY/platform.o (fopen)
 /home/claude/nlbuild/libc.a(libc_a-closer.o)
                               /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_close_r)
 /home/claude/nlbuild/libc.a(libc_a-signal.o)
@@ -175,7 +175,7 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__divdf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
-                              /tmp/tmp.1Erh3DXJsk/rxas_opt.o (__eqdf2)
+                              /tmp/tmp.9fPPzaq6iY/rxas_opt.o (__eqdf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__fixdfdi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
@@ -207,9 +207,9 @@ Archive member included to satisfy reference by file (symbol)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o) (__clzsi2)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
-                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (__udivdi3)
+                              /tmp/tmp.9fPPzaq6iY/cmsrt.o (__udivdi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
-                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (__umoddi3)
+                              /tmp/tmp.9fPPzaq6iY/cmsrt.o (__umoddi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o) (__udiv_w_sdiv)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
@@ -217,116 +217,116 @@ Archive member included to satisfy reference by file (symbol)
 
 Discarded input sections
 
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/entry31.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/entry31.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasmain.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasmain.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasmain.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxasmain.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasmain.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxastoke.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxastoke.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxastoke.o
  .rodata.prnt_tok.str1.2
-                0x00000000       0x24 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00000000       0x24 /tmp/tmp.9fPPzaq6iY/rxastoke.o
  .text.prnt_tok
-                0x00000000       0xc0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00000000       0xc0 /tmp/tmp.9fPPzaq6iY/rxastoke.o
  .rodata.prnt_tok
-                0x00000000       0x44 /tmp/tmp.1Erh3DXJsk/rxastoke.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00000000       0x44 /tmp/tmp.9fPPzaq6iY/rxastoke.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxastoke.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxastoke.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxaseror.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxaseror.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxaseror.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxaseror.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasscan.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxaseror.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasscan.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasscan.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasscan.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxasscan.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasscan.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .text.ParseInit
-                0x00000000       0x30 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00000000       0x30 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .text.ParseFinalize
-                0x00000000      0x138 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00000000      0x138 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .text.ParseFallback
-                0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00000000        0x8 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .text.tk_tp_nm
-                0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00000000       0x10 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/platform.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/platform.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/platform.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/platform.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/platform.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/platform.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxvminst.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxvminst.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .text.get_inst
-                0x00000000       0x30 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x00000000       0x30 /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .text.opd_name
-                0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/rxvminst.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x00000000       0x18 /tmp/tmp.9fPPzaq6iY/rxvminst.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/rxvminst.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/avl_tree.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/avl_tree.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/avl_tree.o
  .text.avl_lino
-                0x00000000       0x20 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x00000000       0x20 /tmp/tmp.9fPPzaq6iY/avl_tree.o
  .text.avl_remv
-                0x00000000      0x468 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x00000000      0x468 /tmp/tmp.9fPPzaq6iY/avl_tree.o
  .rodata.avl_remv
-                0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/avl_tree.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x00000000        0x8 /tmp/tmp.9fPPzaq6iY/avl_tree.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/avl_tree.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
- .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._stat    0x00000000       0x48 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._unlink  0x00000000      0x238 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text.system   0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._execve  0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._fork    0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._wait    0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text.write    0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._link    0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._times   0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/avl_tree.o
+ .text          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .data          0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss           0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._stat    0x00000000       0x48 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._unlink  0x00000000      0x238 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text.system   0x00000000        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._execve  0x00000000       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._fork    0x00000000       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._wait    0x00000000       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text.write    0x00000000        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._link    0x00000000       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._times   0x00000000       0x10 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .text.gettimeofday
-                0x00000000       0x68 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00000000       0x68 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.gettimeofday
-                0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00000000       0x10 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .text._gettimeofday
-                0x00000000       0x68 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00000000       0x68 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._gettimeofday
-                0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00000000       0x10 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .comment       0x00000000       0x2e /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
  .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
  .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
@@ -1061,258 +1061,258 @@ Linker script and memory map
 
 .text           0x00000000    0x2c170
  *(.text.entry)
- .text.entry    0x00000000       0x70 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .text.entry    0x00000000       0x70 /tmp/tmp.9fPPzaq6iY/entry31.o
                 0x00000000                cms_entry
  *(.text .text.*)
- .text          0x00000070       0x58 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .text          0x00000070       0x58 /tmp/tmp.9fPPzaq6iY/entry31.o
                 0x00000070                cms_exit
                 0x00000088                cms202
  .text.error_and_exit.constprop.0
-                0x000000c8       0x30 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                0x000000c8       0x30 /tmp/tmp.9fPPzaq6iY/rxasmain.o
  .text.startup.main
-                0x000000f8      0x6f8 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                0x000000f8      0x6f8 /tmp/tmp.9fPPzaq6iY/rxasmain.o
                 0x000000f8                main
- .text.token_f  0x000007f0      0xb50 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .text.token_f  0x000007f0      0xb50 /tmp/tmp.9fPPzaq6iY/rxastoke.o
                 0x000007f0                token_f
  .text.token_id
-                0x00001340      0x100 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00001340      0x100 /tmp/tmp.9fPPzaq6iY/rxastoke.o
                 0x00001340                token_id
  .text.free_tok
-                0x00001440       0x30 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00001440       0x30 /tmp/tmp.9fPPzaq6iY/rxastoke.o
                 0x00001440                free_tok
- .text.error_f  0x00001470      0x108 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .text.error_f  0x00001470      0x108 /tmp/tmp.9fPPzaq6iY/rxaseror.o
                 0x00001470                error_f
  .text.prnt_err
-                0x00001578       0x98 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001578       0x98 /tmp/tmp.9fPPzaq6iY/rxaseror.o
                 0x00001578                prnt_err
  .text.free_err
-                0x00001610       0x30 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001610       0x30 /tmp/tmp.9fPPzaq6iY/rxaseror.o
                 0x00001610                free_err
  .text.err_aftr
-                0x00001640       0xa0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001640       0xa0 /tmp/tmp.9fPPzaq6iY/rxaseror.o
                 0x00001640                err_aftr
- .text.err_at   0x000016e0       0xa0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .text.err_at   0x000016e0       0xa0 /tmp/tmp.9fPPzaq6iY/rxaseror.o
                 0x000016e0                err_at
- .text.scan     0x00001780     0x5cd8 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .text.scan     0x00001780     0x5cd8 /tmp/tmp.9fPPzaq6iY/rxasscan.o
                 0x00001780                scan
  .text.is_relevant
-                0x00007458       0xb0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00007458       0xb0 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.executeQueuedItem
-                0x00007508       0xf8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00007508       0xf8 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.can_map_operand
-                0x00007600      0x2d8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00007600      0x2d8 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.map_operand
-                0x000078d8      0x3a0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000078d8      0x3a0 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.map_instruction
-                0x00007c78       0xe8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00007c78       0xe8 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.mapped_token
-                0x00007d60      0x178 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00007d60      0x178 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.optimise_rule_in_queue
-                0x00007ed8      0x7b8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00007ed8      0x7b8 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.queue_instruction
-                0x00008690      0x100 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008690      0x100 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .text.rxasque0
-                0x00008790       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008790       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008790                rxasque0
  .text.rxasque1
-                0x000087d8       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000087d8       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x000087d8                rxasque1
  .text.rxasque2
-                0x00008820       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008820       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008820                rxasque2
  .text.rxasque3
-                0x00008868       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008868       0x50 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008868                rxasque3
  .text.rxasqlbl
-                0x000088b8       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000088b8       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x000088b8                rxasqlbl
  .text.rxasqmfl
-                0x00008900       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008900       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008900                rxasqmfl
  .text.rxasqmsr
-                0x00008948       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008948       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008948                rxasqmsr
  .text.rxasqmfu
-                0x00008990       0x68 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008990       0x68 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008990                rxasqmfu
  .text.rxasqmre
-                0x000089f8       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000089f8       0x50 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x000089f8                rxasqmre
  .text.rxasqmct
-                0x00008a48       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008a48       0x50 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008a48                rxasqmct
  .text.rxasqmcl
-                0x00008a98       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008a98       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008a98                rxasqmcl
  .text.flushopt
-                0x00008ae0       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008ae0       0x50 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00008ae0                flushopt
  .text.yy_pop_parser_stack
-                0x00008b30       0xa8 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008b30       0xa8 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .text.yyTraceShift
-                0x00008bd8       0x80 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008bd8       0x80 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .text.ParseTrace
-                0x00008c58       0x30 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008c58       0x30 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
                 0x00008c58                ParseTrace
  .text.ParseAlloc
-                0x00008c88       0x48 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008c88       0x48 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
                 0x00008c88                ParseAlloc
  .text.ParseFree
-                0x00008cd0      0x148 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008cd0      0x148 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
                 0x00008cd0                ParseFree
- .text.Parse    0x00008e18     0x1070 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.Parse    0x00008e18     0x1070 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
                 0x00008e18                Parse
  .text.get_reg_number
-                0x00009e88       0xd8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00009e88       0xd8 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.validate_instruction
-                0x00009f60      0x130 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00009f60      0x130 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.reserve_in_const_pool
-                0x0000a090      0x188 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000a090      0x188 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.gen_instr
-                0x0000a218      0x188 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000a218      0x188 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.add_node.isra.0
-                0x0000a3a0       0xa0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000a3a0       0xa0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.add_string_to_pool
-                0x0000a440      0x348 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000a440      0x348 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.add_func_to_pool
-                0x0000a788      0x250 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000a788      0x250 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.gen_operand
-                0x0000a9d8      0x340 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000a9d8      0x340 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.define_proc
-                0x0000ad18      0x248 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000ad18      0x248 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .text.freeasbl
-                0x0000af60      0x128 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000af60      0x128 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000af60                freeasbl
  .text.backptch
-                0x0000b088      0x230 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b088      0x230 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b088                backptch
  .text.rxassetg
-                0x0000b2b8       0x50 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b2b8       0x50 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b2b8                rxassetg
  .text.rxasexre
-                0x0000b308      0x278 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b308      0x278 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b308                rxasexre
  .text.rxasgen0
-                0x0000b580       0x38 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b580       0x38 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b580                rxasgen0
  .text.rxasgen1
-                0x0000b5b8       0x80 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b5b8       0x80 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b5b8                rxasgen1
  .text.rxasgen2
-                0x0000b638       0xb8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b638       0xb8 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b638                rxasgen2
  .text.rxasgen3
-                0x0000b6f0       0xf0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b6f0       0xf0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b6f0                rxasgen3
- .text.rxasgen  0x0000b7e0       0xf0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.rxasgen  0x0000b7e0       0xf0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b7e0                rxasgen
  .text.rxasproc
-                0x0000b8d0       0x88 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b8d0       0x88 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b8d0                rxasproc
  .text.rxaslabl
-                0x0000b958       0xd8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b958       0xd8 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000b958                rxaslabl
  .text.rxasexpc
-                0x0000ba30      0x2a8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000ba30      0x2a8 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000ba30                rxasexpc
  .text.rxasdecl
-                0x0000bcd8      0x270 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000bcd8      0x270 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000bcd8                rxasdecl
  .text.rxasmefl
-                0x0000bf48       0x88 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000bf48       0x88 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000bf48                rxasmefl
  .text.rxasmesr
-                0x0000bfd0       0xa0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000bfd0       0xa0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000bfd0                rxasmesr
  .text.rxasmefu
-                0x0000c070      0x130 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c070      0x130 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000c070                rxasmefu
  .text.rxasmere
-                0x0000c1a0       0xd0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c1a0       0xd0 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000c1a0                rxasmere
  .text.rxasmect
-                0x0000c270       0xd8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c270       0xd8 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000c270                rxasmect
  .text.rxasmecl
-                0x0000c348       0x88 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c348       0x88 /tmp/tmp.9fPPzaq6iY/rxasassm.o
                 0x0000c348                rxasmecl
  .text.file2buf
-                0x0000c3d0       0xa0 /tmp/tmp.1Erh3DXJsk/platform.o
+                0x0000c3d0       0xa0 /tmp/tmp.9fPPzaq6iY/platform.o
                 0x0000c3d0                file2buf
  .text.openfile
-                0x0000c470       0xa0 /tmp/tmp.1Erh3DXJsk/platform.o
+                0x0000c470       0xa0 /tmp/tmp.9fPPzaq6iY/platform.o
                 0x0000c470                openfile
- .text.instr_f  0x0000c510      0x170 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .text.instr_f  0x0000c510      0x170 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000c510                instr_f
  .text.init_ops
-                0x0000c680     0x1ce0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000c680     0x1ce0 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000c680                init_ops
  .text.src_inst
-                0x0000e360       0x90 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e360       0x90 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000e360                src_inst
  .text.fst_inst
-                0x0000e3f0       0xc8 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e3f0       0xc8 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000e3f0                fst_inst
  .text.nxt_inst
-                0x0000e4b8       0xd0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e4b8       0xd0 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000e4b8                nxt_inst
  .text.free_ops
-                0x0000e588       0x80 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e588       0x80 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000e588                free_ops
  .text.exp_opds
-                0x0000e608      0x170 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e608      0x170 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000e608                exp_opds
- .text.prt_ops  0x0000e778       0x88 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .text.prt_ops  0x0000e778       0x88 /tmp/tmp.9fPPzaq6iY/rxvminst.o
                 0x0000e778                prt_ops
  .text.avl_fino
-                0x0000e800       0x20 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e800       0x20 /tmp/tmp.9fPPzaq6iY/avl_tree.o
                 0x0000e800                avl_fino
  .text.avl_nino
-                0x0000e820       0x80 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e820       0x80 /tmp/tmp.9fPPzaq6iY/avl_tree.o
                 0x0000e820                avl_nino
  .text.avl_pino
-                0x0000e8a0       0x80 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e8a0       0x80 /tmp/tmp.9fPPzaq6iY/avl_tree.o
                 0x0000e8a0                avl_pino
  .text.avl_finp
-                0x0000e920       0x20 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e920       0x20 /tmp/tmp.9fPPzaq6iY/avl_tree.o
                 0x0000e920                avl_finp
  .text.avl_ninp
-                0x0000e940       0x28 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e940       0x28 /tmp/tmp.9fPPzaq6iY/avl_tree.o
                 0x0000e940                avl_ninp
  .text.avl_bain
-                0x0000e968      0x328 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e968      0x328 /tmp/tmp.9fPPzaq6iY/avl_tree.o
                 0x0000e968                avl_bain
  .text.set_fscb
-                0x0000ec90      0x1f8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0000ec90      0x1f8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .text.read_whole
-                0x0000ee88      0x870 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text.tflush   0x0000f6f8      0x240 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0000ee88      0x870 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text.tflush   0x0000f6f8      0x240 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .text.parse_name
-                0x0000f938      0x5c8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .text._sbrk    0x0000ff00      0x860 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0000f938      0x5c8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .text._sbrk    0x0000ff00      0x860 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x0000ff00                _sbrk
- .text._open    0x00010760      0x120 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._open    0x00010760      0x120 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00010760                _open
- .text._close   0x00010880      0xac8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._close   0x00010880      0xac8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00010880                _close
- .text._write   0x00011348      0x588 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._write   0x00011348      0x588 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00011348                _write
- .text._read    0x000118d0      0x710 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._read    0x000118d0      0x710 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x000118d0                _read
- .text._lseek   0x00011fe0      0x210 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._lseek   0x00011fe0      0x210 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00011fe0                _lseek
- .text._fstat   0x000121f0       0x78 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._fstat   0x000121f0       0x78 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x000121f0                _fstat
- .text._isatty  0x00012268       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._isatty  0x00012268       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00012268                _isatty
- .text._kill    0x00012280       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._kill    0x00012280       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00012280                _kill
- .text._getpid  0x00012298        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._getpid  0x00012298        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00012298                _getpid
- .text._exit    0x000122a0      0x1f8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._exit    0x000122a0      0x1f8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x000122a0                _exit
  .text.cms_main
-                0x00012498       0xd8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00012498       0xd8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x00012498                cms_main
  .text.strncpy  0x00012570      0x448 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
                 0x00012570                strncpy
@@ -1652,158 +1652,158 @@ Linker script and memory map
                 0x0002c000                __udiv_w_sdiv
 
 .iplt           0x0002c170        0x0
- .iplt          0x0002c170        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .iplt          0x0002c170        0x0 /tmp/tmp.9fPPzaq6iY/entry31.o
 
 .rodata         0x0002c170     0x9218
  *(.rodata .rodata.*)
  .rodata.error_and_exit.constprop.0.str1.2
-                0x0002c170     0x3ed0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                0x0002c170     0x3ed0 /tmp/tmp.9fPPzaq6iY/rxasmain.o
                                  0x1c (size before relaxing)
  .rodata.main.str1.2
-                0x00030040      0x800 /tmp/tmp.1Erh3DXJsk/rxasmain.o
- .rodata.main   0x00030040       0xb0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
- .rodata        0x000300f0        0xa /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                0x00030040      0x800 /tmp/tmp.9fPPzaq6iY/rxasmain.o
+ .rodata.main   0x00030040       0xb0 /tmp/tmp.9fPPzaq6iY/rxasmain.o
+ .rodata        0x000300f0        0xa /tmp/tmp.9fPPzaq6iY/rxasmain.o
  *fill*         0x000300fa        0x6 
  .rodata.token_f
-                0x00030100       0x50 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00030100       0x50 /tmp/tmp.9fPPzaq6iY/rxastoke.o
  .rodata.prnt_err.str1.2
-                0x00030150       0x2c /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00030150       0x2c /tmp/tmp.9fPPzaq6iY/rxaseror.o
  .rodata.err_aftr.str1.2
-                0x00030150       0x4a /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00030150       0x4a /tmp/tmp.9fPPzaq6iY/rxaseror.o
  .rodata.err_at.str1.2
-                0x00030150       0x44 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00030150       0x44 /tmp/tmp.9fPPzaq6iY/rxaseror.o
  .rodata.scan.str1.2
-                0x00030150       0x1e /tmp/tmp.1Erh3DXJsk/rxasscan.o
- .rodata.scan   0x00030150     0x2a88 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+                0x00030150       0x1e /tmp/tmp.9fPPzaq6iY/rxasscan.o
+ .rodata.scan   0x00030150     0x2a88 /tmp/tmp.9fPPzaq6iY/rxasscan.o
  .rodata.executeQueuedItem
-                0x00032bd8       0x20 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032bd8       0x20 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.can_map_operand
-                0x00032bf8       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032bf8       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.map_operand
-                0x00032c40       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032c40       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.mapped_token.str1.2
-                0x00032c88        0x4 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032c88        0x4 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.mapped_token
-                0x00032c88       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032c88       0x48 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.CSWTCH.72
-                0x00032cd0        0x6 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032cd0        0x6 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.str1.2
-                0x00032cd6       0x38 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00032cd6       0x38 /tmp/tmp.9fPPzaq6iY/rxas_opt.o
  .rodata.yy_pop_parser_stack.str1.2
-                0x00032cd6       0x6e /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032cd6       0x6e /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yyTraceShift.str1.2
-                0x00032cd6       0x3a /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032cd6       0x3a /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.Parse.str1.2
-                0x00032cd6      0x5a6 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032cd6      0x5a6 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  *fill*         0x00032cd6        0x2 
- .rodata.Parse  0x00032cd8      0x108 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.Parse  0x00032cd8      0x108 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.__func__.0
-                0x00032de0       0x16 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032de0       0x16 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.__func__.1
-                0x00032df6        0xa /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032df6        0xa /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.__func__.2
-                0x00032e00        0xa /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032e00        0xa /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.__func__.3
-                0x00032e0a       0x16 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032e0a       0x16 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.__func__.4
-                0x00032e20        0x6 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032e20        0x6 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.__func__.5
-                0x00032e26       0x14 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032e26       0x14 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  *fill*         0x00032e3a        0x2 
  .rodata.yyRuleInfoNRhs
-                0x00032e3c       0x5c /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032e3c       0x5c /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yyRuleInfoLhs
-                0x00032e98       0x5c /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032e98       0x5c /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.str1.2
-                0x00032ef4     0x10b4 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032ef4     0x10b4 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yyRuleName
-                0x00032ef4      0x170 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00032ef4      0x170 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yyTokenName
-                0x00033064       0xac /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00033064       0xac /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yy_default
-                0x00033110      0x1ac /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00033110      0x1ac /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yy_reduce_ofst
-                0x000332bc       0x58 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x000332bc       0x58 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yy_shift_ofst
-                0x00033314      0x1ac /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00033314      0x1ac /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yy_lookahead
-                0x000334c0      0x3cc /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x000334c0      0x3cc /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.yy_action
-                0x0003388c      0x764 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x0003388c      0x764 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .rodata.get_reg_number.str1.2
-                0x00033ff0       0x6c /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00033ff0       0x6c /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.validate_instruction.str1.2
-                0x00033ff0       0x44 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00033ff0       0x44 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.add_string_to_pool
-                0x00033ff0      0x15c /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00033ff0      0x15c /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.gen_operand.str1.2
-                0x0003414c       0x18 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0003414c       0x18 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.gen_operand
-                0x0003414c       0x44 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0003414c       0x44 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.define_proc.str1.2
-                0x00034190       0x20 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190       0x20 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.backptch.str1.2
-                0x00034190       0x24 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190       0x24 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.rxassetg.str1.2
-                0x00034190       0x28 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190       0x28 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.rxasexre.str1.2
-                0x00034190       0x34 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190       0x34 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.rxaslabl.str1.2
-                0x00034190       0x1c /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190       0x1c /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.rxasmefu.str1.2
-                0x00034190        0x2 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190        0x2 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.CSWTCH.60
-                0x00034190       0x44 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x00034190       0x44 /tmp/tmp.9fPPzaq6iY/rxasassm.o
  .rodata.file2buf.str1.2
-                0x000341d4       0x1a /tmp/tmp.1Erh3DXJsk/platform.o
+                0x000341d4       0x1a /tmp/tmp.9fPPzaq6iY/platform.o
  .rodata.openfile.str1.2
-                0x000341d4        0xc /tmp/tmp.1Erh3DXJsk/platform.o
+                0x000341d4        0xc /tmp/tmp.9fPPzaq6iY/platform.o
  .rodata.instr_f.str1.2
-                0x000341d4       0x1a /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341d4       0x1a /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.init_ops.str1.2
-                0x000341d4     0x1b7c /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341d4     0x1b7c /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.exp_opds.str1.2
-                0x000341d4       0x3c /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341d4       0x3c /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.exp_opds
-                0x000341d4       0x10 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341d4       0x10 /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.prt_ops.str1.2
-                0x000341e4       0x3a /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341e4       0x3a /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.str1.2
-                0x000341e4       0x2c /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341e4       0x2c /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.CSWTCH.36
-                0x000341e4       0x20 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x000341e4       0x20 /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .rodata.read_whole.str1.2
-                0x00034204        0xc /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034204        0xc /tmp/tmp.9fPPzaq6iY/cmsrt.o
  *fill*         0x00034204        0x4 
  .rodata.read_whole
-                0x00034208        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034208        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.tflush.str1.2
-                0x00034210        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034210        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.parse_name.str1.2
-                0x00034210        0xe /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034210        0xe /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._sbrk.str1.2
-                0x00034210       0x12 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .rodata._sbrk  0x00034210        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034210       0x12 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .rodata._sbrk  0x00034210        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._close.str1.2
-                0x00034218        0xc /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034218        0xc /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._close
-                0x00034218        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034218        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._read.str1.2
-                0x00034220        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .rodata._read  0x00034220        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034220        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .rodata._read  0x00034220        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._fstat
-                0x00034228        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034228        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata._exit.str1.2
-                0x00034230        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .rodata._exit  0x00034230        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034230        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .rodata._exit  0x00034230        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.cms_main
-                0x00034238        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034238        0x8 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.tries.0
-                0x00034240       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034240       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.rt_e2a
-                0x00034258      0x100 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034258      0x100 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.rt_a2e
-                0x00034358      0x100 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00034358      0x100 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .rodata.strncpy
                 0x00034458        0x8 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
  .rodata.__assert_func.str1.2
@@ -1941,12 +1941,12 @@ Linker script and memory map
                 0x00035288                __clz_tab
 
 .rela.dyn       0x00035388        0x0
- .rela.iplt     0x00035388        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
- .rela.got      0x00035388        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .rela.iplt     0x00035388        0x0 /tmp/tmp.9fPPzaq6iY/entry31.o
+ .rela.got      0x00035388        0x0 /tmp/tmp.9fPPzaq6iY/entry31.o
 
 .data           0x00035388     0x11dc
  *(.data .data.*)
- .data.rules    0x00035388      0xf3c /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .data.rules    0x00035388      0xf3c /tmp/tmp.9fPPzaq6iY/rxas_opt.o
                 0x00035388                rules
  .data.__global_locale
                 0x000362c4      0x16c /home/claude/nlbuild/libc.a(libc_a-locale.o)
@@ -1962,51 +1962,51 @@ Linker script and memory map
                 0x00036558                __sglue
 
 .igot.plt       0x00036564        0x0
- .igot.plt      0x00036564        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .igot.plt      0x00036564        0x0 /tmp/tmp.9fPPzaq6iY/entry31.o
 
 .got            0x00036564        0x4
- .got           0x00036564        0x4 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .got           0x00036564        0x4 /tmp/tmp.9fPPzaq6iY/entry31.o
 
 .got.plt        0x00036568        0xc
- .got.plt       0x00036568        0xc /tmp/tmp.1Erh3DXJsk/entry31.o
+ .got.plt       0x00036568        0xc /tmp/tmp.9fPPzaq6iY/entry31.o
                 0x00036568                _GLOBAL_OFFSET_TABLE_
 
 .bss            0x00036578    0x28858
  *(.bss .bss.*)
- .bss           0x00036578    0x10010 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .bss           0x00036578    0x10010 /tmp/tmp.9fPPzaq6iY/entry31.o
                 0x00036580                cms_exit_sp
  .bss.yyTracePrompt
-                0x00046588        0x4 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00046588        0x4 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .bss.yyTraceFILE
-                0x0004658c        0x4 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x0004658c        0x4 /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
  .bss.no_instructions
-                0x00046590        0x4 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x00046590        0x4 /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .bss.instructions
-                0x00046594        0x4 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x00046594        0x4 /tmp/tmp.9fPPzaq6iY/rxvminst.o
  .bss.instruction_root
-                0x00046598        0x4 /tmp/tmp.1Erh3DXJsk/rxvminst.o
- .bss.argv_     0x0004659c       0x84 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.argbuf    0x00046620      0x120 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.files     0x00046740      0x340 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.rec       0x00046a80     0x8000 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.fscb      0x0004ea80       0x2c /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00046598        0x4 /tmp/tmp.9fPPzaq6iY/rxvminst.o
+ .bss.argv_     0x0004659c       0x84 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.argbuf    0x00046620      0x120 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.files     0x00046740      0x340 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.rec       0x00046a80     0x8000 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.fscb      0x0004ea80       0x2c /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .bss.cms_heap_mb
-                0x0004eaac        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0004eaac        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
                 0x0004eaac                cms_heap_mb
- .bss.low_heap  0x0004eab0    0x10000 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.heap_brk  0x0005eab0        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.heap_end  0x0005eab4        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.low_heap  0x0004eab0    0x10000 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.heap_brk  0x0005eab0        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.heap_end  0x0005eab4        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .bss.heap_base
-                0x0005eab8        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.hsp       0x0005eabc       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.tin_pos   0x0005ead4        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.tin_len   0x0005ead8        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.tin       0x0005eadc       0x88 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.rdbuf     0x0005eb64       0x84 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.rdpl      0x0005ebe8       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.typl      0x0005ebf8       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.tlen      0x0005ec08        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
- .bss.tline     0x0005ec0c       0x84 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0005eab8        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.hsp       0x0005eabc       0x18 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.tin_pos   0x0005ead4        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.tin_len   0x0005ead8        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.tin       0x0005eadc       0x88 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.rdbuf     0x0005eb64       0x84 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.rdpl      0x0005ebe8       0x10 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.typl      0x0005ebf8       0x10 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.tlen      0x0005ec08        0x4 /tmp/tmp.9fPPzaq6iY/cmsrt.o
+ .bss.tline     0x0005ec0c       0x84 /tmp/tmp.9fPPzaq6iY/cmsrt.o
  .bss.__malloc_sbrk_start
                 0x0005ec90        0x4 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                 0x0005ec90                __malloc_sbrk_start
@@ -2028,18 +2028,18 @@ Linker script and memory map
  *(.note.GNU-stack)
  *(.comment)
  *(.eh_frame)
-LOAD /tmp/tmp.1Erh3DXJsk/entry31.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxasmain.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxastoke.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxaseror.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxasscan.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxas_opt.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxasassm.o
-LOAD /tmp/tmp.1Erh3DXJsk/platform.o
-LOAD /tmp/tmp.1Erh3DXJsk/rxvminst.o
-LOAD /tmp/tmp.1Erh3DXJsk/avl_tree.o
-LOAD /tmp/tmp.1Erh3DXJsk/cmsrt.o
+LOAD /tmp/tmp.9fPPzaq6iY/entry31.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxasmain.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxastoke.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxaseror.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxasscan.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxas_opt.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxasgrmr.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxasassm.o
+LOAD /tmp/tmp.9fPPzaq6iY/platform.o
+LOAD /tmp/tmp.9fPPzaq6iY/rxvminst.o
+LOAD /tmp/tmp.9fPPzaq6iY/avl_tree.o
+LOAD /tmp/tmp.9fPPzaq6iY/cmsrt.o
 START GROUP
 LOAD /home/claude/nlbuild/libc.a
 LOAD /home/claude/nlbuild/libm.a

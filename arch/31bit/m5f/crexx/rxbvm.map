@@ -1,25 +1,25 @@
 Archive member included to satisfy reference by file (symbol)
 
 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (strtoll)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (strtoll)
 /home/claude/nlbuild/libc.a(libc_a-fread.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmload.o (fread)
+                              /tmp/tmp.CnuQAtxHd6/rxvmload.o (fread)
 /home/claude/nlbuild/libc.a(libc_a-assert.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__assert_func)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__assert_func)
 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
-                              /tmp/tmp.5vut2GmgaF/platform.o (ftell)
+                              /tmp/tmp.CnuQAtxHd6/platform.o (ftell)
 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (strtod)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (strtod)
 /home/claude/nlbuild/libc.a(libc_a-lcltime.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (localtime)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (localtime)
 /home/claude/nlbuild/libc.a(libc_a-getchar.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (getchar)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (getchar)
 /home/claude/nlbuild/libc.a(libc_a-locale.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__global_locale)
 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__gethex)
 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
-                              /tmp/tmp.5vut2GmgaF/platform.o (rewind)
+                              /tmp/tmp.CnuQAtxHd6/platform.o (rewind)
 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (memcpy)
 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
@@ -29,51 +29,51 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (strncmp)
 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmload.o (calloc)
+                              /tmp/tmp.CnuQAtxHd6/rxvmload.o (calloc)
 /home/claude/nlbuild/libc.a(libc_a-errno.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__errno)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__errno)
 /home/claude/nlbuild/libc.a(libc_a-impure.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmmain.o (_impure_ptr)
+                              /tmp/tmp.CnuQAtxHd6/rxvmmain.o (_impure_ptr)
 /home/claude/nlbuild/libc.a(libc_a-abort.o)
                               /home/claude/nlbuild/libc.a(libc_a-assert.o) (abort)
 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-calloc.o) (_calloc_r)
 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (realloc)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (realloc)
 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
                               /home/claude/nlbuild/libc.a(libc_a-assert.o) (fiprintf)
 /home/claude/nlbuild/libc.a(libc_a-tzset.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (tzset)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (tzset)
 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-callocr.o) (_malloc_r)
 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
-                              /tmp/tmp.5vut2GmgaF/rxvminst.o (putchar)
+                              /tmp/tmp.CnuQAtxHd6/rxvminst.o (putchar)
 /home/claude/nlbuild/libc.a(libc_a-freer.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (_free_r)
 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
                               /home/claude/nlbuild/libc.a(libc_a-rewind.o) (_fseek_r)
 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmload.o (fclose)
+                              /tmp/tmp.CnuQAtxHd6/rxvmload.o (fclose)
 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
                               /home/claude/nlbuild/libc.a(libc_a-locale.o) (__ascii_wctomb)
 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
-                              /tmp/tmp.5vut2GmgaF/cmsrt.o (strrchr)
+                              /tmp/tmp.CnuQAtxHd6/cmsrt.o (strrchr)
 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseek.o) (_fseeko_r)
 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (snprintf)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (snprintf)
 /home/claude/nlbuild/libc.a(libc_a-tzvars.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (_timezone)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (_timezone)
 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (malloc)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (malloc)
 /home/claude/nlbuild/libc.a(libc_a-putc.o)
                               /home/claude/nlbuild/libc.a(libc_a-putchar.o) (_putc_r)
 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (__sseek)
 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmmain.o (fprintf)
+                              /tmp/tmp.CnuQAtxHd6/rxvmmain.o (fprintf)
 /home/claude/nlbuild/libc.a(libc_a-reent.o)
-                              /tmp/tmp.5vut2GmgaF/cmsrt.o (errno)
+                              /tmp/tmp.CnuQAtxHd6/cmsrt.o (errno)
 /home/claude/nlbuild/libc.a(libc_a-refill.o)
                               /home/claude/nlbuild/libc.a(libc_a-fread.o) (__srefill_r)
 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
@@ -81,35 +81,35 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
                               /home/claude/nlbuild/libc.a(libc_a-realloc.o) (_realloc_r)
 /home/claude/nlbuild/libc.a(libc_a-clock.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (clock)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (clock)
 /home/claude/nlbuild/libc.a(libc_a-writer.o)
                               /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_write_r)
 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
                               /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (_fstat_r)
 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (fwrite)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (fwrite)
 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (__malloc_lock)
 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
                               /home/claude/nlbuild/libc.a(libc_a-refill.o) (__sglue)
 /home/claude/nlbuild/libc.a(libc_a-puts.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmmain.o (puts)
+                              /tmp/tmp.CnuQAtxHd6/rxvmmain.o (puts)
 /home/claude/nlbuild/libc.a(libc_a-exit.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmmain.o (exit)
+                              /tmp/tmp.CnuQAtxHd6/rxvmmain.o (exit)
 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmmain.o (_ctype_)
+                              /tmp/tmp.CnuQAtxHd6/rxvmmain.o (_ctype_)
 /home/claude/nlbuild/libc.a(libc_a-lcltime_r.o)
                               /home/claude/nlbuild/libc.a(libc_a-lcltime.o) (localtime_r)
 /home/claude/nlbuild/libc.a(libc_a-printf.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmmain.o (printf)
+                              /tmp/tmp.CnuQAtxHd6/rxvmmain.o (printf)
 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
                               /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (_sbrk_r)
 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__match)
 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
-                              /tmp/tmp.5vut2GmgaF/platform.o (fopen)
+                              /tmp/tmp.CnuQAtxHd6/platform.o (fopen)
 /home/claude/nlbuild/libc.a(libc_a-time.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (time)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (time)
 /home/claude/nlbuild/libc.a(libc_a-closer.o)
                               /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_close_r)
 /home/claude/nlbuild/libc.a(libc_a-signal.o)
@@ -223,35 +223,35 @@ Archive member included to satisfy reference by file (symbol)
 /home/claude/nlbuild/libc.a(libc_a-iswspace_l.o)
                               /home/claude/nlbuild/libc.a(libc_a-iswspace.o) (iswspace_l)
 /home/claude/nlbuild/libm.a(libm_a-s_floor.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (floor)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (floor)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__adddf3)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__adddf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__divdf3)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__divdf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__eqdf2)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__eqdf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__fixdfdi)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__fixdfdi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
                               /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (__fixdfsi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__fixunsdfsi)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__floatdidf)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__floatdidf)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
                               /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (__floatsidf)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__floatunsidf)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__gedf2)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__gedf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__ledf2)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__ledf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__lesf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__muldf3)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__muldf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__subdf3)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__subdf3)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
                               /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__truncdfsf2)
 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
@@ -261,13 +261,13 @@ Archive member included to satisfy reference by file (symbol)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o) (__clzsi2)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_divdi3.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__divdi3)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__divdi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_moddi3.o)
-                              /tmp/tmp.5vut2GmgaF/rxvmintp.o (__moddi3)
+                              /tmp/tmp.CnuQAtxHd6/rxvmintp.o (__moddi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
-                              /tmp/tmp.5vut2GmgaF/cmsrt.o (__udivdi3)
+                              /tmp/tmp.CnuQAtxHd6/cmsrt.o (__udivdi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
-                              /tmp/tmp.5vut2GmgaF/cmsrt.o (__umoddi3)
+                              /tmp/tmp.CnuQAtxHd6/cmsrt.o (__umoddi3)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
                               /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o) (__udiv_w_sdiv)
 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
@@ -275,113 +275,113 @@ Archive member included to satisfy reference by file (symbol)
 
 Discarded input sections
 
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/entry31.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/entry31.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/entry31.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmmain.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmmain.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmmain.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/rxvmmain.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/entry31.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/rxvmmain.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmmain.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmload.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmload.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmload.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmload.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmload.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmload.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/rxvmload.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvmload.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/platform.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/platform.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/platform.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvmload.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/platform.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/platform.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/platform.o
  .rodata.file2buf.str1.2
-                0x00000000       0x1a /tmp/tmp.5vut2GmgaF/platform.o
+                0x00000000       0x1a /tmp/tmp.CnuQAtxHd6/platform.o
  .text.file2buf
-                0x00000000       0xa0 /tmp/tmp.5vut2GmgaF/platform.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/platform.o
+                0x00000000       0xa0 /tmp/tmp.CnuQAtxHd6/platform.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/platform.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/platform.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvminst.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvminst.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/platform.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvminst.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvminst.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.instr_f.str1.2
-                0x00000000       0x1a /tmp/tmp.5vut2GmgaF/rxvminst.o
- .text.instr_f  0x00000000      0x170 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x1a /tmp/tmp.CnuQAtxHd6/rxvminst.o
+ .text.instr_f  0x00000000      0x170 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.init_ops.str1.2
-                0x00000000     0x1b7c /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000     0x1b7c /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.init_ops
-                0x00000000     0x1ce0 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000     0x1ce0 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.src_inst
-                0x00000000       0x90 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x90 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.fst_inst
-                0x00000000       0xc8 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0xc8 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.nxt_inst
-                0x00000000       0xd0 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0xd0 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.get_inst
-                0x00000000       0x30 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x30 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.free_ops
-                0x00000000       0x80 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x80 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.opd_name
-                0x00000000       0x18 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x18 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.exp_opds.str1.2
-                0x00000000       0x3c /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x3c /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .text.exp_opds
-                0x00000000      0x170 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000      0x170 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.exp_opds
-                0x00000000       0x10 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x10 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.prt_ops.str1.2
-                0x00000000       0x3a /tmp/tmp.5vut2GmgaF/rxvminst.o
- .text.prt_ops  0x00000000       0x88 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x3a /tmp/tmp.CnuQAtxHd6/rxvminst.o
+ .text.prt_ops  0x00000000       0x88 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.str1.2
-                0x00000000       0x2c /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x2c /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .rodata.CSWTCH.36
-                0x00000000       0x20 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000       0x20 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .bss.no_instructions
-                0x00000000        0x4 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000        0x4 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .bss.instructions
-                0x00000000        0x4 /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000        0x4 /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .bss.instruction_root
-                0x00000000        0x4 /tmp/tmp.5vut2GmgaF/rxvminst.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/rxvminst.o
+                0x00000000        0x4 /tmp/tmp.CnuQAtxHd6/rxvminst.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/rxvminst.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/rxvminst.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/avl_tree.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/avl_tree.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/rxvminst.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/avl_tree.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/avl_tree.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .text.avl_fino
-                0x00000000       0x20 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000       0x20 /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .text.avl_lino
-                0x00000000       0x20 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000       0x20 /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .text.avl_nino
-                0x00000000       0x80 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000       0x80 /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .text.avl_pino
-                0x00000000       0x80 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000       0x80 /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .text.avl_remv
-                0x00000000      0x468 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000      0x468 /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .rodata.avl_remv
-                0x00000000        0x8 /tmp/tmp.5vut2GmgaF/avl_tree.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00000000        0x8 /tmp/tmp.CnuQAtxHd6/avl_tree.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/avl_tree.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/avl_tree.o
- .text          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .data          0x00000000        0x0 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss           0x00000000        0x0 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._stat    0x00000000       0x48 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._unlink  0x00000000      0x238 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text.system   0x00000000        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._execve  0x00000000       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._fork    0x00000000       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._wait    0x00000000       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text.write    0x00000000        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._link    0x00000000       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .comment       0x00000000       0x2e /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/avl_tree.o
+ .text          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .data          0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss           0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._stat    0x00000000       0x48 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._unlink  0x00000000      0x238 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text.system   0x00000000        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._execve  0x00000000       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._fork    0x00000000       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._wait    0x00000000       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text.write    0x00000000        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._link    0x00000000       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .comment       0x00000000       0x2e /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .note.GNU-stack
-                0x00000000        0x0 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00000000        0x0 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
  .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
  .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
@@ -1301,117 +1301,117 @@ Linker script and memory map
 
 .text           0x00000000    0x37dc0
  *(.text.entry)
- .text.entry    0x00000000       0x70 /tmp/tmp.5vut2GmgaF/entry31.o
+ .text.entry    0x00000000       0x70 /tmp/tmp.CnuQAtxHd6/entry31.o
                 0x00000000                cms_entry
  *(.text .text.*)
- .text          0x00000070       0x58 /tmp/tmp.5vut2GmgaF/entry31.o
+ .text          0x00000070       0x58 /tmp/tmp.CnuQAtxHd6/entry31.o
                 0x00000070                cms_exit
                 0x00000088                cms202
  .text.error_and_exit
-                0x000000c8       0x30 /tmp/tmp.5vut2GmgaF/rxvmmain.o
+                0x000000c8       0x30 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
  .text.startup.main
-                0x000000f8      0x358 /tmp/tmp.5vut2GmgaF/rxvmmain.o
+                0x000000f8      0x358 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
                 0x000000f8                main
  .text.clear_value
-                0x00000450       0xa0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00000450       0xa0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_set_byte_pos
-                0x000004f0      0x768 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x000004f0      0x768 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.prep_string_buffer.part.0
-                0x00000c58       0x80 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00000c58       0x80 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.set_value_string
-                0x00000cd8      0x178 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00000cd8      0x178 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.set_const_string
-                0x00000e50      0x180 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00000e50      0x180 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_sconcat
-                0x00000fd0      0x5f0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00000fd0      0x5f0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_concat
-                0x000015c0      0x5b8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x000015c0      0x5b8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_sconcat_var_const
-                0x00001b78      0x5d8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00001b78      0x5d8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_concat_var_const
-                0x00002150      0x5b0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00002150      0x5b0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_sconcat_const_var
-                0x00002700      0x5d8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00002700      0x5d8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_concat_const_var
-                0x00002cd8      0x5b0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00002cd8      0x5b0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.set_null_string
-                0x00003288      0x218 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00003288      0x218 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.extend_string_buffer.part.0
-                0x000034a0       0x80 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x000034a0       0x80 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.string_concat_char
-                0x00003520      0x1d8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00003520      0x1d8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.set_num_attributes
-                0x000036f8      0x780 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x000036f8      0x780 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.copy_value
-                0x00003e78      0x218 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00003e78      0x218 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .text.move_value.part.0
-                0x00004090      0x2c0 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .text.frame_f  0x00004350      0x808 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .text.run      0x00004b58     0xf4e8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x00004090      0x2c0 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .text.frame_f  0x00004350      0x808 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .text.run      0x00004b58     0xf4e8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
                 0x00004b58                run
  .text.free_module
-                0x00014040       0x50 /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x00014040       0x50 /tmp/tmp.CnuQAtxHd6/rxvmload.o
  .text.add_node
-                0x00014090       0xb8 /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x00014090       0xb8 /tmp/tmp.CnuQAtxHd6/rxvmload.o
  .text.rxinimod
-                0x00014148       0x48 /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x00014148       0x48 /tmp/tmp.CnuQAtxHd6/rxvmload.o
                 0x00014148                rxinimod
  .text.rxfremod
-                0x00014190      0x158 /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x00014190      0x158 /tmp/tmp.CnuQAtxHd6/rxvmload.o
                 0x00014190                rxfremod
- .text.rxldmod  0x000142e8      0x858 /tmp/tmp.5vut2GmgaF/rxvmload.o
+ .text.rxldmod  0x000142e8      0x858 /tmp/tmp.CnuQAtxHd6/rxvmload.o
                 0x000142e8                rxldmod
  .text.openfile
-                0x00014b40       0xa0 /tmp/tmp.5vut2GmgaF/platform.o
+                0x00014b40       0xa0 /tmp/tmp.CnuQAtxHd6/platform.o
                 0x00014b40                openfile
  .text.avl_finp
-                0x00014be0       0x20 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00014be0       0x20 /tmp/tmp.CnuQAtxHd6/avl_tree.o
                 0x00014be0                avl_finp
  .text.avl_ninp
-                0x00014c00       0x28 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00014c00       0x28 /tmp/tmp.CnuQAtxHd6/avl_tree.o
                 0x00014c00                avl_ninp
  .text.avl_bain
-                0x00014c28      0x328 /tmp/tmp.5vut2GmgaF/avl_tree.o
+                0x00014c28      0x328 /tmp/tmp.CnuQAtxHd6/avl_tree.o
                 0x00014c28                avl_bain
  .text.set_fscb
-                0x00014f50      0x1f8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00014f50      0x1f8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .text.read_whole
-                0x00015148      0x870 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text.tflush   0x000159b8      0x240 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00015148      0x870 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text.tflush   0x000159b8      0x240 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .text.parse_name
-                0x00015bf8      0x5c8 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .text._sbrk    0x000161c0      0x860 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00015bf8      0x5c8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .text._sbrk    0x000161c0      0x860 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x000161c0                _sbrk
- .text._open    0x00016a20      0x120 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._open    0x00016a20      0x120 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00016a20                _open
- .text._close   0x00016b40      0xac8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._close   0x00016b40      0xac8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00016b40                _close
- .text._write   0x00017608      0x588 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._write   0x00017608      0x588 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00017608                _write
- .text._read    0x00017b90      0x710 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._read    0x00017b90      0x710 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00017b90                _read
- .text._lseek   0x000182a0      0x210 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._lseek   0x000182a0      0x210 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x000182a0                _lseek
- .text._fstat   0x000184b0       0x78 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._fstat   0x000184b0       0x78 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x000184b0                _fstat
- .text._isatty  0x00018528       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._isatty  0x00018528       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00018528                _isatty
- .text._kill    0x00018540       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._kill    0x00018540       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00018540                _kill
- .text._getpid  0x00018558        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._getpid  0x00018558        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00018558                _getpid
- .text._times   0x00018560       0x10 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._times   0x00018560       0x10 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00018560                _times
  .text.gettimeofday
-                0x00018570       0x68 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00018570       0x68 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00018570                gettimeofday
- .text._exit    0x000185d8      0x1f8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .text._exit    0x000185d8      0x1f8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x000185d8                _exit
  .text.cms_main
-                0x000187d0       0xd8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x000187d0       0xd8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x000187d0                cms_main
  .text._gettimeofday
-                0x000188a8       0x68 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x000188a8       0x68 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x000188a8                _gettimeofday
  .text._strtoll_l.isra.0
                 0x00018910      0x308 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
@@ -1843,78 +1843,78 @@ Linker script and memory map
                 0x00037c50                __udiv_w_sdiv
 
 .iplt           0x00037dc0        0x0
- .iplt          0x00037dc0        0x0 /tmp/tmp.5vut2GmgaF/entry31.o
+ .iplt          0x00037dc0        0x0 /tmp/tmp.CnuQAtxHd6/entry31.o
 
 .rodata         0x00037dc0     0x8900
  *(.rodata .rodata.*)
  .rodata.error_and_exit.str1.2
-                0x00037dc0     0x45a4 /tmp/tmp.5vut2GmgaF/rxvmmain.o
+                0x00037dc0     0x45a4 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
                                  0x1c (size before relaxing)
  .rodata.main.str1.2
-                0x0003c364      0x6aa /tmp/tmp.5vut2GmgaF/rxvmmain.o
+                0x0003c364      0x6aa /tmp/tmp.CnuQAtxHd6/rxvmmain.o
  *fill*         0x0003c364        0x4 
- .rodata.main   0x0003c368       0xb0 /tmp/tmp.5vut2GmgaF/rxvmmain.o
+ .rodata.main   0x0003c368       0xb0 /tmp/tmp.CnuQAtxHd6/rxvmmain.o
  .rodata.string_set_byte_pos.str1.2
-                0x0003c418       0x54 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003c418       0x54 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.string_concat_char
-                0x0003c418        0x8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003c418        0x8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.set_num_attributes
-                0x0003c420       0x10 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003c420       0x10 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.move_value.part.0
-                0x0003c430        0x8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003c430        0x8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.frame_f
-                0x0003c438        0x8 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003c438        0x8 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.run.str1.2
-                0x0003c440     0x3b74 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .rodata.run    0x0003c440     0x1008 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003c440     0x3b74 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .rodata.run    0x0003c440     0x1008 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.__func__.0
-                0x0003d448       0x14 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003d448       0x14 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.hexconst.1
-                0x0003d45c       0x18 /tmp/tmp.5vut2GmgaF/rxvmintp.o
- .rodata        0x0003d474     0x1c54 /tmp/tmp.5vut2GmgaF/rxvmintp.o
+                0x0003d45c       0x18 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+ .rodata        0x0003d474     0x1c54 /tmp/tmp.CnuQAtxHd6/rxvmintp.o
  .rodata.rxfremod.str1.2
-                0x0003f0c8       0x1a /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x0003f0c8       0x1a /tmp/tmp.CnuQAtxHd6/rxvmload.o
  .rodata.rxldmod.str1.2
-                0x0003f0c8       0xd2 /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x0003f0c8       0xd2 /tmp/tmp.CnuQAtxHd6/rxvmload.o
  .rodata.rxldmod
-                0x0003f0c8       0x10 /tmp/tmp.5vut2GmgaF/rxvmload.o
+                0x0003f0c8       0x10 /tmp/tmp.CnuQAtxHd6/rxvmload.o
  .rodata.openfile.str1.2
-                0x0003f0d8        0xc /tmp/tmp.5vut2GmgaF/platform.o
+                0x0003f0d8        0xc /tmp/tmp.CnuQAtxHd6/platform.o
  .rodata.read_whole.str1.2
-                0x0003f0d8        0xc /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0d8        0xc /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.read_whole
-                0x0003f0d8        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0d8        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.tflush.str1.2
-                0x0003f0e0        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0e0        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.parse_name.str1.2
-                0x0003f0e0        0xe /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0e0        0xe /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._sbrk.str1.2
-                0x0003f0e0       0x12 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .rodata._sbrk  0x0003f0e0        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0e0       0x12 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .rodata._sbrk  0x0003f0e0        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._close.str1.2
-                0x0003f0e8        0xc /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0e8        0xc /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._close
-                0x0003f0e8        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0e8        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._read.str1.2
-                0x0003f0f0        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .rodata._read  0x0003f0f0        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0f0        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .rodata._read  0x0003f0f0        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._fstat
-                0x0003f0f8        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f0f8        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.gettimeofday
-                0x0003f100       0x10 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f100       0x10 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._exit.str1.2
-                0x0003f110        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .rodata._exit  0x0003f110        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f110        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .rodata._exit  0x0003f110        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.cms_main
-                0x0003f118        0x8 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f118        0x8 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._gettimeofday
-                0x0003f120       0x10 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f120       0x10 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.tries.0
-                0x0003f130       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f130       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.rt_e2a
-                0x0003f148      0x100 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f148      0x100 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata.rt_a2e
-                0x0003f248      0x100 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x0003f248      0x100 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .rodata._strtoll_l.isra.0
                 0x0003f348       0x10 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
  .rodata.__assert_func.str1.2
@@ -2087,8 +2087,8 @@ Linker script and memory map
                 0x000405c0                __clz_tab
 
 .rela.dyn       0x000406c0        0x0
- .rela.iplt     0x000406c0        0x0 /tmp/tmp.5vut2GmgaF/entry31.o
- .rela.got      0x000406c0        0x0 /tmp/tmp.5vut2GmgaF/entry31.o
+ .rela.iplt     0x000406c0        0x0 /tmp/tmp.CnuQAtxHd6/entry31.o
+ .rela.got      0x000406c0        0x0 /tmp/tmp.CnuQAtxHd6/entry31.o
 
 .data           0x000406c0      0x304
  *(.data .data.*)
@@ -2111,42 +2111,42 @@ Linker script and memory map
                 0x000409c0                environ
 
 .igot.plt       0x000409c4        0x0
- .igot.plt      0x000409c4        0x0 /tmp/tmp.5vut2GmgaF/entry31.o
+ .igot.plt      0x000409c4        0x0 /tmp/tmp.CnuQAtxHd6/entry31.o
 
 .got            0x000409c4        0x4
- .got           0x000409c4        0x4 /tmp/tmp.5vut2GmgaF/entry31.o
+ .got           0x000409c4        0x4 /tmp/tmp.CnuQAtxHd6/entry31.o
 
 .got.plt        0x000409c8        0xc
- .got.plt       0x000409c8        0xc /tmp/tmp.5vut2GmgaF/entry31.o
+ .got.plt       0x000409c8        0xc /tmp/tmp.CnuQAtxHd6/entry31.o
                 0x000409c8                _GLOBAL_OFFSET_TABLE_
 
 .bss            0x000409d8    0x28870
  *(.bss .bss.*)
- .bss           0x000409d8    0x10010 /tmp/tmp.5vut2GmgaF/entry31.o
+ .bss           0x000409d8    0x10010 /tmp/tmp.CnuQAtxHd6/entry31.o
                 0x000409e0                cms_exit_sp
- .bss.argv_     0x000509e8       0x84 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.argbuf    0x00050a6c      0x120 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.files     0x00050b8c      0x340 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.rec       0x00050ecc     0x8000 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.fscb      0x00058ecc       0x2c /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .bss.argv_     0x000509e8       0x84 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.argbuf    0x00050a6c      0x120 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.files     0x00050b8c      0x340 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.rec       0x00050ecc     0x8000 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.fscb      0x00058ecc       0x2c /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .bss.cms_heap_mb
-                0x00058ef8        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00058ef8        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
                 0x00058ef8                cms_heap_mb
  *fill*         0x00058efc        0x4 
- .bss.low_heap  0x00058f00    0x10000 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.heap_brk  0x00068f00        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.heap_end  0x00068f04        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
+ .bss.low_heap  0x00058f00    0x10000 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.heap_brk  0x00068f00        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.heap_end  0x00068f04        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .bss.heap_base
-                0x00068f08        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.hsp       0x00068f0c       0x18 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.tin_pos   0x00068f24        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.tin_len   0x00068f28        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.tin       0x00068f2c       0x88 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.rdbuf     0x00068fb4       0x84 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.rdpl      0x00069038       0x10 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.typl      0x00069048       0x10 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.tlen      0x00069058        0x4 /tmp/tmp.5vut2GmgaF/cmsrt.o
- .bss.tline     0x0006905c       0x84 /tmp/tmp.5vut2GmgaF/cmsrt.o
+                0x00068f08        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.hsp       0x00068f0c       0x18 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.tin_pos   0x00068f24        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.tin_len   0x00068f28        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.tin       0x00068f2c       0x88 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.rdbuf     0x00068fb4       0x84 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.rdpl      0x00069038       0x10 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.typl      0x00069048       0x10 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.tlen      0x00069058        0x4 /tmp/tmp.CnuQAtxHd6/cmsrt.o
+ .bss.tline     0x0006905c       0x84 /tmp/tmp.CnuQAtxHd6/cmsrt.o
  .bss.__malloc_sbrk_start
                 0x000690e0        0x4 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
                 0x000690e0                __malloc_sbrk_start
@@ -2182,14 +2182,14 @@ Linker script and memory map
  *(.note.GNU-stack)
  *(.comment)
  *(.eh_frame)
-LOAD /tmp/tmp.5vut2GmgaF/entry31.o
-LOAD /tmp/tmp.5vut2GmgaF/rxvmmain.o
-LOAD /tmp/tmp.5vut2GmgaF/rxvmintp.o
-LOAD /tmp/tmp.5vut2GmgaF/rxvmload.o
-LOAD /tmp/tmp.5vut2GmgaF/platform.o
-LOAD /tmp/tmp.5vut2GmgaF/rxvminst.o
-LOAD /tmp/tmp.5vut2GmgaF/avl_tree.o
-LOAD /tmp/tmp.5vut2GmgaF/cmsrt.o
+LOAD /tmp/tmp.CnuQAtxHd6/entry31.o
+LOAD /tmp/tmp.CnuQAtxHd6/rxvmmain.o
+LOAD /tmp/tmp.CnuQAtxHd6/rxvmintp.o
+LOAD /tmp/tmp.CnuQAtxHd6/rxvmload.o
+LOAD /tmp/tmp.CnuQAtxHd6/platform.o
+LOAD /tmp/tmp.CnuQAtxHd6/rxvminst.o
+LOAD /tmp/tmp.CnuQAtxHd6/avl_tree.o
+LOAD /tmp/tmp.CnuQAtxHd6/cmsrt.o
 START GROUP
 LOAD /home/claude/nlbuild/libc.a
 LOAD /home/claude/nlbuild/libm.a

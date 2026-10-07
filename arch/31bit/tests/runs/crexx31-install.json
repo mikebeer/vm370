@@ -129,6 +129,19 @@
   "settle": 8
  },
  {
+  "send": "devinit 000c io/libctest.rdr eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true,
+  "settle": 8
+ },
+ {
   "send": "/cp q rdr cmsuser all",
   "expect": "Ready|RDR|NO",
   "timeout": 60,
@@ -202,6 +215,30 @@
  },
  {
   "term": "readcard rxdas31 text a",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 200,
+  "cont": true
+ },
+ {
+  "term": "readcard libctest text a",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 200,
+  "cont": true
+ },
+ {
+  "term": "load libctest",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 200,
+  "cont": true
+ },
+ {
+  "term": "genmod libctest",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "libctest a[1] b",
   "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
   "timeout": 200,
   "cont": true
