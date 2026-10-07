@@ -1,0 +1,11 @@
+./ I 00512000 $ 00512110 010                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST: THE        XA0054DK         
+         BZ    CFGNESA        IPL DEVICE'S SUBSYSTEM ID        XA0054DK         
+         L     R1,SAVEWRK2    AT X'B8' (DMKVMI KEEPS IT)       XA0054DK         
+         L     R15,=V(DMKVCSSN)                                XA0054DK         
+         BALR  R14,R15        R1 = ITS SUBCHANNEL              XA0054DK         
+         O     R1,=X'00010000'                                 XA0054DK         
+         ST    R1,184(,R2)                                     XA0054DK         
+         XC    188(4,R2),188(R2)                               XA0054DK         
+CFGNESA  DS    0H                                              XA0054DK         

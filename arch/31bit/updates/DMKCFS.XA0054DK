@@ -1,0 +1,7 @@
+./ I 00428100 $ 00428150 010                                                    
+         B     SETESA         SET ESA ON|OFF (M7)              XA0054DK         
+./ I 00719000 $ 00719110 010                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+SETESA   BAL   R9,EXECONF     M7: AN ESA/390 MACHINE           XA0054DK         
+         OI    VMFSTAT,VMESA390                                XA0054DK         
+         NI    VMFSTAT,X'FF'-VMESA390                          XA0054DK         

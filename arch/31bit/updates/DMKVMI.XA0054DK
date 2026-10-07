@@ -1,0 +1,7 @@
+./ R 00805000          $ 00805010 010                                           
+         B     VMIESA9        PAST THE EC-MODE STORE           XA0054DK         
+./ I 00806600 $ 00806610 010                                                    
+         CLC   G370TIO-2(2),=X'0001'  M7: ESA/390?             XA0054DK         
+         BE    *+8            YES: X'B8' IS DMKCFG'S           XA0054DK         
+./ I 00806700 $ 00806710 010                                                    
+VMIESA9  DS    0H                                              XA0054DK         

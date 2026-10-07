@@ -1,0 +1,8 @@
+./ I 00500000 $ 00500110 010                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         ENTRY DMKVSJTE                                        XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
+         BZ    DMKVSJTE       SSCH/TSCH/TPI, RUN AS SIO        XA0054DK         
+         L     R12,=V(DMKVCSSE)  OR TIO: BACK TO DMKVCS        XA0054DK         
+         BR    R12                                             XA0054DK         
+DMKVSJTE DS    0H             (DMKVCSSE: NOT ITS OWN)          XA0054DK         

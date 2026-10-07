@@ -1,0 +1,499 @@
+./ I 01636000 $ 01636001 001                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+VMVCSTB  EQU   VMVMPS+4       ITS SUBCHANNEL TABLE (DMKVCS)    XA0054DK         
+*                                                              XA0054DK         
+* M7: THE VIRTUAL CHANNEL SUBSYSTEM OF AN ESA/390 VIRTUAL      XA0054DK         
+* MACHINE (SET ESA ON). SUBCHANNEL N IS THE N-TH VIRTUAL       XA0054DK         
+* DEVICE IN ADDRESS ORDER. SSCH AND TSCH/TPI RUN THROUGH       XA0054DK         
+* DMKVSI AS SIO AND TIO; DMKVSJ COMES BACK TO DMKVCSSE.        XA0054DK         
+* DOCS/39-M7-ESA-GUESTS.MD.                                    XA0054DK         
+*                                                              XA0054DK         
+DMKVCS   CSECT                                                 XA0054DK         
+         DROP  R10,R12                                         XA0054DK         
+         USING DMKVCS,R12                                      XA0054DK         
+         USING VCSTAB,R10                                      XA0054DK         
+         ENTRY DMKVCSEX,DMKVCSSE,DMKVCSIN,DMKVCSSN             XA0054DK         
+DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK         
+         NI    VMPSW+2,X'CF'  CC 0                             XA0054DK         
+         BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
+         MVI   VCSOP,0                                         XA0054DK         
+         OI    VCSFLG,VCSACT  FROM NOW ON: ESA/390 I/O         XA0054DK         
+         CLI   VMINST+1,X'12' STAP                             XA0054DK         
+         BE    VCSSTAP                                         XA0054DK         
+         CLI   VMINST+1,X'36' TPI                              XA0054DK         
+         BE    VCSTPI                                          XA0054DK         
+         CLI   VMINST+1,X'39' STCRW                            XA0054DK         
+         BE    VCSSTCRW                                        XA0054DK         
+         L     R1,VMGPRS+4    GR1: SUBSYSTEM ID                XA0054DK         
+         CLM   R1,12,SSIDW    X'0001' NNNN ?                   XA0054DK         
+         BNE   VCSCC3                                          XA0054DK         
+         N     R1,F65535      THE SUBCHANNEL NUMBER            XA0054DK         
+         BAL   R9,FINDSUB     R6-R8, R13 = ITS DEVICE          XA0054DK         
+         BNZ   VCSCC3                                          XA0054DK         
+         BAL   R9,GETENT      R3 = ITS ENTRY                   XA0054DK         
+         CLI   VMINST+1,X'34'                                  XA0054DK         
+         BE    VCSSTSCH                                        XA0054DK         
+         CLI   VMINST+1,X'32'                                  XA0054DK         
+         BE    VCSMSCH                                         XA0054DK         
+         CLI   VMINST+1,X'33'                                  XA0054DK         
+         BE    VCSSSCH                                         XA0054DK         
+         CLI   VMINST+1,X'35'                                  XA0054DK         
+         BE    VCSTSCH                                         XA0054DK         
+         CLI   VMINST+1,X'31' HSCH                             XA0054DK         
+         BE    VCSCSCH                                         XA0054DK         
+         CLI   VMINST+1,X'30' CSCH                             XA0054DK         
+         BE    VCSCSCH                                         XA0054DK         
+         B     VCSEXIT        RSCH, SAL, SCHM: NOTHING         XA0054DK         
+VCSCC3   OI    VMPSW+2,X'30'                                   XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+VCSCC2   OI    VMPSW+2,X'20'                                   XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+VCSCC1   OI    VMPSW+2,X'10'                                   XA0054DK         
+VCSEXIT  GOTO  DMKDSPCH                                        XA0054DK         
+*                                                              XA0054DK         
+VCSSTAP  BAL   R9,OPADDR      STAP: CPU ADDRESS 0              XA0054DK         
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31),ADEX=VCSEXIT      XA0054DK         
+         XC    0(2,R2),0(R2)                                   XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+VCSSTCRW XC    VCSBUF(4),VCSBUF  STCRW: NO CRW PENDING         XA0054DK         
+         LA    R4,1                                            XA0054DK         
+         BAL   R9,STOREOP                                      XA0054DK         
+         B     VCSCC1                                          XA0054DK         
+*                                                              XA0054DK         
+VCSSTSCH BAL   R9,BLDSCHIB    STSCH: 52 BYTES                  XA0054DK         
+         LA    R4,13                                           XA0054DK         
+         BAL   R9,STOREOP                                      XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+VCSMSCH  BAL   R9,OPADDR      MSCH: THE PMCW                   XA0054DK         
+         LR    R5,R1                                           XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,7                                            XA0054DK         
+         LA    R0,1           FETCH                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         MVC   ENTIPRM(4,R3),VCSBUF                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         IC    R0,VCSBUF+4                                     XA0054DK         
+         SRL   R0,3                                            XA0054DK         
+         N     R0,F7                                           XA0054DK         
+         STC   R0,ENTISC(R3)                                   XA0054DK         
+         NI    ENTFLG(R3),255-ENTENAB                          XA0054DK         
+         TM    VCSBUF+5,X'80' ENABLED?                         XA0054DK         
+         BZ    VCSEXIT                                         XA0054DK         
+         OI    ENTFLG(R3),ENTENAB                              XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+VCSSSCH  TM    ENTFLG(R3),ENTPEND  SSCH                        XA0054DK         
+         BO    VCSCC1         STATUS PENDING                   XA0054DK         
+         TM    ENTFLG(R3),ENTACT                               XA0054DK         
+         BO    VCSCC2         BUSY                             XA0054DK         
+         BAL   R9,OPADDR      THE ORB                          XA0054DK         
+         LR    R5,R1                                           XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,3                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         MVC   ENTIPRM(4,R3),VCSBUF                            XA0054DK         
+         NI    ENTFLG(R3),255-ENTFMT1-ENTSOL                   XA0054DK         
+         TM    VCSBUF+5,X'80' FORMAT-1 CCWS?                   XA0054DK         
+         BZ    *+8                                             XA0054DK         
+         OI    ENTFLG(R3),ENTFMT1                              XA0054DK         
+         L     R0,VCSBUF+8    CCW ADDRESS                      XA0054DK         
+         N     R0,XRIGHT24                                     XA0054DK         
+         SR    R1,R1                                           XA0054DK         
+         IC    R1,VCSBUF+4    KEY                              XA0054DK         
+         SRL   R1,4                                            XA0054DK         
+         SLL   R1,28                                           XA0054DK         
+         OR    R0,R1                                           XA0054DK         
+         ST    R0,VCSBUF      THE CAW, FOR DMKVSI              XA0054DK         
+         LA    R5,X'48'                                        XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,1                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         OI    ENTFLG(R3),ENTACT                               XA0054DK         
+         MVI   VCSOP,C'S'                                      XA0054DK         
+         MVC   VMINST(2),SIOOP   SIO VDEV                      XA0054DK         
+VCSVSI   STH   R13,VMINST+2                                    XA0054DK         
+         GOTO  DMKVSIEX                                        XA0054DK         
+*                                                              XA0054DK         
+VCSTSCH  BAL   R9,OPADDR      TSCH: THE IRB                    XA0054DK         
+         ST    R1,VCSADDR                                      XA0054DK         
+         TM    ENTFLG(R3),ENTPEND                              XA0054DK         
+         BO    TSCHIRB                                         XA0054DK         
+         TM    VDEVSTAT,VDEVCHAN+VDEVPEND                      XA0054DK         
+         BNZ   TSCHTIO        S/370 STATUS STILL QUEUED        XA0054DK         
+         BAL   R9,BLDIRB      NONE: CC 1                       XA0054DK         
+         BAL   R9,PUTIRB                                       XA0054DK         
+         B     VCSCC1                                          XA0054DK         
+TSCHIRB  BAL   R9,BLDIRB                                       XA0054DK         
+         NI    ENTFLG(R3),255-ENTPEND-ENTACT-ENTSOL            XA0054DK         
+         BAL   R9,PUTIRB                                       XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+TSCHTIO  MVI   VCSOP,C'T'     COLLECT IT WITH A TIO            XA0054DK         
+         MVC   VMINST(2),TIOOP                                 XA0054DK         
+         B     VCSVSI                                          XA0054DK         
+*                                                              XA0054DK         
+VCSTPI   BAL   R9,OPADDR      TPI                              XA0054DK         
+         ST    R1,VCSADDR                                      XA0054DK         
+         SR    R1,R1                                           XA0054DK         
+TPILOOP  ST    R1,VCSSUB                                       XA0054DK         
+         BAL   R9,FINDSUB                                      XA0054DK         
+         BNZ   VCSEXIT        NONE QUEUED: CC 0                XA0054DK         
+         TM    VDEVSTAT,VDEVCHAN+VDEVPEND                      XA0054DK         
+         BNZ   TPITIO                                          XA0054DK         
+         L     R1,VCSSUB                                       XA0054DK         
+         LA    R1,1(,R1)                                       XA0054DK         
+         B     TPILOOP                                         XA0054DK         
+TPITIO   MVI   VCSOP,C'P'                                      XA0054DK         
+         MVC   VMINST(2),TIOOP                                 XA0054DK         
+         B     VCSVSI                                          XA0054DK         
+*                                                              XA0054DK         
+VCSCSCH  NI    ENTFLG(R3),255-ENTACT-ENTPEND-ENTSOL            XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+* DMKVCSSE: GOTO FROM DMKVSJ TESTEC (ESA/390 GUEST). R2 =      XA0054DK         
+* THE SIO/TIO CONDITION CODE (X'00'-X'30'), R13 = THE DEVICE.  XA0054DK         
+*                                                              XA0054DK         
+DMKVCSSE L     R12,AVCSSE-DMKVCSSE(,R12)                       XA0054DK         
+         ICM   R15,15,VMVCSTB OURS ONLY IF DMKVCS SET VCSOP:   XA0054DK         
+         BZ    SENOTME        THE IPL SIMULATOR'S OWN SIO      XA0054DK         
+         CLI   VCSOP-VCSTAB(R15),0  AND TIO GO BACK            XA0054DK         
+         BE    SENOTME                                         XA0054DK         
+         STC   R2,VCSCCX      (R10 NOT YET SET)                XA0054DK         
+         BAL   R9,GETTAB                                       XA0054DK         
+         MVC   VCSCC,VCSCCX                                    XA0054DK         
+         CLI   VCSOP,C'S'                                      XA0054DK         
+         BE    SSEND                                           XA0054DK         
+         CLI   VCSOP,C'T'                                      XA0054DK         
+         BE    TSEND                                           XA0054DK         
+         CLI   VCSOP,C'P'                                      XA0054DK         
+         BE    TPEND                                           XA0054DK         
+         B     SEBACK                                          XA0054DK         
+SSEND    MVI   VCSOP,0        SSCH                             XA0054DK         
+         BAL   R9,GETENT                                       XA0054DK         
+         CLI   VCSCC,0                                         XA0054DK         
+         BE    SEBACK         STARTED                          XA0054DK         
+         NI    ENTFLG(R3),255-ENTACT                           XA0054DK         
+         CLI   VCSCC,X'10'                                     XA0054DK         
+         BNE   SEBACK         CC 2, CC 3                       XA0054DK         
+         BAL   R9,GETCSW      CC 1: STATUS PENDING             XA0054DK         
+         B     SEBACK                                          XA0054DK         
+TSEND    MVI   VCSOP,0        TSCH                             XA0054DK         
+         BAL   R9,GETENT                                       XA0054DK         
+         CLI   VCSCC,X'10'    TIO STORED A CSW?                XA0054DK         
+         BNE   TSENONE                                         XA0054DK         
+         BAL   R9,GETCSW                                       XA0054DK         
+         BAL   R9,BLDIRB                                       XA0054DK         
+         NI    ENTFLG(R3),255-ENTPEND-ENTACT-ENTSOL            XA0054DK         
+         BAL   R9,PUTIRB                                       XA0054DK         
+         MVI   VCSCC,0                                         XA0054DK         
+         B     SEBACK                                          XA0054DK         
+TSENONE  BAL   R9,BLDIRB                                       XA0054DK         
+         BAL   R9,PUTIRB                                       XA0054DK         
+         MVI   VCSCC,X'10'                                     XA0054DK         
+         B     SEBACK                                          XA0054DK         
+TPEND    MVI   VCSOP,0        TPI                              XA0054DK         
+         CLI   VCSCC,X'10'                                     XA0054DK         
+         BNE   TPENONE                                         XA0054DK         
+         BAL   R9,GETENT                                       XA0054DK         
+         BAL   R9,GETCSW                                       XA0054DK         
+         L     R1,VCSSUB                                       XA0054DK         
+         O     R1,SSIDW                                        XA0054DK         
+         ST    R1,VCSBUF      SUBSYSTEM ID                     XA0054DK         
+         MVC   VCSBUF+4(4),ENTIPRM(R3)                         XA0054DK         
+         L     R5,VCSADDR                                      XA0054DK         
+         LTR   R5,R5                                           XA0054DK         
+         BNZ   *+8                                             XA0054DK         
+         LA    R5,X'B8'       OPERAND 0: THE LOWCORE           XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         MVI   VCSCC,X'10'                                     XA0054DK         
+         B     SEBACK                                          XA0054DK         
+TPENONE  MVI   VCSCC,0                                         XA0054DK         
+SEBACK   NI    VMPSW+2,X'CF'                                   XA0054DK         
+         OC    VMPSW+2(1),VCSCC                                XA0054DK         
+         NI    VMDSTAT,X'FF'-VMTIO                             XA0054DK         
+         NI    VMRSTAT,X'FF'-VMEXWAIT                          XA0054DK         
+         GOTO  DMKDSPCH                                        XA0054DK         
+SENOTME  L     R12,=V(DMKVSJEX)  DMKVSJ'S OWN EXIT, R2 AS IT   XA0054DK         
+         L     R15,=V(DMKVSJTE)  WAS                           XA0054DK         
+         BR    R15                                             XA0054DK         
+*                                                              XA0054DK         
+* DMKVCSIN: BALR FROM DMKDSP STORECSW. R0 = DEVICE, R4-R5 =    XA0054DK         
+* ITS CSW. KEEPS THE STATUS PENDING FOR TSCH; RETURNS R1 =     XA0054DK         
+* SUBCHANNEL NUMBER, R3 = INTERRUPTION PARAMETER.              XA0054DK         
+*                                                              XA0054DK         
+DMKVCSIN STM   R14,R13,VCSSAVI-DMKVCSIN(R15)                   XA0054DK         
+         L     R12,AVCSIN-DMKVCSIN(,R15)                       XA0054DK         
+         LR    R13,R0                                          XA0054DK         
+         BAL   R9,GETTAB                                       XA0054DK         
+         BAL   R9,GETENT                                       XA0054DK         
+         STM   R4,R5,ENTCSW(R3)                                XA0054DK         
+         BAL   R9,PENDING                                      XA0054DK         
+         L     R0,ENTIPRM(R3)                                  XA0054DK         
+         ST    R0,VCSSAVI+20  R3                               XA0054DK         
+         BAL   R9,FINDSN                                       XA0054DK         
+         ST    R1,VCSSAVI+12  R1                               XA0054DK         
+         LM    R14,R13,VCSSAVI  (R13 TOO: IT IS THE CALLER'S)  XA0054DK         
+         BR    R14                                             XA0054DK         
+*                                                              XA0054DK         
+* DMKVCSSN: BALR. R1 = DEVICE IN, ITS SUBCHANNEL NUMBER OUT.   XA0054DK         
+*                                                              XA0054DK         
+DMKVCSSN STM   R14,R13,VCSSAVN-DMKVCSSN(R15)                   XA0054DK         
+         L     R12,AVCSSN-DMKVCSSN(,R15)                       XA0054DK         
+         LR    R13,R1                                          XA0054DK         
+         ICM   R10,15,VMVCSTB  IPL IS A SYSTEM RESET: BACK     XA0054DK         
+         BZ    SNFIND         TO S/370 I/O UNTIL THE GUEST     XA0054DK         
+         NI    VCSFLG,255-VCSACT   USES THE CHANNEL            XA0054DK         
+         LA    R3,VCSHDRL(,R10)    SUBSYSTEM, EVERY            XA0054DK         
+         LA    R0,VCSNENT          SUBCHANNEL IDLE AND         XA0054DK         
+SNRESET  MVI   ENTFLG(R3),0        DISABLED                    XA0054DK         
+         LA    R3,16(,R3)                                      XA0054DK         
+         BCT   R0,SNRESET                                      XA0054DK         
+SNFIND   DS    0H                                              XA0054DK         
+         BAL   R9,FINDSN                                       XA0054DK         
+         ST    R1,VCSSAVN+12                                   XA0054DK         
+         LM    R14,R13,VCSSAVN                                 XA0054DK         
+         BR    R14                                             XA0054DK         
+*                                                              XA0054DK         
+* SUBROUTINES, ALL BAL R9.                                     XA0054DK         
+*                                                              XA0054DK         
+OPADDR   L     R1,VMINST      R1 = THE S-OPERAND ADDRESS       XA0054DK         
+         N     R1,F4095                                        XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+         IC    R2,VMINST+2                                     XA0054DK         
+         SRL   R2,4                                            XA0054DK         
+         SLL   R2,2                                            XA0054DK         
+         LTR   R2,R2                                           XA0054DK         
+         BZ    OPADDR1                                         XA0054DK         
+         A     R1,VMGPRS(R2)                                   XA0054DK         
+OPADDR1  TM    VMFSTAT,VMAM31                                  XA0054DK         
+         BO    *+8                                             XA0054DK         
+         N     R1,XRIGHT24                                     XA0054DK         
+         N     R1,X7FFF                                        XA0054DK         
+         BR    R9                                              XA0054DK         
+STOREOP  ST    R9,VCSLINK     R4 WORDS OF VCSBUF TO THE        XA0054DK         
+         BAL   R9,OPADDR      OPERAND: FALLS INTO GUESTIO      XA0054DK         
+         LR    R5,R1                                           XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         L     R9,VCSLINK                                      XA0054DK         
+*  GUESTIO: R4 WORDS BETWEEN GUEST REAL R5 AND CP R6.          XA0054DK         
+*  R0 = 0 STORES INTO THE GUEST, R0 = 1 FETCHES.               XA0054DK         
+GUESTIO  LR    R1,R5                                           XA0054DK         
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31),ADEX=GIOEND       XA0054DK         
+         LTR   R0,R0                                           XA0054DK         
+         BNZ   GIOGET                                          XA0054DK         
+         MVC   0(4,R2),0(R6)                                   XA0054DK         
+         B     GIONEXT                                         XA0054DK         
+GIOGET   MVC   0(4,R6),0(R2)                                   XA0054DK         
+GIONEXT  LA    R6,4(,R6)                                       XA0054DK         
+         AL    R5,F4                                           XA0054DK         
+         BCT   R4,GUESTIO                                      XA0054DK         
+GIOEND   BR    R9                                              XA0054DK         
+GETCSW   ST    R9,VCSLINK     THE CSW AT GUEST X'40'           XA0054DK         
+         LA    R5,X'40'                                        XA0054DK         
+         LA    R6,ENTCSW(,R3)                                  XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         L     R9,VCSLINK                                      XA0054DK         
+PENDING  OI    ENTFLG(R3),ENTPEND                              XA0054DK         
+         TM    ENTFLG(R3),ENTACT                               XA0054DK         
+         BZR   R9                                              XA0054DK         
+         OI    ENTFLG(R3),ENTSOL   SOLICITED                   XA0054DK         
+         BR    R9                                              XA0054DK         
+BLDIRB   XC    VCSBUF(64),VCSBUF  IRB: SCSW, ESW, ECW          XA0054DK         
+         LA    R1,VCSBUF                                       XA0054DK         
+         B     BLDSCSW                                         XA0054DK         
+PUTIRB   L     R5,VCSADDR                                      XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,16                                           XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         B     GUESTIO                                         XA0054DK         
+BLDSCHIB XC    VCSBUF(64),VCSBUF                               XA0054DK         
+         MVC   VCSBUF(4),ENTIPRM(R3)                           XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         IC    R0,ENTISC(R3)                                   XA0054DK         
+         SLL   R0,3                                            XA0054DK         
+         STC   R0,VCSBUF+4                                     XA0054DK         
+         MVI   VCSBUF+5,X'01' VALID                            XA0054DK         
+         TM    ENTFLG(R3),ENTENAB                              XA0054DK         
+         BZ    *+8                                             XA0054DK         
+         OI    VCSBUF+5,X'80' ENABLED                          XA0054DK         
+         STH   R13,VCSBUF+6   DEVICE NUMBER                    XA0054DK         
+         MVC   VCSBUF+8(8),PMCWPATH                            XA0054DK         
+         LR    R0,R13                                          XA0054DK         
+         SRL   R0,8                                            XA0054DK         
+         STC   R0,VCSBUF+16   CHPID: THE CHANNEL               XA0054DK         
+         LA    R1,VCSBUF+28                                    XA0054DK         
+*  BLDSCSW: THE SCSW AT R1 FROM THE ENTRY AT R3.               XA0054DK         
+BLDSCSW  TM    ENTFLG(R3),ENTPEND                              XA0054DK         
+         BZ    SCSWIDLE                                        XA0054DK         
+         MVC   4(4,R1),ENTCSW(R3)                              XA0054DK         
+         MVI   4(R1),0        CCW ADDRESS                      XA0054DK         
+         MVC   8(4,R1),ENTCSW+4(R3)                            XA0054DK         
+         TM    ENTFLG(R3),ENTFMT1                              XA0054DK         
+         BZ    *+8                                             XA0054DK         
+         MVI   1(R1),X'80'    FORMAT-1 CCWS                    XA0054DK         
+         TM    ENTFLG(R3),ENTSOL                               XA0054DK         
+         BZ    SCSWUNS                                         XA0054DK         
+         MVI   2(R1),X'40'    START FUNCTION                   XA0054DK         
+         MVI   3(R1),X'05'    PRIMARY, PENDING                 XA0054DK         
+         TM    ENTCSW+4(R3),X'04'  DEVICE END?                 XA0054DK         
+         BZR   R9                                              XA0054DK         
+         MVI   3(R1),X'07'    AND SECONDARY                    XA0054DK         
+         BR    R9                                              XA0054DK         
+SCSWUNS  MVI   3(R1),X'11'    ALERT, PENDING                   XA0054DK         
+         BR    R9                                              XA0054DK         
+SCSWIDLE TM    ENTFLG(R3),ENTACT                               XA0054DK         
+         BZR   R9                                              XA0054DK         
+         MVI   2(R1),X'44'    START, START PENDING             XA0054DK         
+         MVI   3(R1),X'80'    SUBCHANNEL ACTIVE                XA0054DK         
+         BR    R9                                              XA0054DK         
+GETTAB   ICM   R10,15,VMVCSTB R10 = THE TABLE                  XA0054DK         
+         BNZR  R9                                              XA0054DK         
+         LA    R0,VCSTABSZ                                     XA0054DK         
+         CALL  DMKFREE                                         XA0054DK         
+         LR    R10,R1                                          XA0054DK         
+         ST    R10,VMVCSTB                                     XA0054DK         
+         XC    0(VCSHDRL,R10),0(R10)                           XA0054DK         
+         LA    R1,VCSHDRL(,R10)                                XA0054DK         
+         LA    R0,VCSNENT                                      XA0054DK         
+GTINIT   MVC   0(16,R1),EMPTYENT                               XA0054DK         
+         LA    R1,16(,R1)                                      XA0054DK         
+         BCT   R0,GTINIT                                       XA0054DK         
+         BR    R9                                              XA0054DK         
+GETENT   LA    R3,VCSHDRL(,R10)  R3 = THE ENTRY OF R13         XA0054DK         
+         LA    R0,VCSNENT                                      XA0054DK         
+GESRCH   CH    R13,0(,R3)                                      XA0054DK         
+         BER   R9                                              XA0054DK         
+         LA    R3,16(,R3)                                      XA0054DK         
+         BCT   R0,GESRCH                                       XA0054DK         
+         LA    R3,VCSHDRL(,R10)                                XA0054DK         
+         LA    R0,VCSNENT                                      XA0054DK         
+GEFREE   CLC   0(2,R3),EMPTYENT                                XA0054DK         
+         BE    GENEW                                           XA0054DK         
+         LA    R3,16(,R3)                                      XA0054DK         
+         BCT   R0,GEFREE                                       XA0054DK         
+         LA    R3,VCSHDRL(,R10)  FULL: REUSE THE FIRST         XA0054DK         
+GENEW    XC    0(16,R3),0(R3)                                  XA0054DK         
+         STH   R13,0(,R3)                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+*  FINDSUB: R1 = SUBCHANNEL N. R6-R8 AND R13 = THE N-TH        XA0054DK         
+*  DEVICE IN ADDRESS ORDER, CC 0; CC NOT 0 IF THERE IS NONE.   XA0054DK         
+FINDSUB  LR    R0,R1                                           XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+FSCH     LH    R6,VMCHTBL(R2)                                  XA0054DK         
+         LTR   R6,R6                                           XA0054DK         
+         BM    FSCHN                                           XA0054DK         
+         A     R6,VMCHSTRT                                     XA0054DK         
+         SR    R4,R4                                           XA0054DK         
+FSCU     LH    R7,VCHCUTBL(R4)                                 XA0054DK         
+         LTR   R7,R7                                           XA0054DK         
+         BM    FSCUN                                           XA0054DK         
+         A     R7,VMCUSTRT                                     XA0054DK         
+         SR    R5,R5                                           XA0054DK         
+FSDV     LH    R8,VCUDVTBL(R5)                                 XA0054DK         
+         LTR   R8,R8                                           XA0054DK         
+         BM    FSDVN                                           XA0054DK         
+         A     R8,VMDVSTRT                                     XA0054DK         
+         TM    VDEVFLAG,VDEVDET                                XA0054DK         
+         BO    FSDVN                                           XA0054DK         
+         LTR   R0,R0                                           XA0054DK         
+         BZ    FSFOUND                                         XA0054DK         
+         BCTR  R0,0                                            XA0054DK         
+FSDVN    LA    R5,2(,R5)                                       XA0054DK         
+         CH    R5,H32                                          XA0054DK         
+         BL    FSDV                                            XA0054DK         
+FSCUN    LA    R4,2(,R4)                                       XA0054DK         
+         CH    R4,H32                                          XA0054DK         
+         BL    FSCU                                            XA0054DK         
+FSCHN    LA    R2,2(,R2)                                       XA0054DK         
+         CH    R2,H32                                          XA0054DK         
+         BL    FSCH                                            XA0054DK         
+         LTR   R9,R9          NONE: CC NOT 0                   XA0054DK         
+         BR    R9                                              XA0054DK         
+FSFOUND  LH    R13,VDEVADD                                     XA0054DK         
+         AH    R13,VCUADD                                      XA0054DK         
+         AH    R13,VCHADD                                      XA0054DK         
+         SR    R0,R0          CC 0                             XA0054DK         
+         BR    R9                                              XA0054DK         
+*  FINDSN: R13 = DEVICE. R1 = ITS SUBCHANNEL NUMBER.           XA0054DK         
+FINDSN   SR    R1,R1                                           XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+FNCH     LH    R6,VMCHTBL(R2)                                  XA0054DK         
+         LTR   R6,R6                                           XA0054DK         
+         BM    FNCHN                                           XA0054DK         
+         A     R6,VMCHSTRT                                     XA0054DK         
+         SR    R4,R4                                           XA0054DK         
+FNCU     LH    R7,VCHCUTBL(R4)                                 XA0054DK         
+         LTR   R7,R7                                           XA0054DK         
+         BM    FNCUN                                           XA0054DK         
+         A     R7,VMCUSTRT                                     XA0054DK         
+         SR    R5,R5                                           XA0054DK         
+FNDV     LH    R8,VCUDVTBL(R5)                                 XA0054DK         
+         LTR   R8,R8                                           XA0054DK         
+         BM    FNDVN                                           XA0054DK         
+         A     R8,VMDVSTRT                                     XA0054DK         
+         TM    VDEVFLAG,VDEVDET                                XA0054DK         
+         BO    FNDVN                                           XA0054DK         
+         LH    R0,VDEVADD                                      XA0054DK         
+         AH    R0,VCUADD                                       XA0054DK         
+         AH    R0,VCHADD                                       XA0054DK         
+         CR    R0,R13                                          XA0054DK         
+         BER   R9                                              XA0054DK         
+         LA    R1,1(,R1)                                       XA0054DK         
+FNDVN    LA    R5,2(,R5)                                       XA0054DK         
+         CH    R5,H32                                          XA0054DK         
+         BL    FNDV                                            XA0054DK         
+FNCUN    LA    R4,2(,R4)                                       XA0054DK         
+         CH    R4,H32                                          XA0054DK         
+         BL    FNCU                                            XA0054DK         
+FNCHN    LA    R2,2(,R2)                                       XA0054DK         
+         CH    R2,H32                                          XA0054DK         
+         BL    FNCH                                            XA0054DK         
+         BR    R9                                              XA0054DK         
+*                                                              XA0054DK         
+AVCSSE   DC    A(DMKVCS)                                       XA0054DK         
+AVCSIN   DC    A(DMKVCS)                                       XA0054DK         
+AVCSSN   DC    A(DMKVCS)                                       XA0054DK         
+VCSSAVI  DS    16F                                             XA0054DK         
+VCSSAVN  DS    16F                                             XA0054DK         
+VCSCCX   DC    X'00'                                           XA0054DK         
+         DS    0F                                              XA0054DK         
+SSIDW    DC    X'00010000'                                     XA0054DK         
+F65535   DC    F'65535'                                        XA0054DK         
+X7FFF    DC    X'7FFFFFFF'                                     XA0054DK         
+H32      DC    H'32'                                           XA0054DK         
+SIOOP    DC    X'9C00'                                         XA0054DK         
+TIOOP    DC    X'9D00'                                         XA0054DK         
+EMPTYENT DC    X'FFFF',XL14'00'                                XA0054DK         
+PMCWPATH DC    X'80008080',X'0000FF80'                         XA0054DK         
+         LTORG                                                 XA0054DK         
+ENTFLG   EQU   2              ENTRY: DEVICE H, FLAGS, ISC,     XA0054DK         
+ENTISC   EQU   3              INTERRUPTION PARAMETER, AND      XA0054DK         
+ENTIPRM  EQU   4              THE PENDING STATUS AS A CSW      XA0054DK         
+ENTCSW   EQU   8                                               XA0054DK         
+ENTENAB  EQU   X'80'          MSCH: ENABLED                    XA0054DK         
+ENTACT   EQU   X'40'          SSCH ISSUED, NOT COMPLETE        XA0054DK         
+ENTSOL   EQU   X'20'          PENDING STATUS IS SOLICITED      XA0054DK         
+ENTFMT1  EQU   X'10'          ORB: FORMAT-1 CCWS               XA0054DK         
+ENTPEND  EQU   X'01'          STATUS PENDING                   XA0054DK         
+VCSNENT  EQU   255                                             XA0054DK         
+VCSTAB   DSECT                                                 XA0054DK         
+VCSOP    DS    X              S, T, P: WHAT DMKVSJ RETURNS TO  XA0054DK         
+VCSCC    DS    X                                               XA0054DK         
+VCSFLG   DS    X              (DMKDSP TESTS IT AS 2(TABLE))    XA0054DK         
+VCSACT   EQU   X'80'          GUEST USES ITS CHANNEL SUBSYS    XA0054DK         
+         DS    X                                               XA0054DK         
+VCSADDR  DS    F                                               XA0054DK         
+VCSSUB   DS    F                                               XA0054DK         
+VCSLINK  DS    F                                               XA0054DK         
+VCSBUF   DS    16F                                             XA0054DK         
+VCSHDRL  EQU   *-VCSTAB                                        XA0054DK         
+VCSTABSZ EQU   (VCSHDRL+VCSNENT*16+7)/8                        XA0054DK         
