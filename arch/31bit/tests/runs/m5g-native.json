@@ -255,7 +255,7 @@
  },
  {
   "term": "exec crxmk31",
-  "expect": "RXBVMN -V[^R]*Ready|BUILD ERRORS|DMSABN|DMSITP",
+  "expect": "Bytecode Mode\\)\\s+Ready|BUILD ERRORS|DMSABN|DMSITP",
   "timeout": 1800,
   "cont": true
  },
