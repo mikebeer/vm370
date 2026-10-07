@@ -33,6 +33,12 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BE    VCSSTPX                                         XA0054DK         
          CLI   VMINST+1,X'10' SPX                              XA0054DK         
          BE    VCSSPX                                          XA0054DK         
+         CLI   VMINST+1,X'21' IPTE                             XA0054DK         
+         BE    VCSIPTE                                         XA0054DK         
+         CLI   VMINST+1,X'79' SACF                             XA0054DK         
+         BE    VCSSAC                                          XA0054DK         
+         CLI   VMINST+1,X'19' SAC                              XA0054DK         
+         BE    VCSSAC                                          XA0054DK         
          CLI   VMINST+1,X'36' TPI                              XA0054DK         
          BE    VCSTPI                                          XA0054DK         
          CLI   VMINST+1,X'39' STCRW                            XA0054DK         
@@ -105,7 +111,8 @@ VCSSPX   BAL   R9,OPADDR                                       XA0054DK
          N     R7,XPFX                                         XA0054DK         
          BZ    VCSEXIT        0: NOTHING TO COPY               XA0054DK         
          SR    R8,R8          OFFSET                           XA0054DK         
-SPXLOOP  LA    R5,0(R7,R8)                                     XA0054DK         
+SPXLOOP  LR    R5,R7          (NOT LA: CP RUNS AMODE 24 AND    XA0054DK         
+         AR    R5,R8          LINUX'S PREFIX IS NEAR 64 MB)    XA0054DK         
          LA    R6,VCSBUF                                       XA0054DK         
          LA    R4,4                                            XA0054DK         
          LA    R0,1                                            XA0054DK         
@@ -118,6 +125,48 @@ SPXLOOP  LA    R5,0(R7,R8)                                     XA0054DK
          LA    R8,16(,R8)                                      XA0054DK         
          C     R8,=F'4096'                                     XA0054DK         
          BL    SPXLOOP                                         XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+* IPTE R1,R2: THE GUEST'S PTE INVALID; EVERY SHADOW TABLE      XA0054DK         
+* INVALIDATED BEFORE IT RUNS AGAIN (DMKVAX).                   XA0054DK         
+VCSIPTE  IC    R1,VMINST+3                                     XA0054DK         
+         SRL   R1,4                                            XA0054DK         
+         N     R1,=F'15'                                       XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         L     R5,VMGPRS(R1)  PAGE TABLE ORIGIN                XA0054DK         
+         N     R5,=X'7FFFFFC0'                                 XA0054DK         
+         IC    R1,VMINST+3                                     XA0054DK         
+         N     R1,=F'15'                                       XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         L     R1,VMGPRS(R1)  PAGE INDEX                       XA0054DK         
+         SRL   R1,12                                           XA0054DK         
+         N     R1,=F'255'                                      XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         AR    R5,R1                                           XA0054DK         
+         ST    R5,VCSADDR                                      XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,1                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         OI    VCSBUF+2,X'04'                                  XA0054DK         
+         L     R5,VCSADDR                                      XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,1                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         OI    VMESTAT,VMINVPAG                                XA0054DK         
+         B     VCSEXIT                                         XA0054DK         
+*                                                              XA0054DK         
+* SAC/SACF: HOME MODE IS PRIVILEGED IN THE REAL PROBLEM        XA0054DK         
+* STATE THE GUEST RUNS IN. BITS 22-23 OF THE ADDRESS ARE       XA0054DK         
+* THE NEW ADDRESS-SPACE CONTROL, PSW BITS 16-17.               XA0054DK         
+VCSSAC   BAL   R9,OPADDR                                       XA0054DK         
+         SRL   R1,8                                            XA0054DK         
+         N     R1,=F'3'                                        XA0054DK         
+         SLL   R1,6                                            XA0054DK         
+         STC   R1,VCSBUF                                       XA0054DK         
+         NI    VMPSW+2,X'3F'                                   XA0054DK         
+         OC    VMPSW+2(1),VCSBUF                               XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 *                                                              XA0054DK         
 VCSSTCRW XC    VCSBUF(4),VCSBUF  STCRW: NO CRW PENDING         XA0054DK         

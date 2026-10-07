@@ -42,3 +42,18 @@ DSPM7A   L     R15,=V(DMKVCSIN)  STATUS PENDING FOR TSCH,      XA0054DK
          ST    R1,VMPSW+4                                      XA0054DK         
          B     NOCHAN         NO CSW AT X'40'                  XA0054DK         
 DSPS370  DS    0H                                              XA0054DK         
+./ I 01339000 $ 01339100 100                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 PSW: BITS       XA0054DK         
+         BZ    GETMASK2       16-17 ARE THE ADDRESS-SPACE      XA0054DK         
+         N     R0,=X'FFFF3FFF'  CONTROL                        XA0054DK         
+GETMASK2 DS    0H                                              XA0054DK         
+./ I 02424000 $ 02424110 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: AN ESA/390 GUEST IN     XA0054DK         
+         BZ    DSPV370        TRANSLATE MODE RUNS ON THE       XA0054DK         
+         TM    VMPSW,TRANMODE  SHADOWS OF ITS CR1, CR7 AND     XA0054DK         
+         BZ    CHKRUNE        CR13 (DMKVAX)                    XA0054DK         
+         L     R15,=V(DMKVATES)                                XA0054DK         
+         BALR  R14,R15        R0, R1 = SHADOW CR0, CR1         XA0054DK         
+         OI    VMMCR6,VMMSHADT                                 XA0054DK         
+         B     SETCREGS                                        XA0054DK         
+DSPV370  DS    0H                                              XA0054DK         

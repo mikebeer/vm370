@@ -1,0 +1,467 @@
+./ I 00145000 $ 00145010 010                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATAB370                                        XA0054DK         
+         L     R12,=A(DMKVAXAB)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATAB370 DS    0H                                              XA0054DK         
+./ I 00232040 $ 00232050 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATMD370                                        XA0054DK         
+         L     R12,=A(DMKVAXMD)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATMD370 DS    0H                                              XA0054DK         
+./ I 00346000 $ 00346010 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATBC370                                        XA0054DK         
+         L     R12,=A(DMKVAXBC)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATBC370 DS    0H                                              XA0054DK         
+./ I 00499000 $ 00499010 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATLA370                                        XA0054DK         
+         L     R12,=A(DMKVAXLA)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATLA370 DS    0H                                              XA0054DK         
+./ I 00553000 $ 00553010 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATRN370                                        XA0054DK         
+         L     R12,=A(DMKVAXRN)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATRN370 DS    0H                                              XA0054DK         
+./ I 00780000 $ 00780010 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATSX370                                        XA0054DK         
+         L     R12,=A(DMKVAXFL)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATSX370 DS    0H                                              XA0054DK         
+./ I 00822000 $ 00822010 010                                                    
+         TM    VMFSTAT,VMESA390  M7.3: ESA/390 GUEST           XA0054DK         
+         BZ    VATPX370                                        XA0054DK         
+         L     R12,=A(DMKVAXFL)                                XA0054DK         
+         BR    R12                                             XA0054DK         
+VATPX370 DS    0H                                              XA0054DK         
+./ I 01045000 $ 01045002 002                                                    
+*                                                              XA0054DK         
+* M7.3: SHADOW TRANSLATION FOR AN ESA/390 VIRTUAL MACHINE      XA0054DK         
+* (SET ESA ON). ITS TABLES ARE ESA/390 FORMAT, 1 MB            XA0054DK         
+* SEGMENTS OF 4 KB PAGES, LIKE THE HARDWARE'S, SO EACH         XA0054DK         
+* SHADOW TABLE IS THE GUEST'S ENTRY FOR ENTRY WITH REAL        XA0054DK         
+* FRAMES. UP TO FOUR STDS ARE SHADOWED; CR1, CR7, CR13         XA0054DK         
+* EACH RUN ON THE SHADOW OF THEIR OWN. EXTSHSEG POINTS AT      XA0054DK         
+* THE DATBLK. DOCS/40-M7.3-GUEST-DAT.MD.                       XA0054DK         
+*                                                              XA0054DK         
+* DATBLK: +0 SHADOW STD FOR CR7, +4 FOR CR13, +8 NEXT SET      XA0054DK         
+* TO REUSE; +16 FOUR SETS OF 16 BYTES: GUEST STD, SHADOW       XA0054DK         
+* SEGMENT TABLE (4 KB ALIGNED, 2048 ENTRIES), ITS DMKFREE      XA0054DK         
+* ADDRESS (0: SET UNUSED). A SHADOW PAGE TABLE IS 256          XA0054DK         
+* ENTRIES, 64-BYTE ALIGNED, ITS DMKFREE ADDRESS AT +1024.      XA0054DK         
+*                                                              XA0054DK         
+DMKVAX   CSECT                                                 XA0054DK         
+         DROP  R12                                             XA0054DK         
+         USING DMKVAX,R12                                      XA0054DK         
+         ENTRY DMKVATES                                        XA0054DK         
+*                                                              XA0054DK         
+* DMKVATES: BALR FROM DMKDSP FOR A TRANSLATE-MODE ESA/390      XA0054DK         
+* GUEST. R0, R1 = SHADOW CR0, CR1 OUT; CR7, CR13 LOADED.       XA0054DK         
+*                                                              XA0054DK         
+DMKVATES STM   R0,R15,BALRSAVE                                 XA0054DK         
+         L     R12,AVAXES-DMKVATES(,R15)                       XA0054DK         
+         L     R10,VMECEXT                                     XA0054DK         
+         BAL   R8,VXREF                                        XA0054DK         
+         L     R5,EXTSHSEG                                     XA0054DK         
+         LCTL  C7,C7,0(R5)                                     XA0054DK         
+         LCTL  C13,C13,4(R5)                                   XA0054DK         
+         L     R1,EXTCR0+12   CR3: PKM AND SASN. A GUEST IN    XA0054DK         
+         TM    VMPSW+1,X'01'  VIRTUAL SUPERVISOR STATE MAY     XA0054DK         
+         BO    VXES3          USE ANY KEY IN MVCP/MVCS,        XA0054DK         
+         O     R1,=X'FFFF0000'  WHICH RUN NATIVELY             XA0054DK         
+VXES3    ST    R1,VXCR3                                        XA0054DK         
+         LCTL  C3,C3,VXCR3                                     XA0054DK         
+         L     R0,EXTSHCR0                                     XA0054DK         
+         L     R1,EXTSHCR1                                     XA0054DK         
+         LM    R2,R15,BALRSAVE+8                               XA0054DK         
+         BR    R14                                             XA0054DK         
+AVAXES   DC    A(DMKVAX)                                       XA0054DK         
+*                                                              XA0054DK         
+* DMKVAXAB, DMKVAXMD: FROM DMKVATAB AND DMKVATMD (BALRSAVE     XA0054DK         
+* HOLDS THE CALLER'S REGISTERS). INVALIDATE IF ASKED, SET      XA0054DK         
+* THE SHADOW CONTROL REGISTERS.                                XA0054DK         
+*                                                              XA0054DK         
+DMKVAXAB DS    0H                                              XA0054DK         
+DMKVAXMD L     R12,AVAXAB-DMKVAXAB(,R12)                       XA0054DK         
+         L     R10,VMECEXT                                     XA0054DK         
+         BAL   R8,VXREF                                        XA0054DK         
+VXBALR   LM    R0,R15,BALRSAVE                                 XA0054DK         
+         BR    R14                                             XA0054DK         
+AVAXAB   DC    A(DMKVAX)                                       XA0054DK         
+*                                                              XA0054DK         
+* DMKVAXBC: FROM DMKVATBC. RELEASE EVERYTHING.                 XA0054DK         
+*                                                              XA0054DK         
+DMKVAXBC L     R12,AVAXBC-DMKVAXBC(,R12)                       XA0054DK         
+         L     R10,VMECEXT                                     XA0054DK         
+         ICM   R5,15,EXTSHSEG                                  XA0054DK         
+         BZ    VXBC9                                           XA0054DK         
+         LA    R4,16(,R5)                                      XA0054DK         
+         LA    R3,4                                            XA0054DK         
+VXBC1    ICM   R1,15,8(R4)                                     XA0054DK         
+         BZ    VXBC2                                           XA0054DK         
+         ST    R3,VXCNT                                        XA0054DK         
+         BAL   R9,VXFSET                                       XA0054DK         
+         L     R1,8(,R4)                                       XA0054DK         
+         LA    R0,1536                                         XA0054DK         
+         CALL  DMKFRET                                         XA0054DK         
+         L     R3,VXCNT                                        XA0054DK         
+VXBC2    LA    R4,16(,R4)                                      XA0054DK         
+         BCT   R3,VXBC1                                        XA0054DK         
+         LR    R1,R5                                           XA0054DK         
+         LA    R0,10                                           XA0054DK         
+         CALL  DMKFRET                                         XA0054DK         
+VXBC9    SR    R1,R1                                           XA0054DK         
+         ST    R1,EXTSHSEG                                     XA0054DK         
+         ST    R1,EXTSHCR1                                     XA0054DK         
+         NI    VMESTAT,X'FF'-VMSHADT                           XA0054DK         
+         B     VXBALR                                          XA0054DK         
+AVAXBC   DC    A(DMKVAX)                                       XA0054DK         
+*                                                              XA0054DK         
+* DMKVAXFL: GOTO FROM DMKVATSX/DMKVATPX: A SEGMENT- OR         XA0054DK         
+* PAGE-TRANSLATION EXCEPTION ON A SHADOW TABLE. TREXADD'S      XA0054DK         
+* LOW BITS NAME THE SPACE (00 PRIMARY, 10 SECONDARY, 11        XA0054DK         
+* HOME). WALK THE GUEST'S TABLES; REFLECT, OR FILL IN.         XA0054DK         
+*                                                              XA0054DK         
+DMKVAXFL L     R12,AVAXFL-DMKVAXFL(,R12)                       XA0054DK         
+         L     R10,VMECEXT                                     XA0054DK         
+         L     R7,TREXADD                                      XA0054DK         
+         BAL   R8,VXREF       (PENDING INVALIDATIONS TOO)      XA0054DK         
+         L     R5,EXTSHSEG                                     XA0054DK         
+         LR    R1,R7                                           XA0054DK         
+         N     R1,=F'3'                                        XA0054DK         
+         L     R3,EXTCR1                                       XA0054DK         
+         C     R1,=F'2'                                        XA0054DK         
+         BL    VXF1                                            XA0054DK         
+         L     R3,EXTCR7                                       XA0054DK         
+         BE    VXF1                                            XA0054DK         
+         L     R3,EXTCR7+24   CR13                             XA0054DK         
+VXF1     ST    R3,VXSTD                                        XA0054DK         
+         LR    R1,R3                                           XA0054DK         
+         BAL   R9,VXSET       R4 = ITS SET                     XA0054DK         
+         ST    R4,VXSETP      (VXWALK USES R4)                 XA0054DK         
+         L     R3,VXSTD                                        XA0054DK         
+         BAL   R9,VXWALK                                       XA0054DK         
+         L     R1,VXRNXT      DIAGNOSTIC RING (DCP DMKVATRG)   XA0054DK         
+         LA    R2,VXRING(R1)                                   XA0054DK         
+         ST    R7,0(,R2)      FAULT ADDRESS                    XA0054DK         
+         MVC   4(4,R2),VXSTD  GUEST STD                        XA0054DK         
+         ST    R0,8(,R2)      0 OR THE CODE REFLECTED          XA0054DK         
+         ST    R6,12(,R2)     GUEST FRAME                      XA0054DK         
+         LA    R1,16(,R1)                                      XA0054DK         
+         N     R1,=F'255'                                      XA0054DK         
+         ST    R1,VXRNXT                                       XA0054DK         
+         LTR   R0,R0                                           XA0054DK         
+         BNZ   VXREFL                                          XA0054DK         
+         ST    R15,VXPROT                                      XA0054DK         
+         LR    R1,R6                                           XA0054DK         
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31)                   XA0054DK         
+         BC    2,VXADR                                         XA0054DK         
+         N     R2,=X'7FFFF000'                                 XA0054DK         
+         O     R2,VXPROT                                       XA0054DK         
+         ST    R2,VXPTE                                        XA0054DK         
+         L     R4,VXSETP                                       XA0054DK         
+         L     R2,4(,R4)      SHADOW SEGMENT TABLE             XA0054DK         
+         LR    R1,R7                                           XA0054DK         
+         SRL   R1,20                                           XA0054DK         
+         N     R1,=F'2047'                                     XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         AR    R2,R1          ITS ENTRY                        XA0054DK         
+         TM    3(R2),X'20'                                     XA0054DK         
+         BZ    VXF3                                            XA0054DK         
+         ST    R2,VXSTE       NO PAGE TABLE YET                XA0054DK         
+         LA    R0,137                                          XA0054DK         
+         CALL  DMKFREE                                         XA0054DK         
+         LA    R3,63(,R1)                                      XA0054DK         
+         N     R3,=X'7FFFFFC0'                                 XA0054DK         
+         ST    R1,1024(,R3)                                    XA0054DK         
+         LR    R6,R3                                           XA0054DK         
+         LA    R0,256                                          XA0054DK         
+         L     R1,=X'00000400'                                 XA0054DK         
+VXF2     ST    R1,0(,R6)                                       XA0054DK         
+         LA    R6,4(,R6)                                       XA0054DK         
+         BCT   R0,VXF2                                         XA0054DK         
+         O     R3,=F'15'                                       XA0054DK         
+         L     R2,VXSTE                                        XA0054DK         
+         ST    R3,0(,R2)                                       XA0054DK         
+VXF3     L     R3,0(,R2)                                       XA0054DK         
+         N     R3,=X'7FFFFFC0'                                 XA0054DK         
+         LR    R1,R7                                           XA0054DK         
+         SRL   R1,12                                           XA0054DK         
+         N     R1,=F'255'                                      XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         AR    R3,R1                                           XA0054DK         
+         MVC   0(4,R3),VXPTE                                   XA0054DK         
+         L     R15,=A(VATEXIT)                                 XA0054DK         
+         L     R12,=A(DMKVAT)                                  XA0054DK         
+         BR    R15                                             XA0054DK         
+VXADR    LA    R0,5                                            XA0054DK         
+VXREFL   L     R15,=A(SEGEXCP)                                 XA0054DK         
+         C     R0,=F'16'                                       XA0054DK         
+         BE    VXREFL2                                         XA0054DK         
+         L     R15,=A(PAGEXCP)                                 XA0054DK         
+         C     R0,=F'17'                                       XA0054DK         
+         BE    VXREFL2                                         XA0054DK         
+         L     R15,=A(TRNEXCP)                                 XA0054DK         
+         C     R0,=F'18'                                       XA0054DK         
+         BE    VXREFL2                                         XA0054DK         
+         L     R15,=A(ADREXCP)                                 XA0054DK         
+VXREFL2  L     R12,=A(DMKVAT)                                  XA0054DK         
+         BR    R15                                             XA0054DK         
+AVAXFL   DC    A(DMKVAX)                                       XA0054DK         
+*                                                              XA0054DK         
+* DMKVAXRN, DMKVAXLA: FROM DMKVATRN/DMKVATLA AFTER ENTER.      XA0054DK         
+* R3 = THE GUEST VIRTUAL ADDRESS; SAVER2 = ITS REAL (RN)       XA0054DK         
+* OR GUEST REAL (LA) ADDRESS; SAVER0/1 = 1/CODE ON AN          XA0054DK         
+* EXCEPTION. PRIMARY SPACE, HOME IN HOME MODE.                 XA0054DK         
+*                                                              XA0054DK         
+DMKVAXLA L     R12,AVAXLA-DMKVAXLA(,R12)                       XA0054DK         
+         MVI   VXOP,C'L'                                       XA0054DK         
+         B     VXRN0                                           XA0054DK         
+AVAXLA   DC    A(DMKVAX)                                       XA0054DK         
+DMKVAXRN L     R12,AVAXRN-DMKVAXRN(,R12)                       XA0054DK         
+         MVI   VXOP,C'R'                                       XA0054DK         
+VXRN0    DS    0H                                              XA0054DK         
+         L     R10,VMECEXT                                     XA0054DK         
+         LR    R7,R3                                           XA0054DK         
+         L     R3,EXTCR1                                       XA0054DK         
+         TM    VMPSW+2,X'C0'                                   XA0054DK         
+         BNO   VXRN1                                           XA0054DK         
+         L     R3,EXTCR7+24                                    XA0054DK         
+VXRN1    BAL   R9,VXWALK                                       XA0054DK         
+         LTR   R0,R0                                           XA0054DK         
+         BNZ   VXGIVE                                          XA0054DK         
+         LR    R2,R6                                           XA0054DK         
+         CLI   VXOP,C'L'                                       XA0054DK         
+         BE    VXRN2                                           XA0054DK         
+         LR    R1,R6                                           XA0054DK         
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31)                   XA0054DK         
+         BC    2,VXG05                                         XA0054DK         
+VXRN2    LR    R1,R7                                           XA0054DK         
+         N     R1,=F'4095'                                     XA0054DK         
+         AR    R2,R1                                           XA0054DK         
+         ST    R2,SAVER2                                       XA0054DK         
+         EXIT                                                  XA0054DK         
+VXG05    LA    R0,5                                            XA0054DK         
+VXGIVE   LR    R1,R0                                           XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         ST    R0,SAVER0                                       XA0054DK         
+         ST    R1,SAVER1                                       XA0054DK         
+         EXIT                                                  XA0054DK         
+AVAXRN   DC    A(DMKVAX)                                       XA0054DK         
+*                                                              XA0054DK         
+* VXREF (BAL R8): THE DATBLK, PENDING INVALIDATIONS, AND       XA0054DK         
+* THE SHADOW STDS OF CR1, CR7, CR13; EXTSHCR0 IS CP'S CR0      XA0054DK         
+* WITH THE GUEST'S SECONDARY-SPACE CONTROL.                    XA0054DK         
+*                                                              XA0054DK         
+VXREF    ST    R8,VXLNK                                        XA0054DK         
+         ICM   R5,15,EXTSHSEG                                  XA0054DK         
+         BNZ   VXREF1                                          XA0054DK         
+         LA    R0,10                                           XA0054DK         
+         CALL  DMKFREE                                         XA0054DK         
+         LR    R5,R1                                           XA0054DK         
+         XC    0(80,R5),0(R5)                                  XA0054DK         
+         ST    R5,EXTSHSEG                                     XA0054DK         
+VXREF1   TM    VMESTAT,VMINVPAG+VMINVSEG+VMNEWCR0              XA0054DK         
+         BZ    VXREF2                                          XA0054DK         
+         BAL   R9,VXZAP                                        XA0054DK         
+VXREF2   NI    VMESTAT,255-(VMNEWCR0+VMINVSEG+VMINVPAG)        XA0054DK         
+         NI    VMESTAT,255-VMBADCR0                            XA0054DK         
+         OI    VMESTAT,VMSHADT                                 XA0054DK         
+         L     R1,EXTCR1                                       XA0054DK         
+         BAL   R9,VXSET                                        XA0054DK         
+         ST    R1,EXTSHCR1                                     XA0054DK         
+         L     R1,EXTCR7                                       XA0054DK         
+         BAL   R9,VXSET                                        XA0054DK         
+         ST    R1,0(,R5)                                       XA0054DK         
+         L     R1,EXTCR7+24                                    XA0054DK         
+         BAL   R9,VXSET                                        XA0054DK         
+         ST    R1,4(,R5)                                       XA0054DK         
+         L     R1,CPCREG0                                      XA0054DK         
+         ST    R1,EXTSHCR0                                     XA0054DK         
+         NI    EXTSHCR0,X'FB'                                  XA0054DK         
+         TM    EXTCR0,X'04'   SECONDARY-SPACE CONTROL          XA0054DK         
+         BZ    VXREF3                                          XA0054DK         
+         OI    EXTSHCR0,X'04'                                  XA0054DK         
+VXREF3   L     R8,VXLNK                                        XA0054DK         
+         BR    R8                                              XA0054DK         
+*                                                              XA0054DK         
+* VXSET (BAL R9): R1 = GUEST STD IN, ITS SHADOW STD OUT;       XA0054DK         
+* R4 = ITS SET. R5 = DATBLK.                                   XA0054DK         
+*                                                              XA0054DK         
+VXSET    ST    R9,VXLNK2                                       XA0054DK         
+         ST    R1,VXTMP                                        XA0054DK         
+         LA    R4,16(,R5)                                      XA0054DK         
+         LA    R0,4                                            XA0054DK         
+VXS1     ICM   R2,15,8(R4)                                     XA0054DK         
+         BZ    VXS1N                                           XA0054DK         
+         C     R1,0(,R4)                                       XA0054DK         
+         BE    VXSFND                                          XA0054DK         
+VXS1N    LA    R4,16(,R4)                                      XA0054DK         
+         BCT   R0,VXS1                                         XA0054DK         
+         LA    R4,16(,R5)     A FREE SET?                      XA0054DK         
+         LA    R0,4                                            XA0054DK         
+VXS2     ICM   R2,15,8(R4)                                     XA0054DK         
+         BZ    VXSNEW                                          XA0054DK         
+         LA    R4,16(,R4)                                      XA0054DK         
+         BCT   R0,VXS2                                         XA0054DK         
+         L     R4,8(,R5)      NO: THE NEXT IN TURN             XA0054DK         
+         LA    R2,1(,R4)                                       XA0054DK         
+         N     R2,=F'3'                                        XA0054DK         
+         ST    R2,8(,R5)                                       XA0054DK         
+         SLL   R4,4                                            XA0054DK         
+         LA    R4,16(R4,R5)                                    XA0054DK         
+         BAL   R9,VXFSET                                       XA0054DK         
+         B     VXSINI                                          XA0054DK         
+VXSNEW   LA    R0,1536        12 KB: 8 KB ON A 4 KB BOUNDARY   XA0054DK         
+         CALL  DMKFREE                                         XA0054DK         
+         ST    R1,8(,R4)                                       XA0054DK         
+         LA    R2,4095(,R1)                                    XA0054DK         
+         N     R2,=X'7FFFF000'                                 XA0054DK         
+         ST    R2,4(,R4)                                       XA0054DK         
+         L     R2,4(,R4)                                       XA0054DK         
+         LA    R0,2048                                         XA0054DK         
+         L     R3,=X'00000020'                                 XA0054DK         
+VXSI2    ST    R3,0(,R2)                                       XA0054DK         
+         LA    R2,4(,R2)                                       XA0054DK         
+         BCT   R0,VXSI2                                        XA0054DK         
+VXSINI   L     R1,VXTMP                                        XA0054DK         
+         ST    R1,0(,R4)                                       XA0054DK         
+VXSFND   L     R1,VXTMP                                        XA0054DK         
+         N     R1,=F'127'     STL                              XA0054DK         
+         O     R1,4(,R4)                                       XA0054DK         
+         L     R9,VXLNK2                                       XA0054DK         
+         BR    R9                                              XA0054DK         
+*                                                              XA0054DK         
+* VXFSET (BAL R9): RELEASE SET R4'S PAGE TABLES, ALL ITS       XA0054DK         
+* SEGMENT TABLE ENTRIES INVALID.                               XA0054DK         
+*                                                              XA0054DK         
+VXFSET   ST    R9,VXLNK3                                       XA0054DK         
+         ST    R1,VXTMP2                                       XA0054DK         
+         L     R2,4(,R4)                                       XA0054DK         
+         LA    R3,2048                                         XA0054DK         
+VXFS1    TM    3(R2),X'20'                                     XA0054DK         
+         BO    VXFS2                                           XA0054DK         
+         L     R6,0(,R2)                                       XA0054DK         
+         N     R6,=X'7FFFFFC0'                                 XA0054DK         
+         L     R1,1024(,R6)                                    XA0054DK         
+         LA    R0,137                                          XA0054DK         
+         STM   R2,R3,VXSV23                                    XA0054DK         
+         CALL  DMKFRET                                         XA0054DK         
+         LM    R2,R3,VXSV23                                    XA0054DK         
+         MVC   0(4,R2),=X'00000020'                            XA0054DK         
+VXFS2    LA    R2,4(,R2)                                       XA0054DK         
+         BCT   R3,VXFS1                                        XA0054DK         
+         L     R1,VXTMP2                                       XA0054DK         
+         L     R9,VXLNK3                                       XA0054DK         
+         BR    R9                                              XA0054DK         
+*                                                              XA0054DK         
+* VXZAP (BAL R9): EVERY SET INVALIDATED; PTLB BEFORE RUNNING.  XA0054DK         
+*                                                              XA0054DK         
+VXZAP    ST    R9,VXLNK4                                       XA0054DK         
+         LA    R4,16(,R5)                                      XA0054DK         
+         LA    R3,4                                            XA0054DK         
+VXZ1     ICM   R1,15,8(R4)                                     XA0054DK         
+         BZ    VXZ2                                            XA0054DK         
+         ST    R3,VXCNT                                        XA0054DK         
+         BAL   R9,VXFSET                                       XA0054DK         
+         L     R3,VXCNT                                        XA0054DK         
+VXZ2     LA    R4,16(,R4)                                      XA0054DK         
+         BCT   R3,VXZ1                                         XA0054DK         
+         OI    APSTAT2,CPPTLBR                                 XA0054DK         
+         L     R9,VXLNK4                                       XA0054DK         
+         BR    R9                                              XA0054DK         
+*                                                              XA0054DK         
+* VXWALK (BAL R9): R7 = VIRTUAL ADDRESS, R3 = GUEST STD.       XA0054DK         
+* R0 = 0: R6 = GUEST REAL FRAME, R15 = ITS PROTECT BIT;        XA0054DK         
+* ELSE R0 = PROGRAM INTERRUPTION CODE (10, 11, 12, 5).         XA0054DK         
+*                                                              XA0054DK         
+VXWALK   ST    R9,VXLNKW                                       XA0054DK         
+         LR    R1,R7                                           XA0054DK         
+         SRL   R1,20                                           XA0054DK         
+         N     R1,=F'2047'    SEGMENT INDEX                    XA0054DK         
+         LR    R4,R3                                           XA0054DK         
+         N     R4,=F'127'                                      XA0054DK         
+         LA    R4,1(,R4)                                       XA0054DK         
+         SLL   R4,4           ENTRIES IN THE TABLE             XA0054DK         
+         CR    R1,R4                                           XA0054DK         
+         BNL   VXW10                                           XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         LR    R4,R3                                           XA0054DK         
+         N     R4,=X'7FFFF000'                                 XA0054DK         
+         AR    R1,R4                                           XA0054DK         
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31)                   XA0054DK         
+         BC    2,VXW05                                         XA0054DK         
+         L     R4,0(,R2)      GUEST STE                        XA0054DK         
+         LR    R0,R4                                           XA0054DK         
+         N     R0,=X'00000020'                                 XA0054DK         
+         BNZ   VXW10                                           XA0054DK         
+         LTR   R4,R4                                           XA0054DK         
+         BM    VXW12                                           XA0054DK         
+         LR    R1,R7                                           XA0054DK         
+         SRL   R1,12                                           XA0054DK         
+         N     R1,=F'255'     PAGE INDEX                       XA0054DK         
+         LR    R0,R4                                           XA0054DK         
+         N     R0,=F'15'                                       XA0054DK         
+         A     R0,=F'1'       (NOT LA: BASE 0 IS NO REGISTER)  XA0054DK         
+         SLL   R0,4                                            XA0054DK         
+         CR    R1,R0                                           XA0054DK         
+         BNL   VXW11                                           XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         N     R4,=X'7FFFFFC0'                                 XA0054DK         
+         AR    R1,R4                                           XA0054DK         
+         TRANS 2,1,OPT=(BRING,DEFER,AMODE31)                   XA0054DK         
+         BC    2,VXW05                                         XA0054DK         
+         L     R4,0(,R2)      GUEST PTE                        XA0054DK         
+         LR    R0,R4                                           XA0054DK         
+         N     R0,=X'00000400'                                 XA0054DK         
+         BNZ   VXW11                                           XA0054DK         
+         LR    R0,R4                                           XA0054DK         
+         N     R0,=X'80000900'                                 XA0054DK         
+         BNZ   VXW12                                           XA0054DK         
+         LR    R6,R4                                           XA0054DK         
+         N     R6,=X'7FFFF000'                                 XA0054DK         
+         CL    R6,VMSIZE                                       XA0054DK         
+         BNL   VXW05                                           XA0054DK         
+         LR    R15,R4                                          XA0054DK         
+         N     R15,=X'00000200'                                XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         B     VXWEND                                          XA0054DK         
+VXW05    LA    R0,5                                            XA0054DK         
+         B     VXWEND                                          XA0054DK         
+VXW10    LA    R0,16                                           XA0054DK         
+         B     VXWEND                                          XA0054DK         
+VXW11    LA    R0,17                                           XA0054DK         
+         B     VXWEND                                          XA0054DK         
+VXW12    LA    R0,18                                           XA0054DK         
+VXWEND   L     R9,VXLNKW                                       XA0054DK         
+         BR    R9                                              XA0054DK         
+*                                                              XA0054DK         
+VXLNK    DS    F                                               XA0054DK         
+VXLNK2   DS    F                                               XA0054DK         
+VXLNK3   DS    F                                               XA0054DK         
+VXLNK4   DS    F                                               XA0054DK         
+VXLNKW   DS    F                                               XA0054DK         
+VXTMP    DS    F                                               XA0054DK         
+VXTMP2   DS    F                                               XA0054DK         
+VXCNT    DS    F                                               XA0054DK         
+VXSTD    DS    F                                               XA0054DK         
+VXPROT   DS    F                                               XA0054DK         
+VXPTE    DS    F                                               XA0054DK         
+VXSTE    DS    F                                               XA0054DK         
+VXSETP   DS    F                                               XA0054DK         
+VXCR3    DS    F                                               XA0054DK         
+VXSV23   DS    2F                                              XA0054DK         
+VXOP     DS    C                                               XA0054DK         
+         DS    0F                                              XA0054DK         
+         ENTRY DMKVATRG                                        XA0054DK         
+DMKVATRG DC    C'VXRING'                                       XA0054DK         
+VXRNXT   DC    F'0'                                            XA0054DK         
+VXRING   DC    16XL16'00'                                      XA0054DK         
+         LTORG                                                 XA0054DK         
