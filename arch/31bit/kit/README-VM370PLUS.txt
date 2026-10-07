@@ -1,4 +1,4 @@
-VM/370+  --  overlay kit, 6 October 2026
+VM/370+  --  overlay kit, 7 October 2026
 =========================================
 
 VM/370 Community Edition V1 R1.2, with CP converted to ESA/390 (AMODE 31)
@@ -43,6 +43,16 @@ USE
 
   IPL CMS / IPL 190 still give the classic BC-mode CMS.
 
+  cREXX (the 2022 S370 tree, F0041), built natively on this system:
+    ipl 290, then  global txtlib gcclib  and on CMSUSER's E disk:
+        rxc -v   rxas -v   rxdas -v   rxbvm -v
+        rxbvm -l d ascommon        10 tests, Success
+        rxbvm -l d asebcdic        12 tests, Success
+    The sources are on CMSUSER's D disk; CRXMAKE EXEC rebuilds them
+    (RXVMINTP needs GCC380 in AMODE 31 -- GCC370 runs out of storage).
+    Known: RXC -L on a REXX program ends in DLMALLOC PANIC, as on
+    stock CE.  vm370plus/ has CRXMAKE.EXEC and the cms.h it needs.
+
   Compiling C with the compiler running above 16 MB:
     GCC EXEC chooses GCC370 here (no S/380); GCC380 is the AMODE 31
     build.  vm370plus/GCC31.EXEC in this kit forces GCC380 (and
@@ -64,6 +74,11 @@ RULES THAT MATTER
   - CP itself runs with 16 MB of real storage (MAINSIZE 16).  Virtual
     machines may be up to 256 MB.  Raising CP's real storage is
     milestone M4b.
+  - CPWATCH is no longer autologged (AUTOLOG1's PROFILE EXEC: the two
+    CPWATCH lines start with '*').  It is an S/370 CP monitor that loops
+    under this CP at priority 5 and starves everyone else (I-251).
+  - CP emulates the S/370 interval timer from the TOD clock (ESA/390 has
+    none), so time slices end and virtual interval timers run (I-250).
   - CP Q V STOR shows only 5 digits (131072K appears as 31072K) -- a
     cosmetic CP bug (I-246).  DEF STOR shows the right value.
 
