@@ -4664,6 +4664,25 @@ ECMODS = {
             "TEMPSEND EQU   *",
         ]),
     ],
+    # I-252: SVC 10 from an AMODE 31 caller.  CMS reads a nonzero byte 0
+    # of R1 as GETMAIN, the 24-bit convention; an AMODE 31 FREEMAIN R of
+    # an address above the line (GCC380's PDPCLIB FREEPOOL, from a DCB
+    # whose BUFCB it never set) became a GETMAIN of 2 MB and abend 80A.
+    # From AMODE 31: GETMAIN iff R1 bit 0 is on (the XA rule); FREEMAIN
+    # above the line is not DMSSMN's storage and is ignored.
+    'DMSSMN': [
+        ('00165000', [
+            "         TM    OLDPSW+4,X'80'  I-252: CALLER AMODE 31?",
+            "         BZ    SMN10A",
+            "         TM    EGPR1,X'80'    R1 NEGATIVE: GETMAIN",
+            "         BO    GET",
+            "         CLI   EGPR1,X'00'    ABOVE THE LINE?",
+            "         BE    SMN10A         NO: AN ORDINARY FREEMAIN",
+            "         XC    EGPR15,EGPR15  NOT DMSSMN'S STORAGE:",
+            "         BR    R14            IGNORED (I-252)",
+            "SMN10A   CLI   EGPR1,X'00'    LOOK AT R1'S HIGH-ORDER BYTE",
+        ]),
+    ],
     'DMSINI': [
         # a reader IPL arrives from the card loader in BC mode: switch here
         ('00133000', ["         LPSW  ECPSW          DISABLED, EC MODE (M5B)",

@@ -1,0 +1,10 @@
+./ R 00165000          $ 00165100 100                                           
+         TM    OLDPSW+4,X'80'  I-252: CALLER AMODE 31?         XA0051DK         
+         BZ    SMN10A                                          XA0051DK         
+         TM    EGPR1,X'80'    R1 NEGATIVE: GETMAIN             XA0051DK         
+         BO    GET                                             XA0051DK         
+         CLI   EGPR1,X'00'    ABOVE THE LINE?                  XA0051DK         
+         BE    SMN10A         NO: AN ORDINARY FREEMAIN         XA0051DK         
+         XC    EGPR15,EGPR15  NOT DMSSMN'S STORAGE:            XA0051DK         
+         BR    R14            IGNORED (I-252)                  XA0051DK         
+SMN10A   CLI   EGPR1,X'00'    LOOK AT R1'S HIGH-ORDER BYTE     XA0051DK         
