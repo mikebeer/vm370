@@ -26,18 +26,18 @@ DMKCPIB  CSECT                                                 XA0053DK
          USING *,R11                                           XA0053DK         
          L     R3,=A(DMKSYSRM)                                 XA0053DK         
          L     R5,0(,R3)      REAL SIZE                        XA0053DK         
+         L     R10,=X'01000000'  CP BELOW 16 MB                XA0053DK         
+         CLR   R5,R10                                          XA0053DK         
+         BNH   CPIB1                                           XA0053DK         
+         L     R4,=A(DMKPGTXT)  M4B.2: STORAGE ABOVE 16 MB     XA0053DK         
+         ST    R5,0(,R4)      IS DMKPGT'S PAGING STORE         XA0053DK         
+         LR    R5,R10         M4B.4: AND CP'S MACHINE ENDS     XA0053DK         
+         ST    R5,0(,R3)      AT 16 MB (TABLE, LIMIT CHECKS)   XA0053DK         
+CPIB1    LR    R10,R5         TOP OF THE LOW REGION            XA0053DK         
          LR    R6,R5                                           XA0053DK         
          SRL   R6,8           16 BYTES PER 4 KB FRAME          XA0053DK         
          AL    R6,=F'4095'                                     XA0053DK         
          N     R6,=X'7FFFF000'  WHOLE PAGES                    XA0053DK         
-         L     R10,=X'01000000'  CP BELOW 16 MB                XA0053DK         
-         CLR   R5,R10                                          XA0053DK         
-         BNL   CPIB1                                           XA0053DK         
-         LR    R10,R5         UNDER 16 MB: ALL                 XA0053DK         
-CPIB1    L     R3,=A(DMKPGTXT)  M4B.2: STORAGE ABOVE 16 MB     XA0053DK         
-         CLR   R5,R10         IS DMKPGT'S PAGING STORE         XA0053DK         
-         BNH   CPIB1A                                          XA0053DK         
-         ST    R5,0(,R3)      ITS TOP                          XA0053DK         
 CPIB1A   LR    R7,R10         TOP OF THE LOW REGION            XA0053DK         
          SLR   R7,R6          TABLE ORIGIN                     XA0053DK         
          ST    R7,ACORETBL    EVERY MODULE LOOKS HERE          XA0053DK         
