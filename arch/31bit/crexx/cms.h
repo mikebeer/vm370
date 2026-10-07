@@ -46,8 +46,40 @@ static int gettimeofday(struct timeval *tv, void *tz) {
 }
 
 
-/* Shocking hack ... todo - need to replace with fixed buffer logig for cms */
-#define snprintf(s,sz,...) sprintf(s,__VA_ARGS__)
-#define vsnprintf(s,sz,...) vsprintf(s,__VA_ARGS__)
+/*
+ * VM/370+ (M5g): GCCLIB has no snprintf/vsnprintf.  The original hack
+ * mapped them to sprintf/vsprintf and so ignored the size -- and the
+ * compiler sizes its buffers by calling vsnprintf with a small one first
+ * (rxcpemit.c, rxcpast.c), so every long line overran the heap: the
+ * DLMALLOC PANIC of native RXC.  Format into a 64 KB scratch buffer (one
+ * per translation unit, from malloc on first use), copy what fits, and
+ * return the full length as C99 does.
+ */
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
+static char *rx_snbuf = 0;
+static int rx_vsnprintf(char *s, size_t sz, const char *fmt, va_list ap) {
+    int n;
+    size_t c;
+    if (!rx_snbuf) rx_snbuf = malloc(65536);
+    n = vsprintf(rx_snbuf, fmt, ap);
+    if (sz) {
+        c = (size_t) n < sz ? (size_t) n : sz - 1;
+        memcpy(s, rx_snbuf, c);
+        s[c] = 0;
+    }
+    return n;
+}
+static int rx_snprintf(char *s, size_t sz, const char *fmt, ...) {
+    va_list ap;
+    int n;
+    va_start(ap, fmt);
+    n = rx_vsnprintf(s, sz, fmt, ap);
+    va_end(ap);
+    return n;
+}
+#define snprintf rx_snprintf
+#define vsnprintf rx_vsnprintf
 
 #endif //CREXX_CMS_H
