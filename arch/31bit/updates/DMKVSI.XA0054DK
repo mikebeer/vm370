@@ -97,11 +97,19 @@ VCSSSCH  TM    ENTFLG(R3),ENTPEND  SSCH                        XA0054DK
          LA    R0,1                                            XA0054DK         
          BAL   R9,GUESTIO                                      XA0054DK         
          MVC   ENTIPRM(4,R3),VCSBUF                            XA0054DK         
+         BAL   R9,UNCVT       A CHAIN LEFT CONVERTED: BACK     XA0054DK         
          NI    ENTFLG(R3),255-ENTFMT1-ENTSOL                   XA0054DK         
-         TM    VCSBUF+5,X'80' FORMAT-1 CCWS?                   XA0054DK         
-         BZ    *+8                                             XA0054DK         
-         OI    ENTFLG(R3),ENTFMT1                              XA0054DK         
+         NI    ENTFLG2(R3),255-ENTPRIM                         XA0054DK         
          L     R0,VCSBUF+8    CCW ADDRESS                      XA0054DK         
+         N     R0,X7FFF                                        XA0054DK         
+         ST    R0,ENTCCW(R3)                                   XA0054DK         
+         TM    VCSBUF+5,X'80' FORMAT-1 CCWS?                   XA0054DK         
+         BZ    SSCHF0                                          XA0054DK         
+         OI    ENTFLG(R3),ENTFMT1                              XA0054DK         
+         LA    R0,1           CONVERTED IN PLACE TO            XA0054DK         
+         BAL   R9,CVTCHN      FORMAT 0 FOR DMKVSI/DMKCCW,      XA0054DK         
+         OI    ENTFLG2(R3),ENTCVT  BACK AT TSCH                XA0054DK         
+SSCHF0   L     R0,VCSBUF+8    CCW ADDRESS                      XA0054DK         
          N     R0,XRIGHT24                                     XA0054DK         
          SR    R1,R1                                           XA0054DK         
          IC    R1,VCSBUF+4    KEY                              XA0054DK         
@@ -129,8 +137,9 @@ VCSTSCH  BAL   R9,OPADDR      TSCH: THE IRB                    XA0054DK
          BAL   R9,BLDIRB      NONE: CC 1                       XA0054DK         
          BAL   R9,PUTIRB                                       XA0054DK         
          B     VCSCC1                                          XA0054DK         
-TSCHIRB  BAL   R9,BLDIRB                                       XA0054DK         
-         NI    ENTFLG(R3),255-ENTPEND-ENTACT-ENTSOL            XA0054DK         
+TSCHIRB  BAL   R9,UNCVT                                        XA0054DK         
+         BAL   R9,BLDIRB                                       XA0054DK         
+         BAL   R9,TSCLEAR                                      XA0054DK         
          BAL   R9,PUTIRB                                       XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 TSCHTIO  MVI   VCSOP,C'T'     COLLECT IT WITH A TIO            XA0054DK         
@@ -152,7 +161,8 @@ TPITIO   MVI   VCSOP,C'P'                                      XA0054DK
          MVC   VMINST(2),TIOOP                                 XA0054DK         
          B     VCSVSI                                          XA0054DK         
 *                                                              XA0054DK         
-VCSCSCH  NI    ENTFLG(R3),255-ENTACT-ENTPEND-ENTSOL            XA0054DK         
+VCSCSCH  BAL   R9,UNCVT                                        XA0054DK         
+         NI    ENTFLG(R3),255-ENTACT-ENTPEND-ENTSOL            XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 *                                                              XA0054DK         
 * DMKVCSSE: GOTO FROM DMKVSJ TESTEC (ESA/390 GUEST). R2 =      XA0054DK         
@@ -179,6 +189,7 @@ SSEND    MVI   VCSOP,0        SSCH                             XA0054DK
          CLI   VCSCC,0                                         XA0054DK         
          BE    SEBACK         STARTED                          XA0054DK         
          NI    ENTFLG(R3),255-ENTACT                           XA0054DK         
+         BAL   R9,UNCVT       NOT STARTED                      XA0054DK         
          CLI   VCSCC,X'10'                                     XA0054DK         
          BNE   SEBACK         CC 2, CC 3                       XA0054DK         
          BAL   R9,GETCSW      CC 1: STATUS PENDING             XA0054DK         
@@ -188,8 +199,9 @@ TSEND    MVI   VCSOP,0        TSCH                             XA0054DK
          CLI   VCSCC,X'10'    TIO STORED A CSW?                XA0054DK         
          BNE   TSENONE                                         XA0054DK         
          BAL   R9,GETCSW                                       XA0054DK         
+         BAL   R9,UNCVT                                        XA0054DK         
          BAL   R9,BLDIRB                                       XA0054DK         
-         NI    ENTFLG(R3),255-ENTPEND-ENTACT-ENTSOL            XA0054DK         
+         BAL   R9,TSCLEAR                                      XA0054DK         
          BAL   R9,PUTIRB                                       XA0054DK         
          MVI   VCSCC,0                                         XA0054DK         
          B     SEBACK                                          XA0054DK         
@@ -257,7 +269,7 @@ DMKVCSSN STM   R14,R13,VCSSAVN-DMKVCSSN(R15)                   XA0054DK
          LA    R3,VCSHDRL(,R10)    SUBSYSTEM, EVERY            XA0054DK         
          LA    R0,VCSNENT          SUBCHANNEL IDLE AND         XA0054DK         
 SNRESET  MVI   ENTFLG(R3),0        DISABLED                    XA0054DK         
-         LA    R3,16(,R3)                                      XA0054DK         
+         LA    R3,ENTLEN(,R3)                                  XA0054DK         
          BCT   R0,SNRESET                                      XA0054DK         
 SNFIND   DS    0H                                              XA0054DK         
          BAL   R9,FINDSN                                       XA0054DK         
@@ -348,10 +360,13 @@ BLDSCSW  TM    ENTFLG(R3),ENTPEND                              XA0054DK
          TM    ENTFLG(R3),ENTSOL                               XA0054DK         
          BZ    SCSWUNS                                         XA0054DK         
          MVI   2(R1),X'40'    START FUNCTION                   XA0054DK         
-         MVI   3(R1),X'05'    PRIMARY, PENDING                 XA0054DK         
-         TM    ENTCSW+4(R3),X'04'  DEVICE END?                 XA0054DK         
+         MVI   3(R1),X'01'    STATUS PENDING:                  XA0054DK         
+         TM    ENTFLG2(R3),ENTPRIM  PRIMARY (UNLESS A CE       XA0054DK         
+         BO    *+8            CAME FIRST),                     XA0054DK         
+         OI    3(R1),X'04'                                     XA0054DK         
+         TM    ENTCSW+4(R3),X'04'  SECONDARY WITH DEVICE END   XA0054DK         
          BZR   R9                                              XA0054DK         
-         MVI   3(R1),X'07'    AND SECONDARY                    XA0054DK         
+         OI    3(R1),X'02'                                     XA0054DK         
          BR    R9                                              XA0054DK         
 SCSWUNS  MVI   3(R1),X'11'    ALERT, PENDING                   XA0054DK         
          BR    R9                                              XA0054DK         
@@ -360,6 +375,99 @@ SCSWIDLE TM    ENTFLG(R3),ENTACT                               XA0054DK
          MVI   2(R1),X'44'    START, START PENDING             XA0054DK         
          MVI   3(R1),X'80'    SUBCHANNEL ACTIVE                XA0054DK         
          BR    R9                                              XA0054DK         
+*  TSCLEAR: TSCH TOOK THE STATUS. A CHANNEL END WITHOUT        XA0054DK         
+*  DEVICE END LEAVES THE SUBCHANNEL ACTIVE FOR THE DE.         XA0054DK         
+TSCLEAR  NI    ENTFLG(R3),255-ENTPEND                          XA0054DK         
+         TM    ENTFLG(R3),ENTSOL                               XA0054DK         
+         BZ    TSCL2                                           XA0054DK         
+         TM    ENTCSW+4(R3),X'04'  DEVICE END?                 XA0054DK         
+         BO    TSCL2                                           XA0054DK         
+         OI    ENTFLG2(R3),ENTPRIM                             XA0054DK         
+         NI    ENTFLG(R3),255-ENTSOL                           XA0054DK         
+         BR    R9                                              XA0054DK         
+TSCL2    NI    ENTFLG(R3),255-ENTACT-ENTSOL                    XA0054DK         
+         NI    ENTFLG2(R3),255-ENTPRIM                         XA0054DK         
+         BR    R9                                              XA0054DK         
+*  UNCVT: A CHAIN CVTCHN CONVERTED GOES BACK TO FORMAT 1.      XA0054DK         
+UNCVT    TM    ENTFLG2(R3),ENTCVT                              XA0054DK         
+         BZR   R9                                              XA0054DK         
+         ST    R9,VCSLNK3                                      XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,CVTCHN                                       XA0054DK         
+         NI    ENTFLG2(R3),255-ENTCVT                          XA0054DK         
+         L     R9,VCSLNK3                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+*  CVTCHN: THE CHAIN AT ENTCCW, IN PLACE. R0 = 1: FORMAT 1     XA0054DK         
+*  TO FORMAT 0; R0 = 0: BACK. FOLLOWS CD/CC AND TIC; A TIC TO  XA0054DK         
+*  A CCW ALREADY DONE (SEARCH LOOP) GOES ON PAST THE TIC, FOR  XA0054DK         
+*  THE STATUS-MODIFIER PATH. AT MOST 64 CCWS.                  XA0054DK         
+CVTCHN   ST    R9,VCSLNK2                                      XA0054DK         
+         STC   R0,VCSDIR                                       XA0054DK         
+         L     R7,ENTCCW(R3)                                   XA0054DK         
+         XC    VCSNVIS,VCSNVIS                                 XA0054DK         
+CVLOOP   BAL   R14,CVSEEN     DONE ALREADY?                    XA0054DK         
+         BZ    CVDONE                                          XA0054DK         
+         L     R1,VCSNVIS                                      XA0054DK         
+         C     R1,F64                                          XA0054DK         
+         BNL   CVDONE                                          XA0054DK         
+         SLL   R1,2                                            XA0054DK         
+         ST    R7,VCSVIS(R1)                                   XA0054DK         
+         L     R1,VCSNVIS                                      XA0054DK         
+         LA    R1,1(,R1)                                       XA0054DK         
+         ST    R1,VCSNVIS                                      XA0054DK         
+         LR    R5,R7                                           XA0054DK         
+         LA    R6,VCSCCW                                       XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO     FETCH IT                         XA0054DK         
+         CLI   VCSDIR,1                                        XA0054DK         
+         BNE   CVTO1                                           XA0054DK         
+         MVC   VCSCFLG,VCSCCW+1   FORMAT 1 -> 0                XA0054DK         
+         MVC   VCSCADR,VCSCCW+4                                XA0054DK         
+         MVC   VCSNEW(1),VCSCCW                                XA0054DK         
+         MVC   VCSNEW+1(3),VCSCCW+5                            XA0054DK         
+         MVC   VCSNEW+4(1),VCSCCW+1                            XA0054DK         
+         MVI   VCSNEW+5,0                                      XA0054DK         
+         MVC   VCSNEW+6(2),VCSCCW+2                            XA0054DK         
+         B     CVSTORE                                         XA0054DK         
+CVTO1    MVC   VCSCFLG,VCSCCW+4   FORMAT 0 -> 1                XA0054DK         
+         L     R1,VCSCCW                                       XA0054DK         
+         N     R1,XRIGHT24                                     XA0054DK         
+         ST    R1,VCSCADR                                      XA0054DK         
+         MVC   VCSNEW(1),VCSCCW                                XA0054DK         
+         MVC   VCSNEW+1(1),VCSCCW+4                            XA0054DK         
+         MVC   VCSNEW+2(2),VCSCCW+6                            XA0054DK         
+         MVC   VCSNEW+4(4),VCSCADR                             XA0054DK         
+CVSTORE  LR    R5,R7                                           XA0054DK         
+         LA    R6,VCSNEW                                       XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO     STORE IT                         XA0054DK         
+         CLI   VCSCCW,X'08'   TIC?                             XA0054DK         
+         BNE   CVNOTIC                                         XA0054DK         
+         ST    R7,VCSTIC                                       XA0054DK         
+         L     R7,VCSCADR     ITS TARGET,                      XA0054DK         
+         BAL   R14,CVSEEN                                      XA0054DK         
+         BNZ   CVLOOP                                          XA0054DK         
+         L     R7,VCSTIC      OR, ALREADY DONE, PAST THE TIC   XA0054DK         
+         AL    R7,F8                                           XA0054DK         
+         B     CVLOOP                                          XA0054DK         
+CVNOTIC  TM    VCSCFLG,X'C0'  CHAIN DATA OR COMMAND?           XA0054DK         
+         BZ    CVDONE                                          XA0054DK         
+         AL    R7,F8                                           XA0054DK         
+         B     CVLOOP                                          XA0054DK         
+CVDONE   L     R9,VCSLNK2                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+CVSEEN   L     R1,VCSNVIS     CC 0 IF R7 IS IN VCSVIS          XA0054DK         
+         LTR   R1,R1                                           XA0054DK         
+         BZ    CVSEEN9                                         XA0054DK         
+         LA    R2,VCSVIS                                       XA0054DK         
+CVSEEN1  C     R7,0(,R2)                                       XA0054DK         
+         BCR   8,R14                                           XA0054DK         
+         LA    R2,4(,R2)                                       XA0054DK         
+         BCT   R1,CVSEEN1                                      XA0054DK         
+CVSEEN9  LTR   R14,R14        CC NOT 0                         XA0054DK         
+         BR    R14                                             XA0054DK         
 *  GETTAB: R10 = THIS USER'S TABLE. VMVCSIX IS ITS SLOT        XA0054DK         
 *  NUMBER IN VCSSLOTS (OWNER VMBLOK, TABLE); A SLOT LEFT BY    XA0054DK         
 *  A USER WHO LOGGED OFF IS REUSED BY THE NEXT ONE GIVEN THE   XA0054DK         
@@ -400,27 +508,28 @@ GTINIT0  LR    R0,R1          SLOT NUMBER INTO VMVCSIX         XA0054DK
          SR    R0,R1                                           XA0054DK         
          SRL   R0,3                                            XA0054DK         
          STH   R0,VMVCSIX                                      XA0054DK         
-         XC    0(VCSHDRL,R10),0(R10)                           XA0054DK         
+         XC    0(256,R10),0(R10)                               XA0054DK         
+         XC    256(VCSHDRL-256,R10),256(R10)                   XA0054DK         
          LA    R1,VCSHDRL(,R10)                                XA0054DK         
          LA    R0,VCSNENT                                      XA0054DK         
-GTINIT   MVC   0(16,R1),EMPTYENT                               XA0054DK         
-         LA    R1,16(,R1)                                      XA0054DK         
+GTINIT   MVC   0(ENTLEN,R1),EMPTYENT                           XA0054DK         
+         LA    R1,ENTLEN(,R1)                                  XA0054DK         
          BCT   R0,GTINIT                                       XA0054DK         
          BR    R9                                              XA0054DK         
 GETENT   LA    R3,VCSHDRL(,R10)  R3 = THE ENTRY OF R13         XA0054DK         
          LA    R0,VCSNENT                                      XA0054DK         
 GESRCH   CH    R13,0(,R3)                                      XA0054DK         
          BER   R9                                              XA0054DK         
-         LA    R3,16(,R3)                                      XA0054DK         
+         LA    R3,ENTLEN(,R3)                                  XA0054DK         
          BCT   R0,GESRCH                                       XA0054DK         
          LA    R3,VCSHDRL(,R10)                                XA0054DK         
          LA    R0,VCSNENT                                      XA0054DK         
 GEFREE   CLC   0(2,R3),EMPTYENT                                XA0054DK         
          BE    GENEW                                           XA0054DK         
-         LA    R3,16(,R3)                                      XA0054DK         
+         LA    R3,ENTLEN(,R3)                                  XA0054DK         
          BCT   R0,GEFREE                                       XA0054DK         
          LA    R3,VCSHDRL(,R10)  FULL: REUSE THE FIRST         XA0054DK         
-GENEW    XC    0(16,R3),0(R3)                                  XA0054DK         
+GENEW    XC    0(ENTLEN,R3),0(R3)                              XA0054DK         
          STH   R13,0(,R3)                                      XA0054DK         
          BR    R9                                              XA0054DK         
 *  FINDSUB: R1 = SUBCHANNEL N. R6-R8 AND R13 = THE N-TH        XA0054DK         
@@ -512,21 +621,27 @@ SSIDW    DC    X'00010000'                                     XA0054DK
 F65535   DC    F'65535'                                        XA0054DK         
 X7FFF    DC    X'7FFFFFFF'                                     XA0054DK         
 H32      DC    H'32'                                           XA0054DK         
+F64      DC    F'64'                                           XA0054DK         
 SIOOP    DC    X'9C00'                                         XA0054DK         
 TIOOP    DC    X'9D00'                                         XA0054DK         
-EMPTYENT DC    X'FFFF',XL14'00'                                XA0054DK         
+EMPTYENT DC    X'FFFF',XL30'00'                                XA0054DK         
 PMCWPATH DC    X'80008080',X'0000FF80'                         XA0054DK         
          LTORG                                                 XA0054DK         
 ENTFLG   EQU   2              ENTRY: DEVICE H, FLAGS, ISC,     XA0054DK         
 ENTISC   EQU   3              INTERRUPTION PARAMETER, AND      XA0054DK         
 ENTIPRM  EQU   4              THE PENDING STATUS AS A CSW      XA0054DK         
 ENTCSW   EQU   8                                               XA0054DK         
+ENTCCW   EQU   16             SSCH: THE CHAIN                  XA0054DK         
+ENTFLG2  EQU   20                                              XA0054DK         
+ENTCVT   EQU   X'80'          CHAIN CONVERTED TO FORMAT 0      XA0054DK         
+ENTPRIM  EQU   X'40'          PRIMARY STATUS ALREADY TAKEN     XA0054DK         
+ENTLEN   EQU   32                                              XA0054DK         
 ENTENAB  EQU   X'80'          MSCH: ENABLED                    XA0054DK         
 ENTACT   EQU   X'40'          SSCH ISSUED, NOT COMPLETE        XA0054DK         
 ENTSOL   EQU   X'20'          PENDING STATUS IS SOLICITED      XA0054DK         
 ENTFMT1  EQU   X'10'          ORB: FORMAT-1 CCWS               XA0054DK         
 ENTPEND  EQU   X'01'          STATUS PENDING                   XA0054DK         
-VCSNENT  EQU   255                                             XA0054DK         
+VCSNENT  EQU   100                                             XA0054DK         
 VCSNSLOT EQU   32                                              XA0054DK         
 VCSTAB   DSECT                                                 XA0054DK         
 VCSOP    DS    X              S, T, P: WHAT DMKVSJ RETURNS TO  XA0054DK         
@@ -536,5 +651,16 @@ VCSADDR  DS    F                                               XA0054DK
 VCSSUB   DS    F                                               XA0054DK         
 VCSLINK  DS    F                                               XA0054DK         
 VCSBUF   DS    16F                                             XA0054DK         
+VCSDIR   DS    X              CVTCHN: DIRECTION                XA0054DK         
+VCSCFLG  DS    X                      CCW FLAGS                XA0054DK         
+         DS    XL2                                             XA0054DK         
+VCSLNK2  DS    F                                               XA0054DK         
+VCSLNK3  DS    F                                               XA0054DK         
+VCSNVIS  DS    F                                               XA0054DK         
+VCSCADR  DS    F                      CCW DATA ADDRESS         XA0054DK         
+VCSTIC   DS    F                                               XA0054DK         
+VCSCCW   DS    2F                     AS FETCHED               XA0054DK         
+VCSNEW   DS    2F                     AS STORED                XA0054DK         
+VCSVIS   DS    64F                    CCWS DONE                XA0054DK         
 VCSHDRL  EQU   *-VCSTAB                                        XA0054DK         
-VCSTABSZ EQU   (VCSHDRL+VCSNENT*16+7)/8                        XA0054DK         
+VCSTABSZ EQU   (VCSHDRL+VCSNENT*ENTLEN+7)/8                    XA0054DK         
