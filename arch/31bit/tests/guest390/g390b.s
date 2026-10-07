@@ -30,10 +30,10 @@ base:   mvc   0x68(8,%r0),pgmnew-base(%r12)
         stsch 0(%r2)
         brc   1,9f                          # cc 3: end
         clc   6(2,%r2),h0009-base(%r12)
-        bne   2f
+        jne   2f
         st    %r1,conssid-base(%r12)
 2:      ltr   %r5,%r5
-        bz    3f
+        jz    3f
         mvc   0(2,%r4),6(%r2)
         la    %r4,2(%r4)
         bctr  %r5,0

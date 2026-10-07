@@ -3,19 +3,15 @@ VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK
          L     R7,EXTCR2-ECBLOK(,R1) CHAN MASK                 XA0054DK         
          TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST             XA0054DK         
          BZ    GETPEND        USING THE CHANNEL                XA0054DK         
-         ICM   R15,15,VMVMPS+4  SUBSYSTEM: CR6                 XA0054DK         
+         TM    VMLCLRSV,X'80'  SUBSYSTEM: CR6                  XA0054DK         
          BZ    GETPEND        SUBCLASSES INSTEAD               XA0054DK         
-         TM    2(R15),X'80'   (VCSFLG, VCSACT)                 XA0054DK         
-         BZ    GETPEND                                         XA0054DK         
          ICM   R7,15,EXTCR6-ECBLOK(R1)                         XA0054DK         
          BZ    GETPEND        NONE: NOTHING ENABLED            XA0054DK         
          L     R7,=X'FFFF0000'  ANY: EVERY CHANNEL             XA0054DK         
 ./ I 01206000 $ 01206110 010                                                    
          TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST             XA0054DK         
          BZ    DSPS370        USING THE CHANNEL                XA0054DK         
-         ICM   R15,15,VMVMPS+4  SUBSYSTEM (NOT DMKVMI)         XA0054DK         
-         BZ    DSPS370                                         XA0054DK         
-         TM    2(R15),X'80'   (VCSFLG, VCSACT)                 XA0054DK         
+         TM    VMLCLRSV,X'80'  SUBSYSTEM (NOT DMKVMI)          XA0054DK         
          BZ    DSPS370                                         XA0054DK         
          L     R15,=V(DMKVCSIN)  STATUS PENDING FOR TSCH,      XA0054DK         
          BALR  R14,R15        R1 = SUBCHANNEL, R3 = PARM       XA0054DK         

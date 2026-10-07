@@ -53,8 +53,8 @@
  },
  {
   "term": "cp set esa on",
-  "expect": "Ready|DMK|CP",
-  "timeout": 20,
+  "expect": "Ready|DMK|CP|^$",
+  "timeout": 5,
   "cont": true
  },
  {
@@ -66,25 +66,25 @@
  {
   "term": "cp d 1000.100",
   "expect": "1000|DMK",
-  "timeout": 30,
+  "timeout": 20,
   "cont": true
  },
  {
   "term": "cp d psw",
   "expect": "PSW|DMK",
-  "timeout": 30,
+  "timeout": 15,
   "cont": true
  },
  {
   "term": "cp d g",
   "expect": "GPR|DMK",
-  "timeout": 30,
+  "timeout": 15,
   "cont": true
  },
  {
   "term": "cp logoff",
   "expect": "LOGOFF AT|DMK",
-  "timeout": 60,
+  "timeout": 15,
   "cont": true
  },
  {

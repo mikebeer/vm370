@@ -1,6 +1,7 @@
 ./ I 01636000 $ 01636001 001                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
-VMVCSTB  EQU   VMVMPS+4       ITS SUBCHANNEL TABLE (DMKVCS)    XA0054DK         
+VMVCSIX  EQU   VMUSERH1       ITS TABLE: SLOT IN DMKVCS        XA0054DK         
+VMVCSFL  EQU   VMLCLRSV       X'80': ESA/390 I/O ACTIVE        XA0054DK         
 *                                                              XA0054DK         
 * M7: THE VIRTUAL CHANNEL SUBSYSTEM OF AN ESA/390 VIRTUAL      XA0054DK         
 * MACHINE (SET ESA ON). SUBCHANNEL N IS THE N-TH VIRTUAL       XA0054DK         
@@ -17,7 +18,7 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          NI    VMPSW+2,X'CF'  CC 0                             XA0054DK         
          BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
          MVI   VCSOP,0                                         XA0054DK         
-         OI    VCSFLG,VCSACT  FROM NOW ON: ESA/390 I/O         XA0054DK         
+         OI    VMVCSFL,X'80'  FROM NOW ON: ESA/390 I/O         XA0054DK         
          CLI   VMINST+1,X'12' STAP                             XA0054DK         
          BE    VCSSTAP                                         XA0054DK         
          CLI   VMINST+1,X'36' TPI                              XA0054DK         
@@ -49,7 +50,8 @@ VCSCC3   OI    VMPSW+2,X'30'                                   XA0054DK
 VCSCC2   OI    VMPSW+2,X'20'                                   XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 VCSCC1   OI    VMPSW+2,X'10'                                   XA0054DK         
-VCSEXIT  GOTO  DMKDSPCH                                        XA0054DK         
+VCSEXIT  NI    VMRSTAT,255-VMEXWAIT  OUT OF INSTR WAIT         XA0054DK         
+         GOTO  DMKDSPCH       (AS DMKPRV PRIVRET)              XA0054DK         
 *                                                              XA0054DK         
 VCSSTAP  BAL   R9,OPADDR      STAP: CPU ADDRESS 0              XA0054DK         
          TRANS 2,1,OPT=(BRING,DEFER,AMODE31),ADEX=VCSEXIT      XA0054DK         
@@ -157,9 +159,10 @@ VCSCSCH  NI    ENTFLG(R3),255-ENTACT-ENTPEND-ENTSOL            XA0054DK
 * THE SIO/TIO CONDITION CODE (X'00'-X'30'), R13 = THE DEVICE.  XA0054DK         
 *                                                              XA0054DK         
 DMKVCSSE L     R12,AVCSSE-DMKVCSSE(,R12)                       XA0054DK         
-         ICM   R15,15,VMVCSTB OURS ONLY IF DMKVCS SET VCSOP:   XA0054DK         
+         TM    VMVCSFL,X'80'  OURS ONLY IF DMKVCS SET VCSOP:   XA0054DK         
          BZ    SENOTME        THE IPL SIMULATOR'S OWN SIO      XA0054DK         
-         CLI   VCSOP-VCSTAB(R15),0  AND TIO GO BACK            XA0054DK         
+         BAL   R9,GETTAB      AND TIO GO BACK                  XA0054DK         
+         CLI   VCSOP,0                                         XA0054DK         
          BE    SENOTME                                         XA0054DK         
          STC   R2,VCSCCX      (R10 NOT YET SET)                XA0054DK         
          BAL   R9,GETTAB                                       XA0054DK         
@@ -219,8 +222,8 @@ SEBACK   NI    VMPSW+2,X'CF'                                   XA0054DK
          NI    VMDSTAT,X'FF'-VMTIO                             XA0054DK         
          NI    VMRSTAT,X'FF'-VMEXWAIT                          XA0054DK         
          GOTO  DMKDSPCH                                        XA0054DK         
-SENOTME  L     R12,=V(DMKVSJEX)  DMKVSJ'S OWN EXIT, R2 AS IT   XA0054DK         
-         L     R15,=V(DMKVSJTE)  WAS                           XA0054DK         
+SENOTME  L     R15,=V(DMKVSJTE)  DMKVSJ'S OWN EXIT, R2 AS IT   XA0054DK         
+         L     R12,=V(DMKVSJEX)  WAS (BASE LAST)               XA0054DK         
          BR    R15                                             XA0054DK         
 *                                                              XA0054DK         
 * DMKVCSIN: BALR FROM DMKDSP STORECSW. R0 = DEVICE, R4-R5 =    XA0054DK         
@@ -246,9 +249,11 @@ DMKVCSIN STM   R14,R13,VCSSAVI-DMKVCSIN(R15)                   XA0054DK
 DMKVCSSN STM   R14,R13,VCSSAVN-DMKVCSSN(R15)                   XA0054DK         
          L     R12,AVCSSN-DMKVCSSN(,R15)                       XA0054DK         
          LR    R13,R1                                          XA0054DK         
-         ICM   R10,15,VMVCSTB  IPL IS A SYSTEM RESET: BACK     XA0054DK         
-         BZ    SNFIND         TO S/370 I/O UNTIL THE GUEST     XA0054DK         
-         NI    VCSFLG,255-VCSACT   USES THE CHANNEL            XA0054DK         
+         NI    VMVCSFL,X'7F'  IPL IS A SYSTEM RESET: BACK      XA0054DK         
+         ICM   R10,15,VMVCSIX-2  TO S/370 I/O UNTIL THE GUEST  XA0054DK         
+         N     R10,F65535     USES THE CHANNEL SUBSYSTEM       XA0054DK         
+         BZ    SNFIND                                          XA0054DK         
+         BAL   R9,GETTAB                                       XA0054DK         
          LA    R3,VCSHDRL(,R10)    SUBSYSTEM, EVERY            XA0054DK         
          LA    R0,VCSNENT          SUBCHANNEL IDLE AND         XA0054DK         
 SNRESET  MVI   ENTFLG(R3),0        DISABLED                    XA0054DK         
@@ -355,12 +360,46 @@ SCSWIDLE TM    ENTFLG(R3),ENTACT                               XA0054DK
          MVI   2(R1),X'44'    START, START PENDING             XA0054DK         
          MVI   3(R1),X'80'    SUBCHANNEL ACTIVE                XA0054DK         
          BR    R9                                              XA0054DK         
-GETTAB   ICM   R10,15,VMVCSTB R10 = THE TABLE                  XA0054DK         
-         BNZR  R9                                              XA0054DK         
+*  GETTAB: R10 = THIS USER'S TABLE. VMVCSIX IS ITS SLOT        XA0054DK         
+*  NUMBER IN VCSSLOTS (OWNER VMBLOK, TABLE); A SLOT LEFT BY    XA0054DK         
+*  A USER WHO LOGGED OFF IS REUSED BY THE NEXT ONE GIVEN THE   XA0054DK         
+*  SAME VMBLOK, SO NO TABLE IS LOST TWICE.                     XA0054DK         
+GETTAB   LH    R1,VMVCSIX                                      XA0054DK         
+         LTR   R1,R1                                           XA0054DK         
+         BNP   GTFIND                                          XA0054DK         
+         SLL   R1,3                                            XA0054DK         
+         LA    R1,VCSSLOTS-8(R1)                               XA0054DK         
+         C     R11,0(,R1)     STILL OURS?                      XA0054DK         
+         BNE   GTFIND                                          XA0054DK         
+         L     R10,4(,R1)                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+GTFIND   LA    R1,VCSSLOTS    A SLOT THIS VMBLOK HAD, OR       XA0054DK         
+         LA    R0,VCSNSLOT    A FREE ONE                       XA0054DK         
+GTF1     C     R11,0(,R1)                                      XA0054DK         
+         BE    GTREUSE                                         XA0054DK         
+         LA    R1,8(,R1)                                       XA0054DK         
+         BCT   R0,GTF1                                         XA0054DK         
+         LA    R1,VCSSLOTS                                     XA0054DK         
+         LA    R0,VCSNSLOT                                     XA0054DK         
+GTF2     ICM   R10,15,0(R1)                                    XA0054DK         
+         BZ    GTNEW                                           XA0054DK         
+         LA    R1,8(,R1)                                       XA0054DK         
+         BCT   R0,GTF2                                         XA0054DK         
+         ABEND 1              MORE ESA/390 USERS THAN SLOTS    XA0054DK         
+GTNEW    ST    R11,0(,R1)                                      XA0054DK         
+         ST    R1,VCSSLOTW                                     XA0054DK         
          LA    R0,VCSTABSZ                                     XA0054DK         
          CALL  DMKFREE                                         XA0054DK         
          LR    R10,R1                                          XA0054DK         
-         ST    R10,VMVCSTB                                     XA0054DK         
+         L     R1,VCSSLOTW                                     XA0054DK         
+         ST    R10,4(,R1)                                      XA0054DK         
+         B     GTINIT0                                         XA0054DK         
+GTREUSE  L     R10,4(,R1)     THE PREVIOUS USER'S TABLE        XA0054DK         
+GTINIT0  LR    R0,R1          SLOT NUMBER INTO VMVCSIX         XA0054DK         
+         LA    R1,VCSSLOTS-8                                   XA0054DK         
+         SR    R0,R1                                           XA0054DK         
+         SRL   R0,3                                            XA0054DK         
+         STH   R0,VMVCSIX                                      XA0054DK         
          XC    0(VCSHDRL,R10),0(R10)                           XA0054DK         
          LA    R1,VCSHDRL(,R10)                                XA0054DK         
          LA    R0,VCSNENT                                      XA0054DK         
@@ -466,6 +505,9 @@ VCSSAVI  DS    16F                                             XA0054DK
 VCSSAVN  DS    16F                                             XA0054DK         
 VCSCCX   DC    X'00'                                           XA0054DK         
          DS    0F                                              XA0054DK         
+VCSSLOTW DC    F'0'                                            XA0054DK         
+VCSSLOTS DC    64F'0'         32 SLOTS: OWNER VMBLOK, TABLE    XA0054DK         
+         DS    0F                                              XA0054DK         
 SSIDW    DC    X'00010000'                                     XA0054DK         
 F65535   DC    F'65535'                                        XA0054DK         
 X7FFF    DC    X'7FFFFFFF'                                     XA0054DK         
@@ -485,12 +527,11 @@ ENTSOL   EQU   X'20'          PENDING STATUS IS SOLICITED      XA0054DK
 ENTFMT1  EQU   X'10'          ORB: FORMAT-1 CCWS               XA0054DK         
 ENTPEND  EQU   X'01'          STATUS PENDING                   XA0054DK         
 VCSNENT  EQU   255                                             XA0054DK         
+VCSNSLOT EQU   32                                              XA0054DK         
 VCSTAB   DSECT                                                 XA0054DK         
 VCSOP    DS    X              S, T, P: WHAT DMKVSJ RETURNS TO  XA0054DK         
 VCSCC    DS    X                                               XA0054DK         
-VCSFLG   DS    X              (DMKDSP TESTS IT AS 2(TABLE))    XA0054DK         
-VCSACT   EQU   X'80'          GUEST USES ITS CHANNEL SUBSYS    XA0054DK         
-         DS    X                                               XA0054DK         
+         DS    XL2                                             XA0054DK         
 VCSADDR  DS    F                                               XA0054DK         
 VCSSUB   DS    F                                               XA0054DK         
 VCSLINK  DS    F                                               XA0054DK         
