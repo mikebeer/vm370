@@ -1,0 +1,2049 @@
+Archive member included to satisfy reference by file (symbol)
+
+/home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+                              /tmp/tmp.1Erh3DXJsk/rxaseror.o (strncpy)
+/home/claude/nlbuild/libc.a(libc_a-fread.o)
+                              /tmp/tmp.1Erh3DXJsk/platform.o (fread)
+/home/claude/nlbuild/libc.a(libc_a-assert.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasgrmr.o (__assert_func)
+/home/claude/nlbuild/libc.a(libc_a-ftell.o)
+                              /tmp/tmp.1Erh3DXJsk/platform.o (ftell)
+/home/claude/nlbuild/libc.a(libc_a-atof.o)
+                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (atof)
+/home/claude/nlbuild/libc.a(libc_a-strtod.o)
+                              /home/claude/nlbuild/libc.a(libc_a-atof.o) (strtod)
+/home/claude/nlbuild/libc.a(libc_a-locale.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__global_locale)
+/home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__gethex)
+/home/claude/nlbuild/libc.a(libc_a-rewind.o)
+                              /tmp/tmp.1Erh3DXJsk/platform.o (rewind)
+/home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fread.o) (memcpy)
+/home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+                              /home/claude/nlbuild/libc.a(libc_a-locale.o) (__ascii_mbtowc)
+/home/claude/nlbuild/libc.a(libc_a-ftello.o)
+                              /home/claude/nlbuild/libc.a(libc_a-ftell.o) (_ftello_r)
+/home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (strncmp)
+/home/claude/nlbuild/libc.a(libc_a-memmove.o)
+                              /tmp/tmp.1Erh3DXJsk/rxas_opt.o (memmove)
+/home/claude/nlbuild/libc.a(libc_a-calloc.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (calloc)
+/home/claude/nlbuild/libc.a(libc_a-errno.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__errno)
+/home/claude/nlbuild/libc.a(libc_a-impure.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (_impure_ptr)
+/home/claude/nlbuild/libc.a(libc_a-abort.o)
+                              /home/claude/nlbuild/libc.a(libc_a-assert.o) (abort)
+/home/claude/nlbuild/libc.a(libc_a-callocr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-calloc.o) (_calloc_r)
+/home/claude/nlbuild/libc.a(libc_a-realloc.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasassm.o (realloc)
+/home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-assert.o) (fiprintf)
+/home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-callocr.o) (_malloc_r)
+/home/claude/nlbuild/libc.a(libc_a-putchar.o)
+                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (putchar)
+/home/claude/nlbuild/libc.a(libc_a-freer.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fread.o) (_free_r)
+/home/claude/nlbuild/libc.a(libc_a-fseek.o)
+                              /home/claude/nlbuild/libc.a(libc_a-rewind.o) (_fseek_r)
+/home/claude/nlbuild/libc.a(libc_a-atoi.o)
+                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (atoi)
+/home/claude/nlbuild/libc.a(libc_a-strtol.o)
+                              /home/claude/nlbuild/libc.a(libc_a-atoi.o) (_strtol_r)
+/home/claude/nlbuild/libc.a(libc_a-fclose.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (fclose)
+/home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+                              /home/claude/nlbuild/libc.a(libc_a-locale.o) (__ascii_wctomb)
+/home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (strrchr)
+/home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fseek.o) (_fseeko_r)
+/home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+                              /tmp/tmp.1Erh3DXJsk/rxaseror.o (snprintf)
+/home/claude/nlbuild/libc.a(libc_a-malloc.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (malloc)
+/home/claude/nlbuild/libc.a(libc_a-putc.o)
+                              /home/claude/nlbuild/libc.a(libc_a-putchar.o) (_putc_r)
+/home/claude/nlbuild/libc.a(libc_a-stdio.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (__sseek)
+/home/claude/nlbuild/libc.a(libc_a-atoll.o)
+                              /tmp/tmp.1Erh3DXJsk/rxastoke.o (atoll)
+/home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (fprintf)
+/home/claude/nlbuild/libc.a(libc_a-reent.o)
+                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (errno)
+/home/claude/nlbuild/libc.a(libc_a-refill.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fread.o) (__srefill_r)
+/home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-putc.o) (__swbuf_r)
+/home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-realloc.o) (_realloc_r)
+/home/claude/nlbuild/libc.a(libc_a-writer.o)
+                              /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_write_r)
+/home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (_fstat_r)
+/home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (fwrite)
+/home/claude/nlbuild/libc.a(libc_a-mlock.o)
+                              /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (__malloc_lock)
+/home/claude/nlbuild/libc.a(libc_a-findfp.o)
+                              /home/claude/nlbuild/libc.a(libc_a-refill.o) (__sglue)
+/home/claude/nlbuild/libc.a(libc_a-puts.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (puts)
+/home/claude/nlbuild/libc.a(libc_a-exit.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (exit)
+/home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (_ctype_)
+/home/claude/nlbuild/libc.a(libc_a-printf.o)
+                              /tmp/tmp.1Erh3DXJsk/rxasmain.o (printf)
+/home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-mallocr.o) (_sbrk_r)
+/home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__match)
+/home/claude/nlbuild/libc.a(libc_a-fopen.o)
+                              /tmp/tmp.1Erh3DXJsk/platform.o (fopen)
+/home/claude/nlbuild/libc.a(libc_a-closer.o)
+                              /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_close_r)
+/home/claude/nlbuild/libc.a(libc_a-signal.o)
+                              /home/claude/nlbuild/libc.a(libc_a-abort.o) (raise)
+/home/claude/nlbuild/libc.a(libc_a-openr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fopen.o) (_open_r)
+/home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (nan)
+/home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (nanf)
+/home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+                              /home/claude/nlbuild/libc.a(libc_a-locale.o) (strcmp)
+/home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+                              /home/claude/nlbuild/libc.a(libc_a-atoll.o) (_strtoll_r)
+/home/claude/nlbuild/libc.a(libc_a-memset.o)
+                              /home/claude/nlbuild/libc.a(libc_a-callocr.o) (memset)
+/home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (_Balloc)
+/home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+                              /home/claude/nlbuild/libc.a(libc_a-refill.o) (_fwalk_sglue)
+/home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fprintf.o) (_vfprintf_r)
+/home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fseeko.o) (__smakebuf_r)
+/home/claude/nlbuild/libc.a(libc_a-msizer.o)
+                              /home/claude/nlbuild/libc.a(libc_a-reallocr.o) (_malloc_usable_size_r)
+/home/claude/nlbuild/libc.a(libc_a-strchr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strrchr.o) (strchr)
+/home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-snprintf.o) (_svfprintf_r)
+/home/claude/nlbuild/libc.a(libc_a-signalr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-signal.o) (_kill_r)
+/home/claude/nlbuild/libc.a(libc_a-fflush.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fclose.o) (__sflush_r)
+/home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fiprintf.o) (_vfiprintf_r)
+/home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+                              /home/claude/nlbuild/libc.a(libc_a-svfprintf.o) (__ssputs_r)
+/home/claude/nlbuild/libc.a(libc_a-readr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_read_r)
+/home/claude/nlbuild/libc.a(libc_a-strlen.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (strlen)
+/home/claude/nlbuild/libc.a(libc_a-flags.o)
+                              /home/claude/nlbuild/libc.a(libc_a-fopen.o) (__sflags)
+/home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (_dtoa_r)
+/home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+                              /home/claude/nlbuild/libc.a(libc_a-wbuf.o) (__swsetup_r)
+/home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-stdio.o) (_lseek_r)
+/home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+                              /home/claude/nlbuild/libc.a(libc_a-exit.o) (__call_exitprocs)
+/home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-makebuf.o) (_isatty_r)
+/home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (__sfputs_r)
+/home/claude/nlbuild/libc.a(libc_a-memchr.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (memchr)
+/home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (frexp)
+/home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (_localeconv_r)
+/home/claude/nlbuild/libc.a(libc_a-fputc.o)
+                              /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o) (_fputc_r)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__adddf3)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__divdf3)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+                              /tmp/tmp.1Erh3DXJsk/rxas_opt.o (__eqdf2)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__fixdfdi)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (__fixdfsi)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__fixunsdfsi)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__floatdidf)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-vfprintf.o) (__floatsidf)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__floatunsidf)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__gtdf2)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__ledf2)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__lesf2)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__muldf3)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__subdf3)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__truncdfsf2)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__unorddf2)
+/home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+                              /home/claude/nlbuild/libc.a(libc_a-strtod.o) (__unordsf2)
+/usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+                              /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o) (__clzsi2)
+/usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (__udivdi3)
+/usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+                              /tmp/tmp.1Erh3DXJsk/cmsrt.o (__umoddi3)
+/usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+                              /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o) (__udiv_w_sdiv)
+/usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
+                              /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o) (__clz_tab)
+
+Discarded input sections
+
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .rodata.prnt_tok.str1.2
+                0x00000000       0x24 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .text.prnt_tok
+                0x00000000       0xc0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .rodata.prnt_tok
+                0x00000000       0x44 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.ParseInit
+                0x00000000       0x30 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.ParseFinalize
+                0x00000000      0x138 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.ParseFallback
+                0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.tk_tp_nm
+                0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/platform.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/platform.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .text.get_inst
+                0x00000000       0x30 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .text.opd_name
+                0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .text.avl_lino
+                0x00000000       0x20 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .text.avl_remv
+                0x00000000      0x468 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .rodata.avl_remv
+                0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+ .text          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .data          0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss           0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._stat    0x00000000       0x48 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._unlink  0x00000000      0x238 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text.system   0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._execve  0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._fork    0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._wait    0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text.write    0x00000000        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._link    0x00000000       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._times   0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text.gettimeofday
+                0x00000000       0x68 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.gettimeofday
+                0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._gettimeofday
+                0x00000000       0x68 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._gettimeofday
+                0x00000000       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .comment       0x00000000       0x2e /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fread.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .text.__assert
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+ .text._ftell_r
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atof.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atof.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atof.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-atof.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atof.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .text._strtod_r
+                0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .text.strtod_l
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .text.strtof_l
+                0x00000000       0xe8 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata.strtof_l
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .text.strtof   0x00000000      0x108 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata.strtof
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .text._setlocale_r
+                0x00000000       0x68 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .text.__locale_mb_cur_max
+                0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .text.setlocale
+                0x00000000       0x68 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .bss._PathLocale
+                0x00000000        0x4 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+ .text._rewind_r
+                0x00000000       0x28 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+ .text._mbtowc_r
+                0x00000000       0x20 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+ .text.ftello   0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-memmove.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-calloc.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-errno.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-errno.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-errno.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-errno.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-errno.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-impure.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-impure.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-impure.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-impure.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-impure.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-abort.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-abort.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-abort.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-abort.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-abort.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-callocr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-realloc.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+ .text._fiprintf_r
+                0x00000000       0x40 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+ .text._putchar_r
+                0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-freer.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-freer.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-freer.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-freer.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-freer.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+ .text._atoi_r  0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .text._strtol_r
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .text.strtol_l
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+ .text._wctomb_r
+                0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .text.fseeko   0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+ .text._snprintf_r
+                0x00000000      0x100 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putc.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putc.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putc.o)
+ .text.putc     0x00000000       0x88 /home/claude/nlbuild/libc.a(libc_a-putc.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-putc.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-putc.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+ .text.__seofread
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+ .text._atoll_r
+                0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+ .text._fprintf_r
+                0x00000000       0x40 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reent.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reent.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reent.o)
+ .text._reclaim_reent
+                0x00000000       0xb0 /home/claude/nlbuild/libc.a(libc_a-reent.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-reent.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reent.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-refill.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-refill.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-refill.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-refill.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-refill.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+ .text.__swbuf  0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-writer.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-writer.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-writer.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-writer.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-writer.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-puts.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-puts.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-puts.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-puts.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-puts.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-exit.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-exit.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-exit.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-exit.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-exit.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-printf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-printf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-printf.o)
+ .text._printf_r
+                0x00000000       0x48 /home/claude/nlbuild/libc.a(libc_a-printf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-printf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-printf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-closer.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-closer.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-closer.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-closer.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-closer.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text._init_signal_r
+                0x00000000       0x78 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text._signal_r
+                0x00000000       0x98 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text._raise_r
+                0x00000000       0x98 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text.__sigtramp_r
+                0x00000000       0xd8 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text.signal   0x00000000       0xa0 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text._init_signal
+                0x00000000       0x80 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text.__sigtramp
+                0x00000000       0xd8 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-openr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-openr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-openr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-openr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-openr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .text.nanf     0x00000000       0x10 /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .rodata.nanf   0x00000000        0x8 /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-sf_nan.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .text.strcmp   0x00000000       0xa0 /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .rodata.strcmp
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strcmp.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .text._strtoll_r
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .text.strtoll_l
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memset.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memset.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memset.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-memset.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memset.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .text._mprec_log10
+                0x00000000      0x148 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata._mprec_log10
+                0x00000000       0x10 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__mprec_tinytens
+                0x00000000       0x28 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .text.vfprintf
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .text.__swhatbuf_r
+                0x00000000       0xa0 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .rodata.__swhatbuf_r
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-msizer.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-msizer.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-msizer.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-msizer.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-msizer.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .text.fflush   0x00000000       0x70 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .text.vfiprintf
+                0x00000000       0x18 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-readr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-readr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-readr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-readr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-readr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-flags.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-flags.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-flags.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-flags.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-flags.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .text.__localeconv_l
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .text.localeconv
+                0x00000000        0x8 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+ .text          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+ .data          0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+ .bss           0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+ .text.fputc    0x00000000       0x50 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+ .comment       0x00000000       0x2e /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+ .text          0x00000000      0x110 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+ .rodata        0x00000000        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(lesf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+ .text          0x00000000      0x1e0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+ .rodata        0x00000000       0x10 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(truncdfsf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+ .text          0x00000000       0x50 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+ .data          0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+ .bss           0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+ .rodata        0x00000000        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+ .comment       0x00000000       0x2e /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unordsf2.o)
+ .data          0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+ .bss           0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+ .note.GNU-stack
+                0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+ .eh_frame      0x00000000       0x28 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+ .data          0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+ .bss           0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+ .note.GNU-stack
+                0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+ .eh_frame      0x00000000       0x54 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+ .data          0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+ .bss           0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+ .note.GNU-stack
+                0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+ .eh_frame      0x00000000       0x60 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+ .data          0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+ .bss           0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+ .note.GNU-stack
+                0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+ .eh_frame      0x00000000       0x48 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+ .text          0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
+ .data          0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
+ .bss           0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
+ .note.GNU-stack
+                0x00000000        0x0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+                0x00000000                        . = 0x0
+
+.text           0x00000000    0x2c170
+ *(.text.entry)
+ .text.entry    0x00000000       0x70 /tmp/tmp.1Erh3DXJsk/entry31.o
+                0x00000000                cms_entry
+ *(.text .text.*)
+ .text          0x00000070       0x58 /tmp/tmp.1Erh3DXJsk/entry31.o
+                0x00000070                cms_exit
+                0x00000088                cms202
+ .text.error_and_exit.constprop.0
+                0x000000c8       0x30 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .text.startup.main
+                0x000000f8      0x6f8 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                0x000000f8                main
+ .text.token_f  0x000007f0      0xb50 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x000007f0                token_f
+ .text.token_id
+                0x00001340      0x100 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00001340                token_id
+ .text.free_tok
+                0x00001440       0x30 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+                0x00001440                free_tok
+ .text.error_f  0x00001470      0x108 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001470                error_f
+ .text.prnt_err
+                0x00001578       0x98 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001578                prnt_err
+ .text.free_err
+                0x00001610       0x30 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001610                free_err
+ .text.err_aftr
+                0x00001640       0xa0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x00001640                err_aftr
+ .text.err_at   0x000016e0       0xa0 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+                0x000016e0                err_at
+ .text.scan     0x00001780     0x5cd8 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+                0x00001780                scan
+ .text.is_relevant
+                0x00007458       0xb0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.executeQueuedItem
+                0x00007508       0xf8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.can_map_operand
+                0x00007600      0x2d8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.map_operand
+                0x000078d8      0x3a0 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.map_instruction
+                0x00007c78       0xe8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.mapped_token
+                0x00007d60      0x178 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.optimise_rule_in_queue
+                0x00007ed8      0x7b8 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.queue_instruction
+                0x00008690      0x100 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .text.rxasque0
+                0x00008790       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008790                rxasque0
+ .text.rxasque1
+                0x000087d8       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000087d8                rxasque1
+ .text.rxasque2
+                0x00008820       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008820                rxasque2
+ .text.rxasque3
+                0x00008868       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008868                rxasque3
+ .text.rxasqlbl
+                0x000088b8       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000088b8                rxasqlbl
+ .text.rxasqmfl
+                0x00008900       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008900                rxasqmfl
+ .text.rxasqmsr
+                0x00008948       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008948                rxasqmsr
+ .text.rxasqmfu
+                0x00008990       0x68 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008990                rxasqmfu
+ .text.rxasqmre
+                0x000089f8       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x000089f8                rxasqmre
+ .text.rxasqmct
+                0x00008a48       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008a48                rxasqmct
+ .text.rxasqmcl
+                0x00008a98       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008a98                rxasqmcl
+ .text.flushopt
+                0x00008ae0       0x50 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00008ae0                flushopt
+ .text.yy_pop_parser_stack
+                0x00008b30       0xa8 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.yyTraceShift
+                0x00008bd8       0x80 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .text.ParseTrace
+                0x00008c58       0x30 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008c58                ParseTrace
+ .text.ParseAlloc
+                0x00008c88       0x48 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008c88                ParseAlloc
+ .text.ParseFree
+                0x00008cd0      0x148 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008cd0                ParseFree
+ .text.Parse    0x00008e18     0x1070 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+                0x00008e18                Parse
+ .text.get_reg_number
+                0x00009e88       0xd8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.validate_instruction
+                0x00009f60      0x130 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.reserve_in_const_pool
+                0x0000a090      0x188 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.gen_instr
+                0x0000a218      0x188 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.add_node.isra.0
+                0x0000a3a0       0xa0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.add_string_to_pool
+                0x0000a440      0x348 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.add_func_to_pool
+                0x0000a788      0x250 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.gen_operand
+                0x0000a9d8      0x340 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.define_proc
+                0x0000ad18      0x248 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .text.freeasbl
+                0x0000af60      0x128 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000af60                freeasbl
+ .text.backptch
+                0x0000b088      0x230 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b088                backptch
+ .text.rxassetg
+                0x0000b2b8       0x50 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b2b8                rxassetg
+ .text.rxasexre
+                0x0000b308      0x278 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b308                rxasexre
+ .text.rxasgen0
+                0x0000b580       0x38 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b580                rxasgen0
+ .text.rxasgen1
+                0x0000b5b8       0x80 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b5b8                rxasgen1
+ .text.rxasgen2
+                0x0000b638       0xb8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b638                rxasgen2
+ .text.rxasgen3
+                0x0000b6f0       0xf0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b6f0                rxasgen3
+ .text.rxasgen  0x0000b7e0       0xf0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b7e0                rxasgen
+ .text.rxasproc
+                0x0000b8d0       0x88 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b8d0                rxasproc
+ .text.rxaslabl
+                0x0000b958       0xd8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000b958                rxaslabl
+ .text.rxasexpc
+                0x0000ba30      0x2a8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000ba30                rxasexpc
+ .text.rxasdecl
+                0x0000bcd8      0x270 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000bcd8                rxasdecl
+ .text.rxasmefl
+                0x0000bf48       0x88 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000bf48                rxasmefl
+ .text.rxasmesr
+                0x0000bfd0       0xa0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000bfd0                rxasmesr
+ .text.rxasmefu
+                0x0000c070      0x130 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c070                rxasmefu
+ .text.rxasmere
+                0x0000c1a0       0xd0 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c1a0                rxasmere
+ .text.rxasmect
+                0x0000c270       0xd8 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c270                rxasmect
+ .text.rxasmecl
+                0x0000c348       0x88 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+                0x0000c348                rxasmecl
+ .text.file2buf
+                0x0000c3d0       0xa0 /tmp/tmp.1Erh3DXJsk/platform.o
+                0x0000c3d0                file2buf
+ .text.openfile
+                0x0000c470       0xa0 /tmp/tmp.1Erh3DXJsk/platform.o
+                0x0000c470                openfile
+ .text.instr_f  0x0000c510      0x170 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000c510                instr_f
+ .text.init_ops
+                0x0000c680     0x1ce0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000c680                init_ops
+ .text.src_inst
+                0x0000e360       0x90 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e360                src_inst
+ .text.fst_inst
+                0x0000e3f0       0xc8 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e3f0                fst_inst
+ .text.nxt_inst
+                0x0000e4b8       0xd0 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e4b8                nxt_inst
+ .text.free_ops
+                0x0000e588       0x80 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e588                free_ops
+ .text.exp_opds
+                0x0000e608      0x170 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e608                exp_opds
+ .text.prt_ops  0x0000e778       0x88 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+                0x0000e778                prt_ops
+ .text.avl_fino
+                0x0000e800       0x20 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e800                avl_fino
+ .text.avl_nino
+                0x0000e820       0x80 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e820                avl_nino
+ .text.avl_pino
+                0x0000e8a0       0x80 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e8a0                avl_pino
+ .text.avl_finp
+                0x0000e920       0x20 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e920                avl_finp
+ .text.avl_ninp
+                0x0000e940       0x28 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e940                avl_ninp
+ .text.avl_bain
+                0x0000e968      0x328 /tmp/tmp.1Erh3DXJsk/avl_tree.o
+                0x0000e968                avl_bain
+ .text.set_fscb
+                0x0000ec90      0x1f8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text.read_whole
+                0x0000ee88      0x870 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text.tflush   0x0000f6f8      0x240 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text.parse_name
+                0x0000f938      0x5c8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .text._sbrk    0x0000ff00      0x860 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0000ff00                _sbrk
+ .text._open    0x00010760      0x120 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00010760                _open
+ .text._close   0x00010880      0xac8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00010880                _close
+ .text._write   0x00011348      0x588 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00011348                _write
+ .text._read    0x000118d0      0x710 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x000118d0                _read
+ .text._lseek   0x00011fe0      0x210 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00011fe0                _lseek
+ .text._fstat   0x000121f0       0x78 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x000121f0                _fstat
+ .text._isatty  0x00012268       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00012268                _isatty
+ .text._kill    0x00012280       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00012280                _kill
+ .text._getpid  0x00012298        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00012298                _getpid
+ .text._exit    0x000122a0      0x1f8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x000122a0                _exit
+ .text.cms_main
+                0x00012498       0xd8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x00012498                cms_main
+ .text.strncpy  0x00012570      0x448 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+                0x00012570                strncpy
+ .text._fread_r
+                0x000129b8      0x1c0 /home/claude/nlbuild/libc.a(libc_a-fread.o)
+                0x000129b8                _fread_r
+ .text.fread    0x00012b78       0x30 /home/claude/nlbuild/libc.a(libc_a-fread.o)
+                0x00012b78                fread
+ .text.__assert_func
+                0x00012ba8       0x58 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+                0x00012ba8                __assert_func
+ .text.ftell    0x00012c00       0x18 /home/claude/nlbuild/libc.a(libc_a-ftell.o)
+                0x00012c00                ftell
+ .text.atof     0x00012c18       0x10 /home/claude/nlbuild/libc.a(libc_a-atof.o)
+                0x00012c18                atof
+ .text._strtod_l
+                0x00012c28     0x18c0 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+                0x00012c28                _strtod_l
+ .text.strtod   0x000144e8       0x20 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+                0x000144e8                strtod
+ .text.rshift   0x00014508      0x3c0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .text.__gethex
+                0x000148c8      0xda0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+                0x000148c8                __gethex
+ .text.rewind   0x00015668       0x38 /home/claude/nlbuild/libc.a(libc_a-rewind.o)
+                0x00015668                rewind
+ .text.memcpy   0x000156a0      0x2d8 /home/claude/nlbuild/libc.a(libc_a-memcpy.o)
+                0x000156a0                memcpy
+ .text.__ascii_mbtowc
+                0x00015978       0x88 /home/claude/nlbuild/libc.a(libc_a-mbtowc_r.o)
+                0x00015978                __ascii_mbtowc
+ .text._ftello_r
+                0x00015a00       0xe0 /home/claude/nlbuild/libc.a(libc_a-ftello.o)
+                0x00015a00                _ftello_r
+ .text.strncmp  0x00015ae0      0x320 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+                0x00015ae0                strncmp
+ .text.memmove  0x00015e00      0x400 /home/claude/nlbuild/libc.a(libc_a-memmove.o)
+                0x00015e00                memmove
+ .text.calloc   0x00016200       0x18 /home/claude/nlbuild/libc.a(libc_a-calloc.o)
+                0x00016200                calloc
+ .text.__errno  0x00016218       0x10 /home/claude/nlbuild/libc.a(libc_a-errno.o)
+                0x00016218                __errno
+ .text.abort    0x00016228       0x20 /home/claude/nlbuild/libc.a(libc_a-abort.o)
+                0x00016228                abort
+ .text._calloc_r
+                0x00016248       0x50 /home/claude/nlbuild/libc.a(libc_a-callocr.o)
+                0x00016248                _calloc_r
+ .text.realloc  0x00016298       0x18 /home/claude/nlbuild/libc.a(libc_a-realloc.o)
+                0x00016298                realloc
+ .text.fiprintf
+                0x000162b0       0x50 /home/claude/nlbuild/libc.a(libc_a-fiprintf.o)
+                0x000162b0                fiprintf
+ .text.sbrk_aligned
+                0x00016300       0x80 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+ .text._malloc_r
+                0x00016380      0x1a8 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+                0x00016380                _malloc_r
+ .text.putchar  0x00016528       0x18 /home/claude/nlbuild/libc.a(libc_a-putchar.o)
+                0x00016528                putchar
+ .text._free_r  0x00016540      0x140 /home/claude/nlbuild/libc.a(libc_a-freer.o)
+                0x00016540                _free_r
+ .text._fseek_r
+                0x00016680        0x8 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+                0x00016680                _fseek_r
+ .text.fseek    0x00016688       0x18 /home/claude/nlbuild/libc.a(libc_a-fseek.o)
+                0x00016688                fseek
+ .text.atoi     0x000166a0       0x10 /home/claude/nlbuild/libc.a(libc_a-atoi.o)
+                0x000166a0                atoi
+ .text._strtol_l.isra.0
+                0x000166b0      0x240 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .text.strtol   0x000168f0       0x18 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+                0x000168f0                strtol
+ .text._fclose_r
+                0x00016908       0xd8 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+                0x00016908                _fclose_r
+ .text.fclose   0x000169e0       0x18 /home/claude/nlbuild/libc.a(libc_a-fclose.o)
+                0x000169e0                fclose
+ .text.__ascii_wctomb
+                0x000169f8       0x30 /home/claude/nlbuild/libc.a(libc_a-wctomb_r.o)
+                0x000169f8                __ascii_wctomb
+ .text.strrchr  0x00016a28       0x58 /home/claude/nlbuild/libc.a(libc_a-strrchr.o)
+                0x00016a28                strrchr
+ .text._fseeko_r
+                0x00016a80      0x3a0 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+                0x00016a80                _fseeko_r
+ .text.snprintf
+                0x00016e20      0x110 /home/claude/nlbuild/libc.a(libc_a-snprintf.o)
+                0x00016e20                snprintf
+ .text.malloc   0x00016f30       0x18 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+                0x00016f30                malloc
+ .text.free     0x00016f48       0x18 /home/claude/nlbuild/libc.a(libc_a-malloc.o)
+                0x00016f48                free
+ .text._putc_r  0x00016f60       0x80 /home/claude/nlbuild/libc.a(libc_a-putc.o)
+                0x00016f60                _putc_r
+ .text.__sread  0x00016fe0       0x40 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+                0x00016fe0                __sread
+ .text.__swrite
+                0x00017020       0x70 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+                0x00017020                __swrite
+ .text.__sseek  0x00017090       0x50 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+                0x00017090                __sseek
+ .text.__sclose
+                0x000170e0       0x10 /home/claude/nlbuild/libc.a(libc_a-stdio.o)
+                0x000170e0                __sclose
+ .text.atoll    0x000170f0       0x10 /home/claude/nlbuild/libc.a(libc_a-atoll.o)
+                0x000170f0                atoll
+ .text.fprintf  0x00017100       0x50 /home/claude/nlbuild/libc.a(libc_a-fprintf.o)
+                0x00017100                fprintf
+ .text.lflush   0x00017150       0x28 /home/claude/nlbuild/libc.a(libc_a-refill.o)
+ .text.__srefill_r
+                0x00017178      0x1a0 /home/claude/nlbuild/libc.a(libc_a-refill.o)
+                0x00017178                __srefill_r
+ .text.__swbuf_r
+                0x00017318       0xf8 /home/claude/nlbuild/libc.a(libc_a-wbuf.o)
+                0x00017318                __swbuf_r
+ .text._realloc_r
+                0x00017410       0xb8 /home/claude/nlbuild/libc.a(libc_a-reallocr.o)
+                0x00017410                _realloc_r
+ .text._write_r
+                0x000174c8       0x50 /home/claude/nlbuild/libc.a(libc_a-writer.o)
+                0x000174c8                _write_r
+ .text._fstat_r
+                0x00017518       0x50 /home/claude/nlbuild/libc.a(libc_a-fstatr.o)
+                0x00017518                _fstat_r
+ .text._fwrite_r
+                0x00017568      0x348 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+                0x00017568                _fwrite_r
+ .text.fwrite   0x000178b0       0x30 /home/claude/nlbuild/libc.a(libc_a-fwrite.o)
+                0x000178b0                fwrite
+ .text.__malloc_lock
+                0x000178e0        0x8 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+                0x000178e0                __malloc_lock
+ .text.__malloc_unlock
+                0x000178e8        0x8 /home/claude/nlbuild/libc.a(libc_a-mlock.o)
+                0x000178e8                __malloc_unlock
+ .text.stdio_exit_handler
+                0x000178f0       0x18 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .text.cleanup_stdio
+                0x00017908       0x60 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .text.global_stdio_init.part.0
+                0x00017968      0x180 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .text.__sfp    0x00017ae8      0x230 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+                0x00017ae8                __sfp
+ .text.__sinit  0x00017d18       0x28 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+                0x00017d18                __sinit
+ .text._puts_r  0x00017d40      0x110 /home/claude/nlbuild/libc.a(libc_a-puts.o)
+                0x00017d40                _puts_r
+ .text.puts     0x00017e50       0x18 /home/claude/nlbuild/libc.a(libc_a-puts.o)
+                0x00017e50                puts
+ .text.exit     0x00017e68       0x30 /home/claude/nlbuild/libc.a(libc_a-exit.o)
+                0x00017e68                exit
+ .text.printf   0x00017e98       0x50 /home/claude/nlbuild/libc.a(libc_a-printf.o)
+                0x00017e98                printf
+ .text._sbrk_r  0x00017ee8       0x48 /home/claude/nlbuild/libc.a(libc_a-sbrkr.o)
+                0x00017ee8                _sbrk_r
+ .text.__match  0x00017f30       0x80 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+                0x00017f30                __match
+ .text.__hexnan
+                0x00017fb0      0x9c0 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+                0x00017fb0                __hexnan
+ .text._fopen_r
+                0x00018970       0xd0 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+                0x00018970                _fopen_r
+ .text.fopen    0x00018a40       0x18 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+                0x00018a40                fopen
+ .text._close_r
+                0x00018a58       0x48 /home/claude/nlbuild/libc.a(libc_a-closer.o)
+                0x00018a58                _close_r
+ .text.raise    0x00018aa0       0xa0 /home/claude/nlbuild/libc.a(libc_a-signal.o)
+                0x00018aa0                raise
+ .text._open_r  0x00018b40       0x50 /home/claude/nlbuild/libc.a(libc_a-openr.o)
+                0x00018b40                _open_r
+ .text.nan      0x00018b90       0x10 /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+                0x00018b90                nan
+ .text._strtoll_l.isra.0
+                0x00018ba0      0x308 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .text.strtoll  0x00018ea8       0x18 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+                0x00018ea8                strtoll
+ .text.memset   0x00018ec0      0x3d0 /home/claude/nlbuild/libc.a(libc_a-memset.o)
+                0x00018ec0                memset
+ .text._Balloc  0x00019290       0x98 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019290                _Balloc
+ .text._Bfree   0x00019328       0x20 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019328                _Bfree
+ .text.__multadd
+                0x00019348      0x2d8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019348                __multadd
+ .text.__s2b    0x00019620      0x2b8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019620                __s2b
+ .text.__hi0bits
+                0x000198d8       0x78 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x000198d8                __hi0bits
+ .text.__lo0bits
+                0x00019950       0xb0 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019950                __lo0bits
+ .text.__i2b    0x00019a00       0xc0 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019a00                __i2b
+ .text.__multiply
+                0x00019ac0      0x6e8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00019ac0                __multiply
+ .text.__pow5mult
+                0x0001a1a8      0x118 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001a1a8                __pow5mult
+ .text.__lshift
+                0x0001a2c0      0x510 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001a2c0                __lshift
+ .text.__mcmp   0x0001a7d0      0x218 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001a7d0                __mcmp
+ .text.__mdiff  0x0001a9e8      0x7b8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001a9e8                __mdiff
+ .text.__ulp    0x0001b1a0       0x70 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001b1a0                __ulp
+ .text.__b2d    0x0001b210      0x118 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001b210                __b2d
+ .text.__d2b    0x0001b328      0x138 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001b328                __d2b
+ .text.__ratio  0x0001b460       0x80 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001b460                __ratio
+ .text.__copybits
+                0x0001b4e0      0x230 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001b4e0                __copybits
+ .text.__any_on
+                0x0001b710      0x170 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x0001b710                __any_on
+ .text._fwalk_sglue
+                0x0001b880      0x158 /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+                0x0001b880                _fwalk_sglue
+ .text._vfprintf_r
+                0x0001b9d8     0x3b38 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+                0x0001b9d8                _vfprintf_r
+ .text.__sbprintf
+                0x0001f510       0xa8 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .text.__smakebuf_r
+                0x0001f5b8      0x148 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+                0x0001f5b8                __smakebuf_r
+ .text._malloc_usable_size_r
+                0x0001f700       0x18 /home/claude/nlbuild/libc.a(libc_a-msizer.o)
+                0x0001f700                _malloc_usable_size_r
+ .text.strchr   0x0001f718      0x128 /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+                0x0001f718                strchr
+ .text._svfprintf_r
+                0x0001f840     0x4098 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+                0x0001f840                _svfprintf_r
+ .text._kill_r  0x000238d8       0x50 /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+                0x000238d8                _kill_r
+ .text._getpid_r
+                0x00023928        0x8 /home/claude/nlbuild/libc.a(libc_a-signalr.o)
+                0x00023928                _getpid_r
+ .text.__sflush_r
+                0x00023930      0x1f8 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+                0x00023930                __sflush_r
+ .text._fflush_r
+                0x00023b28       0x48 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+                0x00023b28                _fflush_r
+ .text._vfiprintf_r
+                0x00023b70     0x1cc8 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+                0x00023b70                _vfiprintf_r
+ .text.__sbprintf
+                0x00025838       0xa8 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .text.__ssputs_r
+                0x000258e0      0x118 /home/claude/nlbuild/libc.a(libc_a-ssputs_r.o)
+                0x000258e0                __ssputs_r
+ .text._read_r  0x000259f8       0x50 /home/claude/nlbuild/libc.a(libc_a-readr.o)
+                0x000259f8                _read_r
+ .text.strlen   0x00025a48       0xa8 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+                0x00025a48                strlen
+ .text.__sflags
+                0x00025af0      0x118 /home/claude/nlbuild/libc.a(libc_a-flags.o)
+                0x00025af0                __sflags
+ .text.quorem   0x00025c08      0x800 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .text._dtoa_r  0x00026408     0x1c30 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+                0x00026408                _dtoa_r
+ .text.__swsetup_r
+                0x00028038      0x150 /home/claude/nlbuild/libc.a(libc_a-wsetup.o)
+                0x00028038                __swsetup_r
+ .text._lseek_r
+                0x00028188       0x50 /home/claude/nlbuild/libc.a(libc_a-lseekr.o)
+                0x00028188                _lseek_r
+ .text.__call_exitprocs
+                0x000281d8      0x238 /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+                0x000281d8                __call_exitprocs
+ .text._isatty_r
+                0x00028410       0x48 /home/claude/nlbuild/libc.a(libc_a-isattyr.o)
+                0x00028410                _isatty_r
+ .text.__sfputs_r
+                0x00028458      0x128 /home/claude/nlbuild/libc.a(libc_a-sfputs_r.o)
+                0x00028458                __sfputs_r
+ .text.memchr   0x00028580      0x650 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+                0x00028580                memchr
+ .text.frexp    0x00028bd0       0x80 /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+                0x00028bd0                frexp
+ .text._localeconv_r
+                0x00028c50        0x8 /home/claude/nlbuild/libc.a(libc_a-localeconv.o)
+                0x00028c50                _localeconv_r
+ .text._fputc_r
+                0x00028c58       0x40 /home/claude/nlbuild/libc.a(libc_a-fputc.o)
+                0x00028c58                _fputc_r
+ .text          0x00028c98      0x8b0 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+                0x00028c98                __adddf3
+ .text          0x00029548      0x678 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+                0x00029548                __divdf3
+ .text          0x00029bc0       0xa8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+                0x00029bc0                __eqdf2
+                0x00029bc0                __nedf2
+ .text          0x00029c68       0xe8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+                0x00029c68                __fixdfdi
+ .text          0x00029d50       0x88 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+                0x00029d50                __fixdfsi
+ .text          0x00029dd8       0x80 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+                0x00029dd8                __fixunsdfsi
+ .text          0x00029e58      0x210 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+                0x00029e58                __floatdidf
+ .text          0x0002a068       0xb8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+                0x0002a068                __floatsidf
+ .text          0x0002a120       0x98 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+                0x0002a120                __floatunsidf
+ .text          0x0002a1b8      0x130 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+                0x0002a1b8                __gtdf2
+                0x0002a1b8                __gedf2
+ .text          0x0002a2e8      0x138 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+                0x0002a2e8                __ltdf2
+                0x0002a2e8                __ledf2
+ .text          0x0002a420      0x620 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+                0x0002a420                __muldf3
+ .text          0x0002aa40      0x970 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+                0x0002aa40                __subdf3
+ .text          0x0002b3b0       0x68 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+                0x0002b3b0                __unorddf2
+ *fill*         0x0002b418        0x8 
+ .text          0x0002b420       0xa0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+                0x0002b420                __clzsi2
+ .text          0x0002b4c0      0x5d0 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+                0x0002b4c0                __udivdi3
+ .text          0x0002ba90      0x570 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+                0x0002ba90                __umoddi3
+ .text          0x0002c000      0x170 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+                0x0002c000                __udiv_w_sdiv
+
+.iplt           0x0002c170        0x0
+ .iplt          0x0002c170        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+
+.rodata         0x0002c170     0x9218
+ *(.rodata .rodata.*)
+ .rodata.error_and_exit.constprop.0.str1.2
+                0x0002c170     0x3ed0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+                                 0x1c (size before relaxing)
+ .rodata.main.str1.2
+                0x00030040      0x800 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .rodata.main   0x00030040       0xb0 /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ .rodata        0x000300f0        0xa /tmp/tmp.1Erh3DXJsk/rxasmain.o
+ *fill*         0x000300fa        0x6 
+ .rodata.token_f
+                0x00030100       0x50 /tmp/tmp.1Erh3DXJsk/rxastoke.o
+ .rodata.prnt_err.str1.2
+                0x00030150       0x2c /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .rodata.err_aftr.str1.2
+                0x00030150       0x4a /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .rodata.err_at.str1.2
+                0x00030150       0x44 /tmp/tmp.1Erh3DXJsk/rxaseror.o
+ .rodata.scan.str1.2
+                0x00030150       0x1e /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .rodata.scan   0x00030150     0x2a88 /tmp/tmp.1Erh3DXJsk/rxasscan.o
+ .rodata.executeQueuedItem
+                0x00032bd8       0x20 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.can_map_operand
+                0x00032bf8       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.map_operand
+                0x00032c40       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.mapped_token.str1.2
+                0x00032c88        0x4 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.mapped_token
+                0x00032c88       0x48 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.CSWTCH.72
+                0x00032cd0        0x6 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.str1.2
+                0x00032cd6       0x38 /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+ .rodata.yy_pop_parser_stack.str1.2
+                0x00032cd6       0x6e /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yyTraceShift.str1.2
+                0x00032cd6       0x3a /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.Parse.str1.2
+                0x00032cd6      0x5a6 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ *fill*         0x00032cd6        0x2 
+ .rodata.Parse  0x00032cd8      0x108 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.__func__.0
+                0x00032de0       0x16 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.__func__.1
+                0x00032df6        0xa /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.__func__.2
+                0x00032e00        0xa /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.__func__.3
+                0x00032e0a       0x16 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.__func__.4
+                0x00032e20        0x6 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.__func__.5
+                0x00032e26       0x14 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ *fill*         0x00032e3a        0x2 
+ .rodata.yyRuleInfoNRhs
+                0x00032e3c       0x5c /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yyRuleInfoLhs
+                0x00032e98       0x5c /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.str1.2
+                0x00032ef4     0x10b4 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yyRuleName
+                0x00032ef4      0x170 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yyTokenName
+                0x00033064       0xac /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yy_default
+                0x00033110      0x1ac /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yy_reduce_ofst
+                0x000332bc       0x58 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yy_shift_ofst
+                0x00033314      0x1ac /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yy_lookahead
+                0x000334c0      0x3cc /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.yy_action
+                0x0003388c      0x764 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .rodata.get_reg_number.str1.2
+                0x00033ff0       0x6c /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.validate_instruction.str1.2
+                0x00033ff0       0x44 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.add_string_to_pool
+                0x00033ff0      0x15c /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.gen_operand.str1.2
+                0x0003414c       0x18 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.gen_operand
+                0x0003414c       0x44 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.define_proc.str1.2
+                0x00034190       0x20 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.backptch.str1.2
+                0x00034190       0x24 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.rxassetg.str1.2
+                0x00034190       0x28 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.rxasexre.str1.2
+                0x00034190       0x34 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.rxaslabl.str1.2
+                0x00034190       0x1c /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.rxasmefu.str1.2
+                0x00034190        0x2 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.CSWTCH.60
+                0x00034190       0x44 /tmp/tmp.1Erh3DXJsk/rxasassm.o
+ .rodata.file2buf.str1.2
+                0x000341d4       0x1a /tmp/tmp.1Erh3DXJsk/platform.o
+ .rodata.openfile.str1.2
+                0x000341d4        0xc /tmp/tmp.1Erh3DXJsk/platform.o
+ .rodata.instr_f.str1.2
+                0x000341d4       0x1a /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.init_ops.str1.2
+                0x000341d4     0x1b7c /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.exp_opds.str1.2
+                0x000341d4       0x3c /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.exp_opds
+                0x000341d4       0x10 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.prt_ops.str1.2
+                0x000341e4       0x3a /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.str1.2
+                0x000341e4       0x2c /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.CSWTCH.36
+                0x000341e4       0x20 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .rodata.read_whole.str1.2
+                0x00034204        0xc /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ *fill*         0x00034204        0x4 
+ .rodata.read_whole
+                0x00034208        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.tflush.str1.2
+                0x00034210        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.parse_name.str1.2
+                0x00034210        0xe /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._sbrk.str1.2
+                0x00034210       0x12 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._sbrk  0x00034210        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._close.str1.2
+                0x00034218        0xc /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._close
+                0x00034218        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._read.str1.2
+                0x00034220        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._read  0x00034220        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._fstat
+                0x00034228        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._exit.str1.2
+                0x00034230        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata._exit  0x00034230        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.cms_main
+                0x00034238        0x8 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.tries.0
+                0x00034240       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.rt_e2a
+                0x00034258      0x100 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.rt_a2e
+                0x00034358      0x100 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .rodata.strncpy
+                0x00034458        0x8 /home/claude/nlbuild/libc.a(libc_a-strncpy.o)
+ .rodata.__assert_func.str1.2
+                0x00034460       0x40 /home/claude/nlbuild/libc.a(libc_a-assert.o)
+ .rodata._strtod_l.str1.2
+                0x00034460       0x12 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata._strtod_l
+                0x00034460      0x178 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata.fpinan.0
+                0x000345d8       0x14 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata.fpi.1  0x000345ec       0x14 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata.tinytens
+                0x00034600       0x28 /home/claude/nlbuild/libc.a(libc_a-strtod.o)
+ .rodata._setlocale_r.str1.2
+                0x00034628        0xa /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .rodata.str1.2
+                0x00034628        0x2 /home/claude/nlbuild/libc.a(libc_a-locale.o)
+ .rodata.__gethex.str1.2
+                0x00034628       0x60 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+ .rodata.__hexdig
+                0x00034628      0x100 /home/claude/nlbuild/libc.a(libc_a-gdtoa-gethex.o)
+                0x00034628                __hexdig
+ .rodata.strncmp
+                0x00034728        0x8 /home/claude/nlbuild/libc.a(libc_a-strncmp.o)
+ .rodata._strtol_l.isra.0
+                0x00034730       0x10 /home/claude/nlbuild/libc.a(libc_a-strtol.o)
+ .rodata._fseeko_r
+                0x00034740       0x10 /home/claude/nlbuild/libc.a(libc_a-fseeko.o)
+ .rodata.cleanup_stdio
+                0x00034750        0x8 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .rodata.global_stdio_init.part.0
+                0x00034758       0x18 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .rodata.__sfp  0x00034770        0x8 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+ .rodata._ctype_
+                0x00034778      0x104 /home/claude/nlbuild/libc.a(libc_a-ctype_.o)
+                0x00034778                _ctype_
+ *fill*         0x0003487c        0x4 
+ .rodata.__hexnan
+                0x00034880        0x8 /home/claude/nlbuild/libc.a(libc_a-gdtoa-hexnan.o)
+ .rodata._fopen_r
+                0x00034888        0x8 /home/claude/nlbuild/libc.a(libc_a-fopen.o)
+ .rodata.nan    0x00034890        0x8 /home/claude/nlbuild/libc.a(libm_a-s_nan.o)
+ .rodata._strtoll_l.isra.0
+                0x00034898       0x10 /home/claude/nlbuild/libc.a(libc_a-strtoll.o)
+ .rodata.memset
+                0x000348a8        0x8 /home/claude/nlbuild/libc.a(libc_a-memset.o)
+ .rodata.__multadd.str1.2
+                0x000348b0       0x56 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__multadd
+                0x000348b0        0x8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__s2b  0x000348b8        0x8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__hi0bits
+                0x000348c0       0x10 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__multiply
+                0x000348d0        0x8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__mdiff
+                0x000348d8        0x8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__ulp  0x000348e0       0x18 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__b2d  0x000348f8        0x8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.__d2b  0x00034900        0x8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ .rodata.p05.0  0x00034908        0xc /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+ *fill*         0x00034914        0x4 
+ .rodata.__mprec_bigtens
+                0x00034918       0x28 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00034918                __mprec_bigtens
+ .rodata.__mprec_tens
+                0x00034940       0xc8 /home/claude/nlbuild/libc.a(libc_a-mprec.o)
+                0x00034940                __mprec_tens
+ .rodata._fwalk_sglue
+                0x00034a08        0x8 /home/claude/nlbuild/libc.a(libc_a-fwalk.o)
+ .rodata._vfprintf_r.str1.2
+                0x00034a10       0x3e /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .rodata._vfprintf_r
+                0x00034a10      0x248 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .rodata.__sbprintf
+                0x00034c58        0x8 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .rodata.zeroes.0
+                0x00034c60       0x10 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .rodata.blanks.1
+                0x00034c70       0x10 /home/claude/nlbuild/libc.a(libc_a-vfprintf.o)
+ .rodata.__smakebuf_r
+                0x00034c80        0x8 /home/claude/nlbuild/libc.a(libc_a-makebuf.o)
+ .rodata.strchr
+                0x00034c88       0x10 /home/claude/nlbuild/libc.a(libc_a-strchr.o)
+ .rodata._svfprintf_r.str1.2
+                0x00034c98       0x3e /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .rodata._svfprintf_r
+                0x00034c98      0x248 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .rodata.zeroes.0
+                0x00034ee0       0x10 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .rodata.blanks.1
+                0x00034ef0       0x10 /home/claude/nlbuild/libc.a(libc_a-svfprintf.o)
+ .rodata.__sflush_r
+                0x00034f00        0x8 /home/claude/nlbuild/libc.a(libc_a-fflush.o)
+ .rodata._vfiprintf_r.str1.2
+                0x00034f08       0x2c /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .rodata._vfiprintf_r
+                0x00034f08      0x180 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .rodata.__sbprintf
+                0x00035088        0x8 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .rodata.zeroes.0
+                0x00035090       0x10 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .rodata.blanks.1
+                0x000350a0       0x10 /home/claude/nlbuild/libc.a(libc_a-vfiprintf.o)
+ .rodata.strlen
+                0x000350b0        0x8 /home/claude/nlbuild/libc.a(libc_a-strlen.o)
+ .rodata.quorem
+                0x000350b8        0x8 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .rodata._dtoa_r.str1.2
+                0x000350c0       0x66 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .rodata._dtoa_r
+                0x000350c0       0x80 /home/claude/nlbuild/libc.a(libc_a-dtoa.o)
+ .rodata.memchr
+                0x00035140       0x10 /home/claude/nlbuild/libc.a(libc_a-memchr.o)
+ .rodata.frexp  0x00035150       0x18 /home/claude/nlbuild/libc.a(libm_a-s_frexp.o)
+ .rodata        0x00035168       0x18 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(adddf3.o)
+ .rodata        0x00035180       0x50 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(divdf3.o)
+ .rodata        0x000351d0        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(eqdf2.o)
+ .rodata        0x000351d8       0x10 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfdi.o)
+ .rodata        0x000351e8       0x10 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixdfsi.o)
+ .rodata        0x000351f8        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(fixunsdfsi.o)
+ .rodata        0x00035200        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatdidf.o)
+ .rodata        0x00035208        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatsidf.o)
+ .rodata        0x00035210        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(floatunsidf.o)
+ .rodata        0x00035218        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(gedf2.o)
+ .rodata        0x00035220        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(ledf2.o)
+ .rodata        0x00035228       0x10 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(muldf3.o)
+ .rodata        0x00035238       0x18 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(subdf3.o)
+ .rodata        0x00035250        0x8 /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a(unorddf2.o)
+ .rodata        0x00035258        0x8 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clzsi2.o)
+ .rodata        0x00035260       0x10 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udivdi3.o)
+ .rodata        0x00035270       0x10 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_umoddi3.o)
+ .rodata        0x00035280        0x8 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_udiv_w_sdiv.o)
+ .rodata        0x00035288      0x100 /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a(_clz.o)
+                0x00035288                __clz_tab
+
+.rela.dyn       0x00035388        0x0
+ .rela.iplt     0x00035388        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+ .rela.got      0x00035388        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+
+.data           0x00035388     0x11dc
+ *(.data .data.*)
+ .data.rules    0x00035388      0xf3c /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+                0x00035388                rules
+ .data.__global_locale
+                0x000362c4      0x16c /home/claude/nlbuild/libc.a(libc_a-locale.o)
+                0x000362c4                __global_locale
+ .data._impure_ptr
+                0x00036430        0x4 /home/claude/nlbuild/libc.a(libc_a-impure.o)
+                0x00036430                _impure_ptr
+ *fill*         0x00036434        0x4 
+ .data._impure_data
+                0x00036438      0x120 /home/claude/nlbuild/libc.a(libc_a-impure.o)
+                0x00036438                _impure_data
+ .data.__sglue  0x00036558        0xc /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+                0x00036558                __sglue
+
+.igot.plt       0x00036564        0x0
+ .igot.plt      0x00036564        0x0 /tmp/tmp.1Erh3DXJsk/entry31.o
+
+.got            0x00036564        0x4
+ .got           0x00036564        0x4 /tmp/tmp.1Erh3DXJsk/entry31.o
+
+.got.plt        0x00036568        0xc
+ .got.plt       0x00036568        0xc /tmp/tmp.1Erh3DXJsk/entry31.o
+                0x00036568                _GLOBAL_OFFSET_TABLE_
+
+.bss            0x00036578    0x28858
+ *(.bss .bss.*)
+ .bss           0x00036578    0x10010 /tmp/tmp.1Erh3DXJsk/entry31.o
+                0x00036580                cms_exit_sp
+ .bss.yyTracePrompt
+                0x00046588        0x4 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .bss.yyTraceFILE
+                0x0004658c        0x4 /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+ .bss.no_instructions
+                0x00046590        0x4 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .bss.instructions
+                0x00046594        0x4 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .bss.instruction_root
+                0x00046598        0x4 /tmp/tmp.1Erh3DXJsk/rxvminst.o
+ .bss.argv_     0x0004659c       0x84 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.argbuf    0x00046620      0x120 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.files     0x00046740      0x340 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.rec       0x00046a80     0x8000 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.fscb      0x0004ea80       0x2c /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.cms_heap_mb
+                0x0004eaac        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+                0x0004eaac                cms_heap_mb
+ .bss.low_heap  0x0004eab0    0x10000 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.heap_brk  0x0005eab0        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.heap_end  0x0005eab4        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.heap_base
+                0x0005eab8        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.hsp       0x0005eabc       0x18 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.tin_pos   0x0005ead4        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.tin_len   0x0005ead8        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.tin       0x0005eadc       0x88 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.rdbuf     0x0005eb64       0x84 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.rdpl      0x0005ebe8       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.typl      0x0005ebf8       0x10 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.tlen      0x0005ec08        0x4 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.tline     0x0005ec0c       0x84 /tmp/tmp.1Erh3DXJsk/cmsrt.o
+ .bss.__malloc_sbrk_start
+                0x0005ec90        0x4 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+                0x0005ec90                __malloc_sbrk_start
+ .bss.__malloc_free_list
+                0x0005ec94        0x4 /home/claude/nlbuild/libc.a(libc_a-mallocr.o)
+                0x0005ec94                __malloc_free_list
+ .bss.errno     0x0005ec98        0x4 /home/claude/nlbuild/libc.a(libc_a-reent.o)
+                0x0005ec98                errno
+ .bss.__sf      0x0005ec9c      0x12c /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+                0x0005ec9c                __sf
+ .bss.__stdio_exit_handler
+                0x0005edc8        0x4 /home/claude/nlbuild/libc.a(libc_a-findfp.o)
+                0x0005edc8                __stdio_exit_handler
+ .bss.__atexit  0x0005edcc        0x4 /home/claude/nlbuild/libc.a(libc_a-__call_atexit.o)
+                0x0005edcc                __atexit
+ *(COMMON)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.comment)
+ *(.eh_frame)
+LOAD /tmp/tmp.1Erh3DXJsk/entry31.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxasmain.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxastoke.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxaseror.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxasscan.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxas_opt.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxasgrmr.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxasassm.o
+LOAD /tmp/tmp.1Erh3DXJsk/platform.o
+LOAD /tmp/tmp.1Erh3DXJsk/rxvminst.o
+LOAD /tmp/tmp.1Erh3DXJsk/avl_tree.o
+LOAD /tmp/tmp.1Erh3DXJsk/cmsrt.o
+START GROUP
+LOAD /home/claude/nlbuild/libc.a
+LOAD /home/claude/nlbuild/libm.a
+LOAD /home/claude/vm370/arch/31bit/m5f/softfp/libsoftfp.a
+LOAD /usr/lib/gcc-cross/s390x-linux-gnu/13/32/libgcc.a
+END GROUP
+OUTPUT(rxas.elf elf32-s390)

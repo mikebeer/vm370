@@ -179,9 +179,20 @@ static int parse_name(const char *name, struct cfile *f)
     char part[3][9];
     int np = 0, k = 0;
     const char *p = name;
+    char dirmode[3] = {0, 0, 0};
     memset(part, 0, sizeof part);
     f->binary = 0;
     while (*p == ' ') p++;
+    /* "dir/fn.ft": cREXX's openfile() builds these.  "." is no mode (search
+       the accessed disks); otherwise the directory is the filemode letter. */
+    const char *slash = strrchr(p, '/');
+    if (slash) {
+        if (!(slash - p == 1 && p[0] == '.') && slash > p) {
+            dirmode[0] = p[0];
+            if (slash - p > 1 && p[1] >= '0' && p[1] <= '9') dirmode[1] = p[1];
+        }
+        p = slash + 1;
+    }
     for (; *p; p++) {
         if (*p == '(') { if ((p[1] == 'b' || p[1] == 'B')) f->binary = 1; break; }
         if (*p == '.' || *p == ' ') {
@@ -200,6 +211,12 @@ static int parse_name(const char *name, struct cfile *f)
     if (np >= 3) {
         f->fm[0] = rt_a2e[(unsigned char)part[2][0]];
         f->fm[1] = part[2][1] ? rt_a2e[(unsigned char)part[2][1]] : 0xF1;
+        f->fm_given = 1;
+    } else if (dirmode[0]) {
+        char c = dirmode[0];
+        if (c >= 'a' && c <= 'z') c -= 32;
+        f->fm[0] = rt_a2e[(unsigned char)c];
+        f->fm[1] = dirmode[1] ? rt_a2e[(unsigned char)dirmode[1]] : 0xF1;
         f->fm_given = 1;
     } else { f->fm[0] = 0xC1; f->fm[1] = 0xF1; f->fm_given = 0; }
     if (!memcmp(part[1], "RXBIN", 6) || !memcmp(part[1], "MODULE", 7)) f->binary = 1;
@@ -394,13 +411,20 @@ int _unlink(const char *name)
     return 0;
 }
 
+/* No processes on CMS: system() would LOAD a MODULE over the running one. */
+int system(const char *cmd) { return cmd ? -1 : 0; }
+int _execve(const char *n, char *const a[], char *const e[]) { (void)n; (void)a; (void)e; errno = ENOSYS; return -1; }
+int _fork(void) { errno = ENOSYS; return -1; }
+int _wait(int *st) { (void)st; errno = ECHILD; return -1; }
+int write(int fd, const void *p, size_t n) { return _write(fd, p, n); }
+
 int _link(const char *a, const char *b) { (void)a; (void)b; errno = EMLINK; return -1; }
 int _kill(int pid, int sig) { (void)pid; (void)sig; errno = EINVAL; return -1; }
 int _getpid(void) { return 1; }
 clock_t _times(struct tms *t) { memset(t, 0, sizeof *t); return 0; }
 
 /* TOD clock: bit 51 = 1 microsecond, epoch 1900 */
-int _gettimeofday(struct timeval *tv, void *tz)
+int gettimeofday(struct timeval *tv, void *tz)
 {
     unsigned long long tod;
     (void)tz;
@@ -443,3 +467,4 @@ int cms_main(unsigned char *plist)
     argv_[argc] = 0;
     exit(main(argc, argv_));
 }
+int _gettimeofday(struct timeval *tv, void *tz) { return gettimeofday(tv, tz); }
