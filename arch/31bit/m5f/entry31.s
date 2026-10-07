@@ -14,13 +14,19 @@ cms_entry:
  l %r3,.Lsaved-.Lb(%r12)
  st %r13,0(%r3)            # CMS save area, for the way back
  l %r15,.Lstack-.Lb(%r12)  # C stack: top of a BSS block
- lr %r2,%r1                # the PLIST, for main
+ la %r2,0(%r1)             # the PLIST, for main (AMODE 24 LA: flag byte off)
+ l %r3,.Lexsp-.Lb(%r12)
+ st %r15,0(%r3)            # stack top, for cms_exit
  l %r1,.Lgo31-.Lb(%r12)
  o %r1,.Lhi-.Lb(%r12)      # AMODE bit (not an address constant)
  bsm 0,%r1                 # to AMODE 31
 .Lin31:
  l %r1,.Lmain-.Lb(%r12)
  basr %r14,%r1             # rc = cms_main(plist)
+.Lback:                    # cms_exit() arrives here, rc in r2
+ basr %r12,0
+.Lb2:
+ ahi %r12,.Lb-.Lb2         # our base again
  l %r1,.Lgo24-.Lb(%r12)
  bsm 0,%r1                 # back to AMODE 24
 .Lin24:
@@ -37,6 +43,22 @@ cms_entry:
 .Lgo31:  .long .Lin31
 .Lhi:    .long 0x80000000
 .Lgo24:  .long .Lin24
+.Lexsp:  .long cms_exit_sp
+
+# void cms_exit(int rc): unwind to cms_entry from any depth (exit, abort).
+ .text
+ .balign 8
+ .globl cms_exit
+cms_exit:
+ basr %r1,0
+.Lx:
+ l %r3,.Lxsp-.Lx(%r1)
+ l %r15,0(%r3)
+ l %r1,.Lxback-.Lx(%r1)
+ br %r1
+ .balign 4
+.Lxsp: .long cms_exit_sp
+.Lxback: .long .Lback
 
 # int cms202(void *plist): SVC 202 in AMODE 24.  The plist and anything
 # it points to must be below 16 MB (static data is: the image is low).
@@ -74,6 +96,8 @@ cms202:
  .bss
  .balign 8
 cms_saved: .skip 8
+ .globl cms_exit_sp
+cms_exit_sp: .skip 4
  .balign 8
 cms_stack: .skip 65536
  .section .note.GNU-stack,"",@progbits

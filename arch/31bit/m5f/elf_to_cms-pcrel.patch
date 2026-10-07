@@ -1,6 +1,17 @@
 --- /home/claude/ml/mainframe-lab-main/tools/elf_to_cms.c	2026-10-05 13:02:09.000000000 +0000
-+++ elf_to_cms.c	2026-10-07 00:16:39.858136322 +0000
-@@ -294,6 +294,10 @@
++++ elf_to_cms.c	2026-10-07 04:52:52.456624251 +0000
+@@ -224,7 +224,9 @@
+         if (!allocated(s)) continue;
+         if ((s->flags & ~7U) || (s->type!=PROGBITS && s->type!=NOBITS))
+             fail("unsupported allocated section (TLS/dynamic/etc.)");
+-        if (!s->align || s->align>8 || (s->align&(s->align-1)) || s->addr%s->align)
++        /* VM/370+ M5f: newlib objects ask for 16; CMS loads at a doubleword,
++           and nothing on S/390 needs more than 8 for correctness. */
++        if (!s->align || s->align>4096 || (s->align&(s->align-1)) || s->addr%s->align)
+             fail("allocated alignment must be a power of two <= 8");
+         if ((s->flags&4) && s->type!=PROGBITS) fail("executable NOBITS unsupported");
+         if (s->addr>=MAX_IMAGE || s->size>MAX_IMAGE-s->addr) fail("image exceeds configured limit");
+@@ -294,6 +296,13 @@
              uint32_t offset=get32(p), info=get32(p+4), symno=info>>8;
              uint32_t value, symsec, expected;
              Section *target=sec+s->info, *symbols=sec+s->link;
@@ -8,6 +19,26 @@
 +               PC32DBL 19, PLT32DBL 20, PC32 5) were resolved by the static
 +               link and move with the image; only R_390_32 needs an RLD. */
 +            if ((info&255)==16 || (info&255)==19 || (info&255)==20 || (info&255)==5) continue;
++            /* GOTENT (26): LARL of a .got slot -- PC-relative too; the slot's
++               own address constant gets an RLD below. */
++            if ((info&255)==26) continue;
              if ((info&255)!=4) fail("only R_390_32 relocation is supported");
              if (symbols->ent!=16 || symbols->size%16 || !symno || symno>=symbols->size/16)
                  fail("invalid relocation symbol");
+@@ -316,6 +325,16 @@
+             fixes[offset]=1; fix_count++;
+         }
+     }
++    /* VM/370+ M5f: a static link fills .got with absolute addresses and
++       emits no relocation for them; each is an A-type constant to relocate. */
++    for (i=1;i<shnum;i++) {
++        Section *s=sec+i;
++        if (s->type==PROGBITS && allocated(s) && !strcmp((const char *)file+names->off+s->name,".got"))
++            for (j=0;j+4<=s->size;j+=4) {
++                uint32_t w=get32(image+s->addr+j);
++                if (w && w<=image_size && !fixes[s->addr+j]) { fixes[s->addr+j]=1; fix_count++; }
++            }
++    }
+     if (symtabs!=1) fail("requires one retained symbol table");
+     if (!rela_sections || !fix_count) fail("requires retained relocations; link with --emit-relocs");
+ #ifdef MODULE_OUTPUT
