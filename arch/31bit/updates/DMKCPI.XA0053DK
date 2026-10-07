@@ -1,0 +1,71 @@
+./ I 00592000 $ 00592100 100                                                    
+         LA    R1,*+16        M4B: PROBE IN AMODE 31           XA0053DK         
+         LA    R0,1           (NO LITERAL: DMKCPI'S POOL       XA0053DK         
+         SLL   R0,31          IS FULL, I-250)                  XA0053DK         
+         OR    R1,R0                                           XA0053DK         
+         DC    X'0B01'        BSM 0,R1                         XA0053DK         
+./ R 00597000          $ 00597100 100                                           
+         L     R5,=X'7FFFF000'  M4B: 2 GB                      XA0053DK         
+./ I 00606000 $ 00606100 100                                                    
+         L     R15,=A(DMKCPIB)  M4B: FULL CORTABLE             XA0053DK         
+         BALR  R14,R15                                         XA0053DK         
+./ R 02894000          $ 02894100 100                                           
+         L     R10,=A(DMKSYSRV)  M4B: LOW REGION               XA0053DK         
+./ I 03495800 $ 03495801 001                                                    
+*                                                              XA0053DK         
+* M4B: THE CORTABLE FOR ALL OF REAL STORAGE, AT THE TOP        XA0053DK         
+* OF THE LOW 16 MB.  BALR R14,R15 IN AMODE 24, REAL SIZE       XA0053DK         
+* IN DMKSYSRM.  RETURNS THE LOW REGION UNDER THE TABLE IN      XA0053DK         
+* DMKSYSRV.  FRAMES ABOVE 16 MB OFFLINE UNTIL M4B.2.           XA0053DK         
+*                                                              XA0053DK         
+DMKCPIB  CSECT                                                 XA0053DK         
+         USING PSA,R0                                          XA0053DK         
+         STM   R0,R14,CPIBSAVE-DMKCPIB(R15)                    XA0053DK         
+         BALR  R11,0                                           XA0053DK         
+         USING *,R11                                           XA0053DK         
+         L     R3,=A(DMKSYSRM)                                 XA0053DK         
+         L     R5,0(,R3)      REAL SIZE                        XA0053DK         
+         LR    R6,R5                                           XA0053DK         
+         SRL   R6,8           16 BYTES PER 4 KB FRAME          XA0053DK         
+         AL    R6,=F'4095'                                     XA0053DK         
+         N     R6,=X'7FFFF000'  WHOLE PAGES                    XA0053DK         
+         L     R10,=X'01000000'  CP BELOW 16 MB                XA0053DK         
+         CLR   R5,R10                                          XA0053DK         
+         BNL   CPIB1                                           XA0053DK         
+         LR    R10,R5         UNDER 16 MB: ALL                 XA0053DK         
+CPIB1    LR    R7,R10         TOP OF THE LOW REGION            XA0053DK         
+         SLR   R7,R6          TABLE ORIGIN                     XA0053DK         
+         ST    R7,ACORETBL    EVERY MODULE LOOKS HERE          XA0053DK         
+         LR    R8,R7          CLEAR THE TABLE                  XA0053DK         
+         LR    R9,R6                                           XA0053DK         
+         SLR   R14,R14                                         XA0053DK         
+         SLR   R15,R15                                         XA0053DK         
+         MVCL  R8,R14                                          XA0053DK         
+         L     R2,ASYSVM      TABLE FRAMES: SYSTEM             XA0053DK         
+CPIB2    LR    R9,R7                                           XA0053DK         
+         SRL   R9,8                                            XA0053DK         
+         AL    R9,ACORETBL                                     XA0053DK         
+         ST    R2,CORFPNT-CORTABLE(,R9)                        XA0053DK         
+         MVI   CORFLAG-CORTABLE(R9),CORCP                      XA0053DK         
+         AL    R7,=F'4096'                                     XA0053DK         
+         CLR   R7,R10                                          XA0053DK         
+         BL    CPIB2                                           XA0053DK         
+CPIB3    CLR   R7,R5          FRAMES ABOVE 16 MB: OFFLINE      XA0053DK         
+         BNL   CPIB4                                           XA0053DK         
+         LR    R9,R7                                           XA0053DK         
+         SRL   R9,8                                            XA0053DK         
+         AL    R9,ACORETBL                                     XA0053DK         
+         MVC   CORFPNT-CORTABLE(4,R9),=C'*OL*'                 XA0053DK         
+         AL    R7,=F'4096'                                     XA0053DK         
+         B     CPIB3                                           XA0053DK         
+CPIB4    SLR   R10,R6         LOW REGION UNDER TABLE           XA0053DK         
+         L     R3,=A(DMKSYSRV)  DMKCPI LAYS IT OUT             XA0053DK         
+         ST    R10,0(,R3)                                      XA0053DK         
+         DROP  R11                                             XA0053DK         
+         BALR  R15,0                                           XA0053DK         
+         USING *,R15                                           XA0053DK         
+         LM    R0,R14,CPIBSAVE                                 XA0053DK         
+         BR    R14                                             XA0053DK         
+         DROP  R15                                             XA0053DK         
+CPIBSAVE DS    15F                                             XA0053DK         
+         LTORG                                                 XA0053DK         

@@ -109,6 +109,7 @@ XA49 = 'XA0049DK'
 XA50 = 'XA0050DK'
 XA51 = 'XA0051DK'
 XA52 = 'XA0052DK'
+XA53 = 'XA0053DK'   # M4b: real storage above 16 MB
 
 
 def psa():
@@ -1590,6 +1591,116 @@ def dmkcpi():
     d.insert('03506100', first='03506110', inc=10,
              limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '03506100'),
              lines=["         COPY  XABLOKS"])
+    return d
+
+
+def m4bcpi():
+    """M4b.1: CP sizes real storage above 16 MB and builds a CORTABLE for all
+    of it, below 16 MB.  docs/38-M4B-REAL2G.md.
+
+    * The probe (`KEYLOOP`, SSKE upward by 2 KB until an addressing
+      exception) ran in AMODE 24 -- DMKCPI's initialisation does until its
+      first interrupt (I-224) -- so `LA R5,2048(,R5)` wrapped at 16 MB and
+      `L R5,=X'01000000'` stored 16 MB whatever Hercules had.  It now runs
+      AMODE 31.  The exception's new PSW is `A(CPIPINT)` with bit 32 off, so
+      CPIPINT is back in AMODE 24 with the size in R5.
+    * The CORTABLE (16 bytes per 4 KB frame) was SYSCOR's static table in
+      DMKSYS, sized by RMSIZE (at most 16392K).  DMKCPIB builds one for all
+      of real storage at the top of the low 16 MB, stores its origin in
+      ACORETBL (the PSA word every module loads it from), marks its own
+      frames as system frames and every frame above 16 MB offline ('*OL*',
+      as CP marks storage beyond RMSIZE), and stores the low region below
+      the table as DMKSYSRV -- the size the rest of DMKCPI lays out free
+      storage, the trace table and the dynamic area in.  DMKSYSRM keeps the
+      real size: QUERY STORAGE and every bounds check see all of it.  The
+      static table and the CP-assist lists that point at it (DMKCCW, DMKFRE,
+      DMKPTR) are dead on ESA/390; DMKDMP's DMPCORET still names it (I-201).
+    * The dump file is sized from DMKSYSRV, not DMKSYSRM: at 2 GB it would
+      be 512K spool records.
+    """
+    d = Deck(XA53)
+    src = SRC + '/DMKCPI.ASSEMBLE'
+    d.insert('00592000', first='00592100', inc=100,
+             limit=next_seq(src, '00592000'), lines=[
+        "         LA    R1,*+16        M4B: PROBE IN AMODE 31",
+        "         LA    R0,1           (NO LITERAL: DMKCPI'S POOL",
+        "         SLL   R0,31          IS FULL, I-250)",
+        "         OR    R1,R0",
+        "         DC    X'0B01'        BSM 0,R1",
+    ])
+    d.replace('00597000', first='00597100', inc=100,
+              limit=next_seq(src, '00597000'), lines=[
+        "         L     R5,=X'7FFFF000'  M4B: 2 GB",
+    ])
+    d.insert('00606000', first='00606100', inc=100,
+             limit=next_seq(src, '00606000'), lines=[
+        "         L     R15,=A(DMKCPIB)  M4B: FULL CORTABLE",
+        "         BALR  R14,R15",
+    ])
+    d.replace('02894000', first='02894100', inc=100,
+              limit=next_seq(src, '02894000'), lines=[
+        "         L     R10,=A(DMKSYSRV)  M4B: LOW REGION",
+    ])
+    d.insert('03495800', first='03495801', inc=1,
+             limit=next_seq(src, '03495800'), lines=[
+        "*",
+        "* M4B: THE CORTABLE FOR ALL OF REAL STORAGE, AT THE TOP",
+        "* OF THE LOW 16 MB.  BALR R14,R15 IN AMODE 24, REAL SIZE",
+        "* IN DMKSYSRM.  RETURNS THE LOW REGION UNDER THE TABLE IN",
+        "* DMKSYSRV.  FRAMES ABOVE 16 MB OFFLINE UNTIL M4B.2.",
+        "*",
+        "DMKCPIB  CSECT",
+        "         USING PSA,R0",
+        "         STM   R0,R14,CPIBSAVE-DMKCPIB(R15)",
+        "         BALR  R11,0",
+        "         USING *,R11",
+        "         L     R3,=A(DMKSYSRM)",
+        "         L     R5,0(,R3)      REAL SIZE",
+        "         LR    R6,R5",
+        "         SRL   R6,8           16 BYTES PER 4 KB FRAME",
+        "         AL    R6,=F'4095'",
+        "         N     R6,=X'7FFFF000'  WHOLE PAGES",
+        "         L     R10,=X'01000000'  CP BELOW 16 MB",
+        "         CLR   R5,R10",
+        "         BNL   CPIB1",
+        "         LR    R10,R5         UNDER 16 MB: ALL",
+        "CPIB1    LR    R7,R10         TOP OF THE LOW REGION",
+        "         SLR   R7,R6          TABLE ORIGIN",
+        "         ST    R7,ACORETBL    EVERY MODULE LOOKS HERE",
+        "         LR    R8,R7          CLEAR THE TABLE",
+        "         LR    R9,R6",
+        "         SLR   R14,R14",
+        "         SLR   R15,R15",
+        "         MVCL  R8,R14",
+        "         L     R2,ASYSVM      TABLE FRAMES: SYSTEM",
+        "CPIB2    LR    R9,R7",
+        "         SRL   R9,8",
+        "         AL    R9,ACORETBL",
+        "         ST    R2,CORFPNT-CORTABLE(,R9)",
+        "         MVI   CORFLAG-CORTABLE(R9),CORCP",
+        "         AL    R7,=F'4096'",
+        "         CLR   R7,R10",
+        "         BL    CPIB2",
+        "CPIB3    CLR   R7,R5          FRAMES ABOVE 16 MB: OFFLINE",
+        "         BNL   CPIB4",
+        "         LR    R9,R7",
+        "         SRL   R9,8",
+        "         AL    R9,ACORETBL",
+        "         MVC   CORFPNT-CORTABLE(4,R9),=C'*OL*'",
+        "         AL    R7,=F'4096'",
+        "         B     CPIB3",
+        "CPIB4    SLR   R10,R6         LOW REGION UNDER TABLE",
+        "         L     R3,=A(DMKSYSRV)  DMKCPI LAYS IT OUT",
+        "         ST    R10,0(,R3)",
+        "         DROP  R11",
+        "         BALR  R15,0",
+        "         USING *,R15",
+        "         LM    R0,R14,CPIBSAVE",
+        "         BR    R14",
+        "         DROP  R15",
+        "CPIBSAVE DS    15F",
+        "         LTORG",
+    ])
     return d
 
 
@@ -7848,6 +7959,14 @@ def main():
             [(XA51, 'CMS IN EC MODE: PSWS, INTERRUPT CODES, MASKS (M5B)')])
         print('%-8s %-9s %3d cards  %s' % (m, XA51, n,
               'OK' if not verify(path) else 'BAD'))
+
+    dk = m4bcpi()
+    path = os.path.join(HERE, 'DMKCPI.%s' % XA53)
+    n = dk.write(path)
+    aux(os.path.join(HERE, 'DMKCPI.AUXLCL'),
+        [(XA53, 'M4B: REAL STORAGE ABOVE 16 MB, CORTABLE BUILT AT IPL')])
+    print('%-8s %-9s %3d cards  %s' % ('DMKCPI', XA53, n,
+          'OK' if not verify(path) else 'BAD'))
 
     for m in sorted(TMRMODS):
         dk = datdeck(m, TMRMODS[m], ident=XA52)
