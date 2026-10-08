@@ -1,4 +1,4 @@
-./ I 01636000 $ 01636001 001                                                    
+./ R 01637000          $ 01636001 001                                           
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
 VMVCSIX  EQU   VMUSERH1       ITS TABLE: SLOT IN DMKVCS        XA0054DK         
 VMVCSFL  EQU   VMLCLRSV       X'80': ESA/390 I/O ACTIVE        XA0054DK         
@@ -19,6 +19,12 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
          MVI   VCSOP,0                                         XA0054DK         
          OI    VMVCSFL,X'80'  FROM NOW ON: ESA/390 I/O         XA0054DK         
+         CLI   VMINST,X'B2'   THE RING KEEPS THE CHANNEL       XA0054DK         
+         BNE   VCRDONE        SUBSYSTEM INSTRUCTIONS ONLY      XA0054DK         
+         CLI   VMINST+1,X'30' (B230-B23F): A GUEST'S OOPS      XA0054DK         
+         BL    VCRDONE        LOOP (SACF, STFL, STSI) NO       XA0054DK         
+         CLI   VMINST+1,X'3F' LONGER WIPES THEM                XA0054DK         
+         BH    VCRDONE                                         XA0054DK         
          L     R2,VCRLAST     DIAGNOSTIC RING (DCP DMKVCSRG):  XA0054DK         
          CLC   0(4,R2),VMINST  INSTRUCTION, GR1, PSW ADDRESS,  XA0054DK         
          BNE   VCRNEW         THE PSW BYTE 2 AT EXIT, AND      XA0054DK         
@@ -363,8 +369,13 @@ SSCC1    LA    R5,X'40'                                        XA0054DK
          LA    R0,1                                            XA0054DK         
          BAL   R9,GUESTIO     THE CSW DMKVSJ STORED            XA0054DK         
 SSCC1Q   BAL   R9,FINDSN      R6-R8: THE DEVICE'S BLOCKS       XA0054DK         
-         MVC   VDEVCSW,VCSBUF                                  XA0054DK         
-         OI    VDEVSTAT,VDEVPEND                               XA0054DK         
+         MVC   VDEVCSW,VCSBUF  DMKDSP'S CHANNEL-END PATH       XA0054DK         
+         OI    VDEVSTAT,VDEVCHAN  (POST) TAKES THE WHOLE CSW   XA0054DK         
+         OI    VCHSTAT,VCHCEPND   FROM VDEVCSW; VDEVPEND'S     XA0054DK         
+         TM    VCHTYPE,VCHSEL     A SELECTOR CHANNEL NAMES     XA0054DK         
+         BZ    *+8                THE DEVICE (DSP001 IF NOT)   XA0054DK         
+         STH   R13,VCHCEDEV                                    XA0054DK         
+         OI    VCUSTAT,VCUCEPND   ONLY VDEVINTS                XA0054DK         
          L     R2,=A(DMKVIOMK)                                 XA0054DK         
          LH    R4,VDEVADD                                      XA0054DK         
          AR    R4,R4                                           XA0054DK         
@@ -610,9 +621,14 @@ UNCVT    TM    ENTFLG2(R3),ENTCVT                              XA0054DK
 *  THIS WAY. CHAIN IN FORMAT 0 HERE; R8 = VDEVBLOK.            XA0054DK         
 SIDCHK   ST    R9,VCSLNK5                                      XA0054DK         
          NI    ENTFLG2(R3),255-ENTSID                          XA0054DK         
+         L     R2,VCRLAST     RING: C'1' SIDCHK REACHED,       XA0054DK         
+         MVI   14(R2),C'1'    C'2' TYPE KNOWN, C'3' AN E4      XA0054DK         
+         MVC   15(1,R2),VDEVTYPC                               XA0054DK         
          BAL   R9,SIDLOOK                                      XA0054DK         
          LTR   R1,R1                                           XA0054DK         
          BZ    SIDCX          A TYPE WE DO NOT KNOW            XA0054DK         
+         L     R2,VCRLAST                                      XA0054DK         
+         MVI   14(R2),C'2'                                     XA0054DK         
          LA    R0,SIDTAB      ITS SIDTAB ENTRY, AS AN INDEX    XA0054DK         
          SR    R1,R0                                           XA0054DK         
          SRL   R1,3                                            XA0054DK         
@@ -622,10 +638,17 @@ SIDCHK   ST    R9,VCSLNK5                                      XA0054DK
          LA    R4,2                                            XA0054DK         
          LA    R0,1                                            XA0054DK         
          BAL   R9,GUESTIO                                      XA0054DK         
-         CLI   VCSCCW,X'E4'                                    XA0054DK         
-         BNE   SIDCX                                           XA0054DK         
+         L     R2,VCRLAST                                      XA0054DK         
+         MVC   15(1,R2),VCSCCW                                 XA0054DK         
          TM    VCSCCW+4,X'C0' CHAINED: LEFT ALONE              XA0054DK         
          BNZ   SIDCX                                           XA0054DK         
+         CLI   VCSCCW,X'03'   A LONE NOP (LINUX'S PATH         XA0054DK         
+         BNE   SIDC4          VERIFICATION) ENDS HERE: THE     XA0054DK         
+         MVI   ENTSIDX(R3),255  CONSOLE'S NOP NEVER REACHES    XA0054DK         
+         B     SIDC5          DMKVCSSE                         XA0054DK         
+SIDC4    CLI   VCSCCW,X'E4'                                    XA0054DK         
+         BNE   SIDCX                                           XA0054DK         
+SIDC5    MVI   14(R2),C'3'                                     XA0054DK         
          MVC   ENTSIDA(4,R3),VCSCCW                            XA0054DK         
          MVC   ENTSIDC(2,R3),VCSCCW+6                          XA0054DK         
          OI    ENTFLG2(R3),ENTSID                              XA0054DK         
@@ -636,21 +659,35 @@ SIDCX    L     R9,VCSLNK5                                      XA0054DK
 SIDDO    ST    R9,VCSLNK5                                      XA0054DK         
          NI    ENTFLG2(R3),255-ENTSID                          XA0054DK         
          LH    R7,ENTSIDC(R3)  NOTHING STORED: ALL RESIDUAL    XA0054DK         
-         CH    R7,H8                                           XA0054DK         
+         CLI   ENTSIDX(R3),255  THE NOP                        XA0054DK         
+         BE    SIDD2                                           XA0054DK         
+         CH    R7,H7                                           XA0054DK         
          BL    SIDD2                                           XA0054DK         
-         TM    ENTSIDA+3(R3),3                                 XA0054DK         
-         BNZ   SIDD2                                           XA0054DK         
+         L     R5,ENTSIDA(R3)  LINUX'S SENSEID NEED NOT BE     XA0054DK         
+         N     R5,XRIGHT24    WORD-ALIGNED: 3 WORDS AROUND     XA0054DK         
+         SRL   R5,2           IT FETCHED, 7 BYTES MERGED IN,   XA0054DK         
+         SLL   R5,2                                            XA0054DK         
+         LA    R6,VCSVIS      STORED BACK                      XA0054DK         
+         LA    R4,3                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
          SR    R1,R1                                           XA0054DK         
          IC    R1,ENTSIDX(R3)                                  XA0054DK         
          SLL   R1,3                                            XA0054DK         
          LA    R1,SIDTAB(R1)                                   XA0054DK         
-         MVI   VCSCCW,X'FF'                                    XA0054DK         
-         MVC   VCSCCW+1(6),2(R1)                               XA0054DK         
-         MVI   VCSCCW+7,0                                      XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+         IC    R2,ENTSIDA+3(R3)                                XA0054DK         
+         SLL   R2,30                                           XA0054DK         
+         SRL   R2,30                                           XA0054DK         
+         LA    R2,VCSVIS(R2)                                   XA0054DK         
+         MVI   0(R2),X'FF'                                     XA0054DK         
+         MVC   1(6,R2),2(R1)                                   XA0054DK         
          L     R5,ENTSIDA(R3)                                  XA0054DK         
          N     R5,XRIGHT24                                     XA0054DK         
-         LA    R6,VCSCCW                                       XA0054DK         
-         LA    R4,2                                            XA0054DK         
+         SRL   R5,2                                            XA0054DK         
+         SLL   R5,2                                            XA0054DK         
+         LA    R6,VCSVIS                                       XA0054DK         
+         LA    R4,3                                            XA0054DK         
          SR    R0,R0                                           XA0054DK         
          BAL   R9,GUESTIO                                      XA0054DK         
          LH    R7,ENTSIDC(R3)  RESIDUAL: 7 BYTES STORED        XA0054DK         
@@ -709,6 +746,10 @@ CVLOOP   BAL   R14,CVSEEN     DONE ALREADY?                    XA0054DK
          MVC   VCSNEW+4(1),VCSCCW+1                            XA0054DK         
          MVI   VCSNEW+5,0                                      XA0054DK         
          MVC   VCSNEW+6(2),VCSCCW+2                            XA0054DK         
+         OC    VCSNEW+6(2),VCSNEW+6  COUNT 0 (LINUX'S PATH-    XA0054DK         
+         BNZ   CVSTORE        VERIFICATION NOP) IS A CHANNEL   XA0054DK         
+         MVI   VCSNEW+7,1     PROGRAM CHECK IN FORMAT 0:       XA0054DK         
+         OI    VCSNEW+4,X'20' COUNT 1, SLI (BACK AS COUNT 1)   XA0054DK         
          B     CVSTORE                                         XA0054DK         
 CVTO1    MVC   VCSCFLG,VCSCCW+4   FORMAT 0 -> 1                XA0054DK         
          L     R1,VCSCCW                                       XA0054DK         
@@ -981,3 +1022,4 @@ VCSNEW   DS    2F                     AS STORED                XA0054DK
 VCSVIS   DS    64F                    CCWS DONE                XA0054DK         
 VCSHDRL  EQU   *-VCSTAB                                        XA0054DK         
 VCSTABSZ EQU   (VCSHDRL+VCSNENT*ENTLEN+7)/8                    XA0054DK         
+         END   DMKVSI                                          XA0054DK         

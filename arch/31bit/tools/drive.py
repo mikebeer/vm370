@@ -265,8 +265,68 @@ def drive(ce, name, steps, herc='hercules', hold=False):
         term.connect(3270)
         time.sleep(1)
 
+    def rdreal(addr, n):
+        # Real storage via Hercules `r` (only after CP shut down): bytes.
+        # Hercules prints 16-byte lines from `addr` itself, unaligned.
+        pos = os.path.getsize(log)
+        send('r %X.%X' % (addr, n))
+        if not wait_for(r'R:%08X' % (addr + ((n - 1) & ~15)), pos, 20):
+            return None
+        out = {}
+        with open(log, errors='replace') as f:
+            f.seek(pos)
+            for l in f:
+                m = re.match(r'R:([0-9A-F]{8}):K:..=((?:[0-9A-F]{8} ?){1,4})', l)
+                if m:
+                    out[int(m.group(1), 16)] = bytes.fromhex(m.group(2).replace(' ', ''))
+        b = b''
+        a = addr
+        while a < addr + n:
+            b += out.get(a, bytes(16))
+            a += 16
+        return b[:n]
+
+    def gdump(st):
+        # A guest's real storage after CP shut down: walk its ESA/390
+        # segment table (`seg`, e.g. VMSEG of its VMBLOK) page by page and
+        # write the bytes to <name>.gdump (guest address, length, data).
+        spec = st['gdump']
+        deref = spec.startswith('*')     # *ADDR.LEN: dump where ADDR points
+        g0, ln = [int(x, 16) for x in spec.lstrip('*').split('.')]
+        if 'seg' in st:
+            sto = int(st['seg'], 16)
+        else:
+            # The VMBLOK CP's LOCATE printed last; VMSEG is at +X'10'.
+            vb = re.findall(r'VMBLOK = ([0-9A-F]+)', open(log, errors='replace').read())
+            sto = int.from_bytes(rdreal(int(vb[-1], 16) + 16, 4), 'big') & 0x7FFFF000
+        def gread(g, n):
+            ste = rdreal(sto + (g >> 20) * 4, 4)
+            if ste and not (ste[3] & 0x20):
+                pto = int.from_bytes(ste, 'big') & 0x7FFFFFC0
+                pte = rdreal(pto + ((g >> 12) & 255) * 4, 4)
+                if pte and not (pte[2] & 0x04):
+                    fr = int.from_bytes(pte, 'big') & 0x7FFFF000
+                    return rdreal(fr + (g & 4095), n) or bytes(n)
+            return bytes(n)
+        if deref:
+            g0 = int.from_bytes(gread(g0, 4), 'big') & 0x7FFFFFFF
+        data = b''
+        g = g0
+        while g < g0 + ln:
+            pg = g & ~4095
+            n = min(pg + 4096, g0 + ln) - g
+            chunk = gread(g, n)
+            data += chunk
+            g += n
+        with open(os.path.join(ce, name + '.gdump'), 'ab') as f:
+            f.write(g0.to_bytes(4, 'big') + len(data).to_bytes(4, 'big') + data)
+        print('%s gdump %s: %d bytes' % (stamp(), st['gdump'], len(data)))
+
     ok = True
     for st in steps:
+        if 'gdump' in st:
+            gdump(st)
+            continue
         if 'term' in st:
             st = dict(st, send=st['term'])
             tpos = os.path.getsize(tlog)
