@@ -3441,6 +3441,16 @@ def m7decks():
         "         BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS",
         "         LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)",
     ])
+    # A user IDAL's address is the 24-bit CCW address, but CP runs AMODE
+    # 31: LA R1,0(,R3) and USIDAL2's LA R3,4(,R3) kept the command code's
+    # low 7 bits (lx140 trace: R3 85F65C68 -> 05F65C6C), so the IDAL's
+    # second word was fetched from beyond the guest and stored X'FFFFFFFF'
+    # in the real IDAL: every 4 KB transfer through 2 KB IDAWs failed
+    # with a channel program check (mke2fs at 64 MB).
+    d.insert('01308000', first='01308100', inc=100,
+             limit=next_seq(src('DMKCCW'), '01308000'), lines=[
+        "         N     R1,XRIGHT24    IDAL ADDRESS: 24 BITS (M7)",
+    ])
     # A guest IDAW is 31 bits (ESA/390, and S/370's own IDAWs): only its
     # bit 0 must be zero.  The high-byte test made every IDAW above 16 MB
     # "positively invalid" (FFFFFFFF in the real IDAL: channel program
@@ -3450,6 +3460,25 @@ def m7decks():
               limit=next_seq(src('DMKCCW'), '01321000'), lines=[
         "         TM    0(R2),X'80'    INVALID IDAW ? (31 BITS, M7)",
     ])
+    d.replace('01335000', first='01335000', inc=100,
+              limit=next_seq(src('DMKCCW'), '01335000'), lines=[
+        "USIDAL2  LA    R3,4(,R3)      ADVANCE TO NEXT USER IDAL WORD",
+        "         N     R3,XRIGHT24    (24 BITS, ALSO IN AMODE 31: M7)",
+    ])
+    # TRANBRNG/TRANLOCK (the software side of the E608/E609 assists)
+    # run in whatever mode CP is in at the time (AMODE 31 mostly, AMODE 24
+    # after some SVC returns -- lx140 trace), so an IDAW above 16 MB could
+    # lose its high byte.  The PSA stub runs the same LRA R2,0(0,R1) in AMODE 31 (24-bit
+    # guests keep their wrap there).  R15 is free in both: their own
+    # DMKPTRAN/DMKPTRLK calls set it.
+    for seq in ('03482000', '03528000'):
+        d.replace(seq, first=seq[:-3] + '100', inc=100,
+                  limit=next_seq(src('DMKCCW'), seq), lines=[
+            "TRANBRG1 L     R15,ATRL31     LRA R2,0(,R1) IN AMODE 31 (M7)"
+            if seq == '03482000' else
+            "TRANLCK1 L     R15,ATRL31     LRA R2,0(,R1) IN AMODE 31 (M7)",
+            "         BASSM R15,R15        (PSA STUB TRL31)",
+        ])
     decks['DMKCCW'] = d
 
     d = Deck(XA54)

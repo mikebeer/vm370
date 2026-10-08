@@ -8,5 +8,16 @@ CCWDUMD  DS    0H                                              XA0054DK
          TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
          BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS    XA0054DK         
          LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)            XA0054DK         
+./ I 01308000 $ 01308100 100                                                    
+         N     R1,XRIGHT24    IDAL ADDRESS: 24 BITS (M7)       XA0054DK         
 ./ R 01321000          $ 01321000 100                                           
          TM    0(R2),X'80'    INVALID IDAW ? (31 BITS, M7)     XA0054DK         
+./ R 01335000          $ 01335000 100                                           
+USIDAL2  LA    R3,4(,R3)      ADVANCE TO NEXT USER IDAL WORD   XA0054DK         
+         N     R3,XRIGHT24    (24 BITS, ALSO IN AMODE 31: M7)  XA0054DK         
+./ R 03482000          $ 03482100 100                                           
+TRANBRG1 L     R15,ATRL31     LRA R2,0(,R1) IN AMODE 31 (M7)   XA0054DK         
+         BASSM R15,R15        (PSA STUB TRL31)                 XA0054DK         
+./ R 03528000          $ 03528100 100                                           
+TRANLCK1 L     R15,ATRL31     LRA R2,0(,R1) IN AMODE 31 (M7)   XA0054DK         
+         BASSM R15,R15        (PSA STUB TRL31)                 XA0054DK         
