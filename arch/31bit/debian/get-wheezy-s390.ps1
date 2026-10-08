@@ -10,7 +10,7 @@ $ProgressPreference = "SilentlyContinue"   # PowerShell 5: the progress bar make
 $mirror = "https://archive.debian.org/debian/"
 $out = Join-Path (Get-Location) "wheezy-s390"
 New-Item -ItemType Directory -Force -Path $out | Out-Null
-$base = @(
+$basePkgs = @(
   @("pool/main/a/adduser/adduser_3.113+nmu3_all.deb", 263714),
   @("pool/main/a/apt/apt_0.9.7.9+deb7u7_s390.deb", 1285536),
   @("pool/main/a/apt/apt-utils_0.9.7.9+deb7u7_s390.deb", 387110),
@@ -166,7 +166,7 @@ $base = @(
   @("pool/main/x/xz-utils/xz-utils_5.1.1alpha+20120614-2_s390.deb", 241714),
   @("pool/main/z/zlib/zlib1g_1.2.7.dfsg-13_s390.deb", 91310)
 )
-$dev = @(
+$devPkgs = @(
   @("pool/main/b/binutils/binutils_2.22-8+deb7u2_s390.deb", 3671924),
   @("pool/main/b/build-essential/build-essential_11.5_s390.deb", 7180),
   @("pool/main/b/bzip2/bzip2_1.0.6-4_s390.deb", 51534),
@@ -218,7 +218,7 @@ $dev = @(
   @("pool/main/x/xmlrpc-c/libxmlrpc-core-c3_1.16.33-3.2_s390.deb", 179324)
 )
 
-$list = $base; if ($Dev) { $list = $base + $dev }
+$list = $basePkgs; if ($Dev) { $list = $basePkgs + $devPkgs }  # PowerShell names ignore case: not $dev
 $i = 0
 foreach ($e in $list) {
   $i++; $f = Join-Path $out (Split-Path $e[0] -Leaf)
