@@ -57,6 +57,17 @@ if [ $# -ge 2 ]; then
 else
   echo "network: none (attach a CTC pair, e.g. CP ATTACH 600 * 620, 601 * 621)"
 fi
+# A Linux system installed on the disk (Debian, see debian-install): boot
+# it, unless the IPL parameters say vmroot=ram.  The CTC group and the
+# disk stay as set up here; the system on the disk configures the rest.
+if [ -x /data/sbin/init ] && ! grep -q vmroot=ram /proc/cmdline; then
+  echo "root: the system on $(mount | awk '$3=="/data"{print $1}') -- switch_root (vmroot=ram stays here)"
+  killall dropbear 2>/dev/null
+  ifconfig ctc0 down 2>/dev/null
+  umount /dev/pts /tmp /proc /sys 2>/dev/null
+  mount --move /dev /data/dev 2>/dev/null || umount /dev 2>/dev/null
+  exec switch_root /data /sbin/init
+fi
 echo
 echo "HELLO FROM LINUX/390 ON VM/370+ (M7)"
 cat /etc/motd

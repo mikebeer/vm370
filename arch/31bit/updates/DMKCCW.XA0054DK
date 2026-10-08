@@ -8,3 +8,5 @@ CCWDUMD  DS    0H                                              XA0054DK
          TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
          BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS    XA0054DK         
          LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)            XA0054DK         
+./ R 01321000          $ 01321000 100                                           
+         TM    0(R2),X'80'    INVALID IDAW ? (31 BITS, M7)     XA0054DK         

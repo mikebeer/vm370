@@ -509,9 +509,11 @@ OPADDR   L     R1,VMINST      R1 = THE S-OPERAND ADDRESS       XA0054DK
          BZ    OPADDR1                                         XA0054DK         
          A     R1,VMGPRS(R2)                                   XA0054DK         
 OPADDR1  TM    VMFSTAT,VMAM31                                  XA0054DK         
-         BO    *+8                                             XA0054DK         
+         BO    OPADDR3                                         XA0054DK         
+         TM    VMPSW+4,X'80'  ESA/390: THE PSW'S AMODE (A      XA0054DK         
+         BO    OPADDR3        STACK ABOVE 16 MB: LX133)        XA0054DK         
          N     R1,XRIGHT24                                     XA0054DK         
-         N     R1,X7FFF                                        XA0054DK         
+OPADDR3  N     R1,X7FFF                                        XA0054DK         
          BR    R9                                              XA0054DK         
 STOREOP  ST    R9,VCSLINK     R4 WORDS OF VCSBUF TO THE        XA0054DK         
          BAL   R9,OPADDR      OPERAND: FALLS INTO GUESTIO      XA0054DK         

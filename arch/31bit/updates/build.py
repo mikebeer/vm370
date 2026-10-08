@@ -2734,9 +2734,11 @@ VCSCODE = [
     "         BZ    OPADDR1",
     "         A     R1,VMGPRS(R2)",
     "OPADDR1  TM    VMFSTAT,VMAM31",
-    "         BO    *+8",
+    "         BO    OPADDR3",
+    "         TM    VMPSW+4,X'80'  ESA/390: THE PSW'S AMODE (A",
+    "         BO    OPADDR3        STACK ABOVE 16 MB: LX133)",
     "         N     R1,XRIGHT24",
-    "         N     R1,X7FFF",
+    "OPADDR3  N     R1,X7FFF",
     "         BR    R9",
     "STOREOP  ST    R9,VCSLINK     R4 WORDS OF VCSBUF TO THE",
     "         BAL   R9,OPADDR      OPERAND: FALLS INTO GUESTIO",
@@ -3438,6 +3440,15 @@ def m7decks():
         "         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S",
         "         BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS",
         "         LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)",
+    ])
+    # A guest IDAW is 31 bits (ESA/390, and S/370's own IDAWs): only its
+    # bit 0 must be zero.  The high-byte test made every IDAW above 16 MB
+    # "positively invalid" (FFFFFFFF in the real IDAL: channel program
+    # check, lx136 -- Linux with 64 MB reads the page cache through IDALs).
+    # VMSIZE still bounds it two cards on.
+    d.replace('01321000', first='01321000', inc=100,
+              limit=next_seq(src('DMKCCW'), '01321000'), lines=[
+        "         TM    0(R2),X'80'    INVALID IDAW ? (31 BITS, M7)",
     ])
     decks['DMKCCW'] = d
 
