@@ -144,3 +144,48 @@ well as `VMPSW+2` (BC-mode PSW). For a 31-bit EC/ESA PSW that clears
 address bits 2-3, so a guest instruction address from X'10000000' to
 X'3FFFFFFF' doing I/O would be damaged. Linux at 64 MB is far below that;
 to fix with M7.3.
+
+## M7.5 — Linux reaches user space (8 October 2026)
+
+**Result (lx78):** Linux 4.0, 31-bit, IPLed from MAINT's reader, boots with
+its 3215 console on MAINT's terminal and runs `/init` from its initramfs:
+
+```
+*** 400098 PROG  0010 ==> 213D98     /init's first segment fault, Linux's
+*** 4000A6 SVC   0004 ==> 213B78     write()
+*** 4000AC SVC   001D ==> 213B78     pause()
+Freeing unused kernel memory: 104K (0027a000 - 00294000)
+
+HELLO FROM LINUX/390 ON VM/370+ (M7)
+```
+
+Kernel parameters (parameter file in the reader, or built in):
+`no_removal_warning conmode=3215 condev=0x0009`. Kernel and patches:
+`arch/31bit/linux390/`.
+
+### The steps from lx40 to lx78
+
+| Run | Symptom | Cause and fix |
+|---|---|---|
+| lx40–47 | oopses in kfree/kmalloc during cio probing, "memory corruption" | the 3215 console was never enabled, and Linux took an error path in `device_add` for the unnamed console device. Native Hercules with the same kernel and `conmode=3215` showed `console [ttyS0] enabled`, so the cause was in CP |
+| lx47 | `cio_commit_config` fails | MSCH kept only ISC and enable; Linux reads back MM/MP, concurrent sense, XMWME, MBFC and MBI with STSCH. Now kept per subchannel |
+| lx48–52 | SENSE ID (X'E4') never answered | VM/370's virtual devices don't know it. DMKVCS answers a lone SENSE ID itself from the device type (`SIDTAB`: 3215, 2501/2540/3505, 2540P/3525, 1403/3211, 3330/3340/3350, 2314, 3420), unaligned buffers included |
+| lx51 | `ccw_device_wait_idle` loops on TSCH cc 1 | an immediate completion (SIO cc 1, CSW stored) left SSCH at cc 1. Now SSCH cc 0 and the status queued as an interruption. CSCH leaves a clear-function status pending |
+| lx57 | status with device status 0 | DMKDSP builds a device-only interrupt (`VDEVPEND`) from `VDEVINTS`, not `VDEVCSW`: the status is queued on the channel-end path (`VDEVCHAN`, `VCHCEPND`, `VCUCEPND`) |
+| lx66–67 | path-verification NOP never ends, Linux retries SENSE ID | the console's NOP (X'03') does not come back through DMKVSJ's TESTEC. DMKVCS ends a lone NOP itself. A zero-count CCW is converted as count 1 + SLI |
+| lx67 | CP abend **DSP001** | a status queued on a selector channel needs `VCHCEDEV` |
+| lx68–69 | `Failed to execute /init (error -14)` | a page-protection exception (a clean user stack page) was reflected with a stale TEID without bit 29, so Linux took it for low-address protection. DMKPRG now passes the real TEID for code 4 |
+| lx70–77 | `PROGRAM INTERRUPT LOOP` (specification exception after `STPT`) | CP fetched the privileged instruction through the *primary*-space shadow (RUNCR1). After the first exec, primary is the user's space, so the user's bytes at the kernel's address were read and `STPT` was decoded as `ISK`. DMKPRV now fetches from the home-space shadow in home mode, and EXTSHCR1 (CP's quick LRA paths) is the home shadow in home mode |
+
+### Tools built for it
+
+- `drive.py` **gdump**: after CP shutdown, a guest's real storage is read
+  through its segment table (from LOCATE's VMBLOK) and saved as
+  `<run>.gdump`. Used to read the kernel log (`__log_buf`), lowcore and cio
+  structures while Linux owns the console.
+- `drive.py` **capture**: follow a value CP printed (a VMBLOK address) in a
+  later step.
+- **CP PER** (`PER STORE range RUN`) and **CP TRACE PROG SVC EXT RUN** on the
+  test terminal, both working for ESA/390 guests.
+- DMKVCS ring (`DMKVCSRG`): subchannel instructions only, repeats counted.
+- DMKPRG capture `PRGSM6`: registers at a simulated specification exception.
