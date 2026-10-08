@@ -1,0 +1,159 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 150
+ },
+ {
+  "send": "/",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 60
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I Initialization complete",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "/enable all",
+  "expect": "COMMAND COMPLETE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "settle": 3
+ },
+ {
+  "send": "devinit 00c /home/claude/vm370/arch/31bit/linux390/decks/linux48.rdr ebcdic eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "STARTED|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp q rdr all",
+  "settle": 60
+ },
+ {
+  "send": "devinit 00c /home/claude/vm370/arch/31bit/linux390/decks/lxparm.rdr ebcdic eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "expect": "STARTED|DMK",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon maint cpcms noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp q rdr all",
+  "expect": "MAINT",
+  "timeout": 10,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 16m",
+  "expect": "STORAGE",
+  "timeout": 10,
+  "cont": true
+ },
+ {
+  "term": "cp attach 600 to maint as 620",
+  "settle": 3
+ },
+ {
+  "term": "cp attach 601 to maint as 630",
+  "settle": 3
+ },
+ {
+  "term": "cp attach 190 to maint as 250",
+  "settle": 3
+ },
+ {
+  "term": "cp set esa on",
+  "settle": 3
+ },
+ {
+  "term": "cp ipl 00c",
+  "expect": "vm370plus:|panic|DISABLED WAIT|LOOP",
+  "timeout": 240,
+  "cont": true
+ },
+ {
+  "term": "ifconfig",
+  "expect": "vm370plus:",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "dmesg | tail -12",
+  "expect": "vm370plus:",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "dmesg | grep -i dasd",
+  "expect": "vm370plus:",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cat /proc/partitions",
+  "expect": "vm370plus:",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "mount | grep data; df -h /data",
+  "expect": "vm370plus:",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "date > /data/hello; ls -l /data; cat /data/hello; sync",
+  "expect": "vm370plus:",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "poweroff",
+  "expect": "DISABLED WAIT",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]

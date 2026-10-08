@@ -8,7 +8,7 @@
 # PID 1 is this script, which ignores the signals busybox poweroff/halt/reboot
 # send to init, so each acts at once (Linux stops in a disabled wait)
 for c in poweroff halt reboot; do rm -f /sbin/$c
-  printf '#!/bin/sh\nsync\nexec /bin/busybox %s -f\n' $c > /sbin/$c; chmod 755 /sbin/$c; done
+  printf '#!/bin/sh\nsync\numount -a -r 2>/dev/null\nexec /bin/busybox %s -f\n' $c > /sbin/$c; chmod 755 /sbin/$c; done
 hostname vm370plus
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
 mkdir -p /dev/pts /etc/dropbear; mount -t devpts devpts /dev/pts
@@ -20,7 +20,16 @@ for d in /sys/bus/ccw/devices/*; do
   case "$(cat $d/devtype 2>/dev/null)" in
     3390/*|3380/*) echo 1 > $d/online 2>/dev/null;; esac; done
 sleep 1
-for b in /dev/dasd?1 /dev/dasd?; do
+# VM/370+ converts a format-1 channel program of at most 64 CCWs (D-21):
+# 128 KB per request is 32 records of 4 KB, plus Define Extent and
+# Locate Record -- well inside.
+for q in /sys/block/dasd*/queue/max_sectors_kb; do [ -e $q ] && echo 128 > $q; done
+# a volume without a Linux partition gets one over all of it (mkdasdpart)
+for d in /dev/dasd?; do
+  [ -b $d ] && [ ! -b ${d}1 ] || continue
+  mkdasdpart $d && blockdev --rereadpt $d && sleep 1
+done
+for b in /dev/dasd?1; do
   [ -b $b ] || continue
   mkdir -p /data
   mount -t ext2 $b /data 2>/dev/null || {

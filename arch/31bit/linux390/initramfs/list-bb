@@ -30,3 +30,4 @@ slink /usr/sbin/dropbear /usr/bin/dropbearmulti 0777 0 0
 slink /usr/bin/dropbearkey /usr/bin/dropbearmulti 0777 0 0
 slink /usr/bin/dbclient /usr/bin/dropbearmulti 0777 0 0
 slink /usr/bin/scp /usr/bin/dropbearmulti 0777 0 0
+file /sbin/mkdasdpart /home/claude/vm370/arch/31bit/linux390/initramfs/mkdasdpart 0755 0 0

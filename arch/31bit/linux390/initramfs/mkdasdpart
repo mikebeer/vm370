@@ -1,0 +1,37 @@
+#!/bin/sh
+# mkdasdpart /dev/dasdX -- one Linux partition over the whole volume
+# (cylinder 0 head 2 to the end) on a CDL-formatted ECKD volume (e.g.
+# Hercules  dasdinit -linux ... 3390-n VOLSER ): a format-1 DSCB in the
+# third record of the VTOC, which Linux's partition code reads.  It is
+# what fdasd -a does, for a volume whose VTOC sits on cylinder 0 head 1
+# with its format-4 and format-5 DSCBs in records 1 and 2.
+dev=${1:-/dev/dasda}; b=${dev#/dev/}
+hx() { dd if=$dev bs=4096 skip=$1 count=1 2>/dev/null | dd bs=1 count=$2 2>/dev/null | hexdump -v -e '/1 "%02x"'; }
+[ "$(hx 2 4)" = e5d6d3f1 ] || { echo "mkdasdpart: $dev has no VOL1 label"; exit 1; }
+[ "$(hx 12 4)" = 04040404 ] || { echo "mkdasdpart: $dev: no format-4 DSCB at cyl 0 head 1 record 1"; exit 1; }
+[ "$(hx 14 4)" = 00000000 ] || { echo "mkdasdpart: $dev: VTOC record 3 is in use -- not touched"; exit 1; }
+sec=$(cat /sys/block/$b/size)            # 512-byte sectors, 4 KB blocks
+cyls=$((sec / 8 / 12 / 15)); last=$((cyls - 1))
+vol=$(dd if=$dev bs=4096 skip=2 count=1 2>/dev/null | dd bs=1 skip=8 count=6 2>/dev/null)
+e2a() { printf '%s' "$1" | tr 'A-IJ-RS-Z0-9.' '\301-\311\321-\331\342-\351\360-\371\113'; }
+pad() { n=$1; while [ $n -gt 0 ]; do printf '\100'; n=$((n-1)); done; }
+zero() { n=$1; while [ $n -gt 0 ]; do printf '\000'; n=$((n-1)); done; }
+oct() { printf "\\$(printf %o $1)"; }
+name="LINUX.V??????.PART0001.NATIVE"         # ?????? = the volser
+{
+  e2a "LINUX.V"; printf '%s' "$vol"; e2a ".PART0001.NATIVE"
+  pad $((44 - ${#name}))                     # key: DS1DSNAM
+  e2a "1"                                    # DS1FMTID
+  printf '%s' "$vol"                         # DS1DSSN (already EBCDIC)
+  zero 2                                     # DS1VOLSQ (0)
+  zero 52                                    # DS1CREDT .. reserved (53-104)
+  oct 1; oct 0                               # DS1EXT1: type 01, seq 0
+  zero 2; oct 0; oct 2                       # lower: cyl 0 head 2
+  oct $((last / 256)); oct $((last % 256)); oct 0; oct 14   # upper
+  zero 25                                    # DS1EXT2/3, pointers
+} > /tmp/f1dscb
+sz=$(wc -c < /tmp/f1dscb)
+[ "$sz" = 140 ] || { echo "mkdasdpart: DSCB is $sz bytes, not 140"; exit 1; }
+dd if=/tmp/f1dscb of=$dev bs=4096 seek=14 count=1 conv=sync,notrunc 2>/dev/null
+sync
+echo "mkdasdpart: $dev: partition 1 = cyl 0 head 2 .. cyl $last head 14 ($name)"
