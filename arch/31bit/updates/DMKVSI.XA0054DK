@@ -25,6 +25,8 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BL    VCRDONE        LOOP (SACF, STFL, STSI) NO       XA0054DK         
          CLI   VMINST+1,X'3F' LONGER WIPES THEM                XA0054DK         
          BH    VCRDONE                                         XA0054DK         
+         CLC   VMGPRS+4(4),SSIDW0  NOT SUBCHANNEL 0:           XA0054DK         
+         BE    VCRDONE        CONSOLE POLLING FILLS THE RING   XA0054DK         
          L     R2,VCRLAST     DIAGNOSTIC RING (DCP DMKVCSRG):  XA0054DK         
          CLC   0(4,R2),VMINST  INSTRUCTION, GR1, PSW ADDRESS,  XA0054DK         
          BNE   VCRNEW         THE PSW BYTE 2 AT EXIT, AND      XA0054DK         
@@ -50,8 +52,11 @@ VCRNEW   L     R1,VCRNXT                                       XA0054DK
 VCRDONE  DS    0H                                              XA0054DK         
          CLI   VMINST,X'E5'   TPROT (E501)                     XA0054DK         
          BE    VCSTPROT                                        XA0054DK         
-         CLI   VMINST,X'AE'   SIGP                             XA0054DK         
-         BE    VCSSIGP                                         XA0054DK         
+         CLI   VMINST,X'AE'   SIGP: PAST R12'S 4 KB, AT        XA0054DK         
+         BNE   VCSNSIGP       THE END WITH ITS OWN BASE        XA0054DK         
+         L     R15,=A(VCSSIGP)                                 XA0054DK         
+         BR    R15                                             XA0054DK         
+VCSNSIGP DS    0H                                              XA0054DK         
          CLI   VMINST+1,X'12' STAP                             XA0054DK         
          BE    VCSSTAP                                         XA0054DK         
          CLI   VMINST+1,X'B1' STFL                             XA0054DK         
@@ -132,38 +137,6 @@ VCSTPROT BAL   R9,OPADDR      TPROT: CC 0 INSIDE THE           XA0054DK
          CL    R1,VMSIZE      MACHINE'S STORAGE, CC 3          XA0054DK         
          BL    VCSEXIT        BEYOND (LINUX SIZES ITS          XA0054DK         
          B     VCSCC3         MEMORY THIS WAY)                 XA0054DK         
-*                                                              XA0054DK         
-* SIGP (AE): ONE CPU, ADDRESS 0. STOP, STOP AND STORE STATUS   XA0054DK         
-* PUT THE VIRTUAL MACHINE IN A DISABLED WAIT (LINUX'S HALT     XA0054DK         
-* AND POWER OFF STOP THE CPU THIS WAY); SENSE IS CC 0; ANY     XA0054DK         
-* OTHER CPU CC 3; ANY OTHER ORDER: INVALID ORDER, CC 1.        XA0054DK         
-VCSSIGP  SR    R2,R2                                           XA0054DK         
-         IC    R2,VMINST+1    R1 AND R3                        XA0054DK         
-         N     R2,=F'15'                                       XA0054DK         
-         SLL   R2,2                                            XA0054DK         
-         L     R3,VMGPRS(R2)  THE CPU ADDRESS                  XA0054DK         
-         N     R3,F65535                                       XA0054DK         
-         BNZ   VCSCC3                                          XA0054DK         
-         BAL   R9,OPADDR      THE ORDER CODE                   XA0054DK         
-         N     R1,=F'255'                                      XA0054DK         
-         C     R1,=F'5'       STOP                             XA0054DK         
-         BE    VCSSTOP                                         XA0054DK         
-         C     R1,=F'9'       STOP AND STORE STATUS            XA0054DK         
-         BE    VCSSTOP                                         XA0054DK         
-         C     R1,=F'1'       SENSE                            XA0054DK         
-         BE    VCSEXIT                                         XA0054DK         
-         SR    R2,R2                                           XA0054DK         
-         IC    R2,VMINST+1                                     XA0054DK         
-         SRL   R2,4                                            XA0054DK         
-         SLL   R2,2                                            XA0054DK         
-         LA    R1,2           STATUS: INVALID ORDER            XA0054DK         
-         ST    R1,VMGPRS(R2)                                   XA0054DK         
-         B     VCSCC1                                          XA0054DK         
-         EXTRN DMKDSPB                                         XA0054DK         
-VCSSTOP  MVC   VMPSW(4),=X'000A0000'                           XA0054DK         
-         XC    VMPSW+4(4),VMPSW+4                              XA0054DK         
-         NI    VMRSTAT,255-VMEXWAIT                            XA0054DK         
-         GOTO  DMKDSPB                                         XA0054DK         
 *                                                              XA0054DK         
 * SPX: ONE CPU, NO VIRTUAL PREFIXING. THE NEW PREFIX PAGE IS   XA0054DK         
 * COPIED TO PAGE 0, WHICH STAYS THE LOWCORE (LINUX UP SETS     XA0054DK         
@@ -361,7 +334,15 @@ VCSCSCH  BAL   R9,UNCVT                                        XA0054DK
          NI    ENTFLG(R3),255-ENTACT-ENTPEND-ENTSOL            XA0054DK         
          OI    ENTFLG(R3),ENTPEND  CLEAR FUNCTION: STATUS      XA0054DK         
          OI    ENTFLG2(R3),ENTCLR  PENDING FOR TSCH            XA0054DK         
-         B     VCSEXIT                                         XA0054DK         
+         CLI   VMINST+1,X'31' HSCH: THE HALT FUNCTION          XA0054DK         
+         BNE   CSCHQ                                           XA0054DK         
+         NI    ENTFLG2(R3),255-ENTCLR                          XA0054DK         
+         OI    ENTFLG2(R3),ENTHLT                              XA0054DK         
+*  AND AN I/O INTERRUPTION, AS THE CHANNEL SUBSYSTEM MAKES     XA0054DK         
+*  ONE: LINUX'S CTCM HALTS A CHANNEL AND WAITS FOR IT (LX118:  XA0054DK         
+*  CTC0 STUCK IN STARTWAIT). NO DEVICE STATUS, A ZERO CSW.     XA0054DK         
+CSCHQ    XC    VCSBUF(8),VCSBUF                                XA0054DK         
+         B     SSCC1Q                                          XA0054DK         
 *                                                              XA0054DK         
 * DMKVCSSE: GOTO FROM DMKVSJ TESTEC (ESA/390 GUEST). R2 =      XA0054DK         
 * THE SIO/TIO CONDITION CODE (X'00'-X'30'), R13 = THE DEVICE.  XA0054DK         
@@ -589,7 +570,12 @@ BLDSCHIB XC    VCSBUF(64),VCSBUF                               XA0054DK
          STC   R0,VCSBUF+16   CHPID: THE CHANNEL               XA0054DK         
          LA    R1,VCSBUF+28                                    XA0054DK         
 *  BLDSCSW: THE SCSW AT R1 FROM THE ENTRY AT R3.               XA0054DK         
-BLDSCSW  TM    ENTFLG2(R3),ENTCLR                              XA0054DK         
+BLDSCSW  TM    ENTFLG2(R3),ENTHLT                              XA0054DK         
+         BZ    BLDSCSW0                                        XA0054DK         
+         MVI   2(R1),X'20'    HALT FUNCTION,                   XA0054DK         
+         MVI   3(R1),X'01'    STATUS PENDING                   XA0054DK         
+         BR    R9                                              XA0054DK         
+BLDSCSW0 TM    ENTFLG2(R3),ENTCLR                              XA0054DK         
          BZ    BLDSCSW1                                        XA0054DK         
          MVI   2(R1),X'10'    CLEAR FUNCTION,                  XA0054DK         
          MVI   3(R1),X'01'    STATUS PENDING                   XA0054DK         
@@ -623,9 +609,9 @@ SCSWIDLE TM    ENTFLG(R3),ENTACT                               XA0054DK
 *  TSCLEAR: TSCH TOOK THE STATUS. A CHANNEL END WITHOUT        XA0054DK         
 *  DEVICE END LEAVES THE SUBCHANNEL ACTIVE FOR THE DE.         XA0054DK         
 TSCLEAR  NI    ENTFLG(R3),255-ENTPEND                          XA0054DK         
-         TM    ENTFLG2(R3),ENTCLR                              XA0054DK         
+         TM    ENTFLG2(R3),ENTCLR+ENTHLT                       XA0054DK         
          BZ    TSCLR1                                          XA0054DK         
-         NI    ENTFLG2(R3),255-ENTCLR                          XA0054DK         
+         NI    ENTFLG2(R3),255-ENTCLR-ENTHLT                   XA0054DK         
          BR    R9                                              XA0054DK         
 TSCLR1   DS    0H                                              XA0054DK         
          TM    ENTFLG(R3),ENTSOL                               XA0054DK         
@@ -981,6 +967,7 @@ VCSSLOTS DC    64F'0'         32 SLOTS: OWNER VMBLOK, TABLE    XA0054DK
          DS    0F                                              XA0054DK         
 SSIDW    DC    X'00010000'                                     XA0054DK         
 F65535   DC    F'65535'                                        XA0054DK         
+SSIDW0   DC    X'00010000'    SUBCHANNEL 0                     XA0054DK         
 X7FFF    DC    X'7FFFFFFF'                                     XA0054DK         
 H32      DC    H'32'                                           XA0054DK         
 H7       DC    H'7'                                            XA0054DK         
@@ -1009,6 +996,42 @@ SIDTAB   DC    X'80FF321500000000'  CONSOLE: 3215              XA0054DK
          DC    X'FF'                                           XA0054DK         
          DS    0F                                              XA0054DK         
 VCRING   DC    32XL16'00'                                      XA0054DK         
+*                                                              XA0054DK         
+* SIGP (AE): ONE CPU, ADDRESS 0. STOP, STOP AND STORE STATUS   XA0054DK         
+* PUT THE VIRTUAL MACHINE IN A DISABLED WAIT (LINUX'S HALT     XA0054DK         
+* AND POWER OFF STOP THE CPU THIS WAY); SENSE IS CC 0; ANY     XA0054DK         
+* OTHER CPU CC 3; ANY OTHER ORDER: INVALID ORDER, CC 1.        XA0054DK         
+* BEYOND R12'S REACH: R15 IS ITS BASE, AFTER OPADDR.           XA0054DK         
+VCSSIGP  BAL   R9,OPADDR      R1 = THE ORDER CODE              XA0054DK         
+         BALR  R15,0                                           XA0054DK         
+         USING *,R15                                           XA0054DK         
+         N     R1,=F'255'                                      XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+         IC    R2,VMINST+1    R1 AND R3                        XA0054DK         
+         N     R2,=F'15'                                       XA0054DK         
+         SLL   R2,2                                            XA0054DK         
+         L     R3,VMGPRS(R2)  THE CPU ADDRESS                  XA0054DK         
+         N     R3,=F'65535'                                    XA0054DK         
+         BNZ   VCSCC3                                          XA0054DK         
+         C     R1,=F'5'       STOP                             XA0054DK         
+         BE    VCSSTOP                                         XA0054DK         
+         C     R1,=F'9'       STOP AND STORE STATUS            XA0054DK         
+         BE    VCSSTOP                                         XA0054DK         
+         C     R1,=F'1'       SENSE                            XA0054DK         
+         BE    VCSEXIT                                         XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+         IC    R2,VMINST+1                                     XA0054DK         
+         SRL   R2,4                                            XA0054DK         
+         SLL   R2,2                                            XA0054DK         
+         LA    R1,2           STATUS: INVALID ORDER            XA0054DK         
+         ST    R1,VMGPRS(R2)                                   XA0054DK         
+         B     VCSCC1                                          XA0054DK         
+VCSSTOP  MVC   VMPSW(4),=X'000A0000'                           XA0054DK         
+         XC    VMPSW+4(4),VMPSW+4                              XA0054DK         
+         NI    VMRSTAT,255-VMEXWAIT                            XA0054DK         
+         L     R15,=V(DMKDSPB)                                 XA0054DK         
+         BR    R15                                             XA0054DK         
+         DROP  R15                                             XA0054DK         
          LTORG                                                 XA0054DK         
 ENTFLG   EQU   2              ENTRY: DEVICE H, FLAGS, ISC,     XA0054DK         
 ENTISC   EQU   3              INTERRUPTION PARAMETER, AND      XA0054DK         
@@ -1026,6 +1049,7 @@ ENTSIDC  EQU   26             COUNT,                           XA0054DK
 ENTSIDA  EQU   28             AND DATA ADDRESS (BYTE 0 E4)     XA0054DK         
 ENTSID   EQU   X'20'          ENTFLG2: SENSE ID ANSWERED HERE  XA0054DK         
 ENTCLR   EQU   X'10'          ENTFLG2: CSCH DONE, NOT TSCHED   XA0054DK         
+ENTHLT   EQU   X'08'          ENTFLG2: HSCH DONE, NOT TSCHED   XA0054DK         
 ENTLEN   EQU   32                                              XA0054DK         
 ENTENAB  EQU   X'80'          MSCH: ENABLED                    XA0054DK         
 ENTACT   EQU   X'40'          SSCH ISSUED, NOT COMPLETE        XA0054DK         
