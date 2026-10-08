@@ -1,5 +1,13 @@
-./ I 00593000 $ 00593100 100                                                    
+./ I 00391000 $ 00391100 100                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST IN HOME     XA0054DK         
+         BZ    PRVLGH         MODE: THE INSTRUCTION IS IN      XA0054DK         
+         TM    PROPSW+2,X'C0' THE HOME SPACE (EXTSHCR1 IS      XA0054DK         
+         BNO   PRVLGH         ITS SHADOW THEN, DMKVAX)         XA0054DK         
+         L     R1,VMECEXT                                      XA0054DK         
+         LCTL  C1,C1,EXTSHCR1-ECBLOK(R1)                       XA0054DK         
+PRVLGH   DS    0H                                              XA0054DK         
+./ I 00593000 $ 00593100 100                                                    
          TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
          BZ    PRVHI          TPROT (E501) GOES TO DMKVCS      XA0054DK         
          CLI   VMINST,X'E5'                                    XA0054DK         

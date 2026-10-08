@@ -1,0 +1,20 @@
+./ I 00457000 $ 00457050 050                                                    
+         CH    R6,=H'6'       DIAGNOSTIC: A SPECIFICATION      XA0054DK         
+         BNE   PRGSM6X        EXCEPTION SIMULATED -- WHERE     XA0054DK         
+         STM   R0,R15,PRGSM6R FROM (R9/R14: THE CALLER'S       XA0054DK         
+         MVC   PRGSM6P,VMPSW  RETURN), ITS PSW, ITS            XA0054DK         
+         MVC   PRGSM6I,VMINST INSTRUCTION                      XA0054DK         
+         B     PRGSM6X                                         XA0054DK         
+         DC    C'PRGSM6'                                       XA0054DK         
+PRGSM6I  DC    XL6'00'                                         XA0054DK         
+PRGSM6P  DC    XL8'00'                                         XA0054DK         
+PRGSM6R  DC    16F'0'                                          XA0054DK         
+PRGSM6X  DS    0H                                              XA0054DK         
+./ I 00495000 $ 00495100 100                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST'S           XA0054DK         
+         BZ    PRGTEIDX       PROTECTION EXCEPTION: THE        XA0054DK         
+         CH    R6,=H'4'       TEID AT X'90' IS THE REAL ONE    XA0054DK         
+         BNE   PRGTEIDX                                        XA0054DK         
+         MVC   TREXADD-PROPSW(4,R2),TREXADD                    XA0054DK         
+PRGTEIDX DS    0H                                              XA0054DK         

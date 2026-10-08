@@ -79,7 +79,7 @@ DMKVATES STM   R0,R15,BALRSAVE                                 XA0054DK
 VXES3    ST    R1,VXCR3                                        XA0054DK         
          LCTL  C3,C3,VXCR3                                     XA0054DK         
          L     R0,EXTSHCR0                                     XA0054DK         
-         L     R1,EXTSHCR1                                     XA0054DK         
+         L     R1,12(,R5)     THE PRIMARY SPACE'S SHADOW       XA0054DK         
          LM    R2,R15,BALRSAVE+8                               XA0054DK         
          BR    R14                                             XA0054DK         
 AVAXES   DC    A(DMKVAX)                                       XA0054DK         
@@ -306,6 +306,7 @@ VXREF2   NI    VMESTAT,255-(VMNEWCR0+VMINVSEG+VMINVPAG)        XA0054DK
          OI    VMESTAT,VMSHADT                                 XA0054DK         
          L     R1,EXTCR1                                       XA0054DK         
          BAL   R9,VXSET                                        XA0054DK         
+         ST    R1,12(,R5)     THE REAL CR1 (DMKVATES)          XA0054DK         
          ST    R1,EXTSHCR1                                     XA0054DK         
          L     R1,EXTCR7                                       XA0054DK         
          BAL   R9,VXSET                                        XA0054DK         
@@ -313,6 +314,10 @@ VXREF2   NI    VMESTAT,255-(VMNEWCR0+VMINVSEG+VMINVPAG)        XA0054DK
          L     R1,EXTCR7+24                                    XA0054DK         
          BAL   R9,VXSET                                        XA0054DK         
          ST    R1,4(,R5)                                       XA0054DK         
+         TM    VMPSW+2,X'C0'  HOME MODE: CP'S QUICK LRA        XA0054DK         
+         BNO   VXREF2H        PATHS (DMKPRV FETCH, STPT)       XA0054DK         
+         ST    R1,EXTSHCR1    USE EXTSHCR1: HOME SPACE         XA0054DK         
+VXREF2H  DS    0H             (LX75)                           XA0054DK         
          L     R1,CPCREG0                                      XA0054DK         
          ST    R1,EXTSHCR0                                     XA0054DK         
          NI    EXTSHCR0,X'FB'                                  XA0054DK         

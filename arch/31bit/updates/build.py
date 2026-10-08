@@ -1755,7 +1755,7 @@ VAXCODE = [
     "VXES3    ST    R1,VXCR3",
     "         LCTL  C3,C3,VXCR3",
     "         L     R0,EXTSHCR0",
-    "         L     R1,EXTSHCR1",
+    "         L     R1,12(,R5)     THE PRIMARY SPACE'S SHADOW",
     "         LM    R2,R15,BALRSAVE+8",
     "         BR    R14",
     "AVAXES   DC    A(DMKVAX)",
@@ -1984,6 +1984,7 @@ VAXCODE = [
     "         OI    VMESTAT,VMSHADT",
     "         L     R1,EXTCR1",
     "         BAL   R9,VXSET",
+    "         ST    R1,12(,R5)     THE REAL CR1 (DMKVATES)",
     "         ST    R1,EXTSHCR1",
     "         L     R1,EXTCR7",
     "         BAL   R9,VXSET",
@@ -1991,6 +1992,10 @@ VAXCODE = [
     "         L     R1,EXTCR7+24",
     "         BAL   R9,VXSET",
     "         ST    R1,4(,R5)",
+    "         TM    VMPSW+2,X'C0'  HOME MODE: CP'S QUICK LRA",
+    "         BNO   VXREF2H        PATHS (DMKPRV FETCH, STPT)",
+    "         ST    R1,EXTSHCR1    USE EXTSHCR1: HOME SPACE",
+    "VXREF2H  DS    0H             (LX75)",
     "         L     R1,CPCREG0",
     "         ST    R1,EXTSHCR0",
     "         NI    EXTSHCR0,X'FB'",
@@ -3227,8 +3232,23 @@ def m7decks():
     decks['DMKVSI'] = d
 
     d = Deck(XA54)
+    # The privileged instruction is fetched by LRA through RUNCR1, the
+    # guest's PRIMARY space shadow. An ESA/390 guest in home mode runs
+    # its kernel in the HOME space (CR13); after Linux's first exec
+    # the primary space is the user's, and CP fetched the user's bytes
+    # at the kernel's address (lx76: STPT read as ISK -> PROG 0006).
+    d.insert('00391000', first='00391100', inc=100,
+             limit=next_seq(src('DMKPRV'), '00391000'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST IN HOME",
+        "         BZ    PRVLGH         MODE: THE INSTRUCTION IS IN",
+        "         TM    PROPSW+2,X'C0' THE HOME SPACE (EXTSHCR1 IS",
+        "         BNO   PRVLGH         ITS SHADOW THEN, DMKVAX)",
+        "         L     R1,VMECEXT",
+        "         LCTL  C1,C1,EXTSHCR1-ECBLOK(R1)",
+        "PRVLGH   DS    0H",
+    ])
     d.insert('00593000', first='00593100', inc=100,
-             limit=next_seq(src('DMKPRV'), '00593000'), lines=M7EQU[:1] + [
+             limit=next_seq(src('DMKPRV'), '00593000'), lines=[
         "         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S",
         "         BZ    PRVHI          TPROT (E501) GOES TO DMKVCS",
         "         CLI   VMINST,X'E5'",
@@ -3282,6 +3302,42 @@ def m7decks():
         "DMKVSJTE DS    0H             (DMKVCSSE: NOT ITS OWN)",
     ])
     decks['DMKVSJ'] = d
+
+    d = Deck(XA54)
+    # A protection exception the hardware took on an ESA/390 guest's
+    # shadow (page protection: a clean page, before Linux marks it
+    # dirty) is reflected with the guest's TEID at X'90' left from the
+    # last DAT fault. Linux tests TEID bit 29 to tell page protection
+    # from low-address protection (lx72: MVCS to the new user stack,
+    # "low-address" -> EFAULT at exec). The real TEID is the guest's:
+    # the shadow is the same virtual address space.
+    # Diagnostic: who simulates a specification exception (lx70-74,
+    # PROG 0006 after STPT): the registers at DMKPRGSM, the PSW and the
+    # instruction, behind the eye-catcher C'PRGSM6' (DCP).
+    d.insert('00457000', first='00457050', inc=50,
+             limit=next_seq(src('DMKPRG'), '00457000'), lines=[
+        "         CH    R6,=H'6'       DIAGNOSTIC: A SPECIFICATION",
+        "         BNE   PRGSM6X        EXCEPTION SIMULATED -- WHERE",
+        "         STM   R0,R15,PRGSM6R FROM (R9/R14: THE CALLER'S",
+        "         MVC   PRGSM6P,VMPSW  RETURN), ITS PSW, ITS",
+        "         MVC   PRGSM6I,VMINST INSTRUCTION",
+        "         B     PRGSM6X",
+        "         DC    C'PRGSM6'",
+        "PRGSM6I  DC    XL6'00'",
+        "PRGSM6P  DC    XL8'00'",
+        "PRGSM6R  DC    16F'0'",
+        "PRGSM6X  DS    0H",
+    ])
+    d.insert('00495000', first='00495100', inc=100,
+             limit=next_seq(src('DMKPRG'), '00495000'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST'S",
+        "         BZ    PRGTEIDX       PROTECTION EXCEPTION: THE",
+        "         CH    R6,=H'4'       TEID AT X'90' IS THE REAL ONE",
+        "         BNE   PRGTEIDX",
+        "         MVC   TREXADD-PROPSW(4,R2),TREXADD",
+        "PRGTEIDX DS    0H",
+    ])
+    decks['DMKPRG'] = d
 
     d = Deck(XA54)
     # An ESA/390 machine has no interval timer at X'50': Linux's IPL
