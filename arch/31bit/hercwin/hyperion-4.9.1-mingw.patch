@@ -1,0 +1,168 @@
+diff --git a/fthreads.h b/fthreads.h
+index 5b48a43e..8d9d1e4c 100644
+--- a/fthreads.h
++++ b/fthreads.h
+@@ -59,7 +59,7 @@
+ ////////////////////////////////////////////////////////////////////////////////////
+ // (need struct timespec for fthread_cond_timedwait)
+ 
+-#if !defined( TIMESPEC_IN_SYS_TYPES_H ) && !defined( TIMESPEC_IN_TIME_H ) && (_MSC_VER < VS2015)
++#if !defined( TIMESPEC_IN_SYS_TYPES_H ) && !defined( TIMESPEC_IN_TIME_H ) && (_MSC_VER < VS2015) && !defined( _TIMESPEC_DEFINED )
+   // Avoid double definition for VS2015 as it defines timespec in ...\ucrt\time.h(39)
+   // (need to define it ourselves)
+   struct timespec
+diff --git a/hatomic.h b/hatomic.h
+index 5bb173fd..ecdccba4 100644
+--- a/hatomic.h
++++ b/hatomic.h
+@@ -115,7 +115,7 @@
+     #if C11_ATOMIC_CHAR_LOCK_FREE == ALWAYS_ATOMIC
+       #define CAN_IAF2      IAF2_C11_STANDARD_ATOMICS
+     #else
+-      #if defined( _MSVC_ )
++      #if defined( _MSVC_ ) && !defined( __GNUC__ )
+         #define CAN_IAF2    IAF2_MICROSOFT_INTRINSICS
+       #elif defined( HAVE_ATOMIC_INTRINSICS )
+         #define CAN_IAF2    IAF2_ATOMIC_INTRINSICS
+@@ -126,7 +126,7 @@
+       #endif
+     #endif
+   #else  /* !C11_ATOMICS_AVAILABLE */
+-    #if defined( _MSVC_ )
++    #if defined( _MSVC_ ) && !defined( __GNUC__ )
+       #define CAN_IAF2      IAF2_MICROSOFT_INTRINSICS
+     #elif defined( HAVE_ATOMIC_INTRINSICS )
+       #define CAN_IAF2      IAF2_ATOMIC_INTRINSICS
+diff --git a/hmalloc.h b/hmalloc.h
+index f83402bc..5b6ec071 100644
+--- a/hmalloc.h
++++ b/hmalloc.h
+@@ -43,7 +43,7 @@
+ 
+ #if !defined(CACHE_ALIGN)
+ 
+-    #if defined(_MSC_VER) || defined(_MSVC_)
++    #if (defined(_MSC_VER) || defined(_MSVC_)) && !defined(__GNUC__)
+         #define __ALIGN(_n)     __declspec(align(_n))
+     #else
+         #define __ALIGN(_n)     __attribute__ ((aligned(_n)))
+diff --git a/htypes.h b/htypes.h
+index 14fe2818..0d7854f1 100644
+--- a/htypes.h
++++ b/htypes.h
+@@ -77,8 +77,10 @@
+ #endif
+ 
+ #ifdef _MSVC_
++ #ifndef __MINGW32__            // (MinGW's <sys/types.h> has these)
+   typedef    int32_t            pid_t;
+   typedef    int32_t            mode_t;
++ #endif
+   typedef   uint32_t            in_addr_t;
+   #ifndef   _SSIZE_T_DEFINED
+     #define _SSIZE_T_DEFINED
+diff --git a/ieee.c b/ieee.c
+index 8bfa6d3a..7c5124b7 100644
+--- a/ieee.c
++++ b/ieee.c
+@@ -788,7 +788,7 @@ static INLINE BYTE ARCH_DEP( float32_signaling_compare )( float32_t op1, float32
+ 
+ #if !defined( _IEEE_NONARCHDEP_ )
+ 
+-#if !defined( HAVE_MATH_H ) && (_MSC_VER < VS2015)
++#if !defined( HAVE_MATH_H ) && (_MSC_VER < VS2015) && !defined( FP_NAN )
+ /* Avoid double definition for VS2015 (albeit with different values). */
+ /* All floating-point numbers can be put in one of these categories.  */
+ enum
+diff --git a/impl.c b/impl.c
+index 47ba16bc..1dac7cee 100644
+--- a/impl.c
++++ b/impl.c
+@@ -865,6 +865,11 @@ static void is_PCLMULQDQ_available()
+     mm2.v = _mm_setzero_si128();
+     mm2.D.L.D = m2;
+ 
++#if defined( __GNUC__ )   /* MinGW: no SEH __try/__except; ask CPUID */
++    (void) acc;
++    __builtin_cpu_init();
++    sysblk.have_PCLMULQDQ = __builtin_cpu_supports( "pclmul" ) ? true : false;
++#else
+     __try
+     {
+         acc.v =  _mm_clmulepi64_si128 ( mm1.v, mm2.v, 0);
+@@ -874,6 +879,7 @@ static void is_PCLMULQDQ_available()
+     {
+         sysblk.have_PCLMULQDQ = false;
+     }
++#endif
+ }
+ 
+ #else // !defined( _MSVC_ ), i.e. Linux
+diff --git a/machdep.c b/machdep.c
+index bd9dc5ca..3ee0fecc 100644
+--- a/machdep.c
++++ b/machdep.c
+@@ -112,7 +112,7 @@
+ /*-------------------------------------------------------------------
+  * Microsoft Visual C/C++...
+  *-------------------------------------------------------------------*/
+-#if defined( _MSVC_ )
++#if defined( _MSVC_ ) && !defined( __GNUC__ )  /* (MinGW uses the gcc path below) */
+ 
+   // PROGRAMMING NOTE: Optimizations normally only apply for release
+   // builds, but we support optionally enabling them for debug too,
+diff --git a/machdep.h b/machdep.h
+index d528a9b7..b7860457 100644
+--- a/machdep.h
++++ b/machdep.h
+@@ -44,7 +44,7 @@
+ /*-------------------------------------------------------------------
+  * Microsoft Visual C/C++...
+  *-------------------------------------------------------------------*/
+-#if defined( _MSVC_ )
++#if defined( _MSVC_ ) && !defined( __GNUC__ )  /* (MinGW uses the gcc path below) */
+ 
+   // PROGRAMMING NOTE: Optimizations normally only apply for release
+   // builds, but we support optionally enabling them for debug too,
+diff --git a/w32stape.c b/w32stape.c
+index 6715220b..dfc85c98 100644
+--- a/w32stape.c
++++ b/w32stape.c
+@@ -533,9 +533,9 @@ int w32_internal_rc ( U32* pStat )
+ ////////////////////////////////////////////////////////////////////////////////////
+ // (forward references for private helper functions)
+ 
+-int  w32_internal_mtop  ( HANDLE hFile, U32* pStat, struct mtop*  mtop,  ifd_t ifd );
+-int  w32_internal_mtget ( HANDLE hFile, U32* pStat, struct mtget* mtget, ifd_t ifd );
+-int  w32_internal_mtpos ( HANDLE hFile, U32* pStat, DWORD* pdwLogPos,
++static int  w32_internal_mtop  ( HANDLE hFile, U32* pStat, struct mtop*  mtop,  ifd_t ifd );
++static int  w32_internal_mtget ( HANDLE hFile, U32* pStat, struct mtget* mtget, ifd_t ifd );
++static int  w32_internal_mtpos ( HANDLE hFile, U32* pStat, DWORD* pdwLogPos,
+                                                     DWORD* pdwAbsPos,    ifd_t ifd );
+ 
+ ////////////////////////////////////////////////////////////////////////////////////
+diff --git a/w32util.c b/w32util.c
+index 6d9e4600..380d5ba9 100644
+--- a/w32util.c
++++ b/w32util.c
+@@ -4675,6 +4675,12 @@ DLL_EXPORT void w32_set_thread_name( TID tid, const char* name )
+     info.dwThreadID = (DWORD)tid;   // (-1 == current thread, else tid)
+     info.dwFlags    = 0;
+ 
++#if defined( __GNUC__ )
++    /* MinGW: no SEH __try/__except, and raising the MS_VC_EXCEPTION
++       without a handler would kill the process when no debugger is
++       attached. Thread naming is a debugger nicety only: skip it. */
++    (void) info;
++#else
+     __try
+     {
+         RaiseException( MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(DWORD), (const U_LONG_PTR*)&info );
+@@ -4683,6 +4689,7 @@ DLL_EXPORT void w32_set_thread_name( TID tid, const char* name )
+     {
+         /* (do nothing) */
+     }
++#endif
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////////////////
