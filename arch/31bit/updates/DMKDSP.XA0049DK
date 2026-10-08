@@ -2,11 +2,13 @@
          NI    VMDSTAT,255-VMDSP NOT RUN USER                  XA0049DK         
          NI    VMFSTAT,255-VMAM31 ASSUME 24-BIT (M2 STEP 3)    XA0049DK         
 ./ R 01342000          $ 01342100 100                                           
-         TM    VMPSW+4,X'7F'  BAD BITS IN WORD 2 (32 = AMODE)  XA0049DK         
-         BNZ   BADPSW         ILLEGAL PSW IF BIT SET           XA0049DK         
          TM    VMPSW+4,X'80'  AMODE 31 ?                       XA0049DK         
-         BZ    *+8            NO                               XA0049DK         
-         OI    VMFSTAT,VMAM31 YES: GUEST RUNS AMODE 31         XA0049DK         
+         BO    CKAM31         YES: 33-63 ARE THE ADDRESS       XA0049DK         
+         TM    VMPSW+4,X'7F'  AMODE 24: BITS 33-39 ZERO        XA0049DK         
+         BNZ   BADPSW         ILLEGAL PSW IF BIT SET           XA0049DK         
+         B     CKAM31X                                         XA0049DK         
+CKAM31   OI    VMFSTAT,VMAM31 GUEST RUNS AMODE 31              XA0049DK         
+CKAM31X  DS    0H                                              XA0049DK         
 ./ R 01343000          $ 01343100 100                                           
          DS    0H             (BNZ BADPSW MOVED UP)            XA0049DK         
 ./ R 01943000          $ 01943100 100                                           

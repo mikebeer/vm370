@@ -6704,11 +6704,18 @@ G31MODS = {
         # an EC PSW with bit 32 (CKEXTPSW).  BC mode leaves it off.
         ('01314100', ["         NI    VMDSTAT,255-VMDSP NOT RUN USER",
                       "         NI    VMFSTAT,255-VMAM31 ASSUME 24-BIT (M2 STEP 3)"]),
-        ('01342000', ["         TM    VMPSW+4,X'7F'  BAD BITS IN WORD 2 (32 = AMODE)",
+        # Bits 33-39 must be zero only in AMODE 24; in AMODE 31 they are
+        # the address.  Testing them always made every PSW above 16 MB
+        # "illegal": Linux's LPSW to ld.so (7D8E7910) or to a signal
+        # trampoline on the user stack (7FFFE006) got a SPECIFICATION
+        # exception, ILC 0 (lx142/lx143: every dynamic binary died).
+        ('01342000', ["         TM    VMPSW+4,X'80'  AMODE 31 ?",
+                      "         BO    CKAM31         YES: 33-63 ARE THE ADDRESS",
+                      "         TM    VMPSW+4,X'7F'  AMODE 24: BITS 33-39 ZERO",
                       "         BNZ   BADPSW         ILLEGAL PSW IF BIT SET",
-                      "         TM    VMPSW+4,X'80'  AMODE 31 ?",
-                      "         BZ    *+8            NO",
-                      "         OI    VMFSTAT,VMAM31 YES: GUEST RUNS AMODE 31"]),
+                      "         B     CKAM31X",
+                      "CKAM31   OI    VMFSTAT,VMAM31 GUEST RUNS AMODE 31",
+                      "CKAM31X  DS    0H"]),
         ('01343000', ["         DS    0H             (BNZ BADPSW MOVED UP)"]),
     # I-238.  DMKPAG marks a paging I/O error by storing X'FF' into byte 0
     # of the CPEXBLOK's CPEXADD (STC R9,CPEXADD, R9 = -1), and the
