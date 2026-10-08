@@ -14,7 +14,7 @@ GI=$($X-gcc -m31 -print-file-name=include)
 LIBGCC=$($X-gcc -m31 -print-libgcc-file-name)
 OUT=$1; shift
 W=$(mktemp -d)
-CF="-m31 -mesa -march=z900 -msoft-float -mlong-double-64 -O2 -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-stack-protector -ffunction-sections -fdata-sections -nostdinc -isystem $GI -I$NEWLIB/targ-include -I$NLSRC/libc/include"
+CF="${CFLAGS_PRE} -m31 -mesa -march=z900 -msoft-float -mlong-double-64 -O2 -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-stack-protector -ffunction-sections -fdata-sections -nostdinc -isystem $GI -I$NEWLIB/targ-include -I$NLSRC/libc/include"
 objs=""
 for c in "$@"; do
   o=$W/$(basename "$c" .c).o

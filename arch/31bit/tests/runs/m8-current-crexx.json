@@ -1,0 +1,197 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "DMKCPI966I|Start \\(\\(Warm",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I|\\?CP",
+  "timeout": 90,
+  "cont": true,
+  "settle": 8
+ },
+ {
+  "send": "/cp disc",
+  "expect": "DISCONNECT AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/logon maint cpcms noipl",
+  "expect": "Ready|LOGON AT|RECONNECT",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "send": "/cp def stor 16m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/ipl 190",
+  "expect": "VM Community|Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "/",
+  "expect": "Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "send": "/cp purge rdr all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp purge printer all",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp spool 00c class *",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "devinit 000c io/rxc8.rdr eof",
+  "expect": "HHCPN098I|initialized",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "send": "/cp start 00c",
+  "settle": 20,
+  "cont": true
+ },
+ {
+  "term": "",
+  "timeout": 30,
+  "cont": true,
+  "settle": 3
+ },
+ {
+  "term": "logon cmsuser cmsuser noipl",
+  "expect": "LOGON AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 128m",
+  "expect": "STORAGE =",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp link maint 290 290 rr",
+  "expect": "Ready|DMK|CP",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl 290",
+  "expect": "VM Community|DMS",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "erase rxc8 text a",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "readcard rxc8 text a",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 400,
+  "cont": true
+ },
+ {
+  "term": "load rxc8",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 400,
+  "cont": true
+ },
+ {
+  "term": "genmod rxc8",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 200,
+  "cont": true
+ },
+ {
+  "term": "highstor reset",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "rxc8 -l a hello",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 600,
+  "cont": true
+ },
+ {
+  "term": "listfile hello * a",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "type hello rxas a",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "rxas8 -l a hello",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 400,
+  "cont": true
+ },
+ {
+  "term": "rxbvm8 -l a hello",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 400,
+  "cont": true
+ },
+ {
+  "term": "highstor query",
+  "expect": "Ready\\(|Ready;|CP ENTERED|CMS$",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "term": "cp logoff",
+  "expect": "LOGOFF AT",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "/cp shutdown",
+  "expect": "HHCCP011I|HHC00809I|SHUTDOWN",
+  "timeout": 60,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]

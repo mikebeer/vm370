@@ -3,10 +3,11 @@
 # for CMS on VM/370+ with the M5f toolchain (GCC 13 -m31, newlib, cmsrt).
 #   build.sh vm|rxc|rxas   -> rxbvm.text / rxc.text / rxas.text here
 set -e
+export E2C=${E2C:-/home/claude/m5f/elf_to_cms8}   # RXC is 2.8 MB: the 8 MB image limit
 cd "$(dirname "$0")"
 C=${CREXX:-/home/claude/adesutherland/crexx}
 G=${CREXXGEN:-/home/claude/crexx-host/generated}
-DEFS="-DCREXX_CMS_ELF=1 -DCREXX_VM_SINGLE_THREADED=1 -DNTHREADED=1 -DCREXX_VM_HANDLER_PANEL=20 -DMANUAL_PLUGIN_LINK=1 \
+DEFS="-DCREXX_CMS_ELF=1 -DCREXX_CMS_TEXT_IO=1 -DCREXX_CMS_DIRENT=1 -DCREXX_VM_SINGLE_THREADED=1 -DNTHREADED=1 -DCREXX_VM_HANDLER_PANEL=20 -DMANUAL_PLUGIN_LINK=1 \
  -DCREXX_VM_STATIC_ONLY=1 -DCREXX_VM_NO_SOCKETS=1 -DCREXX_VM_NO_CLOCK=1 -DCREXX_VM_PORTABLE_ALLOC=1 -DCREXX_VM_COMPACT=1 \
  -DRXVM_MEMORY_SLAB_SIZE=4096 -DRXVM_MEMORY_MAX_STANDARD_SIZE=2048"
 INC="-I/home/claude/vm370/arch/31bit/m8/inc/cms -I$G -I$C/interpreter -I$C/interpreter/rxvmplugin -I$C/assembler -I$C/binutils/include -I$C/rxpa -I$C/platform \
@@ -18,6 +19,7 @@ VM="interpreter/rxvmintp.c interpreter/rxvmworker.c interpreter/rxvmprogram.c in
  interpreter/rxvmplugin/rxvmplugins/mc_decimal/decnumber/decNumber.c interpreter/rxvmplugin/rxvmplugins/mc_decimal/decnumber/decContext.c
  platform/platform.c platform/platform_tso.c platform/platform_native.c platform/text_codec.c platform/oom.c platform/rxinteger.c
  avl_tree/avl_tree.c rxpa/rxpa.c binutils/rxbin.c binutils/rxbin007.c binutils/rxsignature.c binutils/rxsha256.c binutils/rxgraph.c"
+export CFLAGS_PRE="-I/home/claude/vm370/arch/31bit/m8/inc/cms"
 export CFLAGS_EXTRA="-std=gnu99 -Os $DEFS $INC -w ${M8EXTRA}"
 H=${CREXXHOST:-/home/claude/crexx-host}
 AS="$C/binutils/rxopmeta.c $C/assembler/rxas_dsl.c $C/assembler/rxas_flow.c $C/assembler/rxas_flow_analysis.c

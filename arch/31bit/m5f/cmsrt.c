@@ -477,3 +477,74 @@ int cms_main(unsigned char *plist)
     exit(main(argc, argv_));
 }
 int _gettimeofday(struct timeval *tv, void *tz) { return gettimeofday(tv, tz); }
+
+/* M8: cREXX's CREXX_CMS_TEXT_IO hooks.  The file is opened as usual; with
+ * mainframe_set_text_conversion(0) its records arrive as raw IBM-1047 bytes
+ * with ASCII LF between them, and cREXX's own codec decodes them. */
+FILE *crexx_cms_text_open(const char *path, const char *mode) { return fopen(path, mode); }
+int crexx_cms_text_encoding(const char *encoding) { (void)encoding; return 0; }
+
+/* M8: opendir/readdir/closedir for cREXX's import discovery (CREXX_CMS_DIRENT).
+ * A directory is a filemode letter ("A", "a", "a/" or "." for A).  The listing
+ * comes from  LISTFILE * * m (EXEC , which writes CMS EXEC A1 with one
+ * "&1 &2 FN FT FM" line per file.  Names are returned as "fn.ft". */
+struct dirent { unsigned int d_ino; unsigned char d_type; char d_name[20]; };
+struct m8_dir { char *names; int count, pos; struct dirent ent; };
+struct m8_dir *opendir(const char *name)
+{
+    unsigned char pl[8 * 7];
+    char mode = 'A';
+    if (name && name[0] && name[0] != '.') mode = name[0];
+    if (mode >= 'a' && mode <= 'z') mode -= 32;
+    const char *tok[6] = { "LISTFILE", "*", "*", 0, "(", "EXEC" };
+    char m[2] = { mode, 0 };
+    tok[3] = m;
+    memset(pl, 0x40, sizeof pl);
+    for (int t = 0; t < 6; t++)
+        for (int i = 0; tok[t][i] && i < 8; i++) pl[t * 8 + i] = rt_a2e[(unsigned char)tok[t][i]];
+    memset(pl + 48, 0xFF, 8);
+    int rc = cms202(pl);
+    struct m8_dir *d = calloc(1, sizeof *d);
+    if (!d) { errno = ENOMEM; return 0; }
+    if (rc) return d;                                /* no files: empty */
+    struct cfile f;
+    memset(&f, 0, sizeof f);
+    if (parse_name("CMS EXEC A1", &f)) return d;
+    int save = rt_conv; rt_conv = 1;
+    int r = read_whole(&f);
+    rt_conv = save;
+    if (r) { free(f.data); return d; }
+    d->names = malloc(f.len / 2 + 64);
+    char *out = d->names, *p = f.data, *end = f.data + f.len;
+    while (p < end) {
+        char *nl = memchr(p, '\n', end - p); if (!nl) nl = end;
+        char tk[5][16]; int nt = 0;
+        for (char *q = p; q < nl && nt < 5; ) {
+            while (q < nl && *q == ' ') q++;
+            int k = 0;
+            while (q < nl && *q != ' ' && k < 15) tk[nt][k++] = *q++;
+            while (q < nl && *q != ' ') q++;
+            if (k) { tk[nt][k] = 0; nt++; }
+        }
+        int b = 0; while (b < nt && tk[b][0] == '&') b++;
+        if (nt - b >= 2) {
+            int n = sprintf(out, "%s.%s", tk[b], tk[b + 1]);
+            for (int i = 0; i < n; i++) if (out[i] >= 'A' && out[i] <= 'Z') out[i] += 32;
+            out += n + 1; d->count++;
+        }
+        p = nl + 1;
+    }
+    free(f.data);
+    return d;
+}
+struct dirent *readdir(struct m8_dir *d)
+{
+    if (!d || d->pos >= d->count) return 0;
+    char *p = d->names;
+    for (int i = 0; i < d->pos; i++) p += strlen(p) + 1;
+    d->pos++;
+    strncpy(d->ent.d_name, p, sizeof d->ent.d_name - 1);
+    d->ent.d_type = 8;
+    return &d->ent;
+}
+int closedir(struct m8_dir *d) { if (d) { free(d->names); free(d); } return 0; }
