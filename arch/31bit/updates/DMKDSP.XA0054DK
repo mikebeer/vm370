@@ -2,15 +2,19 @@
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
          TM    VMFSTAT,VMESA390  M7: NO LOCATION 80            XA0054DK         
          BO    DMKDSPAA       TIMER IN AN ESA/390 MACHINE      XA0054DK         
-./ I 00452000 $ 00452100 100                                                    
+./ I 00452000 $ 00452050 050                                                    
          TM    VMFSTAT,VMESA390  M7.3: AN ESA/390 GUEST IN     XA0054DK         
          BZ    DSPA2X         TRANSLATE MODE RUNS ON THE       XA0054DK         
          TM    VMPSW,TRANMODE  SHADOW CR7 AND CR13 (DMKVAX)    XA0054DK         
          BZ    DSPA2X                                          XA0054DK         
-         ICM   R15,15,EXTSHSEG-ECBLOK(R2)                      XA0054DK         
-         BZ    DSPA2X                                          XA0054DK         
-         LCTL  C7,C7,0(R15)                                    XA0054DK         
-         LCTL  C13,C13,4(R15)                                  XA0054DK         
+         TM    VMESTAT,VMINVPAG+VMINVSEG+VMNEWCR0              XA0054DK         
+         BNZ   DSPA2X         INVALIDATIONS: THE SLOW PATH     XA0054DK         
+         L     R15,=V(DMKVATEF)  RECOMPUTED: CR7/CR13 MAY      XA0054DK         
+         BALR  R14,R15        HAVE CHANGED WITHOUT A FLAG      XA0054DK         
+         TM    APSTAT2,CPPTLBR  LDRPSW SKIPS THE PTLB, SO      XA0054DK         
+         BNO   DSPA2X         A SET TAKEN OVER (DMKVAX)        XA0054DK         
+         NI    APSTAT2,X'FF'-CPPTLBR  IS PURGED HERE           XA0054DK         
+         PTLB  ,                                               XA0054DK         
 DSPA2X   DS    0H                                              XA0054DK         
 ./ I 00669000 $ 00669110 010                                                    
          TM    VMFSTAT,VMESA390  M7: NO LOCATION 80            XA0054DK         

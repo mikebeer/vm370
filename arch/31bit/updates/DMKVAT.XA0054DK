@@ -84,6 +84,35 @@ VXES3    ST    R1,VXCR3                                        XA0054DK
          BR    R14                                             XA0054DK         
 AVAXES   DC    A(DMKVAX)                                       XA0054DK         
 *                                                              XA0054DK         
+* DMKVATEF: BALR FROM DMKDSP'S FAST REDISPATCH. LIKE           XA0054DK         
+* DMKVATES, BUT EVERY REGISTER KEPT: AN LCTL OF CR7 OR CR13    XA0054DK         
+* (LINUX'S SWITCH_MM) SETS NO FLAG, SO THE SHADOW STDS ARE     XA0054DK         
+* RECOMPUTED ON EVERY DISPATCH (LX38: EXEC GOT -EFAULT FROM    XA0054DK         
+* MVCS INTO THE STALE SECONDARY SPACE).                        XA0054DK         
+*                                                              XA0054DK         
+         ENTRY DMKVATEF                                        XA0054DK         
+DMKVATEF STM   R0,R15,BALRSAVE                                 XA0054DK         
+         L     R12,AVAXEF-DMKVATEF(,R15)                       XA0054DK         
+         L     R10,VMECEXT                                     XA0054DK         
+         BAL   R8,VXREF                                        XA0054DK         
+         BAL   R8,VXCRS                                        XA0054DK         
+         LM    R0,R15,BALRSAVE                                 XA0054DK         
+         BR    R14                                             XA0054DK         
+AVAXEF   DC    A(DMKVAX)                                       XA0054DK         
+*                                                              XA0054DK         
+* VXCRS (BAL R8): REAL CR7, CR13 AND CR3 FOR THE GUEST.        XA0054DK         
+*                                                              XA0054DK         
+VXCRS    L     R5,EXTSHSEG                                     XA0054DK         
+         LCTL  C7,C7,0(R5)                                     XA0054DK         
+         LCTL  C13,C13,4(R5)                                   XA0054DK         
+         L     R1,EXTCR0+12                                    XA0054DK         
+         TM    VMPSW+1,X'01'                                   XA0054DK         
+         BO    VXCRS3                                          XA0054DK         
+         O     R1,=X'FFFF0000'                                 XA0054DK         
+VXCRS3   ST    R1,VXCR3                                        XA0054DK         
+         LCTL  C3,C3,VXCR3                                     XA0054DK         
+         BR    R8                                              XA0054DK         
+*                                                              XA0054DK         
 * DMKVAXAB, DMKVAXMD: FROM DMKVATAB AND DMKVATMD (BALRSAVE     XA0054DK         
 * HOLDS THE CALLER'S REGISTERS). INVALIDATE IF ASKED, SET      XA0054DK         
 * THE SHADOW CONTROL REGISTERS.                                XA0054DK         
@@ -268,7 +297,8 @@ VXREF    ST    R8,VXLNK                                        XA0054DK
          LR    R5,R1                                           XA0054DK         
          XC    0(80,R5),0(R5)                                  XA0054DK         
          ST    R5,EXTSHSEG                                     XA0054DK         
-VXREF1   TM    VMESTAT,VMINVPAG+VMINVSEG+VMNEWCR0              XA0054DK         
+VXREF1   DS    0H                                              XA0054DK         
+         TM    VMESTAT,VMINVPAG+VMINVSEG+VMNEWCR0              XA0054DK         
          BZ    VXREF2                                          XA0054DK         
          BAL   R9,VXZAP                                        XA0054DK         
 VXREF2   NI    VMESTAT,255-(VMNEWCR0+VMINVSEG+VMINVPAG)        XA0054DK         
@@ -318,6 +348,7 @@ VXS2     ICM   R2,15,8(R4)                                     XA0054DK
          SLL   R4,4                                            XA0054DK         
          LA    R4,16(R4,R5)                                    XA0054DK         
          BAL   R9,VXFSET                                       XA0054DK         
+         OI    APSTAT2,CPPTLBR  TLB: THE OLD STD'S ENTRIES     XA0054DK         
          B     VXSINI                                          XA0054DK         
 VXSNEW   LA    R0,1536        12 KB: 8 KB ON A 4 KB BOUNDARY   XA0054DK         
          CALL  DMKFREE                                         XA0054DK         

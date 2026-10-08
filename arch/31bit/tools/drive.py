@@ -304,6 +304,17 @@ def drive(ce, name, steps, herc='hercules', hold=False):
             addr = (int(vals[-1], 16) & 0xFFFFFF) + st.get('offset', 0)
             line = 'r %X.%X' % (addr, st.get('len', 64))
             st = dict(st, send=line, expect=r'R:%08X' % addr)
+        if 'capture' in st:
+            # Follow a pointer CP printed: the last match of `capture` (one
+            # hex group) in the operator log, plus `offset`, replaces {} in
+            # `send` (e.g. a VMBLOK address from LOCATE, then DCP it).
+            vals = re.findall(st['capture'], open(log, errors='replace').read())
+            if not vals:
+                print('%s capture %s: no match' % (stamp(), st['capture']))
+                ok = False
+                continue
+            st = dict(st, send=st['send'].replace(
+                '{}', '%X' % (int(vals[-1], 16) + st.get('offset', 0))))
         line = st['send']
         send(line)
         if 'expect' in st:

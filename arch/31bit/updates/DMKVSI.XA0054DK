@@ -19,9 +19,21 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
          MVI   VCSOP,0                                         XA0054DK         
          OI    VMVCSFL,X'80'  FROM NOW ON: ESA/390 I/O         XA0054DK         
-         L     R1,VCRNXT      DIAGNOSTIC RING (DCP DMKVCSRG):  XA0054DK         
-         LA    R2,VCRING(R1)  INSTRUCTION, GR1, PSW ADDRESS,   XA0054DK         
-         MVC   0(4,R2),VMINST  AND THE PSW BYTE 2 AT EXIT      XA0054DK         
+         L     R2,VCRLAST     DIAGNOSTIC RING (DCP DMKVCSRG):  XA0054DK         
+         CLC   0(4,R2),VMINST  INSTRUCTION, GR1, PSW ADDRESS,  XA0054DK         
+         BNE   VCRNEW         THE PSW BYTE 2 AT EXIT, AND      XA0054DK         
+         CLC   4(4,R2),VMGPRS+4  HOW OFTEN IT CAME AGAIN IN A  XA0054DK         
+         BNE   VCRNEW         ROW (A POLLING LOOP TAKES ONE    XA0054DK         
+         CLC   8(4,R2),VMPSW+4  ENTRY, NOT THE RING)           XA0054DK         
+         BNE   VCRNEW                                          XA0054DK         
+         LH    R1,14(,R2)                                      XA0054DK         
+         LA    R1,1(,R1)                                       XA0054DK         
+         STH   R1,14(,R2)                                      XA0054DK         
+         B     VCRDONE                                         XA0054DK         
+VCRNEW   L     R1,VCRNXT                                       XA0054DK         
+         L     R2,AVCRING                                      XA0054DK         
+         AR    R2,R1                                           XA0054DK         
+         MVC   0(4,R2),VMINST                                  XA0054DK         
          MVC   4(4,R2),VMGPRS+4                                XA0054DK         
          MVC   8(4,R2),VMPSW+4                                 XA0054DK         
          XC    12(4,R2),12(R2)                                 XA0054DK         
@@ -29,6 +41,7 @@ DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK
          LA    R1,16(,R1)                                      XA0054DK         
          N     R1,=F'511'                                      XA0054DK         
          ST    R1,VCRNXT                                       XA0054DK         
+VCRDONE  DS    0H                                              XA0054DK         
          CLI   VMINST,X'E5'   TPROT (E501)                     XA0054DK         
          BE    VCSTPROT                                        XA0054DK         
          CLI   VMINST+1,X'12' STAP                             XA0054DK         
@@ -205,6 +218,13 @@ VCSMSCH  BAL   R9,OPADDR      MSCH: THE PMCW                   XA0054DK
          SRL   R0,3                                            XA0054DK         
          N     R0,F7                                           XA0054DK         
          STC   R0,ENTISC(R3)                                   XA0054DK         
+         IC    R0,VCSBUF+5    MEASUREMENT MODE, MULTIPATH      XA0054DK         
+         N     R0,=F'28'                                       XA0054DK         
+         STC   R0,ENTPM5(R3)                                   XA0054DK         
+         IC    R0,VCSBUF+27   CONCURRENT SENSE, XMWME, MBFC:   XA0054DK         
+         N     R0,F7          LINUX'S CIO_CHECK_CONFIG READS   XA0054DK         
+         STC   R0,ENTPM27(R3) THEM BACK WITH STSCH             XA0054DK         
+         MVC   ENTMBI(2,R3),VCSBUF+12                          XA0054DK         
          NI    ENTFLG(R3),255-ENTENAB                          XA0054DK         
          TM    VCSBUF+5,X'80' ENABLED?                         XA0054DK         
          BZ    VCSEXIT                                         XA0054DK         
@@ -234,7 +254,10 @@ VCSSSCH  TM    ENTFLG(R3),ENTPEND  SSCH                        XA0054DK
          LA    R0,1           CONVERTED IN PLACE TO            XA0054DK         
          BAL   R9,CVTCHN      FORMAT 0 FOR DMKVSI/DMKCCW,      XA0054DK         
          OI    ENTFLG2(R3),ENTCVT  BACK AT TSCH                XA0054DK         
-SSCHF0   L     R0,VCSBUF+8    CCW ADDRESS                      XA0054DK         
+SSCHF0   BAL   R9,SIDCHK      SENSE ID: OURS                   XA0054DK         
+         TM    ENTFLG2(R3),ENTSID                              XA0054DK         
+         BO    SSCHSID                                         XA0054DK         
+         L     R0,VCSBUF+8    CCW ADDRESS                      XA0054DK         
          N     R0,XRIGHT24                                     XA0054DK         
          SR    R1,R1                                           XA0054DK         
          IC    R1,VCSBUF+4    KEY                              XA0054DK         
@@ -252,6 +275,14 @@ SSCHF0   L     R0,VCSBUF+8    CCW ADDRESS                      XA0054DK
          MVC   VMINST(2),SIOOP   SIO VDEV                      XA0054DK         
 VCSVSI   STH   R13,VMINST+2                                    XA0054DK         
          GOTO  DMKVSIEX                                        XA0054DK         
+*                                                              XA0054DK         
+*  A SENSE ID: ENDED HERE, ITS STATUS QUEUED LIKE SSCC1'S      XA0054DK         
+SSCHSID  BAL   R9,SIDDO                                        XA0054DK         
+         NI    VCSBUF+4,X'F0' THE ORB'S KEY                    XA0054DK         
+         OC    VCSCCW(1),VCSBUF+4                              XA0054DK         
+         MVC   VCSBUF(8),VCSCCW                                XA0054DK         
+         OI    ENTFLG(R3),ENTACT                               XA0054DK         
+         B     SSCC1Q                                          XA0054DK         
 *                                                              XA0054DK         
 VCSTSCH  BAL   R9,OPADDR      TSCH: THE IRB                    XA0054DK         
          ST    R1,VCSADDR                                      XA0054DK         
@@ -288,6 +319,8 @@ TPITIO   MVI   VCSOP,C'P'                                      XA0054DK
 *                                                              XA0054DK         
 VCSCSCH  BAL   R9,UNCVT                                        XA0054DK         
          NI    ENTFLG(R3),255-ENTACT-ENTPEND-ENTSOL            XA0054DK         
+         OI    ENTFLG(R3),ENTPEND  CLEAR FUNCTION: STATUS      XA0054DK         
+         OI    ENTFLG2(R3),ENTCLR  PENDING FOR TSCH            XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 *                                                              XA0054DK         
 * DMKVCSSE: GOTO FROM DMKVSJ TESTEC (ESA/390 GUEST). R2 =      XA0054DK         
@@ -313,11 +346,40 @@ SSEND    MVI   VCSOP,0        SSCH                             XA0054DK
          BAL   R9,GETENT                                       XA0054DK         
          CLI   VCSCC,0                                         XA0054DK         
          BE    SEBACK         STARTED                          XA0054DK         
-         NI    ENTFLG(R3),255-ENTACT                           XA0054DK         
-         BAL   R9,UNCVT       NOT STARTED                      XA0054DK         
          CLI   VCSCC,X'10'                                     XA0054DK         
-         BNE   SEBACK         CC 2, CC 3                       XA0054DK         
-         BAL   R9,GETCSW      CC 1: STATUS PENDING             XA0054DK         
+         BE    SSCC1                                           XA0054DK         
+         NI    ENTFLG(R3),255-ENTACT                           XA0054DK         
+         BAL   R9,UNCVT       NOT STARTED: CC 2, CC 3          XA0054DK         
+         B     SEBACK                                          XA0054DK         
+*  SIO CC 1, CSW STORED (AN IMMEDIATE COMMAND, E.G. THE        XA0054DK         
+*  NOP OF A SENSE ID): A CHANNEL SUBSYSTEM STARTS IT (CC 0)    XA0054DK         
+*  AND MAKES THE STATUS PENDING. QUEUED AS A VIRTUAL           XA0054DK         
+*  INTERRUPTION, AS DMKVSP DOES: DMKDSP PRESENTS IT            XA0054DK         
+*  (DMKVCSIN), OR A TSCH OF A DISABLED GUEST COLLECTS IT       XA0054DK         
+*  WITH TIO (LINUX'S CCW_DEVICE_WAIT_IDLE).                    XA0054DK         
+SSCC1    LA    R5,X'40'                                        XA0054DK         
+         LA    R6,VCSBUF                                       XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO     THE CSW DMKVSJ STORED            XA0054DK         
+SSCC1Q   BAL   R9,FINDSN      R6-R8: THE DEVICE'S BLOCKS       XA0054DK         
+         MVC   VDEVCSW,VCSBUF                                  XA0054DK         
+         OI    VDEVSTAT,VDEVPEND                               XA0054DK         
+         L     R2,=A(DMKVIOMK)                                 XA0054DK         
+         LH    R4,VDEVADD                                      XA0054DK         
+         AR    R4,R4                                           XA0054DK         
+         AR    R4,R2                                           XA0054DK         
+         OC    VCUDVINT,0(R4)                                  XA0054DK         
+         LH    R4,VCUADD                                       XA0054DK         
+         SRL   R4,3                                            XA0054DK         
+         AR    R4,R2                                           XA0054DK         
+         OC    VCHCUINT,0(R4)                                  XA0054DK         
+         LH    R4,VCHADD                                       XA0054DK         
+         SRL   R4,7                                            XA0054DK         
+         AR    R4,R2                                           XA0054DK         
+         OC    VMIOINT,0(R4)                                   XA0054DK         
+         OI    VMPEND,VMIOPND                                  XA0054DK         
+         MVI   VCSCC,0                                         XA0054DK         
          B     SEBACK                                          XA0054DK         
 TSEND    MVI   VCSOP,0        TSCH                             XA0054DK         
          BAL   R9,GETENT                                       XA0054DK         
@@ -404,6 +466,7 @@ SNFIND   DS    0H                                              XA0054DK
          ST    R1,VCSSAVN+12                                   XA0054DK         
          LM    R14,R13,VCSSAVN                                 XA0054DK         
          BR    R14                                             XA0054DK         
+         LTORG ,              WITHIN R12'S 4 KB                XA0054DK         
 *                                                              XA0054DK         
 * SUBROUTINES, ALL BAL R9.                                     XA0054DK         
 *                                                              XA0054DK         
@@ -440,6 +503,7 @@ GIONEXT  LA    R6,4(,R6)                                       XA0054DK
          AL    R5,F4                                           XA0054DK         
          BCT   R4,GUESTIO                                      XA0054DK         
 GIOEND   BR    R9                                              XA0054DK         
+         LTORG ,              TRANS'S LITERAL, IN REACH        XA0054DK         
 GETCSW   ST    R9,VCSLINK     THE CSW AT GUEST X'40'           XA0054DK         
          LA    R5,X'40'                                        XA0054DK         
          LA    R6,ENTCSW(,R3)                                  XA0054DK         
@@ -472,12 +536,20 @@ BLDSCHIB XC    VCSBUF(64),VCSBUF                               XA0054DK
          OI    VCSBUF+5,X'80' ENABLED                          XA0054DK         
          STH   R13,VCSBUF+6   DEVICE NUMBER                    XA0054DK         
          MVC   VCSBUF+8(8),PMCWPATH                            XA0054DK         
+         OC    VCSBUF+5(1),ENTPM5(R3)  WHAT MSCH SET           XA0054DK         
+         MVC   VCSBUF+12(2),ENTMBI(R3)                         XA0054DK         
+         MVC   VCSBUF+27(1),ENTPM27(R3)                        XA0054DK         
          LR    R0,R13                                          XA0054DK         
          SRL   R0,8                                            XA0054DK         
          STC   R0,VCSBUF+16   CHPID: THE CHANNEL               XA0054DK         
          LA    R1,VCSBUF+28                                    XA0054DK         
 *  BLDSCSW: THE SCSW AT R1 FROM THE ENTRY AT R3.               XA0054DK         
-BLDSCSW  TM    ENTFLG(R3),ENTPEND                              XA0054DK         
+BLDSCSW  TM    ENTFLG2(R3),ENTCLR                              XA0054DK         
+         BZ    BLDSCSW1                                        XA0054DK         
+         MVI   2(R1),X'10'    CLEAR FUNCTION,                  XA0054DK         
+         MVI   3(R1),X'01'    STATUS PENDING                   XA0054DK         
+         BR    R9                                              XA0054DK         
+BLDSCSW1 TM    ENTFLG(R3),ENTPEND                              XA0054DK         
          BZ    SCSWIDLE                                        XA0054DK         
          MVC   4(4,R1),ENTCSW(R3)                              XA0054DK         
          MVI   4(R1),0        CCW ADDRESS                      XA0054DK         
@@ -506,6 +578,11 @@ SCSWIDLE TM    ENTFLG(R3),ENTACT                               XA0054DK
 *  TSCLEAR: TSCH TOOK THE STATUS. A CHANNEL END WITHOUT        XA0054DK         
 *  DEVICE END LEAVES THE SUBCHANNEL ACTIVE FOR THE DE.         XA0054DK         
 TSCLEAR  NI    ENTFLG(R3),255-ENTPEND                          XA0054DK         
+         TM    ENTFLG2(R3),ENTCLR                              XA0054DK         
+         BZ    TSCLR1                                          XA0054DK         
+         NI    ENTFLG2(R3),255-ENTCLR                          XA0054DK         
+         BR    R9                                              XA0054DK         
+TSCLR1   DS    0H                                              XA0054DK         
          TM    ENTFLG(R3),ENTSOL                               XA0054DK         
          BZ    TSCL2                                           XA0054DK         
          TM    ENTCSW+4(R3),X'04'  DEVICE END?                 XA0054DK         
@@ -526,6 +603,79 @@ UNCVT    TM    ENTFLG2(R3),ENTCVT                              XA0054DK
          BAL   R9,CVTCHN                                       XA0054DK         
          NI    ENTFLG2(R3),255-ENTCVT                          XA0054DK         
          L     R9,VCSLNK3                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+*  SIDCHK: A LONE SENSE ID (X'E4'), WHICH VM/370'S VIRTUAL     XA0054DK         
+*  DEVICES DO NOT KNOW, IS ANSWERED HERE (SSCHSID) FROM THE    XA0054DK         
+*  DEVICE TYPE (SIDTAB): LINUX'S CIO RECOGNISES EVERY DEVICE   XA0054DK         
+*  THIS WAY. CHAIN IN FORMAT 0 HERE; R8 = VDEVBLOK.            XA0054DK         
+SIDCHK   ST    R9,VCSLNK5                                      XA0054DK         
+         NI    ENTFLG2(R3),255-ENTSID                          XA0054DK         
+         BAL   R9,SIDLOOK                                      XA0054DK         
+         LTR   R1,R1                                           XA0054DK         
+         BZ    SIDCX          A TYPE WE DO NOT KNOW            XA0054DK         
+         LA    R0,SIDTAB      ITS SIDTAB ENTRY, AS AN INDEX    XA0054DK         
+         SR    R1,R0                                           XA0054DK         
+         SRL   R1,3                                            XA0054DK         
+         STC   R1,ENTSIDX(R3)                                  XA0054DK         
+         L     R5,ENTCCW(R3)                                   XA0054DK         
+         LA    R6,VCSCCW                                       XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         LA    R0,1                                            XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         CLI   VCSCCW,X'E4'                                    XA0054DK         
+         BNE   SIDCX                                           XA0054DK         
+         TM    VCSCCW+4,X'C0' CHAINED: LEFT ALONE              XA0054DK         
+         BNZ   SIDCX                                           XA0054DK         
+         MVC   ENTSIDA(4,R3),VCSCCW                            XA0054DK         
+         MVC   ENTSIDC(2,R3),VCSCCW+6                          XA0054DK         
+         OI    ENTFLG2(R3),ENTSID                              XA0054DK         
+SIDCX    L     R9,VCSLNK5                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+*  SIDDO: THE SENSE ID DATA STORED; VCSCCW = THE ENDING CSW    XA0054DK         
+*  (CCW+8, CHANNEL END AND DEVICE END, THE RESIDUAL COUNT).    XA0054DK         
+SIDDO    ST    R9,VCSLNK5                                      XA0054DK         
+         NI    ENTFLG2(R3),255-ENTSID                          XA0054DK         
+         LH    R7,ENTSIDC(R3)  NOTHING STORED: ALL RESIDUAL    XA0054DK         
+         CH    R7,H8                                           XA0054DK         
+         BL    SIDD2                                           XA0054DK         
+         TM    ENTSIDA+3(R3),3                                 XA0054DK         
+         BNZ   SIDD2                                           XA0054DK         
+         SR    R1,R1                                           XA0054DK         
+         IC    R1,ENTSIDX(R3)                                  XA0054DK         
+         SLL   R1,3                                            XA0054DK         
+         LA    R1,SIDTAB(R1)                                   XA0054DK         
+         MVI   VCSCCW,X'FF'                                    XA0054DK         
+         MVC   VCSCCW+1(6),2(R1)                               XA0054DK         
+         MVI   VCSCCW+7,0                                      XA0054DK         
+         L     R5,ENTSIDA(R3)                                  XA0054DK         
+         N     R5,XRIGHT24                                     XA0054DK         
+         LA    R6,VCSCCW                                       XA0054DK         
+         LA    R4,2                                            XA0054DK         
+         SR    R0,R0                                           XA0054DK         
+         BAL   R9,GUESTIO                                      XA0054DK         
+         LH    R7,ENTSIDC(R3)  RESIDUAL: 7 BYTES STORED        XA0054DK         
+         SH    R7,H7                                           XA0054DK         
+SIDD2    L     R0,ENTCCW(R3)                                   XA0054DK         
+         AL    R0,F8                                           XA0054DK         
+         N     R0,XRIGHT24                                     XA0054DK         
+         ST    R0,VCSCCW                                       XA0054DK         
+         MVI   VCSCCW+4,X'0C'                                  XA0054DK         
+         MVI   VCSCCW+5,0                                      XA0054DK         
+         STH   R7,VCSCCW+6                                     XA0054DK         
+         L     R9,VCSLNK5                                      XA0054DK         
+         BR    R9                                              XA0054DK         
+SIDLOOK  LA    R1,SIDTAB      R1 = SIDTAB ENTRY OR 0           XA0054DK         
+SIDL1    CLI   0(R1),X'FF'                                     XA0054DK         
+         BE    SIDL0                                           XA0054DK         
+         CLC   0(1,R1),VDEVTYPC                                XA0054DK         
+         BNE   SIDL2                                           XA0054DK         
+         CLI   1(R1),X'FF'    ANY TYPE OF THE CLASS            XA0054DK         
+         BER   R9                                              XA0054DK         
+         CLC   1(1,R1),VDEVTYPE                                XA0054DK         
+         BER   R9                                              XA0054DK         
+SIDL2    LA    R1,8(,R1)                                       XA0054DK         
+         B     SIDL1                                           XA0054DK         
+SIDL0    SR    R1,R1                                           XA0054DK         
          BR    R9                                              XA0054DK         
 *  CVTCHN: THE CHAIN AT ENTCCW, IN PLACE. R0 = 1: FORMAT 1     XA0054DK         
 *  TO FORMAT 0; R0 = 0: BACK. FOLLOWS CD/CC AND TIC; A TIC TO  XA0054DK         
@@ -742,7 +892,7 @@ AVCSSE   DC    A(DMKVCS)                                       XA0054DK
 DMKVCSRG DC    C'VCRING  '                                     XA0054DK         
 VCRNXT   DC    F'0'                                            XA0054DK         
 VCRLAST  DC    A(VCRING)                                       XA0054DK         
-VCRING   DC    32XL16'00'                                      XA0054DK         
+AVCRING  DC    A(VCRING)      THE RING: LAST, PAST R12'S 4 KB  XA0054DK         
 STFLN3   DC    X'80000000'                                     XA0054DK         
 XPFX     DC    X'7FFFF000'                                     XA0054DK         
 AVCSIN   DC    A(DMKVCS)                                       XA0054DK         
@@ -758,11 +908,31 @@ SSIDW    DC    X'00010000'                                     XA0054DK
 F65535   DC    F'65535'                                        XA0054DK         
 X7FFF    DC    X'7FFFFFFF'                                     XA0054DK         
 H32      DC    H'32'                                           XA0054DK         
+H7       DC    H'7'                                            XA0054DK         
+H8       DC    H'8'                                            XA0054DK         
 F64      DC    F'64'                                           XA0054DK         
 SIOOP    DC    X'9C00'                                         XA0054DK         
 TIOOP    DC    X'9D00'                                         XA0054DK         
 EMPTYENT DC    X'FFFF',XL30'00'                                XA0054DK         
 PMCWPATH DC    X'80008080',X'0000FF80'                         XA0054DK         
+*  SIDTAB: CLASS, TYPE (FF ANY), CU TYPE, MODEL, DEVICE TYPE,  XA0054DK         
+*  MODEL: THE SENSE ID DATA OF A VM/370 VIRTUAL DEVICE.        XA0054DK         
+SIDTAB   DC    X'80FF321500000000'  CONSOLE: 3215              XA0054DK         
+         DC    X'2081250100250100'  2501                       XA0054DK         
+         DC    X'2082254000254000'  2540 READER                XA0054DK         
+         DC    X'2084350500350500'  3505                       XA0054DK         
+         DC    X'1082254000254000'  2540 PUNCH                 XA0054DK         
+         DC    X'1084352500352500'  3525                       XA0054DK         
+         DC    X'1041282100140300'  1403                       XA0054DK         
+         DC    X'1042381100321100'  3211                       XA0054DK         
+         DC    X'0408388001335000'  3350                       XA0054DK         
+         DC    X'0410383002333001'  3330                       XA0054DK         
+         DC    X'0401383002334001'  3340                       XA0054DK         
+         DC    X'0440231400231400'  2314                       XA0054DK         
+         DC    X'0810380300342000'  3420                       XA0054DK         
+         DC    X'FF'                                           XA0054DK         
+         DS    0F                                              XA0054DK         
+VCRING   DC    32XL16'00'                                      XA0054DK         
          LTORG                                                 XA0054DK         
 ENTFLG   EQU   2              ENTRY: DEVICE H, FLAGS, ISC,     XA0054DK         
 ENTISC   EQU   3              INTERRUPTION PARAMETER, AND      XA0054DK         
@@ -772,6 +942,14 @@ ENTCCW   EQU   16             SSCH: THE CHAIN                  XA0054DK
 ENTFLG2  EQU   20                                              XA0054DK         
 ENTCVT   EQU   X'80'          CHAIN CONVERTED TO FORMAT 0      XA0054DK         
 ENTPRIM  EQU   X'40'          PRIMARY STATUS ALREADY TAKEN     XA0054DK         
+ENTPM5   EQU   21             MSCH: PMCW BYTE 5 X'1C'          XA0054DK         
+ENTPM27  EQU   22             MSCH: PMCW BYTE 27 X'07'         XA0054DK         
+ENTMBI   EQU   24             MSCH: MEASUREMENT BLOCK INDEX    XA0054DK         
+ENTSIDX  EQU   23             SENSE ID: SIDTAB INDEX,          XA0054DK         
+ENTSIDC  EQU   26             COUNT,                           XA0054DK         
+ENTSIDA  EQU   28             AND DATA ADDRESS (BYTE 0 E4)     XA0054DK         
+ENTSID   EQU   X'20'          ENTFLG2: SENSE ID ANSWERED HERE  XA0054DK         
+ENTCLR   EQU   X'10'          ENTFLG2: CSCH DONE, NOT TSCHED   XA0054DK         
 ENTLEN   EQU   32                                              XA0054DK         
 ENTENAB  EQU   X'80'          MSCH: ENABLED                    XA0054DK         
 ENTACT   EQU   X'40'          SSCH ISSUED, NOT COMPLETE        XA0054DK         
@@ -793,6 +971,8 @@ VCSCFLG  DS    X                      CCW FLAGS                XA0054DK
          DS    XL2                                             XA0054DK         
 VCSLNK2  DS    F                                               XA0054DK         
 VCSLNK3  DS    F                                               XA0054DK         
+VCSLNK4  DS    F                                               XA0054DK         
+VCSLNK5  DS    F                                               XA0054DK         
 VCSNVIS  DS    F                                               XA0054DK         
 VCSCADR  DS    F                      CCW DATA ADDRESS         XA0054DK         
 VCSTIC   DS    F                                               XA0054DK         
