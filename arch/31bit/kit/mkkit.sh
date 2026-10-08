@@ -15,6 +15,7 @@ import sys
 s=open(sys.argv[1]).read()
 i=s.find('# A SECOND 3215, added 3 October')
 if i>0: s=s[:i].rstrip()+'\n'
+s=s.replace('MAINSIZE        16','MAINSIZE        64')
 s=s.replace('PANTITLE        "VM370CE 1.1.2"','PANTITLE        "VM/370+ (VM370CE 1.1.2 ESA/390)"')
 open(sys.argv[2],'w').write(s)
 PY
@@ -22,6 +23,7 @@ cp $C/disks/vm50-4.cckd $K/disks/; cp $C/disks/shadows/*_1.shadow $K/disks/shado
 cp $R/arch/31bit/kit/README-VM370PLUS.txt $K/
 cp $R/arch/31bit/cms/{GCC31.EXEC,HELLO31.C,HIGHSTOR.ASSEMBLE,HSTEST.ASSEMBLE} $R/arch/31bit/crexx/{CRXMAKE.EXEC,cms.h} $K/vm370plus/
 mkdir -p $K/vm370plus/m5f; cp $R/arch/31bit/m5f/{README.md,cmsrt.c,cp1047.h,entry31.s,crt.sh,image.ld,hello31.c,libctest.c,elf_to_cms-pcrel.patch} $K/vm370plus/m5f/
+mkdir -p $K/vm370plus/linux; cp $R/arch/31bit/linux390/decks/{linux44.rdr,lxparm.rdr} $R/arch/31bit/linux390/{README.md,config-4.0-31bit,psw_idle-align.patch} $K/vm370plus/linux/
 mkdir -p $D; cd $W
 zip -qr $D/VM370PLUS-kit-$STAMP-part1.zip VM370CE.V1.R1.2 -x "VM370CE.V1.R1.2/disks/vm50-4.cckd"
 zip -q  $D/VM370PLUS-kit-$STAMP-part2.zip VM370CE.V1.R1.2/disks/vm50-4.cckd

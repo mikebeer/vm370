@@ -20,10 +20,20 @@ for c in "$@"; do
   o=$W/$(basename "$c" .c).o
   $X-gcc $CF ${CFLAGS_EXTRA} -c "$c" -o "$o"; objs="$objs $o"
 done
+# LIBSRC: sources compiled into an archive, pulled in only as needed (like
+# CMake's static libraries -- M8's RXC links the VM library this way).
+libs=""
+if [ -n "$LIBSRC" ]; then
+  mkdir -p $W/lib
+  for c in $LIBSRC; do
+    $X-gcc $CF ${CFLAGS_EXTRA} -c "$c" -o $W/lib/$(basename "$c" .c).o
+  done
+  $X-ar rcs $W/libextra.a $W/lib/*.o; libs=$W/libextra.a
+fi
 $X-gcc $CF -c "$H/cmsrt.c" -o $W/cmsrt.o
 $X-as -m31 -mesa "$H/entry31.s" -o $W/entry31.o
 $X-ld -m elf_s390 -static --emit-relocs --gc-sections -T "$H/image.ld" \
    -Map "${OUT%.*}.map" -o "${OUT%.*}.elf" $W/entry31.o $objs $W/cmsrt.o \
-   --start-group $NEWLIB/libc.a $NEWLIB/libm.a "$H/softfp/libsoftfp.a" $LIBGCC --end-group
+   --start-group $libs $NEWLIB/libc.a $NEWLIB/libm.a "$H/softfp/libsoftfp.a" $LIBGCC --end-group
 $E2C "${OUT%.*}.elf" "$OUT"
 rm -rf $W

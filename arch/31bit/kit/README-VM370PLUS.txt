@@ -1,4 +1,4 @@
-VM/370+  --  overlay kit, 7 October 2026
+VM/370+  --  overlay kit, 8 October 2026
 =========================================
 
 VM/370 Community Edition V1 R1.2, with CP converted to ESA/390 (AMODE 31)
@@ -74,6 +74,47 @@ USE
         load hello31 (start
     (needs  cp def stor 128m  -- GCC380 asks for a 60 MB heap).
 
+LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
+  A Linux 4.0 kernel (31-bit, ESA/390) runs in a virtual machine:
+  console on your terminal (3215 mode), its own initramfs, /init prints
+      HELLO FROM LINUX/390 ON VM/370+ (M7)
+  The kernel has no root file system or shell yet -- /init writes that
+  line and waits.  vm370plus/linux/ has the two reader decks:
+      linux44.rdr   ID MAINT card + the kernel (initramfs built in)
+      lxparm.rdr    ID MAINT card + the parameter line
+                    no_removal_warning conmode=3215 condev=0x0009
+
+  1. vm370ce.conf in this kit has MAINSIZE 64 (CP uses 16 MB as real
+     storage and the rest as paging store).  Keep it.
+  2. IPL as above (ipl 6a1, /cold).  Then at the HERCULES console,
+     spool the two decks to MAINT's reader, in this order:
+        /cp spool 00c class *
+        devinit 00c vm370plus/linux/linux44.rdr ebcdic eof
+        /cp start 00c
+     wait until CP reports the file (a few seconds; RDR FILE ... TO MAINT)
+        devinit 00c vm370plus/linux/lxparm.rdr ebcdic eof
+        /cp start 00c
+  3. On the 3270:   logon maint cpcms noipl
+        cp q rdr all             two files: the kernel, then the parms
+        cp def stor 16m
+        cp set esa on            this virtual machine is ESA/390
+        cp ipl 00c               IPL from the reader
+     Linux reads the kernel and the parameter file, then prints its
+     boot log on your terminal ("Linux version 4.0.0+ ...", "console
+     [ttyS0] enabled", ... "Freeing unused kernel memory") and the
+     HELLO line.  About 1-2 minutes with Hercules.
+  4. The terminal fills: CP shows MORE... -- press CLEAR (or PA2).
+  5. To leave Linux: PA1 (CP mode), then  cp logoff  (or  ipl cms).
+     To run it again, spool the two decks again (step 2) -- IPL from
+     the reader consumes them.
+  Notes:
+   - SET ESA ON / OFF switches a virtual machine between S/370 and
+     ESA/390; CMS needs it OFF (the default).
+   - Linux believes it runs "natively" (no SCLP, no z/VM interfaces),
+     so it needs conmode=3215 condev=0x0009.  The deviations of the
+     ESA/390 virtual machine are listed in docs/40-M7.3-GUEST-DAT.md.
+   - Works with Hercules 3.13 and 4.x.
+
 RULES THAT MATTER
   - Always end with  /shutdown  at the Hercules console, then  exit.
     Killing Hercules leaves the shadows inconsistent.
@@ -81,9 +122,9 @@ RULES THAT MATTER
   - Do not IPL something else after IPL CMS (the shared saved system) in
     the same session: leaving a shared system is not finished yet
     (I-235).  Log off and on, or use IPL 190 / IPL 290 (unshared).
-  - CP itself runs with 16 MB of real storage (MAINSIZE 16).  Virtual
-    machines may be up to 256 MB.  Raising CP's real storage is
-    milestone M4b.
+  - CP's own machine is 16 MB; with MAINSIZE above 16 (this kit: 64)
+    the rest is CP's paging store (milestone M4b).  Virtual machines
+    may be up to 256 MB.
   - CPWATCH is no longer autologged (AUTOLOG1's PROFILE EXEC: the two
     CPWATCH lines start with '*').  It is an S/370 CP monitor that loops
     under this CP at priority 5 and starves everyone else (I-251).

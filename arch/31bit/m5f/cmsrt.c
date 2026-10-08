@@ -29,6 +29,13 @@
 #include <time.h>
 #include "cp1047.h"
 
+/* M8: cREXX's mainframe entry points call mainframe_set_text_conversion(0)
+ * and do IBM-1047 themselves: raw record bytes, ASCII LF as the delimiter. */
+static int rt_conv = 1;
+void mainframe_set_text_conversion(int enabled) { rt_conv = enabled != 0; }
+#define A2E(c) (rt_conv ? rt_a2e[(unsigned char)(c)] : (unsigned char)(c))
+#define E2A(c) (rt_conv ? rt_e2a[(unsigned char)(c)] : (char)(c))
+
 #undef errno
 extern int errno;
 
@@ -68,7 +75,7 @@ static void tput(const char *p, int n)
         if (c == '\n') { tflush(); continue; }
         if (c == '\r') continue;
         if (tlen == (int)sizeof tline) tflush();
-        tline[tlen++] = c == '\t' ? 0x40 : rt_a2e[c];
+        tline[tlen++] = c == '\t' && rt_conv ? 0x40 : A2E(c);
     }
 }
 
@@ -92,7 +99,7 @@ static int tread(char *p, int n)
         if (cms202(rdpl)) return 0;
         len = rdpl[14] << 8 | rdpl[15];             /* length read */
         if (len > 130) len = 130;
-        for (int i = 0; i < len; i++) tin[i] = rt_e2a[rdbuf[i]];
+        for (int i = 0; i < len; i++) tin[i] = E2A(rdbuf[i]);
         tin[len] = '\n';
         tin_len = len + 1; tin_pos = 0;
     }
@@ -258,7 +265,7 @@ static int read_whole(struct cfile *f)
             memcpy(f->data + f->len, rec, n); f->len += n;
         } else {
             while (n > 0 && rec[n - 1] == 0x40) n--;  /* F records are padded */
-            for (u32 i = 0; i < n; i++) f->data[f->len++] = rt_e2a[rec[i]];
+            for (u32 i = 0; i < n; i++) f->data[f->len++] = E2A(rec[i]);
             f->data[f->len++] = '\n';
         }
     }
@@ -294,7 +301,7 @@ static int write_whole(struct cfile *f)
         while (i < f->len && !rc) {
             u32 n = 0;
             while (i < f->len && f->data[i] != '\n') {
-                if (n < RECMAX) rec[n++] = rt_a2e[(unsigned char)f->data[i]];
+                if (n < RECMAX) rec[n++] = A2E(f->data[i]);
                 i++;
             }
             if (i < f->len) i++;                      /* the '\n' */
@@ -399,6 +406,8 @@ int _stat(const char *name, struct stat *st)
     return 0;
 }
 
+int stat(const char *name, struct stat *st) { return _stat(name, st); }
+int fstat(int fd, struct stat *st) { return _fstat(fd, st); }
 int _isatty(int fd) { return fd < 3; }
 
 int _unlink(const char *name)
