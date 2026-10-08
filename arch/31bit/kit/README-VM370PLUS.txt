@@ -14,8 +14,9 @@ WHAT YOU NEED
 
 INSTALL
   1. Unzip VM370CE_V1_R1_2.zip into a new directory.
-  2. Unzip BOTH kit parts OVER it (part 1: config, shadows, tools;
-     part 2: disks/vm50-4.cckd), so the files below replace or add:
+  2. Unzip ALL THREE kit parts OVER it (part 1: config, shadows, tools;
+     part 2: disks/vm50-4.cckd; part 3: the CMSUSER volume's shadow),
+     so the files below replace or add:
         vm370ce.conf                 ARCHMODE ESA/390, CPUMODEL 3090,
                                      ECPSVM NO (CE's own S/370 settings
                                      will not boot this CP)
@@ -78,9 +79,13 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
   A Linux 4.0 kernel (31-bit, ESA/390) runs in a virtual machine:
   console on your terminal (3215 mode), its own initramfs, /init prints
       HELLO FROM LINUX/390 ON VM/370+ (M7)
-  The kernel has no root file system or shell yet -- /init writes that
-  line and waits.  vm370plus/linux/ has the two reader decks:
-      linux44.rdr   ID MAINT card + the kernel (initramfs built in)
+  /init is m7sh, a tiny shell (no C library, no disk yet): after the
+  HELLO line it prompts  / #  and knows
+      help  ls [dir]  cat file  mem  ps  uname  uptime  mount  cpu
+      dmesg  echo  mkdir  cd  pwd  write file text  halt
+  (/proc, /sys and a tmpfs on /tmp are mounted; files you write live
+  in memory only).  vm370plus/linux/ has the two reader decks:
+      linux45.rdr   ID MAINT card + the kernel (initramfs with m7sh)
       lxparm.rdr    ID MAINT card + the parameter line
                     no_removal_warning conmode=3215 condev=0x0009
 
@@ -89,7 +94,7 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
   2. IPL as above (ipl 6a1, /cold).  Then at the HERCULES console,
      spool the two decks to MAINT's reader, in this order:
         /cp spool 00c class *
-        devinit 00c vm370plus/linux/linux44.rdr ebcdic eof
+        devinit 00c vm370plus/linux/linux45.rdr ebcdic eof
         /cp start 00c
      wait until CP reports the file (a few seconds; RDR FILE ... TO MAINT)
         devinit 00c vm370plus/linux/lxparm.rdr ebcdic eof
@@ -102,9 +107,11 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
      Linux reads the kernel and the parameter file, then prints its
      boot log on your terminal ("Linux version 4.0.0+ ...", "console
      [ttyS0] enabled", ... "Freeing unused kernel memory") and the
-     HELLO line.  About 1-2 minutes with Hercules.
+     HELLO line and the  / #  prompt.  About 1-2 minutes with Hercules.
+     Type commands as on any terminal, e.g.  ps  or  mem .
   4. The terminal fills: CP shows MORE... -- press CLEAR (or PA2).
-  5. To leave Linux: PA1 (CP mode), then  cp logoff  (or  ipl cms).
+  5. To leave Linux:  halt  (Linux stops; CP shows a disabled wait),
+     or PA1 (CP mode); then  cp logoff  (or  ipl cms).
      To run it again, spool the two decks again (step 2) -- IPL from
      the reader consumes them.
   Notes:

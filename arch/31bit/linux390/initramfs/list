@@ -1,0 +1,9 @@
+dir /dev 0755 0 0
+nod /dev/console 0600 0 0 c 5 1
+nod /dev/null 0666 0 0 c 1 3
+dir /proc 0555 0 0
+dir /sys 0555 0 0
+dir /tmp 1777 0 0
+dir /etc 0755 0 0
+file /etc/motd /home/claude/vm370/arch/31bit/linux390/initramfs/motd 0644 0 0
+file /init /home/claude/vm370/arch/31bit/linux390/initramfs/m7sh 0755 0 0
