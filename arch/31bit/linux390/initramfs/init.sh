@@ -12,19 +12,24 @@ for c in poweroff halt reboot; do rm -f /sbin/$c
 hostname vm370plus
 mkdir -p /dev/pts /etc/dropbear; mount -t devpts devpts /dev/pts
 ifconfig lo 127.0.0.1 up
-# Network: a CTC pair (Hercules CTCI) attached to this virtual machine as
-# 0600 (read) and 0601 (write).  Addresses from the IPL parameters
-# vmip=  vmpeer=  (default 10.1.1.2, peer = the host 10.1.1.1).
+# Network: a CTC pair (Hercules CTCI) attached to this virtual machine, e.g.
+#   CP ATTACH 600 * 620  and  CP ATTACH 601 * 621  (the lower one reads).
+# Addresses from the IPL parameters vmip= vmpeer= (default 10.1.1.2, and
+# the PC at the other end of the CTC, 10.1.1.1).
 VMIP=10.1.1.2; VMPEER=10.1.1.1
 for a in $(cat /proc/cmdline); do case $a in
   vmip=*) VMIP=${a#vmip=};; vmpeer=*) VMPEER=${a#vmpeer=};; esac; done
-if [ -e /sys/bus/ccw/devices/0.0.0600 ] && [ -e /sys/bus/ccw/devices/0.0.0601 ]; then
-  echo 0.0.0600,0.0.0601 > /sys/bus/ccwgroup/drivers/ctcm/group
-  echo 1 > /sys/bus/ccwgroup/drivers/ctcm/0.0.0600/online
+CTC=""
+for d in /sys/bus/ccw/devices/*; do
+  [ "$(cat $d/cutype 2>/dev/null)" = 3088/08 ] && CTC="$CTC ${d##*/}"; done
+set -- $CTC
+if [ $# -ge 2 ]; then
+  echo $1,$2 > /sys/bus/ccwgroup/drivers/ctcm/group
+  echo 1 > /sys/bus/ccwgroup/drivers/ctcm/$1/online
   ifconfig ctc0 $VMIP pointopoint $VMPEER mtu 1500 up && route add default gw $VMPEER
   dropbear -R -p 22 && echo "network: ctc0 $VMIP (peer $VMPEER), ssh: root / vm370plus"
 else
-  echo "network: none (attach a CTC pair as 0600/0601 for ssh)"
+  echo "network: none (attach a CTC pair, e.g. CP ATTACH 600 * 620, 601 * 621)"
 fi
 echo
 echo "HELLO FROM LINUX/390 ON VM/370+ (M7)"

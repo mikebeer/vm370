@@ -27,9 +27,21 @@ CPIDISC  DS    0H                                              XA0013DK
          USING RDEVBLOK,R8                                     XA0013DK         
          ST    R1,RDEVSSID    REMEMBER THIS DEVICE'S SSID      XA0013DK         
          XC    PMCWPARM,PMCWPARM CLEAR THE PARAMETER           XA0013DK         
-         MVC   PMCWPARM+2(2),RDEVADD DEV ADDR, LOW HALF        XA0013DK         
+*  THE PARAMETER IS THE DEVICE NUMBER FROM THE PMCW: RDEVADD   XA0013DK         
+*  HOLDS ONLY THE DEVICE BITS (DMKSCNRD ORS IN THE CU AND THE  XA0013DK         
+*  CHANNEL), SO 0600 GOT 0000 AND ITS HALT INTERRUPTION WENT   XA0013DK         
+*  NOWHERE UNTIL AN SSCH'S ORB SET IT RIGHT (LX112).           XA0013DK         
+         MVC   PMCWPARM+2(2),PMCWDEV  DEVICE NUMBER, LOW HALF  XA0013DK         
          OI    PMCWFLG5,PMCW5E ENABLE THE SUBCHANNEL           XA0013DK         
          MSCH  0(R4)          MODIFY SUBCHANNEL                XA0013DK         
+         BC    11,CPIMSOK     CC1: STATUS PENDING. CLEAR IT    XA0013DK         
+         TSCH  0(R4)          (THE IRB OVERLAYS THE SCHIB AND  XA0013DK         
+         STSCH 0(R4)          CPIDSAVE: 64 BYTES), REREAD AND  XA0013DK         
+         XC    PMCWPARM,PMCWPARM  MODIFY AGAIN -- ELSE ITS     XA0013DK         
+         MVC   PMCWPARM+2(2),PMCWDEV  INTERRUPTS CARRY         XA0013DK         
+         OI    PMCWFLG5,PMCW5E   PARAMETER 0 (LX109)           XA0013DK         
+         MSCH  0(R4)                                           XA0013DK         
+CPIMSOK  DS    0H                                              XA0013DK         
          DROP  R8                                              XA0013DK         
 CPIDISCN DS    0H             NEXT SUBCHANNEL                  XA0013DK         
          LA    R2,1(0,R2)     BUMP THE SUBCHANNEL NUMBER       XA0013DK         

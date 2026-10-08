@@ -151,7 +151,33 @@ IOSXHIO  DS    0H             HSCH REPLACES HIO AND HDV ALIKE  XA0004DK
          L     R1,RDEVSSID    X'0001' || SUBCHANNEL NUMBER     XA0004DK         
          LTR   R1,R1          NO SUBCHANNEL: NOT OPERATIONAL   XA0004DK         
          BZ    IOSXNOP        ...                              XA0004DK         
-         HSCH  0              HALT SUBCHANNEL                  XA0004DK         
+         STSCH IOBIRB         IS IT DOING ANYTHING? (THE IRB   XA0004DK         
+         BC    1,IOSXNOP      AREA HOLDS THE SCHIB A MOMENT)   XA0004DK         
+         TM    IOBIRB+31,X'01'  STATUS PENDING: HDV STORES     XA0004DK         
+         BO    IOSXTIO        IT, CC1, AS TIO WOULD            XA0004DK         
+         TM    IOBIRB+30,X'0F'  ANY FUNCTION PENDING, OR       XA0004DK         
+         BNZ   IOSXHSCH                                        XA0004DK         
+         TM    IOBIRB+31,X'E0'  SUBCHANNEL/DEVICE ACTIVE?      XA0004DK         
+         BNZ   IOSXHSCH                                        XA0004DK         
+*  IDLE: AS HDV ON AN AVAILABLE DEVICE, CC1 WITH A ZERO CSW.   XA0004DK         
+*  AN HSCH WOULD END IN AN INTERRUPTION WITH NO STATUS, WHICH  XA0004DK         
+*  DMKIOS TAKES FOR 'HALT AGAIN' (LX113: 4.4 MILLION HSCHS).   XA0004DK         
+         XC    CSW,CSW                                         XA0004DK         
+         LA    R15,1                                           XA0004DK         
+         LCR   R15,R15        CC1 (NEGATIVE RESULT)            XA0004DK         
+         BR    R14                                             XA0004DK         
+IOSXHSCH HSCH  0              HALT SUBCHANNEL                  XA0004DK         
+         BCR   1,R14          CC3: NOT OPERATIONAL, AS HDV'S   XA0004DK         
+         BC    4,IOSXTIO      CC1: STATUS PENDING, STORE IT    XA0004DK         
+         BC    2,IOSXHBSY     CC2: A HALT IS ALREADY UNDERWAY  XA0004DK         
+*  CC0: HALT INITIATED, AN INTERRUPTION FOLLOWS, ALSO FOR AN   XA0004DK         
+*  IDLE SUBCHANNEL. HDV'S CC0 IS 'CONTROL UNIT BUSY' (REQUEUE  XA0004DK         
+*  AND WAIT FOR CUE, WHICH NEVER COMES): A DETACH OF A CTCA    XA0004DK         
+*  HUNG ITS CALLER (LX105). HDV CC2, WAIT FOR THE INTERRUPT.   XA0004DK         
+         LA    R15,1          CC2 BY A POSITIVE RESULT         XA0004DK         
+         LTR   R15,R15                                         XA0004DK         
+         BR    R14                                             XA0004DK         
+IOSXHBSY SR    R15,R15        CC0: BUSY, TRY AGAIN LATER       XA0004DK         
          BR    R14                                             XA0004DK         
 IOSXNOP  L     R1,=X'80000000' DEVICE NOT IN THE CONFIG:       XA0004DK         
          LCR   R1,R1          CC3 BY OVERFLOW, AS SIO DID      XA0004DK         
