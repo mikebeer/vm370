@@ -45,3 +45,9 @@ PRVHI    DS    0H                                              XA0054DK
 PRVVCS   L     R12,=V(DMKVCSEX)                                XA0054DK         
          BR    R12                                             XA0054DK         
 PRVB2    DS    0H                                              XA0054DK         
+./ R 01086200 01086300 $ 01086200 100                                           
+         BNZ   PRVCR0X        NO, BYPASS CREG0 RESET           XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ON ESA/390 BIT 13 IS      XA0054DK         
+         BO    PRVCR0X        AFP-REGISTER CONTROL (D-15)      XA0054DK         
+         N     R1,=XL4'FFF8FFFF'   RESET BITS 13-15 IN BYTE 1  XA0054DK         
+PRVCR0X  DS    0H                                              XA0054DK         

@@ -324,7 +324,11 @@ VXREF2H  DS    0H             (LX75)                           XA0054DK
          TM    EXTCR0,X'04'   SECONDARY-SPACE CONTROL          XA0054DK         
          BZ    VXREF3                                          XA0054DK         
          OI    EXTSHCR0,X'04'                                  XA0054DK         
-VXREF3   L     R8,VXLNK                                        XA0054DK         
+VXREF3   NI    EXTSHCR0+1,X'FB'  AFP-REGISTER CONTROL          XA0054DK         
+         TM    EXTCR0+1,X'04'    (BIT 13): BFP NEEDS IT        XA0054DK         
+         BZ    VXREF4            (D-15, LINUX IEEE FP;         XA0054DK         
+         OI    EXTSHCR0+1,X'04'  LX82: DXC 2)                  XA0054DK         
+VXREF4   L     R8,VXLNK                                        XA0054DK         
          BR    R8                                              XA0054DK         
 *                                                              XA0054DK         
 * VXSET (BAL R9): R1 = GUEST STD IN, ITS SHADOW STD OUT;       XA0054DK         

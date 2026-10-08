@@ -246,7 +246,10 @@ def psa():
         "*  PAGES. CE'S X'81800CC0' GIVES X'00800000', WHICH IS 64 KB",
         "*  SEGMENTS, AND LRA TAKES A TRANSLATION-SPECIFICATION",
         "*  EXCEPTION BEFORE IT READS ANY TABLE. I-152.",
-        "CPCREG0  DC    X'81B00CC0' CP ARCH CONTROL AND EXTERNAL MASK",
+        "*  BIT 13 (X'00040000') IS AFP-REGISTER CONTROL: ON FOR EVERY",
+        "*  VIRTUAL MACHINE, SO ESA/390 GUESTS' BFP INSTRUCTIONS RUN",
+        "*  (LINUX: IEEE FLOATING POINT, D-15). CP USES NO BFP.",
+        "CPCREG0  DC    X'81B40CC0' CP ARCH CONTROL AND EXTERNAL MASK",
     ])
 
     d.replace('00243000', first='00243010', inc=10, limit='00244000',
@@ -2002,7 +2005,11 @@ VAXCODE = [
     "         TM    EXTCR0,X'04'   SECONDARY-SPACE CONTROL",
     "         BZ    VXREF3",
     "         OI    EXTSHCR0,X'04'",
-    "VXREF3   L     R8,VXLNK",
+    "VXREF3   NI    EXTSHCR0+1,X'FB'  AFP-REGISTER CONTROL",
+    "         TM    EXTCR0+1,X'04'    (BIT 13): BFP NEEDS IT",
+    "         BZ    VXREF4            (D-15, LINUX IEEE FP;",
+    "         OI    EXTSHCR0+1,X'04'  LX82: DXC 2)",
+    "VXREF4   L     R8,VXLNK",
     "         BR    R8",
     "*",
     "* VXSET (BAL R9): R1 = GUEST STD IN, ITS SHADOW STD OUT;",
@@ -3288,6 +3295,19 @@ def m7decks():
         "PRVVCS   L     R12,=V(DMKVCSEX)",
         "         BR    R12",
         "PRVB2    DS    0H",
+    ])
+    # LCTL of CR0 clears bits 13-15 (VA12971: unassigned on S/370). On
+    # ESA/390 bit 13 is AFP-register control, and Linux loads it on;
+    # cleared, VXREF built a shadow CR0 without it and every BFP
+    # instruction, the kernel's own SFPC included, took DXC 2 (lx87:
+    # guest CR0 14B06810, PROGRAM INTERRUPT LOOP in data_exception).
+    d.replace('01086200', '01086300', first='01086200', inc=100,
+              limit='01087000', lines=[
+        "         BNZ   PRVCR0X        NO, BYPASS CREG0 RESET",
+        "         TM    VMFSTAT,VMESA390  M7: ON ESA/390 BIT 13 IS",
+        "         BO    PRVCR0X        AFP-REGISTER CONTROL (D-15)",
+        "         N     R1,=XL4'FFF8FFFF'   RESET BITS 13-15 IN BYTE 1",
+        "PRVCR0X  DS    0H",
     ])
     decks['DMKPRV'] = d
 
