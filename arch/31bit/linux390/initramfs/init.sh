@@ -5,6 +5,10 @@
 /bin/busybox mount -t sysfs sysfs /sys
 /bin/busybox mount -t tmpfs tmpfs /tmp 2>/dev/null
 /bin/busybox --install -s
+# PID 1 is this script, which ignores the signals busybox poweroff/halt/reboot
+# send to init, so each acts at once (Linux stops in a disabled wait)
+for c in poweroff halt reboot; do rm -f /sbin/$c
+  printf '#!/bin/sh\nsync\nexec /bin/busybox %s -f\n' $c > /sbin/$c; chmod 755 /sbin/$c; done
 hostname vm370plus
 echo
 echo "HELLO FROM LINUX/390 ON VM/370+ (M7)"

@@ -76,16 +76,16 @@ USE
     (needs  cp def stor 128m  -- GCC380 asks for a 60 MB heap).
 
 LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
-  A Linux 4.0 kernel (31-bit, ESA/390) runs in a virtual machine:
-  console on your terminal (3215 mode), its own initramfs, /init prints
+  A Linux 4.0 kernel (31-bit, ESA/390) runs in a virtual machine with
+  a BusyBox userland (glibc 2.39, IEEE floating point), console on your
+  terminal (3215 mode).  /init prints
       HELLO FROM LINUX/390 ON VM/370+ (M7)
-  /init is m7sh, a tiny shell (no C library, no disk yet): after the
-  HELLO line it prompts  / #  and knows
-      help  ls [dir]  cat file  mem  ps  uname  uptime  mount  cpu
-      dmesg  echo  mkdir  cd  pwd  write file text  halt
-  (/proc, /sys and a tmpfs on /tmp are mounted; files you write live
-  in memory only).  vm370plus/linux/ has the two reader decks:
-      linux45.rdr   ID MAINT card + the kernel (initramfs with m7sh)
+  and starts a shell, prompt  vm370plus:~# .  Everything of BusyBox is
+  there: ls cat cp mv rm mkdir vi grep sed awk find ps top free df
+  mount dmesg uname date sort wc head tail tar gzip, ... (ls /bin).
+  /proc, /sys and a tmpfs on /tmp are mounted; there is no disk yet, so
+  files you write live in memory only.  vm370plus/linux/ has the decks:
+      linux46.rdr   ID MAINT card + the kernel (initramfs with BusyBox)
       lxparm.rdr    ID MAINT card + the parameter line
                     no_removal_warning conmode=3215 condev=0x0009
 
@@ -94,7 +94,7 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
   2. IPL as above (ipl 6a1, /cold).  Then at the HERCULES console,
      spool the two decks to MAINT's reader, in this order:
         /cp spool 00c class *
-        devinit 00c vm370plus/linux/linux45.rdr ebcdic eof
+        devinit 00c vm370plus/linux/linux46.rdr ebcdic eof
         /cp start 00c
      wait until CP reports the file (a few seconds; RDR FILE ... TO MAINT)
         devinit 00c vm370plus/linux/lxparm.rdr ebcdic eof
@@ -107,10 +107,14 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
      Linux reads the kernel and the parameter file, then prints its
      boot log on your terminal ("Linux version 4.0.0+ ...", "console
      [ttyS0] enabled", ... "Freeing unused kernel memory") and the
-     HELLO line and the  / #  prompt.  About 1-2 minutes with Hercules.
-     Type commands as on any terminal, e.g.  ps  or  mem .
+     HELLO line and the  vm370plus:~#  prompt.  About 1-2 minutes with
+     Hercules.  Type commands as on any terminal, e.g.  ls -l /  ps
+     free  awk 'BEGIN{print sqrt(2)}' .  The terminal is a line device:
+     full-screen programs (vi, top without -n1) draw poorly; use
+     top -n1 , and vi only if you must.
   4. The terminal fills: CP shows MORE... -- press CLEAR (or PA2).
-  5. To leave Linux:  halt  (Linux stops; CP shows a disabled wait),
+  5. To leave Linux:  poweroff  (or halt; Linux stops and CP shows
+     DISABLED WAIT PSW '000A0000 00000000'),
      or PA1 (CP mode); then  cp logoff  (or  ipl cms).
      To run it again, spool the two decks again (step 2) -- IPL from
      the reader consumes them.

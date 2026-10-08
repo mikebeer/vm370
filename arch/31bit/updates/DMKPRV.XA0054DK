@@ -7,11 +7,14 @@ VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK
          L     R1,VMECEXT                                      XA0054DK         
          LCTL  C1,C1,EXTSHCR1-ECBLOK(R1)                       XA0054DK         
 PRVLGH   DS    0H                                              XA0054DK         
-./ I 00593000 $ 00593100 100                                                    
+./ I 00593000 $ 00593050 050                                                    
          TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
          BZ    PRVHI          TPROT (E501) GOES TO DMKVCS      XA0054DK         
+         CLI   VMINST,X'AE'   SIGP TOO                         XA0054DK         
+         BE    PRVSIGP                                         XA0054DK         
          CLI   VMINST,X'E5'                                    XA0054DK         
          BNE   PRVHI                                           XA0054DK         
+PRVSIGP  DS    0H                                              XA0054DK         
          L     R12,=V(DMKVCSEX)                                XA0054DK         
          BR    R12                                             XA0054DK         
 PRVHI    DS    0H                                              XA0054DK         

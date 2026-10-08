@@ -50,6 +50,8 @@ VCRNEW   L     R1,VCRNXT                                       XA0054DK
 VCRDONE  DS    0H                                              XA0054DK         
          CLI   VMINST,X'E5'   TPROT (E501)                     XA0054DK         
          BE    VCSTPROT                                        XA0054DK         
+         CLI   VMINST,X'AE'   SIGP                             XA0054DK         
+         BE    VCSSIGP                                         XA0054DK         
          CLI   VMINST+1,X'12' STAP                             XA0054DK         
          BE    VCSSTAP                                         XA0054DK         
          CLI   VMINST+1,X'B1' STFL                             XA0054DK         
@@ -130,6 +132,38 @@ VCSTPROT BAL   R9,OPADDR      TPROT: CC 0 INSIDE THE           XA0054DK
          CL    R1,VMSIZE      MACHINE'S STORAGE, CC 3          XA0054DK         
          BL    VCSEXIT        BEYOND (LINUX SIZES ITS          XA0054DK         
          B     VCSCC3         MEMORY THIS WAY)                 XA0054DK         
+*                                                              XA0054DK         
+* SIGP (AE): ONE CPU, ADDRESS 0. STOP, STOP AND STORE STATUS   XA0054DK         
+* PUT THE VIRTUAL MACHINE IN A DISABLED WAIT (LINUX'S HALT     XA0054DK         
+* AND POWER OFF STOP THE CPU THIS WAY); SENSE IS CC 0; ANY     XA0054DK         
+* OTHER CPU CC 3; ANY OTHER ORDER: INVALID ORDER, CC 1.        XA0054DK         
+VCSSIGP  SR    R2,R2                                           XA0054DK         
+         IC    R2,VMINST+1    R1 AND R3                        XA0054DK         
+         N     R2,=F'15'                                       XA0054DK         
+         SLL   R2,2                                            XA0054DK         
+         L     R3,VMGPRS(R2)  THE CPU ADDRESS                  XA0054DK         
+         N     R3,F65535                                       XA0054DK         
+         BNZ   VCSCC3                                          XA0054DK         
+         BAL   R9,OPADDR      THE ORDER CODE                   XA0054DK         
+         N     R1,=F'255'                                      XA0054DK         
+         C     R1,=F'5'       STOP                             XA0054DK         
+         BE    VCSSTOP                                         XA0054DK         
+         C     R1,=F'9'       STOP AND STORE STATUS            XA0054DK         
+         BE    VCSSTOP                                         XA0054DK         
+         C     R1,=F'1'       SENSE                            XA0054DK         
+         BE    VCSEXIT                                         XA0054DK         
+         SR    R2,R2                                           XA0054DK         
+         IC    R2,VMINST+1                                     XA0054DK         
+         SRL   R2,4                                            XA0054DK         
+         SLL   R2,2                                            XA0054DK         
+         LA    R1,2           STATUS: INVALID ORDER            XA0054DK         
+         ST    R1,VMGPRS(R2)                                   XA0054DK         
+         B     VCSCC1                                          XA0054DK         
+         EXTRN DMKDSPB                                         XA0054DK         
+VCSSTOP  MVC   VMPSW(4),=X'000A0000'                           XA0054DK         
+         XC    VMPSW+4(4),VMPSW+4                              XA0054DK         
+         NI    VMRSTAT,255-VMEXWAIT                            XA0054DK         
+         GOTO  DMKDSPB                                         XA0054DK         
 *                                                              XA0054DK         
 * SPX: ONE CPU, NO VIRTUAL PREFIXING. THE NEW PREFIX PAGE IS   XA0054DK         
 * COPIED TO PAGE 0, WHICH STAYS THE LOWCORE (LINUX UP SETS     XA0054DK         
