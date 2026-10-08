@@ -1029,8 +1029,8 @@ VCSSIGP  BAL   R9,OPADDR      R1 = THE ORDER CODE              XA0054DK
 VCSSTOP  MVC   VMPSW(4),=X'000A0000'                           XA0054DK         
          XC    VMPSW+4(4),VMPSW+4                              XA0054DK         
          NI    VMRSTAT,255-VMEXWAIT                            XA0054DK         
-         L     R15,=V(DMKDSPB)                                 XA0054DK         
-         BR    R15                                             XA0054DK         
+         L     R12,=V(DMKDSPB)  ITS BASE IS R12 ON ENTRY       XA0054DK         
+         BR    R12            (AS GOTO DOES)                   XA0054DK         
          DROP  R15                                             XA0054DK         
          LTORG                                                 XA0054DK         
 ENTFLG   EQU   2              ENTRY: DEVICE H, FLAGS, ISC,     XA0054DK         
