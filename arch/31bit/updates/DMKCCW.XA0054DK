@@ -1,0 +1,10 @@
+./ I 00327000 $ 00327100 100                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST (3390,      XA0054DK         
+         BZ    CCWDUMD        LINUX): BY TYPE, AS BELOW        XA0054DK         
+         LA    R1,OTHRTBL                                      XA0054DK         
+CCWDUMD  DS    0H                                              XA0054DK         
+./ I 00398000 $ 00398100 100                                                    
+         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S        XA0054DK         
+         BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS    XA0054DK         
+         LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)            XA0054DK         

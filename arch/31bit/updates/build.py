@@ -3414,6 +3414,33 @@ def m7decks():
     ])
     decks['DMKPRV'] = d
 
+    # A DEDICATED DASD of an ESA/390 guest: Linux's ECKD channel programs
+    # (Define Extent 63, Locate Record 47, PSF 27, RCD FA, Read Track...)
+    # are not in the DEDD table: its X7 routine takes 27/47 for seeks or
+    # invalid CCWs and passed them on with a count of 8 (lx124: Hercules
+    # rejected Locate Record). The OTHR table translates every command by
+    # its type alone -- address translation, no CKD knowledge, which is
+    # what a dedicated device of a guest that brings its own DASD driver
+    # needs.
+    d = Deck(XA54)
+    # A 3390 is no VM/370 device type: ATTACH makes it a dedicated
+    # "unsupported" device whose RDEVFTR says DASD, and that path
+    # chose the DEDD table too (lx125).
+    d.insert('00327000', first='00327100', inc=100,
+             limit=next_seq(src('DMKCCW'), '00327000'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST (3390,",
+        "         BZ    CCWDUMD        LINUX): BY TYPE, AS BELOW",
+        "         LA    R1,OTHRTBL",
+        "CCWDUMD  DS    0H",
+    ])
+    d.insert('00398000', first='00398100', inc=100,
+             limit=next_seq(src('DMKCCW'), '00398000'), lines=[
+        "         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S",
+        "         BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS",
+        "         LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)",
+    ])
+    decks['DMKCCW'] = d
+
     d = Deck(XA54)
     d.insert('00500000', first='00500110', inc=10,
              limit=next_seq(src('DMKVSJ'), '00500000'), lines=M7EQU[:1] + [

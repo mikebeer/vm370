@@ -10,7 +10,24 @@
 for c in poweroff halt reboot; do rm -f /sbin/$c
   printf '#!/bin/sh\nsync\nexec /bin/busybox %s -f\n' $c > /sbin/$c; chmod 755 /sbin/$c; done
 hostname vm370plus
+mount -t devtmpfs devtmpfs /dev 2>/dev/null
 mkdir -p /dev/pts /etc/dropbear; mount -t devpts devpts /dev/pts
+# Disk: every 3390 (or 3380) attached to this virtual machine goes
+# online; the first one becomes /data, an ext2 file system that keeps
+# its files across IPLs (made on first use -- e.g. a Hercules volume
+# from  dasdinit -z -linux file.cckd 3390-1 LNX001 ,  CP ATTACH'ed).
+for d in /sys/bus/ccw/devices/*; do
+  case "$(cat $d/devtype 2>/dev/null)" in
+    3390/*|3380/*) echo 1 > $d/online 2>/dev/null;; esac; done
+sleep 1
+for b in /dev/dasd?1 /dev/dasd?; do
+  [ -b $b ] || continue
+  mkdir -p /data
+  mount -t ext2 $b /data 2>/dev/null || {
+    echo "disk: $b has no file system yet -- making one (once)"
+    mke2fs -q -b 4096 $b && mount -t ext2 $b /data; }
+  if mountpoint -q /data; then echo "disk: $b on /data (persistent)"; break; fi
+done
 ifconfig lo 127.0.0.1 up
 # Network: a CTC pair (Hercules CTCI) attached to this virtual machine, e.g.
 #   CP ATTACH 600 * 620  and  CP ATTACH 601 * 621  (the lower one reads).

@@ -27,11 +27,14 @@ INSTALL
                                      HIGHSTOR, the patched GCCLIB/BREXX,
                                      the directory (ECMODE, 256M), ...
   3. Start it exactly as CE: vm370ce.cmd (Windows) or vm370ce.sh.
-  4. At the Hercules console type:   ipl 6a1
-     CP says
+  4. CE's hercules.rc IPLs 6A1 by itself when Hercules starts.
+     If CP asks
         Start ((Warm|Force|COLD|CKPT) (DRain) (DIsable) (NOAUTOlo)) or (SHUTDOWN)
-     Answer:  /cold
-     (There is no warm-start data in the kit, so COLD is correct.)
+     answer  /cold  (the first time there is no warm-start data).
+     Once the console shows  DMKCPI966I Initialization complete
+     the system is up -- do NOT type ipl 6a1 again (that would reset
+     the running system).  Only if nothing has been IPLed (no DMKCPI
+     messages at all) type  ipl 6a1  yourself.
   5. Connect the 3270 emulator to localhost:3270.
 
 USE
@@ -92,7 +95,7 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
 
   1. vm370ce.conf in this kit has MAINSIZE 64 (CP uses 16 MB as real
      storage and the rest as paging store).  Keep it.
-  2. IPL as above (ipl 6a1, /cold).  Then at the HERCULES console,
+  2. With VM/370+ up (step 4 above), at the HERCULES console
      spool the two decks to MAINT's reader, in this order:
         /cp spool 00c class *
         devinit 00c vm370plus/linux/linux47.rdr ebcdic eof
