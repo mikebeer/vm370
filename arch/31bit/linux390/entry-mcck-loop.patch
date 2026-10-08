@@ -1,0 +1,11 @@
+--- a/arch/s390/kernel/entry.S	2026-10-08 21:53:25.618114443 +0000
++++ b/arch/s390/kernel/entry.S	2026-10-08 21:53:25.620583355 +0000
+@@ -523,7 +523,7 @@
+ # One of the work bits is on. Find out which one.
+ #
+ .Lio_work_tif:
+-	tm	__LC_CPU_FLAGS+3(%r12),_CIF_MCCK_PENDING
++	tm	__LC_CPU_FLAGS+3,_CIF_MCCK_PENDING
+ 	jo	.Lio_mcck_pending
+ 	tm	__TI_flags+3(%r12),_TIF_NEED_RESCHED
+ 	jo	.Lio_reschedule
