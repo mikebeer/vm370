@@ -85,7 +85,8 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
   mount dmesg uname date sort wc head tail tar gzip, ... (ls /bin).
   /proc, /sys and a tmpfs on /tmp are mounted; there is no disk yet, so
   files you write live in memory only.  vm370plus/linux/ has the decks:
-      linux46.rdr   ID MAINT card + the kernel (initramfs with BusyBox)
+      linux47.rdr   ID MAINT card + the kernel (initramfs with BusyBox,
+                    TCP/IP, the CTC driver and the Dropbear SSH server)
       lxparm.rdr    ID MAINT card + the parameter line
                     no_removal_warning conmode=3215 condev=0x0009
 
@@ -94,7 +95,7 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
   2. IPL as above (ipl 6a1, /cold).  Then at the HERCULES console,
      spool the two decks to MAINT's reader, in this order:
         /cp spool 00c class *
-        devinit 00c vm370plus/linux/linux46.rdr ebcdic eof
+        devinit 00c vm370plus/linux/linux47.rdr ebcdic eof
         /cp start 00c
      wait until CP reports the file (a few seconds; RDR FILE ... TO MAINT)
         devinit 00c vm370plus/linux/lxparm.rdr ebcdic eof
@@ -118,6 +119,34 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
      or PA1 (CP mode); then  cp logoff  (or  ipl cms).
      To run it again, spool the two decks again (step 2) -- IPL from
      the reader consumes them.
+  NETWORK: SSH (PuTTY) INTO LINUX
+  Linux talks to the PC over a channel-to-channel adapter that Hercules
+  connects to a tun interface on the PC (CTCI).  Linux is 10.1.1.2, the
+  PC end is 10.1.1.1.
+  a. vm370ce.conf: remove the # in front of
+        #0600.2  CTCI    10.1.1.2 10.1.1.1
+     Linux PC / WSL2: Hercules needs the tun driver (/dev/net/tun) and
+     must run as root (or with hercifc installed setuid).  Windows:
+     Hercules needs SDL's CTCI-WIN package (TunTap64.dll, with Npcap)
+     next to hercules.exe -- without it the 0600 line fails and the
+     rest still works.
+  b. As MAINT, BEFORE  cp ipl 00c , attach the two adapters on two
+     DIFFERENT virtual channels (6xx and 7xx -- one channel would let a
+     pending read block the other adapter):
+        cp attach 600 to maint as 620
+        cp attach 601 to maint as 720
+  c. IPL as in step 3.  Linux finds the pair by itself and prints
+        network: ctc0 10.1.1.2 (peer 10.1.1.1), ssh: root / vm370plus
+     Try  ping -c 3 10.1.1.1  on the Linux console.
+  d. On the PC:  ssh root@10.1.1.2  (or PuTTY, host 10.1.1.2, port 22,
+     SSH), password  vm370plus .  The FIRST login can take about two
+     minutes after boot: the SSH server waits until the kernel has
+     gathered enough randomness, and makes its host key then.
+  e. To end: poweroff in Linux, then  cp logoff  (which releases the
+     adapters), then /shutdown as always.
+  Other IP addresses: add  vmip=a.b.c.d vmpeer=w.x.y.z  to the line in
+  lxparm.rdr, and change the 0600 line to match (CTCI guest-ip pc-ip).
+
   Notes:
    - SET ESA ON / OFF switches a virtual machine between S/370 and
      ESA/390; CMS needs it OFF (the default).
