@@ -130,11 +130,10 @@ LINUX/390 ON VM/370+  (milestone M7, 8 October 2026)
      Hercules needs SDL's CTCI-WIN package (TunTap64.dll, with Npcap)
      next to hercules.exe -- without it the 0600 line fails and the
      rest still works.
-  b. As MAINT, BEFORE  cp ipl 00c , attach the two adapters on two
-     DIFFERENT virtual channels (6xx and 7xx -- one channel would let a
-     pending read block the other adapter):
+  b. As MAINT, BEFORE  cp ipl 00c , attach the two adapters, each on
+     its own virtual control unit (620 and 630, not 620 and 621):
         cp attach 600 to maint as 620
-        cp attach 601 to maint as 720
+        cp attach 601 to maint as 630
   c. IPL as in step 3.  Linux finds the pair by itself and prints
         network: ctc0 10.1.1.2 (peer 10.1.1.1), ssh: root / vm370plus
      Try  ping -c 3 10.1.1.1  on the Linux console.

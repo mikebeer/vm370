@@ -244,7 +244,10 @@ VCSMSCH  BAL   R9,OPADDR      MSCH: THE PMCW                   XA0054DK
          OI    ENTFLG(R3),ENTENAB                              XA0054DK         
          B     VCSEXIT                                         XA0054DK         
 *                                                              XA0054DK         
-VCSSSCH  TM    ENTFLG(R3),ENTPEND  SSCH                        XA0054DK         
+VCSSSCH  TM    VCHTYPE,VCHSEL A CTCA'S CHANNEL IS FORCED TO    XA0054DK         
+         BZ    SSCHS1         SELECTOR: A READ PENDING ON ONE  XA0054DK         
+         MVI   VCHTYPE,VCHBMX ADAPTER WOULD BLOCK THE OTHER    XA0054DK         
+SSCHS1   TM    ENTFLG(R3),ENTPEND  SSCH                        XA0054DK         
          BO    VCSCC1         STATUS PENDING                   XA0054DK         
          TM    ENTFLG(R3),ENTACT                               XA0054DK         
          BO    VCSCC2         BUSY                             XA0054DK         
