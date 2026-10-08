@@ -1005,6 +1005,7 @@ SIDTAB   DC    X'80FF321500000000'  CONSOLE: 3215              XA0054DK
          DC    X'0401383002334001'  3340                       XA0054DK         
          DC    X'0440231400231400'  2314                       XA0054DK         
          DC    X'0810380300342000'  3420                       XA0054DK         
+         DC    X'0280308808000000'  CTCA: 3088-08 (CTCM)       XA0054DK         
          DC    X'FF'                                           XA0054DK         
          DS    0F                                              XA0054DK         
 VCRING   DC    32XL16'00'                                      XA0054DK         

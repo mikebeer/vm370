@@ -16,3 +16,17 @@ file /etc/motd /home/claude/vm370/arch/31bit/linux390/initramfs/motd 0644 0 0
 file /init /home/claude/vm370/arch/31bit/linux390/initramfs/init.sh 0755 0 0
 file /etc/passwd /home/claude/vm370/arch/31bit/linux390/initramfs/passwd 0644 0 0
 file /etc/group /home/claude/vm370/arch/31bit/linux390/initramfs/group 0644 0 0
+file /etc/shadow /home/claude/vm370/arch/31bit/linux390/initramfs/shadow 0600 0 0
+file /etc/shells /home/claude/vm370/arch/31bit/linux390/initramfs/shells 0644 0 0
+nod /dev/ptmx 0666 0 0 c 5 2
+nod /dev/random 0666 0 0 c 1 8
+nod /dev/urandom 0666 0 0 c 1 9
+dir /dev/pts 0755 0 0
+dir /usr 0755 0 0
+dir /usr/bin 0755 0 0
+dir /usr/sbin 0755 0 0
+file /usr/bin/dropbearmulti /home/claude/dropbear-src/dropbearmulti.stripped 0755 0 0
+slink /usr/sbin/dropbear /usr/bin/dropbearmulti 0777 0 0
+slink /usr/bin/dropbearkey /usr/bin/dropbearmulti 0777 0 0
+slink /usr/bin/dbclient /usr/bin/dropbearmulti 0777 0 0
+slink /usr/bin/scp /usr/bin/dropbearmulti 0777 0 0
