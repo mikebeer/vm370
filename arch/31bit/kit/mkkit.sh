@@ -22,12 +22,27 @@ s=s.replace('PANTITLE        "VM370CE 1.1.2"','PANTITLE        "VM/370+ (VM370CE
 open(sys.argv[2],'w').write(s)
 PY
 cp $C/disks/vm50-4.cckd $K/disks/; cp $C/disks/shadows/*_1.shadow $K/disks/shadows/
+for f in $K/disks/shadows/*_1.shadow; do cckdcomp $f >/dev/null; cckdcdsk -3 -ro $f >/dev/null; done   # free space out
 cp $R/arch/31bit/kit/README-VM370PLUS.txt $K/
 cp $R/arch/31bit/cms/{GCC31.EXEC,HELLO31.C,HIGHSTOR.ASSEMBLE,HSTEST.ASSEMBLE} $R/arch/31bit/crexx/{CRXMAKE.EXEC,cms.h} $K/vm370plus/
 mkdir -p $K/vm370plus/m5f; cp $R/arch/31bit/m5f/{README.md,cmsrt.c,cp1047.h,entry31.s,crt.sh,image.ld,hello31.c,libctest.c,elf_to_cms-pcrel.patch} $K/vm370plus/m5f/
-mkdir -p $K/vm370plus/linux; cp -r $R/arch/31bit/linux390/decks/{linux47.rdr,lxparm.rdr} $R/arch/31bit/linux390/{README.md,config-4.0-31bit,busybox-1.36.1.config,psw_idle-align.patch,initramfs} $K/vm370plus/linux/
+mkdir -p $K/vm370plus/linux; cp -r $R/arch/31bit/linux390/decks/{linux48.rdr,lxparm.rdr,lxparmram.rdr} $R/arch/31bit/linux390/{README.md,config-4.0-31bit,busybox-1.36.1.config,psw_idle-align.patch,dma16m-idal.patch,entry-mcck-loop.patch,initramfs} $K/vm370plus/linux/
+cp $R/arch/31bit/debian/vm370plus-post.sh $K/vm370plus/linux/
 mkdir -p $D; cd $W
-zip -qr $D/VM370PLUS-kit-$STAMP-part1.zip VM370CE.V1.R1.2 -x "VM370CE.V1.R1.2/disks/vm50-4.cckd" "VM370CE.V1.R1.2/disks/shadows/vm50u0_1.shadow"
+zip -qr $D/VM370PLUS-kit-$STAMP-part1.zip VM370CE.V1.R1.2 -x "VM370CE.V1.R1.2/disks/vm50-4.cckd" "VM370CE.V1.R1.2/disks/shadows/vm50u0_1.shadow" "VM370CE.V1.R1.2/vm370plus/linux/*"
+zip -qr $D/VM370PLUS-kit-$STAMP-part4.zip VM370CE.V1.R1.2/vm370plus/linux
 zip -q  $D/VM370PLUS-kit-$STAMP-part2.zip VM370CE.V1.R1.2/disks/vm50-4.cckd
 zip -q  $D/VM370PLUS-kit-$STAMP-part3.zip VM370CE.V1.R1.2/disks/shadows/vm50u0_1.shadow
+# parts 5-7: the Debian disk (LNX190), compacted, split in three pieces
+# that copy /b joins (README: INSTALL THE DEBIAN DISK)
+if [ -n "$DEBDISK" ]; then
+  mkdir -p $W/deb/VM370CE.V1.R1.2/disks; cp $DEBDISK $W/deb/lnx190.cckd
+  cckdcomp $W/deb/lnx190.cckd >/dev/null
+  n=$(stat -c %s $W/deb/lnx190.cckd); p=$(( (n+2)/3 ))
+  split -b $p -d -a 3 --numeric-suffixes=1 $W/deb/lnx190.cckd $W/deb/VM370CE.V1.R1.2/disks/lnx190.cckd.
+  sha256sum $W/deb/lnx190.cckd | sed 's#  .*#  lnx190.cckd#' > $W/deb/VM370CE.V1.R1.2/disks/lnx190.sha256
+  (cd $W/deb; zip -q $D/VM370PLUS-kit-$STAMP-part5.zip VM370CE.V1.R1.2/disks/lnx190.cckd.001 VM370CE.V1.R1.2/disks/lnx190.sha256
+   zip -q $D/VM370PLUS-kit-$STAMP-part6.zip VM370CE.V1.R1.2/disks/lnx190.cckd.002
+   zip -q $D/VM370PLUS-kit-$STAMP-part7.zip VM370CE.V1.R1.2/disks/lnx190.cckd.003)
+fi
 rm -rf $W; ls -la $D
