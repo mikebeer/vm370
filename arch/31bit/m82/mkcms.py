@@ -128,8 +128,8 @@ def exec_text(stage):
         L.append("SAY 'CRX82MK: TXTLIB %s'" % lib)
         L.append("'ERASE %s TXTLIB A'" % lib)
         L.append("'TXTLIB GEN %s %s'" % (lib, us[0].upper()))
-        for i in range(1, len(us), 6):
-            L.append("'TXTLIB ADD %s %s'" % (lib, ' '.join(u.upper() for u in us[i:i + 6])))
+        for i in range(1, len(us), 5):
+            L.append("'TXTLIB ADD %s %s'" % (lib, ' '.join(u.upper() for u in us[i:i + 5])))
             L.append("IF RC <> 0 THEN BAD = BAD + 1")
     for name, us, ls in progs:
         L.append("SAY 'CRX82MK: LINKING %s'" % name)
