@@ -1,0 +1,23 @@
+/* PASCAL EXEC -- Pascal in cREXX (github.com/mikebeer/pascal), VM/370+  */
+/*   PASCAL fn [args]      compile fn.pas and run it                    */
+/*   PASCAL fn ( COMPILE   compile only (fn RXAS, fn RXBIN)             */
+/* The compiler (PASCAL RXBIN) writes cREXX assembler, RXAS8 assembles  */
+/* it, RXBVM8 runs it with the runtime PASRT RXBIN.                     */
+PARSE ARG FN ARGS '(' OPT
+FN = STRIP(FN)
+IF FN = '' THEN DO
+  SAY 'PASCAL: usage: PASCAL fn [args] [( COMPILE]'
+  EXIT 24
+END
+'STATE PASCAL RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'PASCAL: PASCAL RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+'RXBVM8 PASCAL -a' FN'.pas' FN'.rxas'
+IF RC <> 0 THEN EXIT RC
+'RXAS8' FN
+IF RC <> 0 THEN EXIT RC
+IF ABBREV('COMPILE', TRANSLATE(STRIP(OPT)), 1) & STRIP(OPT) <> '' THEN EXIT 0
+'RXBVM8' FN 'PASRT -a' ARGS
+EXIT RC

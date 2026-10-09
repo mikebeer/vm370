@@ -1,0 +1,508 @@
+/*
+ * pasrt.crexx - runtime library for programs compiled by pascal.crexx
+ *
+ * The compiled program and this module share the memory arrays (mi, mf, ms)
+ * and the stack/heap pointers (sp, hp) as exposed globals. Everything the
+ * compiler cannot express in a few instructions lives here: math, string
+ * handling, number formatting, input and the heap allocator.
+ */
+options levelb
+namespace pasrt expose mi mf ms sp hp fl rbuf rhave reof pcopy pnew pdispose psqrt psin pcos parctan pln pexp pround ptrunc pfrac pint prandom prandomr prandomize pscopy ppos pupcasec pupcases plowercasec plowercases peof peoln pfmtr pfmtb pfmti pfmts preadi preadc preadr preads preadln pdelete pinsert pvalcode pvali pvalr pstackovf
+
+import rxfnsb
+
+mi = .int[]            /* integer cells        */
+mf = .float[]          /* real cells           */
+ms = .string[]         /* string cells         */
+sp = 0                 /* stack pointer        */
+hp = 0                 /* heap pointer         */
+fl = .int[]            /* free lists by size   */
+rbuf = ''              /* unread part of the current input line */
+rhave = 0              /* 1 = rbuf belongs to a line being read */
+reof = 0
+
+/* ---------------------------------------------------------------- memory */
+/* copy n cells; mask selects the arrays: 1 integers, 2 reals, 4 strings */
+pcopy: procedure = .void
+  arg dst = .int, src = .int, n = .int, mask = .int
+  if mask % 2 = 1 then do
+    do i = 0 to n - 1
+      mi[dst + i] = mi[src + i]
+    end
+  end
+  if (mask / 2) % 2 = 1 then do
+    do i = 0 to n - 1
+      mf[dst + i] = mf[src + i]
+    end
+  end
+  if (mask / 4) % 2 = 1 then do
+    do i = 0 to n - 1
+      ms[dst + i] = ms[src + i]
+    end
+  end
+  return
+
+/* allocate n cells on the heap */
+pnew: procedure = .int
+  arg n = .int, mask = .int
+  a = fl[n]
+  if a <> 0 then fl[n] = mi[a]
+  else do
+    a = hp
+    hp = hp + n
+  end
+  do i = 0 to n - 1
+    mi[a + i] = 0
+  end
+  if (mask / 2) % 2 = 1 then do
+    do i = 0 to n - 1
+      mf[a + i] = 0.0
+    end
+  end
+  if (mask / 4) % 2 = 1 then do
+    do i = 0 to n - 1
+      ms[a + i] = ''
+    end
+  end
+  return a
+
+pdispose: procedure = .void
+  arg p = .int, n = .int
+  if p = 0 then return
+  mi[p] = fl[n]
+  fl[n] = p
+  return
+
+pstackovf: procedure = .void
+  say "runtime error: stack overflow"
+  exit 202
+
+/* ------------------------------------------------------------------ math */
+psqrt: procedure = .float
+  arg x = .float
+  if x <= 0.0 then return 0.0
+  m = x
+  e = 0
+  do while m >= 4.0
+    m = m / 4.0
+    e = e + 1
+  end
+  do while m < 0.25
+    m = m * 4.0
+    e = e - 1
+  end
+  r = (1.0 + m) / 2.0
+  do 8
+    r = (r + m / r) / 2.0
+  end
+  do while e > 0
+    r = r * 2.0
+    e = e - 1
+  end
+  do while e < 0
+    r = r / 2.0
+    e = e + 1
+  end
+  return r
+
+psin: procedure = .float
+  arg x = .float
+  pi = 3.14159265358979323846
+  twopi = 6.28318530717958647692
+  r = x
+  if r > twopi | r < 0.0 - twopi then do
+    q = trunc(r / twopi) as .int
+    r = r - q * twopi
+  end
+  if r > pi then r = r - twopi
+  if r < 0.0 - pi then r = r + twopi
+  /* fold into -pi/2 .. pi/2 */
+  if r > pi / 2.0 then r = pi - r
+  if r < 0.0 - pi / 2.0 then r = 0.0 - pi - r
+  r2 = r * r
+  term = r
+  sum = r
+  do k = 1 to 12
+    term = 0.0 - term * r2 / ((2 * k) * (2 * k + 1))
+    sum = sum + term
+  end
+  return sum
+
+pcos: procedure = .float
+  arg x = .float
+  return psin(x + 1.57079632679489661923)
+
+parctan: procedure = .float
+  arg x = .float
+  neg = 0
+  a = x
+  if a < 0.0 then do
+    neg = 1
+    a = 0.0 - a
+  end
+  inv = 0
+  if a > 1.0 then do
+    inv = 1
+    a = 1.0 / a
+  end
+  /* halve the angle twice: atan(a) = 2 atan(a / (1 + sqrt(1 + a*a))) */
+  do 3
+    a = a / (1.0 + psqrt(1.0 + a * a))
+  end
+  a2 = a * a
+  term = a
+  sum = a
+  do k = 1 to 14
+    term = 0.0 - term * a2
+    sum = sum + term / (2 * k + 1)
+  end
+  sum = sum * 8.0
+  if inv = 1 then sum = 1.57079632679489661923 - sum
+  if neg = 1 then sum = 0.0 - sum
+  return sum
+
+pln: procedure = .float
+  arg x = .float
+  if x <= 0.0 then do
+    say "runtime error: ln of a non-positive number"
+    exit 201
+  end
+  e = 0
+  m = x
+  do while m >= 2.0
+    m = m / 2.0
+    e = e + 1
+  end
+  do while m < 0.5
+    m = m * 2.0
+    e = e - 1
+  end
+  z = (m - 1.0) / (m + 1.0)
+  z2 = z * z
+  term = z
+  sum = z
+  do k = 1 to 30
+    term = term * z2
+    sum = sum + term / (2 * k + 1)
+  end
+  return 2.0 * sum + e * 0.69314718055994530942
+
+pexp: procedure = .float
+  arg x = .float
+  k = 0
+  r = x
+  do while r > 0.5 | r < -0.5
+    r = r / 2.0
+    k = k + 1
+  end
+  term = 1.0
+  sum = 1.0
+  do i = 1 to 20
+    term = term * r / i
+    sum = sum + term
+  end
+  do k
+    sum = sum * sum
+  end
+  return sum
+
+ptrunc: procedure = .int
+  arg x = .float
+  s = trunc(x)
+  v = s as .int
+  return v
+
+pround: procedure = .int
+  arg x = .float
+  if x >= 0.0 then return ptrunc(x + 0.5)
+  return ptrunc(x - 0.5)
+
+pint: procedure = .float
+  arg x = .float
+  v = ptrunc(x)
+  f = v * 1.0
+  return f
+
+pfrac: procedure = .float
+  arg x = .float
+  return x - pint(x)
+
+prandom: procedure = .int
+  arg n = .int
+  if n <= 0 then return 0
+  return random(0, n - 1)
+
+prandomr: procedure = .float
+  r = random(0, 999999999)
+  return r / 1000000000.0
+
+prandomize: procedure = .void
+  return
+
+/* --------------------------------------------------------------- strings */
+pscopy: procedure = .string
+  arg s = .string, i = .int, n = .int
+  len = length(s)
+  if i < 1 then i = 1
+  if i > len | n < 1 then return ''
+  if i + n - 1 > len then n = len - i + 1
+  return substr(s, i, n)
+
+ppos: procedure = .int
+  arg sub = .string, s = .string
+  if sub = '' then return 0
+  return pos(sub, s)
+
+pupcasec: procedure = .int
+  arg c = .int
+  if c >= 97 & c <= 122 then return c - 32
+  return c
+
+plowercasec: procedure = .int
+  arg c = .int
+  if c >= 65 & c <= 90 then return c + 32
+  return c
+
+pupcases: procedure = .string
+  arg s = .string
+  return upper(s)
+
+plowercases: procedure = .string
+  arg s = .string
+  return lower(s)
+
+pdelete: procedure = .string
+  arg s = .string, i = .int, n = .int
+  len = length(s)
+  if i < 1 | i > len | n < 1 then return s
+  if i + n - 1 > len then n = len - i + 1
+  return substr(s, 1, i - 1) || substr(s, i + n)
+
+pinsert: procedure = .string
+  arg src = .string, s = .string, i = .int
+  len = length(s)
+  if i < 1 then i = 1
+  if i > len + 1 then i = len + 1
+  return substr(s, 1, i - 1) || src || substr(s, i)
+
+/* ------------------------------------------------------------ formatting */
+padleft: procedure = .string
+  arg s = .string, w = .int
+  n = length(s)
+  if w <= n then return s
+  return copies(' ', w - n) || s
+
+pfmti: procedure = .string
+  arg v = .int, w = .int
+  s = v || ''
+  return padleft(s, w)
+
+pfmtb: procedure = .string
+  arg v = .int, w = .int
+  s = 'FALSE'
+  if v <> 0 then s = 'TRUE'
+  return padleft(s, w)
+
+pfmts: procedure = .string
+  arg s = .string, w = .int
+  return padleft(s, w)
+
+/* real: w = field width (-1 none), d = decimals (-1 = exponent notation) */
+pfmtr: procedure = .string
+  arg x = .float, w = .int, d = .int
+  if d >= 0 then do
+    s = strip(format(x, , d, 0))
+    if d = 0 & right(s, 1) = '.' then s = left(s, length(s) - 1)
+    return padleft(s, w)
+  end
+  /* floating point notation as in Free Pascal: 1.5000000000000000E+000 */
+  sg = ' '
+  a = x
+  if a < 0.0 then do
+    sg = '-'
+    a = 0.0 - a
+  end
+  if a = 0.0 then return padleft(sg || '0.0000000000000000E+000', w)
+  /* rough decimal exponent, to choose how many decimals to ask for */
+  e0 = 0
+  m = a
+  do while m >= 10.0
+    m = m / 10.0
+    e0 = e0 + 1
+  end
+  do while m < 1.0
+    m = m * 10.0
+    e0 = e0 - 1
+  end
+  dd = 25
+  if e0 < 0 then dd = 25 - e0
+  t = strip(format(a, , dd, 0))
+  q = pos('.', t)
+  ip = t
+  fp = ''
+  if q > 0 then do
+    ip = left(t, q - 1)
+    fp = substr(t, q + 1)
+  end
+  e = 0
+  digits = ''
+  if ip <> '0' & ip <> '' then do
+    digits = ip || fp
+    e = length(ip) - 1
+  end
+  else do
+    z = 0
+    do while z < length(fp) & substr(fp, z + 1, 1) = '0'
+      z = z + 1
+    end
+    digits = substr(fp, z + 1)
+    e = 0 - (z + 1)
+  end
+  digits = digits || copies('0', 20)
+  d17 = left(digits, 17)
+  if substr(digits, 18, 1) >= '5' then do
+    v = d17 as .int
+    v = v + 1
+    d17 = v || ''
+    if length(d17) > 17 then do
+      d17 = left(d17, 17)
+      e = e + 1
+    end
+  end
+  ms2 = left(d17, 1) || '.' || substr(d17, 2)
+  es = '+'
+  ee = e
+  if e < 0 then do
+    es = '-'
+    ee = 0 - e
+  end
+  estr = right(ee || '', 3, '0')
+  s = sg || ms2 || 'E' || es || estr
+  return padleft(s, w)
+
+/* ----------------------------------------------------------------- input */
+ensureline: procedure = .void
+  if rhave = 1 then return
+  if lines() = 0 then do
+    reof = 1
+    return
+  end
+  rbuf = linein()
+  rhave = 1
+  return
+
+isspace: procedure = .int
+  arg c = .string
+  if c = ' ' | c = '09'x | c = '0d'x then return 1
+  return 0
+
+/* skip white space, over line ends; leaves rbuf positioned at the next token */
+skipws: procedure = .void
+  do forever
+    call ensureline
+    if reof = 1 then return
+    do while rbuf <> '' & isspace(left(rbuf, 1)) = 1
+      rbuf = substr(rbuf, 2)
+    end
+    if rbuf <> '' then return
+    rhave = 0
+  end
+  return
+
+nexttoken: procedure = .string
+  call skipws
+  if reof = 1 then return ''
+  i = 1
+  n = length(rbuf)
+  do while i <= n & isspace(substr(rbuf, i, 1)) = 0
+    i = i + 1
+  end
+  t = substr(rbuf, 1, i - 1)
+  rbuf = substr(rbuf, i)
+  return t
+
+preadi: procedure = .int
+  t = nexttoken()
+  if t = '' then return 0
+  if datatype(t, 'W') = '1' then do
+    v = t as .int
+    return v
+  end
+  say "runtime error: invalid integer input '" || t || "'"
+  exit 106
+
+preadr: procedure = .float
+  t = nexttoken()
+  if t = '' then return 0.0
+  if datatype(t, 'N') = '1' then do
+    v = t as .float
+    return v
+  end
+  say "runtime error: invalid real input '" || t || "'"
+  exit 106
+
+preadc: procedure = .int
+  call ensureline
+  if reof = 1 then return 26
+  if rbuf = '' then do
+    rhave = 0
+    return 10
+  end
+  c = c2d(left(rbuf, 1))
+  rbuf = substr(rbuf, 2)
+  return c
+
+preads: procedure = .string
+  call ensureline
+  if reof = 1 then return ''
+  s = rbuf
+  rbuf = ''
+  return s
+
+preadln: procedure = .void
+  call ensureline
+  rhave = 0
+  rbuf = ''
+  return
+
+peof: procedure = .int
+  if reof = 1 then return 1
+  if rhave = 1 then return 0
+  if lines() = 0 then return 1
+  return 0
+
+peoln: procedure = .int
+  call ensureline
+  if reof = 1 then return 1
+  if rbuf = '' then return 1
+  return 0
+
+/* val(): code is 0 when the whole string is a number, else a position */
+pvalcode: procedure = .int
+  arg s = .string
+  t = strip(s)
+  if t = '' then return 1
+  if datatype(t, 'N') = '1' then return 0
+  do i = 1 to length(t)
+    c = substr(t, i, 1)
+    if pos(c, '0123456789+-.eE') = 0 then return i
+  end
+  return length(t)
+
+pvali: procedure = .int
+  arg s = .string
+  t = strip(s)
+  if datatype(t, 'W') = '1' then do
+    v = t as .int
+    return v
+  end
+  return 0
+
+pvalr: procedure = .float
+  arg s = .string
+  t = strip(s)
+  if datatype(t, 'N') = '1' then do
+    v = t as .float
+    return v
+  end
+  return 0.0

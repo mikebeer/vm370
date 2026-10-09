@@ -1,0 +1,2636 @@
+/*
+ * pascal.crexx - a Pascal compiler written in CREXX Level B
+ *
+ * Usage:   rxvm pascal.rxbin -a program.pas [program.rxas]
+ *
+ * The compiler translates a Pascal program into CREXX assembly (.rxas).
+ * The assembly is then assembled with rxas and run on rxvm together with
+ * the runtime library pasrt.rxbin (see the pasc script).
+ *
+ * Supported: integer real boolean char string, subranges, enumerations,
+ * arrays, records, pointers (new/dispose), const/type/var, procedures and
+ * functions (nested, recursive, var parameters), if while repeat for case
+ * with, write/writeln/read/readln and the usual standard functions.
+ *
+ * Machine model: every Pascal variable lives in memory "cells". Three
+ * global arrays hold the cells (mi = integers, mf = reals, ms = strings),
+ * the same index addresses the same cell in each. A procedure's frame
+ * starts at cell fp (register a1): fp+0 static link, fp+1 function result,
+ * then parameters and local variables. Pointers and VAR parameters are
+ * cell addresses.
+ */
+options levelb
+namespace pc expose pfwd wreg dreg cvi cvs cty rt rr rk rb ro rlv pdty pdnm npd  tkk tkv tkl np ti srcfile code nc nr maxr nlab nerr sn sk st slv soff sval sref saux nsym scopemark nscope curlvl tk tsz tlo thi tel tix tf0 tnf tmsk ntype fname ftype foff nfield pn plbl plvl pres pnp pp0 nproc parn part parref paroff npar curproc fsize cursym endlab progname wtype woff nwith hbase dummyreg
+
+import rxfnsb
+
+arg argv = .string[]
+
+/* ---------------------------------------------------------------- tokens */
+tkk = .string[]      /* token kind: I identifier  N integer  R real  S string  Y symbol  E end */
+tkv = .string[]      /* token text (identifiers upper case)                                    */
+tkl = .int[]         /* token line number                                                      */
+np = 0               /* number of tokens                                                       */
+ti = 1               /* current token                                                          */
+srcfile = ""
+
+/* ------------------------------------------------------------- code output */
+code = .string[]
+nc = 0               /* number of code lines                    */
+nr = 0               /* last allocated register                 */
+maxr = 0             /* highest register used in this procedure */
+nlab = 0             /* label counter                           */
+nerr = 0
+
+/* ----------------------------------------------------------- symbol table */
+sn = .string[]       /* name                                      */
+sk = .string[]       /* kind: V var, C const, T type, P proc, F func, B builtin */
+st = .int[]          /* type                                      */
+slv = .int[]         /* declaration level                         */
+soff = .int[]        /* variable cell offset / proc id            */
+sval = .string[]     /* constant value text                       */
+sref = .int[]        /* 1 = variable holds an address (VAR param) */
+saux = .string[]     /* builtin name                              */
+nsym = 0
+scopemark = .int[]
+nscope = 0
+curlvl = 0
+
+/* ------------------------------------------------------------------ types */
+tk = .string[]       /* I integer R real B boolean C char S string E enum G subrange A array D record P pointer N nil V void */
+tsz = .int[]         /* size in cells                             */
+tlo = .int[]         /* lower bound (subrange, enum, array index) */
+thi = .int[]         /* upper bound                               */
+tel = .int[]         /* element type / base type / pointee        */
+tix = .int[]         /* array index type                          */
+tf0 = .int[]         /* first field of record                     */
+tnf = .int[]         /* number of fields                          */
+tmsk = .int[]        /* which cell arrays a value uses: 1 int 2 real 4 string */
+ntype = 0
+fname = .string[]
+ftype = .int[]
+foff = .int[]
+nfield = 0
+
+/* ------------------------------------------------------------- procedures */
+pn = .string[]       /* name                         */
+plbl = .string[]     /* assembler label              */
+plvl = .int[]        /* level of the declaring scope */
+pres = .int[]        /* result type, 0 for procedure */
+pnp = .int[]         /* number of parameters         */
+pp0 = .int[]         /* first parameter record       */
+nproc = 0
+pfwd = .int[]        /* 1 = declared forward, body still to come */
+parn = .string[]
+part = .int[]
+parref = .int[]
+paroff = .int[]
+npar = 0
+curproc = 0          /* procedure being compiled, 0 = main program */
+fsize = 0            /* next free frame cell                        */
+cursym = 0
+endlab = ""
+progname = "PROGRAM"
+
+/* ------------------------------------------------------------ with / misc */
+wtype = .int[]
+woff = .int[]
+nwith = 0
+hbase = 500000
+dummyreg = 0
+
+/* ------------------------------------------------------------ type ids */
+/* 1 integer 2 real 3 boolean 4 char 5 string 6 nil 7 void */
+
+/* ----------------------------------------------------------------- main */
+if argv.0 < 1 then do
+  say "usage: rxvm pascal.rxbin -a program.pas [program.rxas]"
+  exit 1
+end
+srcfile = argv[1]
+outfile = srcfile
+if argv.0 >= 2 then outfile = argv[2]
+else do
+  p = lastpos('.', srcfile)
+  if p > 0 then outfile = left(srcfile, p - 1) || '.rxas'
+  else outfile = srcfile || '.rxas'
+end
+srclines = readlines(srcfile)
+source = ""
+do i = 1 to srclines.0
+  source = source || srclines[i] || '0a'x
+end
+call tokenize source
+call initsyms
+call compileprogram
+if nerr > 0 then exit 1
+call writecode outfile
+exit 0
+
+/* --------------------------------------------------------------- errors */
+error: procedure = .void
+  arg msg = .string
+  line = 0
+  if ti >= 1 & ti <= np then line = tkl[ti]
+  say srcfile || "(" || line || "): error: " || msg
+  exit 1
+
+errorat: procedure = .void
+  arg msg = .string, line = .int
+  say srcfile || "(" || line || "): error: " || msg
+  exit 1
+
+/* --------------------------------------------------------------- lexer */
+isletter: procedure = .int
+  arg c = .string
+  if c = '' then return 0
+  if pos(c, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_') > 0 then return 1
+  return 0
+
+isdigit: procedure = .int
+  arg c = .string
+  if c = '' then return 0
+  if pos(c, '0123456789') > 0 then return 1
+  return 0
+
+ishex: procedure = .int
+  arg c = .string
+  if c = '' then return 0
+  if pos(c, '0123456789abcdefABCDEF') > 0 then return 1
+  return 0
+
+hexval: procedure = .int
+  arg c = .string
+  return pos(upper(c), '0123456789ABCDEF') - 1
+
+addtok: procedure = .void
+  arg k = .string, v = .string, line = .int
+  np = np + 1
+  tkk[np] = k
+  tkv[np] = v
+  tkl[np] = line
+  return
+
+tokenize: procedure = .void
+  arg src = .string
+  n = length(src)
+  i = 1
+  ln = 1
+  do while i <= n
+    c = substr(src, i, 1)
+    if c = '0a'x then do
+      ln = ln + 1
+      i = i + 1
+      iterate
+    end
+    if c = ' ' | c = '09'x | c = '0d'x then do
+      i = i + 1
+      iterate
+    end
+    if c = '{' then do
+      do while i <= n & substr(src, i, 1) <> '}'
+        if substr(src, i, 1) = '0a'x then ln = ln + 1
+        i = i + 1
+      end
+      i = i + 1
+      iterate
+    end
+    if c = '(' & substr(src, i + 1, 1) = '*' then do
+      i = i + 2
+      do while i <= n & substr(src, i, 2) <> '*)'
+        if substr(src, i, 1) = '0a'x then ln = ln + 1
+        i = i + 1
+      end
+      i = i + 2
+      iterate
+    end
+    if c = '/' & substr(src, i + 1, 1) = '/' then do
+      do while i <= n & substr(src, i, 1) <> '0a'x
+        i = i + 1
+      end
+      iterate
+    end
+    if isletter(c) = 1 then do
+      j = i
+      do while j <= n
+        if isletter(substr(src, j, 1)) = 0 & isdigit(substr(src, j, 1)) = 0 then leave
+        j = j + 1
+      end
+      call addtok 'I', upper(substr(src, i, j - i)), ln
+      i = j
+      iterate
+    end
+    if isdigit(c) = 1 then do
+      j = i
+      do while j <= n & isdigit(substr(src, j, 1)) = 1
+        j = j + 1
+      end
+      isreal = 0
+      if substr(src, j, 1) = '.' & isdigit(substr(src, j + 1, 1)) = 1 then do
+        isreal = 1
+        j = j + 1
+        do while j <= n & isdigit(substr(src, j, 1)) = 1
+          j = j + 1
+        end
+      end
+      e = substr(src, j, 1)
+      if e = 'e' | e = 'E' then do
+        k = j + 1
+        sg = substr(src, k, 1)
+        if sg = '+' | sg = '-' then k = k + 1
+        if isdigit(substr(src, k, 1)) = 1 then do
+          isreal = 1
+          do while k <= n & isdigit(substr(src, k, 1)) = 1
+            k = k + 1
+          end
+          j = k
+        end
+      end
+      if isreal = 1 then call addtok 'R', substr(src, i, j - i), ln
+      else call addtok 'N', substr(src, i, j - i), ln
+      i = j
+      iterate
+    end
+    if c = '$' then do
+      j = i + 1
+      v = 0
+      do while j <= n & ishex(substr(src, j, 1)) = 1
+        v = v * 16 + hexval(substr(src, j, 1))
+        j = j + 1
+      end
+      call addtok 'N', v || '', ln
+      i = j
+      iterate
+    end
+    if c = "'" | c = '#' then do
+      /* string literal: 'text''more'#13#10'text' */
+      s = ""
+      do while i <= n
+        c = substr(src, i, 1)
+        if c = "'" then do
+          i = i + 1
+          do while i <= n
+            d = substr(src, i, 1)
+            if d = "'" then do
+              if substr(src, i + 1, 1) = "'" then do
+                s = s || "'"
+                i = i + 2
+              end
+              else do
+                i = i + 1
+                leave
+              end
+            end
+            else do
+              s = s || d
+              i = i + 1
+            end
+          end
+        end
+        else if c = '#' then do
+          i = i + 1
+          v = 0
+          do while i <= n & isdigit(substr(src, i, 1)) = 1
+            dg = c2d(substr(src, i, 1)) - 48
+            v = v * 10 + dg
+            i = i + 1
+          end
+          s = s || d2c(v)
+        end
+        else leave
+      end
+      call addtok 'S', s, ln
+      iterate
+    end
+    /* symbols */
+    two = substr(src, i, 2)
+    if two = ':=' | two = '<>' | two = '<=' | two = '>=' | two = '..' | two = '(.' | two = '.)' then do
+      if two = '(.' then two = '['
+      if two = '.)' then two = ']'
+      call addtok 'Y', two, ln
+      i = i + 2
+      iterate
+    end
+    if pos(c, '+-*/=<>()[],;:.^@') > 0 then do
+      call addtok 'Y', c, ln
+      i = i + 1
+      iterate
+    end
+    call errorat "unexpected character '" || c || "'", ln
+  end
+  call addtok 'E', '<end of file>', ln
+  return
+
+/* ------------------------------------------------------- token helpers */
+curk: procedure = .string
+  return tkk[ti]
+
+cur: procedure = .string
+  return tkv[ti]
+
+/* is the current token the reserved word / identifier w ? */
+isid: procedure = .int
+  arg w = .string
+  if tkk[ti] = 'I' & tkv[ti] = w then return 1
+  return 0
+
+/* is the current token the symbol s ? */
+issym: procedure = .int
+  arg s = .string
+  if tkk[ti] = 'Y' & tkv[ti] = s then return 1
+  return 0
+
+nexttok: procedure = .void
+  if ti < np then ti = ti + 1
+  return
+
+/* consume identifier w if present */
+acceptid: procedure = .int
+  arg w = .string
+  if isid(w) = 1 then do
+    call nexttok
+    return 1
+  end
+  return 0
+
+acceptsym: procedure = .int
+  arg s = .string
+  if issym(s) = 1 then do
+    call nexttok
+    return 1
+  end
+  return 0
+
+expectid: procedure = .void
+  arg w = .string
+  if isid(w) = 0 then call error "expected '" || lower(w) || "' but found '" || tkv[ti] || "'"
+  call nexttok
+  return
+
+expectsym: procedure = .void
+  arg s = .string
+  if issym(s) = 0 then call error "expected '" || s || "' but found '" || tkv[ti] || "'"
+  call nexttok
+  return
+
+/* identifier name, consumed */
+getident: procedure = .string
+  if tkk[ti] <> 'I' then call error "identifier expected but found '" || tkv[ti] || "'"
+  s = tkv[ti]
+  call nexttok
+  return s
+
+/* ---------------------------------------------------------------- emit */
+emit: procedure = .void
+  arg s = .string
+  nc = nc + 1
+  code[nc] = '   ' || s
+  return
+
+emitl: procedure = .void
+  arg s = .string
+  nc = nc + 1
+  code[nc] = s
+  return
+
+newlab: procedure = .string
+  nlab = nlab + 1
+  return 'L' || nlab
+
+nreg: procedure = .int
+  nr = nr + 1
+  if nr > maxr then maxr = nr
+  return nr
+
+/* register operand text: 0 is the frame pointer a1 */
+rg: procedure = .string
+  arg r = .int
+  if r = 0 then return 'a1'
+  return 'r' || r
+
+/* escape text for an assembler string literal */
+asmstr: procedure = .string
+  arg s = .string
+  o = '"'
+  do i = 1 to length(s)
+    c = substr(s, i, 1)
+    k = c2d(c)
+    if c = '"' then o = o || '\"'
+    else if c = '\' then o = o || '\\'
+    else if k < 32 | k = 127 then o = o || '\x' || right(d2x(k), 2, '0')
+    else o = o || c
+  end
+  return o || '"'
+
+writecode: procedure = .void
+  arg fn = .string
+  junk = erasefile(fn)
+  call lineout fn, "/* generated by pascal.crexx from" srcfile "*/"
+  do i = 1 to nc
+    call lineout fn, code[i]
+  end
+  call lineout fn
+  return
+
+/* -------------------------------------------------------- type machinery */
+addtype: procedure = .int
+  arg k = .string, sz = .int, msk = .int
+  ntype = ntype + 1
+  tk[ntype] = k
+  tsz[ntype] = sz
+  tlo[ntype] = 0
+  thi[ntype] = 0
+  tel[ntype] = 0
+  tix[ntype] = 0
+  tf0[ntype] = 0
+  tnf[ntype] = 0
+  tmsk[ntype] = msk
+  return ntype
+
+/* category of a type: I ordinal/pointer, F real, S string, M memory aggregate */
+cat: procedure = .string
+  arg t = .int
+  k = tk[t]
+  if k = 'R' then return 'F'
+  if k = 'S' then return 'S'
+  if k = 'A' | k = 'D' then return 'M'
+  return 'I'
+
+/* base type of a subrange */
+basetype: procedure = .int
+  arg t = .int
+  b = t
+  do while tk[b] = 'G'
+    b = tel[b]
+  end
+  return b
+
+isordinal: procedure = .int
+  arg t = .int
+  k = tk[basetype(t)]
+  if k = 'I' | k = 'B' | k = 'C' | k = 'E' then return 1
+  return 0
+
+/* integer type (including subranges of integer) */
+isint: procedure = .int
+  arg t = .int
+  if tk[basetype(t)] = 'I' then return 1
+  return 0
+
+ischar: procedure = .int
+  arg t = .int
+  if tk[basetype(t)] = 'C' then return 1
+  return 0
+
+isbool: procedure = .int
+  arg t = .int
+  if tk[basetype(t)] = 'B' then return 1
+  return 0
+
+isreal: procedure = .int
+  arg t = .int
+  if tk[t] = 'R' then return 1
+  return 0
+
+isstr: procedure = .int
+  arg t = .int
+  if tk[t] = 'S' then return 1
+  return 0
+
+isptr: procedure = .int
+  arg t = .int
+  if tk[t] = 'P' | tk[t] = 'N' then return 1
+  return 0
+
+/* name of a type for error messages */
+tname: procedure = .string
+  arg t = .int
+  k = tk[basetype(t)]
+  if k = 'I' then return 'integer'
+  if k = 'R' then return 'real'
+  if k = 'B' then return 'boolean'
+  if k = 'C' then return 'char'
+  if k = 'S' then return 'string'
+  if k = 'E' then return 'enumeration'
+  if k = 'A' then return 'array'
+  if k = 'D' then return 'record'
+  if k = 'P' then return 'pointer'
+  if k = 'N' then return 'nil'
+  return 'void'
+
+/* ---------------------------------------------------------- symbol table */
+addsym: procedure = .int
+  arg name = .string, kind = .string, ty = .int, lvl = .int, off = .int
+  /* duplicate in the current scope? */
+  lo = 1
+  if nscope > 0 then lo = scopemark[nscope] + 1
+  do i = nsym to lo by -1
+    if sn[i] = name then call error "identifier '" || lower(name) || "' is already declared"
+  end
+  nsym = nsym + 1
+  sn[nsym] = name
+  sk[nsym] = kind
+  st[nsym] = ty
+  slv[nsym] = lvl
+  soff[nsym] = off
+  sval[nsym] = ''
+  sref[nsym] = 0
+  saux[nsym] = ''
+  return nsym
+
+lookup: procedure = .int
+  arg name = .string
+  do i = nsym to 1 by -1
+    if sn[i] = name then return i
+  end
+  return 0
+
+pushscope: procedure = .void
+  nscope = nscope + 1
+  scopemark[nscope] = nsym
+  return
+
+popscope: procedure = .void
+  nsym = scopemark[nscope]
+  nscope = nscope - 1
+  return
+
+addbuiltin: procedure = .void
+  arg name = .string
+  k = addsym(name, 'B', 7, 0, 0)
+  saux[k] = name
+  return
+
+addtypename: procedure = .void
+  arg name = .string, ty = .int
+  k = addsym(name, 'T', ty, 0, 0)
+  return
+
+initsyms: procedure = .void
+  /* standard types: 1 integer 2 real 3 boolean 4 char 5 string 6 nil 7 void */
+  t = addtype('I', 1, 1)
+  tlo[t] = 0 - 9223372036854775807 - 1
+  thi[t] = 9223372036854775807
+  t = addtype('R', 1, 2)
+  t = addtype('B', 1, 1)
+  thi[t] = 1
+  t = addtype('C', 1, 1)
+  thi[t] = 255
+  t = addtype('S', 1, 4)
+  t = addtype('N', 1, 1)
+  t = addtype('V', 0, 0)
+  call pushscope
+  call addtypename 'INTEGER', 1
+  call addtypename 'LONGINT', 1
+  call addtypename 'SMALLINT', 1
+  call addtypename 'SHORTINT', 1
+  call addtypename 'BYTE', 1
+  call addtypename 'WORD', 1
+  call addtypename 'CARDINAL', 1
+  call addtypename 'INT64', 1
+  call addtypename 'REAL', 2
+  call addtypename 'DOUBLE', 2
+  call addtypename 'SINGLE', 2
+  call addtypename 'EXTENDED', 2
+  call addtypename 'BOOLEAN', 3
+  call addtypename 'CHAR', 4
+  call addtypename 'STRING', 5
+  k = addsym('TRUE', 'C', 3, 0, 0)
+  sval[k] = '1'
+  k = addsym('FALSE', 'C', 3, 0, 0)
+  sval[k] = '0'
+  k = addsym('MAXINT', 'C', 1, 0, 0)
+  sval[k] = '9223372036854775807'
+  k = addsym('NIL', 'C', 6, 0, 0)
+  sval[k] = '0'
+  b = 'WRITE WRITELN READ READLN NEW DISPOSE INC DEC EXIT HALT RANDOMIZE'
+  b = b 'ABS SQR SQRT SIN COS ARCTAN LN EXP ROUND TRUNC FRAC INT PI ODD ORD CHR SUCC PRED RANDOM'
+  b = b 'LENGTH COPY POS CONCAT UPCASE LOWERCASE DELETE INSERT STR VAL EOF EOLN HIGH LOW SIZEOF'
+  b = b 'POWER'
+  do i = 1 to words(b)
+    call addbuiltin word(b, i)
+  end
+  return
+
+/* ----------------------------------------------------- constant expressions */
+/* result in cty (type), cvi (ordinal value) or cvs (real/string text)       */
+cfactor: procedure = .void
+  k = tkk[ti]
+  if k = 'N' then do
+    cvi = tkv[ti] as .int
+    cty = 1
+    call nexttok
+    return
+  end
+  if k = 'R' then do
+    cvs = tkv[ti]
+    cty = 2
+    call nexttok
+    return
+  end
+  if k = 'S' then do
+    if length(tkv[ti]) = 1 then do
+      cvi = c2d(tkv[ti])
+      cty = 4
+    end
+    else do
+      cvs = tkv[ti]
+      cty = 5
+    end
+    call nexttok
+    return
+  end
+  if issym('-') = 1 then do
+    call nexttok
+    call cfactor
+    if cty = 2 then do
+      if left(cvs, 1) = '-' then cvs = substr(cvs, 2)
+      else cvs = '-' || cvs
+    end
+    else cvi = 0 - cvi
+    return
+  end
+  if issym('+') = 1 then do
+    call nexttok
+    call cfactor
+    return
+  end
+  if issym('(') = 1 then do
+    call nexttok
+    call constexpr
+    call expectsym ')'
+    return
+  end
+  if k = 'I' then do
+    name = tkv[ti]
+    if name = 'ORD' | name = 'CHR' then do
+      call nexttok
+      call expectsym '('
+      call constexpr
+      call expectsym ')'
+      if name = 'ORD' then cty = 1
+      else cty = 4
+      return
+    end
+    x = lookup(name)
+    if x = 0 then call error "unknown identifier '" || lower(name) || "'"
+    if sk[x] <> 'C' then call error "'" || lower(name) || "' is not a constant"
+    call nexttok
+    cty = st[x]
+    c = cat(cty)
+    if c = 'I' then cvi = sval[x] as .int
+    else cvs = sval[x]
+    return
+  end
+  call error "constant expected but found '" || tkv[ti] || "'"
+  return
+
+cterm: procedure = .void
+  call cfactor
+  do forever
+    if issym('*') = 1 then op = '*'
+    else if isid('DIV') = 1 then op = 'DIV'
+    else if isid('MOD') = 1 then op = 'MOD'
+    else leave
+    call nexttok
+    a = cvi
+    call cfactor
+    if op = '*' then cvi = a * cvi
+    else if op = 'DIV' then cvi = a / cvi
+    else cvi = a % cvi
+    cty = 1
+  end
+  return
+
+constexpr: procedure = .void
+  call cterm
+  do forever
+    if issym('+') = 1 then op = '+'
+    else if issym('-') = 1 then op = '-'
+    else leave
+    call nexttok
+    a = cvi
+    sa = cvs
+    ta = cty
+    call cterm
+    if ta = 5 | cty = 5 then do
+      if ta = 4 then sa = d2c(a)
+      if cty = 4 then cvs = d2c(cvi)
+      cvs = sa || cvs
+      cty = 5
+    end
+    else if op = '+' then cvi = a + cvi
+    else cvi = a - cvi
+  end
+  return
+
+/* the value of the last constant expression as text */
+cvaltext: procedure = .string
+  if cat(cty) = 'I' then return cvi || ''
+  return cvs
+
+/* ------------------------------------------------------------ type parser */
+wreg = 0
+dreg = 0
+cvi = 0
+cvs = ''
+cty = 1
+rt = 1               /* expression result: type          */
+rr = 0               /* expression result: register      */
+rk = 'V'             /* V value in rr, A address (rb,ro) */
+rb = 0               /* address base register, -1 none, 0 = frame pointer */
+ro = 0               /* address offset                   */
+rlv = 0              /* 1 = assignable designator        */
+pdty = .int[]        /* pointer types still to resolve   */
+pdnm = .string[]
+npd = 0
+
+/* combine two cell-array masks (bits 1, 2, 4) */
+orm: procedure = .int
+  arg a = .int, b = .int
+  r = a
+  if (b % 2) = 1 & (a % 2) = 0 then r = r + 1
+  if ((b / 2) % 2) = 1 & ((a / 2) % 2) = 0 then r = r + 2
+  if ((b / 4) % 2) = 1 & ((a / 4) % 2) = 0 then r = r + 4
+  return r
+
+mksub: procedure = .int
+  arg base = .int, lo = .int, hi = .int
+  t = addtype('G', 1, 1)
+  tel[t] = base
+  tlo[t] = lo
+  thi[t] = hi
+  return t
+
+/* ordinal bounds of an ordinal type */
+lowof: procedure = .int
+  arg t = .int
+  return tlo[t]
+
+highof: procedure = .int
+  arg t = .int
+  return thi[t]
+
+/* parse an index/subrange: type name or lo..hi */
+getindex: procedure = .int
+  if tkk[ti] = 'I' then do
+    x = lookup(tkv[ti])
+    if x > 0 then do
+      if sk[x] = 'T' then do
+        if isordinal(st[x]) = 0 then call error "ordinal type expected"
+        call nexttok
+        return st[x]
+      end
+    end
+  end
+  call constexpr
+  lo = cvi
+  bt = cty
+  if isordinal(bt) = 0 then call error "ordinal constant expected"
+  call expectsym '..'
+  call constexpr
+  hi = cvi
+  if hi < lo then call error "empty subrange"
+  return mksub(basetype(bt), lo, hi)
+
+gettype: procedure = .int
+  if isid('PACKED') = 1 then call nexttok
+  if issym('^') = 1 then do
+    call nexttok
+    nm = getident()
+    t = addtype('P', 1, 1)
+    x = lookup(nm)
+    if x > 0 & sk[x] = 'T' then tel[t] = st[x]
+    else do
+      npd = npd + 1
+      pdty[npd] = t
+      pdnm[npd] = nm
+    end
+    return t
+  end
+  if issym('(') = 1 then do
+    call nexttok
+    t = addtype('E', 1, 1)
+    n = 0
+    do forever
+      nm = getident()
+      k = addsym(nm, 'C', t, 0, 0)
+      sval[k] = n || ''
+      n = n + 1
+      if acceptsym(',') = 0 then leave
+    end
+    call expectsym ')'
+    thi[t] = n - 1
+    return t
+  end
+  if isid('ARRAY') = 1 then do
+    call nexttok
+    call expectsym '['
+    nidx = 0
+    idx = .int[]
+    do forever
+      nidx = nidx + 1
+      idx[nidx] = getindex()
+      if acceptsym(',') = 0 then leave
+    end
+    call expectsym ']'
+    call expectid 'OF'
+    el = gettype()
+    do i = nidx to 1 by -1
+      ix = idx[i]
+      n = thi[ix] - tlo[ix] + 1
+      if n * tsz[el] > 100000000 then call error "array too large"
+      t = addtype('A', n * tsz[el], tmsk[el])
+      tel[t] = el
+      tix[t] = ix
+      tlo[t] = tlo[ix]
+      thi[t] = thi[ix]
+      el = t
+    end
+    return el
+  end
+  if isid('RECORD') = 1 then do
+    call nexttok
+    t = addtype('D', 0, 0)
+    tf0[t] = nfield + 1
+    n = 0
+    off = 0
+    msk = 0
+    do while isid('END') = 0
+      names = .string[]
+      nn = 0
+      do forever
+        nn = nn + 1
+        names[nn] = getident()
+        if acceptsym(',') = 0 then leave
+      end
+      call expectsym ':'
+      ft = gettype()
+      do i = 1 to nn
+        do j = tf0[t] to nfield
+          if fname[j] = names[i] then call error "duplicate field '" || lower(names[i]) || "'"
+        end
+        nfield = nfield + 1
+        fname[nfield] = names[i]
+        ftype[nfield] = ft
+        foff[nfield] = off
+        off = off + tsz[ft]
+        n = n + 1
+      end
+      msk = orm(msk, tmsk[ft])
+      if acceptsym(';') = 0 then leave
+      if isid('CASE') = 1 then call error "variant records are not supported"
+    end
+    call expectid 'END'
+    tnf[t] = n
+    if off = 0 then off = 1
+    tsz[t] = off
+    tmsk[t] = msk
+    return t
+  end
+  if isid('STRING') = 1 then do
+    call nexttok
+    if issym('[') = 1 then do
+      call nexttok
+      call constexpr
+      call expectsym ']'
+    end
+    return 5
+  end
+  if isid('SET') = 1 | isid('FILE') = 1 | isid('TEXT') = 1 then call error "'" || lower(tkv[ti]) || "' types are not supported"
+  if tkk[ti] = 'I' then do
+    x = lookup(tkv[ti])
+    if x = 0 then call error "unknown type '" || lower(tkv[ti]) || "'"
+    if sk[x] = 'T' then do
+      call nexttok
+      return st[x]
+    end
+  end
+  /* subrange of constants */
+  call constexpr
+  lo = cvi
+  bt = cty
+  if isordinal(bt) = 0 then call error "type expected"
+  call expectsym '..'
+  call constexpr
+  hi = cvi
+  if hi < lo then call error "empty subrange"
+  return mksub(basetype(bt), lo, hi)
+
+resolveptrs: procedure = .void
+  do i = 1 to npd
+    x = lookup(pdnm[i])
+    if x = 0 then call error "unknown type '" || lower(pdnm[i]) || "' in pointer declaration"
+    if sk[x] <> 'T' then call error "'" || lower(pdnm[i]) || "' is not a type"
+    tel[pdty[i]] = st[x]
+  end
+  npd = 0
+  return
+
+/* ---------------------------------------------------------- declarations */
+constdecl: procedure = .void
+  do while tkk[ti] = 'I' & isreserved(tkv[ti]) = 0
+    nm = getident()
+    if issym(':') = 1 then call error "typed constants are not supported"
+    call expectsym '='
+    call constexpr
+    k = addsym(nm, 'C', cty, curlvl, 0)
+    sval[k] = cvaltext()
+    call expectsym ';'
+  end
+  return
+
+typedecl: procedure = .void
+  do while tkk[ti] = 'I' & isreserved(tkv[ti]) = 0
+    nm = getident()
+    call expectsym '='
+    t = gettype()
+    k = addsym(nm, 'T', t, curlvl, 0)
+    call expectsym ';'
+  end
+  call resolveptrs
+  return
+
+vardecl: procedure = .void
+  do while tkk[ti] = 'I' & isreserved(tkv[ti]) = 0
+    names = .string[]
+    nn = 0
+    do forever
+      nn = nn + 1
+      names[nn] = getident()
+      if acceptsym(',') = 0 then leave
+    end
+    call expectsym ':'
+    t = gettype()
+    if issym('=') = 1 then call error "initialised variables are not supported"
+    do i = 1 to nn
+      k = addsym(names[i], 'V', t, curlvl, fsize)
+      fsize = fsize + tsz[t]
+    end
+    call expectsym ';'
+  end
+  return
+
+isreserved: procedure = .int
+  arg w = .string
+  if wordpos(w, 'BEGIN END CONST TYPE VAR PROCEDURE FUNCTION IF THEN ELSE WHILE DO REPEAT UNTIL FOR TO DOWNTO CASE OF WITH ARRAY RECORD DIV MOD AND OR NOT XOR IN SHL SHR PROGRAM USES LABEL') > 0 then return 1
+  return 0
+
+/* ----------------------------------------------------- cell access code */
+/* emit: link r1 to the cell (base,off) of the array for category c */
+linkcell: procedure = .void
+  arg c = .string, base = .int, off = .int
+  g = 'g0'
+  if c = 'F' then g = 'g1'
+  if c = 'S' then g = 'g2'
+  if base = -1 then call emit 'minlinkattr1 r1,' || g || ',' || off
+  else call emit 'minlinkattr1 r1,' || g || ',' || rg(base) || ',' || off
+  return
+
+/* load the scalar of type t at cell (base,off) into a new register */
+loadcell: procedure = .int
+  arg t = .int, base = .int, off = .int
+  c = cat(t)
+  d = nreg()
+  call linkcell c, base, off
+  if c = 'F' then do
+    call emit 'fcopy ' || rg(d) || ',r1'
+    call emit 'unlink r1'
+  end
+  else if c = 'S' then do
+    call emit 'scopy ' || rg(d) || ',r1'
+    call emit 'unlink r1'
+  end
+  else call emit 'igetunlink ' || rg(d) || ',r1'
+  return d
+
+/* store register v (scalar of type t) into cell (base,off) */
+storecell: procedure = .void
+  arg t = .int, base = .int, off = .int, v = .int
+  c = cat(t)
+  call linkcell c, base, off
+  if c = 'F' then do
+    call emit 'fcopy r1,' || rg(v)
+    call emit 'unlink r1'
+  end
+  else if c = 'S' then do
+    call emit 'scopy r1,' || rg(v)
+    call emit 'unlink r1'
+  end
+  else call emit 'isetunlink r1,' || rg(v)
+  return
+
+/* register holding base+off of the current designator */
+addrreg: procedure = .int
+  if rb = -1 then do
+    r = nreg()
+    call emit 'load ' || rg(r) || ',' || ro
+    return r
+  end
+  if ro = 0 then return rb
+  r = nreg()
+  call emit 'iadd ' || rg(r) || ',' || rg(rb) || ',' || ro
+  return r
+
+/* register holding the frame pointer of level lvl (0 = current frame, a1) */
+framereg: procedure = .int
+  arg lvl = .int
+  if lvl = curlvl then return 0
+  r = 0
+  do i = 1 to curlvl - lvl
+    call linkcell 'I', r, 0
+    d = nreg()
+    call emit 'igetunlink ' || rg(d) || ',r1'
+    r = d
+  end
+  return r
+
+/* make the designator for variable symbol x */
+varaddr: procedure = .void
+  arg x = .int
+  lvl = slv[x]
+  if lvl = 0 then do
+    rb = -1
+  end
+  else do
+    rb = framereg(lvl)
+  end
+  ro = soff[x]
+  if sref[x] = 1 then do
+    r = loadcell(1, rb, ro)
+    rb = r
+    ro = 0
+  end
+  rt = st[x]
+  rk = 'A'
+  rlv = 1
+  return
+
+/* turn a designator into a value in a register */
+rvalue: procedure = .void
+  if rk = 'A' then do
+    if cat(rt) = 'M' then rr = addrreg()
+    else rr = loadcell(rt, rb, ro)
+    rk = 'V'
+  end
+  rlv = 0
+  return
+
+/* ------------------------------------------------------ type conversions */
+toreal: procedure = .int
+  arg t = .int, r = .int
+  if isreal(t) = 1 then return r
+  if isint(t) = 0 then call error "number expected but found " || tname(t)
+  d = nreg()
+  call emit 'itof ' || rg(d) || ',' || rg(r)
+  return d
+
+tostr: procedure = .int
+  arg t = .int, r = .int
+  if isstr(t) = 1 then return r
+  if ischar(t) = 0 then call error "string expected but found " || tname(t)
+  d = nreg()
+  call emit 'load ' || rg(d) || ',""'
+  call emit 'appendchar ' || rg(d) || ',' || rg(r)
+  return d
+
+/* convert the current value (rt, rr) so it can be stored in a variable of type dt */
+coerce: procedure = .void
+  arg dt = .int
+  s = rt
+  dc = cat(dt)
+  sc = cat(s)
+  ok = 0
+  if dc = 'F' then do
+    if isreal(s) = 1 | isint(s) = 1 then do
+      rr = toreal(s, rr)
+      ok = 1
+    end
+  end
+  else if dc = 'S' then do
+    if isstr(s) = 1 | ischar(s) = 1 then do
+      rr = tostr(s, rr)
+      ok = 1
+    end
+  end
+  else if dc = 'M' then do
+    if s = dt then ok = 1
+    else if tk[s] = tk[dt] & tsz[s] = tsz[dt] & tel[s] = tel[dt] & tf0[s] = tf0[dt] then ok = 1
+  end
+  else if isptr(dt) = 1 then do
+    if s = 6 then ok = 1
+    else if tk[s] = 'P' & (s = dt | tel[s] = tel[dt]) then ok = 1
+  end
+  else if tk[dt] = 'N' then ok = 1
+  else if basetype(s) = basetype(dt) then ok = 1
+  if ok = 0 then call error "type mismatch: cannot use " || tname(s) || " as " || tname(dt)
+  rt = dt
+  return
+
+/* ---------------------------------------------------------- expressions */
+relop: procedure = .string
+  if tkk[ti] = 'Y' then do
+    v = tkv[ti]
+    if v = '=' | v = '<>' | v = '<' | v = '<=' | v = '>' | v = '>=' then return v
+  end
+  return ''
+
+/* compare: left operand (lt,lr), right operand is the current value (rt,rr) */
+compare: procedure = .void
+  arg op = .string, lt = .int, lr = .int
+  r2t = rt
+  r2r = rr
+  if cat(lt) = 'M' | cat(r2t) = 'M' then call error "structured values cannot be compared"
+  pre = 'i'
+  if cat(lt) = 'S' | cat(r2t) = 'S' then do
+    pre = 's'
+    lr = tostr(lt, lr)
+    r2r = tostr(r2t, r2r)
+  end
+  else if cat(lt) = 'F' | cat(r2t) = 'F' then do
+    pre = 'f'
+    lr = toreal(lt, lr)
+    r2r = toreal(r2t, r2r)
+  end
+  else if isptr(lt) = 1 | isptr(r2t) = 1 then do
+    if isptr(lt) = 0 | isptr(r2t) = 0 then call error "type mismatch in comparison"
+    if op <> '=' & op <> '<>' then call error "pointers can only be compared for equality"
+  end
+  else if basetype(lt) <> basetype(r2t) then call error "type mismatch in comparison: " || tname(lt) || " and " || tname(r2t)
+  m = ''
+  if op = '=' then m = 'eq'
+  else if op = '<>' then m = 'ne'
+  else if op = '<' then m = 'lt'
+  else if op = '<=' then m = 'lte'
+  else if op = '>' then m = 'gt'
+  else m = 'gte'
+  d = nreg()
+  call emit pre || m || ' ' || rg(d) || ',' || rg(lr) || ',' || rg(r2r)
+  rt = 3
+  rr = d
+  rk = 'V'
+  return
+
+/* arithmetic: left operand (lt,lr), right operand is the current value */
+arith: procedure = .void
+  arg op = .string, lt = .int, lr = .int
+  r2t = rt
+  r2r = rr
+  if op = '+' & (cat(lt) = 'S' | cat(r2t) = 'S' | (ischar(lt) = 1 & ischar(r2t) = 1)) then do
+    a = tostr(lt, lr)
+    b = tostr(r2t, r2r)
+    d = nreg()
+    call emit 'concat ' || rg(d) || ',' || rg(a) || ',' || rg(b)
+    rt = 5
+    rr = d
+    rk = 'V'
+    return
+  end
+  if op = '/' | cat(lt) = 'F' | cat(r2t) = 'F' then do
+    if op = 'DIV' | op = 'MOD' then call error "'" || lower(op) || "' needs integer operands"
+    a = toreal(lt, lr)
+    b = toreal(r2t, r2r)
+    m = 'fadd'
+    if op = '-' then m = 'fsub'
+    else if op = '*' then m = 'fmult'
+    else if op = '/' then m = 'fdiv'
+    d = nreg()
+    call emit m || ' ' || rg(d) || ',' || rg(a) || ',' || rg(b)
+    rt = 2
+    rr = d
+    rk = 'V'
+    return
+  end
+  if isint(lt) = 0 | isint(r2t) = 0 then call error "operator '" || lower(op) || "' needs numeric operands but found " || tname(lt) || " and " || tname(r2t)
+  m = 'iadd'
+  if op = '-' then m = 'isub'
+  else if op = '*' then m = 'imult'
+  else if op = 'DIV' then m = 'idiv'
+  else if op = 'MOD' then m = 'imod'
+  d = nreg()
+  call emit m || ' ' || rg(d) || ',' || rg(lr) || ',' || rg(r2r)
+  rt = 1
+  rr = d
+  rk = 'V'
+  return
+
+/* ------------------------------------------------------------ designators */
+/* index into an array: designator (rb,ro,rt) is an array, the index value is in rr */
+indexcode: procedure = .void
+  arg at = .int, ri = .int
+  lo = tlo[at]
+  esz = tsz[tel[at]]
+  m = ri
+  if esz <> 1 then do
+    m = nreg()
+    call emit 'imult ' || rg(m) || ',' || rg(ri) || ',' || esz
+  end
+  if rb = -1 then rb = m
+  else do
+    d = nreg()
+    call emit 'iadd ' || rg(d) || ',' || rg(rb) || ',' || rg(m)
+    rb = d
+  end
+  ro = ro - lo * esz
+  rt = tel[at]
+  return
+
+/* selectors after a designator: [i,j]  .field  ^ */
+selectors: procedure = .void
+  do forever
+    if issym('[') = 1 then do
+      call nexttok
+      do forever
+        if tk[rt] = 'S' & rk = 'A' then do
+          /* character of a string */
+          call rvalue
+          sr = rr
+          call expr
+          call rvalue
+          if isint(rt) = 0 then call error "integer index expected"
+          d = nreg()
+          call emit 'isub ' || rg(d) || ',' || rg(rr) || ',1'
+          e = nreg()
+          call emit 'strchar ' || rg(e) || ',' || rg(sr) || ',' || rg(d)
+          rr = e
+          rt = 4
+          rk = 'V'
+          rlv = 0
+        end
+        else if tk[rt] = 'A' then do
+          at = rt
+          sb = rb
+          so = ro
+          call expr
+          call rvalue
+          if isordinal(rt) = 0 then call error "ordinal index expected"
+          ri = rr
+          rb = sb
+          ro = so
+          call indexcode at, ri
+          rk = 'A'
+          rlv = 1
+        end
+        else call error "cannot index a " || tname(rt)
+        if acceptsym(',') = 0 then leave
+      end
+      call expectsym ']'
+    end
+    else if issym('.') = 1 then do
+      if tk[rt] <> 'D' then call error "record expected before '.'"
+      call nexttok
+      fn = getident()
+      f = 0
+      do i = tf0[rt] to tf0[rt] + tnf[rt] - 1
+        if fname[i] = fn then f = i
+      end
+      if f = 0 then call error "record has no field '" || lower(fn) || "'"
+      ro = ro + foff[f]
+      rt = ftype[f]
+    end
+    else if issym('^') = 1 then do
+      if tk[rt] <> 'P' then call error "pointer expected before '^'"
+      if tel[rt] = 0 then call error "pointer type is not resolved"
+      call nexttok
+      call rvalue
+      pt = tel[rt]
+      rb = rr
+      ro = 0
+      rt = pt
+      rk = 'A'
+      rlv = 1
+    end
+    else leave
+  end
+  return
+
+/* look for a field of the innermost record opened by WITH; returns 1 if found */
+withfield: procedure = .int
+  arg name = .string
+  do w = nwith to 1 by -1
+    rtype = wtype[w]
+    do i = tf0[rtype] to tf0[rtype] + tnf[rtype] - 1
+      if fname[i] = name then do
+        /* the record address is in a frame cell */
+        if curlvl = 0 then base = -1
+        else base = 0
+        r = loadcell(1, base, woff[w])
+        rb = r
+        ro = foff[i]
+        rt = ftype[i]
+        rk = 'A'
+        rlv = 1
+        return 1
+      end
+    end
+  end
+  return 0
+
+/* -------------------------------------------------------- procedure calls */
+/* current type may be stored in a parameter of type pt without conversion? */
+sametype: procedure = .int
+  arg a = .int, b = .int
+  if a = b then return 1
+  if cat(a) = 'I' & cat(b) = 'I' then do
+    if isptr(a) = 1 & isptr(b) = 1 then do
+      if tel[a] = tel[b] then return 1
+      return 0
+    end
+    if basetype(a) = basetype(b) then return 1
+    return 0
+  end
+  if tk[a] = tk[b] & tsz[a] = tsz[b] & tel[a] = tel[b] & tf0[a] = tf0[b] & tk[a] <> 'G' then return 1
+  return 0
+
+/* call procedure/function symbol x; arguments are parsed from the token stream */
+callproc: procedure = .void
+  arg x = .int
+  pid = soff[x]
+  n = pnp[pid]
+  areg = .int[]
+  if n > 0 then do
+    call expectsym '('
+    do i = 1 to n
+      if i > 1 then call expectsym ','
+      p = pp0[pid] + i - 1
+      pt = part[p]
+      call expr
+      if parref[p] = 1 then do
+        if rk <> 'A' | rlv = 0 then call error "variable expected for VAR parameter"
+        if sametype(rt, pt) = 0 then call error "VAR parameter type mismatch: " || tname(rt) || " and " || tname(pt)
+        areg[i] = addrreg()
+      end
+      else do
+        call rvalue
+        call coerce pt
+        areg[i] = rr
+      end
+    end
+    call expectsym ')'
+  end
+  nf = nreg()
+  call emit 'icopy ' || rg(nf) || ',g3'
+  lvl = plvl[pid]
+  if lvl > 0 then do
+    sl = framereg(lvl)
+    call storecell 1, nf, 0, sl
+  end
+  do i = 1 to n
+    p = pp0[pid] + i - 1
+    pt = part[p]
+    off = paroff[p]
+    if parref[p] = 1 then call storecell 1, nf, off, areg[i]
+    else if cat(pt) = 'M' then do
+      d = nreg()
+      call emit 'iadd ' || rg(d) || ',' || rg(nf) || ',' || off
+      sz = nreg()
+      call emit 'load ' || rg(sz) || ',' || tsz[pt]
+      mk = nreg()
+      call emit 'load ' || rg(mk) || ',' || tmsk[pt]
+      jk = nreg()
+      call emit 'call4 ' || rg(jk) || ',pasrt.pcopy(),' || rg(d) || ',' || rg(areg[i]) || ',' || rg(sz) || ',' || rg(mk)
+    end
+    else call storecell pt, nf, off, areg[i]
+  end
+  res = nreg()
+  call emit 'call1 ' || rg(res) || ',' || plbl[pid] || '(),' || rg(nf)
+  rt = pres[pid]
+  if rt = 0 then rt = 7
+  rr = res
+  rk = 'V'
+  rlv = 0
+  return
+
+/* call a runtime function with up to 4 register arguments, result in a new register */
+rtcall: procedure = .int
+  arg fn = .string, a = .int, b = .int, c = .int, d = .int, n = .int
+  r = nreg()
+  if n = 0 then s = 'call ' || rg(r) || ',pasrt.' || fn || '()'
+  else s = 'call' || n || ' ' || rg(r) || ',pasrt.' || fn || '()'
+  if n >= 1 then s = s || ',' || rg(a)
+  if n >= 2 then s = s || ',' || rg(b)
+  if n >= 3 then s = s || ',' || rg(c)
+  if n >= 4 then s = s || ',' || rg(d)
+  call emit s
+  return r
+
+/* ---------------------------------------------------------- factor, term */
+loadint: procedure = .int
+  arg v = .string
+  d = nreg()
+  call emit 'load ' || rg(d) || ',' || v
+  return d
+
+realtext: procedure = .string
+  arg v = .string
+  if pos('.', v) = 0 & pos('e', v) = 0 & pos('E', v) = 0 then return v || '.0'
+  return v
+
+factor: procedure = .void
+  k = tkk[ti]
+  rk = 'V'
+  rlv = 0
+  if k = 'N' then do
+    rr = loadint(tkv[ti])
+    rt = 1
+    call nexttok
+    return
+  end
+  if k = 'R' then do
+    rr = loadint(realtext(tkv[ti]))
+    rt = 2
+    call nexttok
+    return
+  end
+  if k = 'S' then do
+    s = tkv[ti]
+    call nexttok
+    if length(s) = 1 then do
+      rr = loadint(c2d(s) || '')
+      rt = 4
+    end
+    else do
+      rr = loadint(asmstr(s))
+      rt = 5
+    end
+    return
+  end
+  if issym('(') = 1 then do
+    call nexttok
+    call expr
+    call expectsym ')'
+    return
+  end
+  if issym('@') = 1 then call error "the address operator @ is not supported"
+  if k <> 'I' then call error "expression expected but found '" || tkv[ti] || "'"
+  name = tkv[ti]
+  if name = 'NOT' then do
+    call nexttok
+    call factor
+    call rvalue
+    d = nreg()
+    if isbool(rt) = 1 then call emit 'not ' || rg(d) || ',' || rg(rr)
+    else if isint(rt) = 1 then call emit 'inot ' || rg(d) || ',' || rg(rr)
+    else call error "'not' needs a boolean or integer"
+    rr = d
+    return
+  end
+  if withfield(name) = 1 then do
+    call nexttok
+    call selectors
+    return
+  end
+  x = lookup(name)
+  if x = 0 then call error "unknown identifier '" || lower(name) || "'"
+  kind = sk[x]
+  call nexttok
+  if kind = 'V' then do
+    call varaddr x
+    call selectors
+    return
+  end
+  if kind = 'C' then do
+    c = cat(st[x])
+    if c = 'F' then rr = loadint(realtext(sval[x]))
+    else if c = 'S' then rr = loadint(asmstr(sval[x]))
+    else rr = loadint(sval[x])
+    rt = st[x]
+    return
+  end
+  if kind = 'F' then do
+    call callproc x
+    call selectors
+    return
+  end
+  if kind = 'P' then call error "procedure '" || lower(name) || "' used as a function"
+  if kind = 'T' then do
+    /* type cast: integer(x), char(x), byte(x) ... */
+    call expectsym '('
+    call expr
+    call rvalue
+    call expectsym ')'
+    if cat(st[x]) <> 'I' | cat(rt) <> 'I' then call error "invalid type cast"
+    rt = st[x]
+    return
+  end
+  if kind = 'B' then do
+    call builtinfunc saux[x]
+    return
+  end
+  call error "unexpected identifier '" || lower(name) || "'"
+  return
+
+term: procedure = .void
+  call factor
+  do forever
+    op = ''
+    if issym('*') = 1 then op = '*'
+    else if issym('/') = 1 then op = '/'
+    else if isid('DIV') = 1 then op = 'DIV'
+    else if isid('MOD') = 1 then op = 'MOD'
+    else if isid('AND') = 1 then op = 'AND'
+    else if isid('SHL') = 1 then op = 'SHL'
+    else if isid('SHR') = 1 then op = 'SHR'
+    else leave
+    call nexttok
+    call rvalue
+    lt = rt
+    lr = rr
+    if op = 'AND' & isbool(lt) = 1 then do
+      /* short circuit */
+      lab = newlab()
+      call emit 'brf ' || lab || ',' || rg(lr)
+      call factor
+      call rvalue
+      if isbool(rt) = 0 then call error "boolean expected after 'and'"
+      call emit 'icopy ' || rg(lr) || ',' || rg(rr)
+      call emitl lab || ':'
+      rr = lr
+      rt = 3
+      rk = 'V'
+    end
+    else do
+      call factor
+      call rvalue
+      if op = 'AND' then do
+        if isint(lt) = 0 | isint(rt) = 0 then call error "'and' needs boolean or integer operands"
+        d = nreg()
+        call emit 'iand ' || rg(d) || ',' || rg(lr) || ',' || rg(rr)
+        rr = d
+        rt = 1
+      end
+      else if op = 'SHL' | op = 'SHR' then do
+        if isint(lt) = 0 | isint(rt) = 0 then call error "shifts need integer operands"
+        d = nreg()
+        if op = 'SHL' then call emit 'ishl ' || rg(d) || ',' || rg(lr) || ',' || rg(rr)
+        else call emit 'ishr ' || rg(d) || ',' || rg(lr) || ',' || rg(rr)
+        rr = d
+        rt = 1
+      end
+      else call arith op, lt, lr
+    end
+  end
+  return
+
+simpleexpr: procedure = .void
+  neg = 0
+  if issym('-') = 1 then do
+    neg = 1
+    call nexttok
+  end
+  else if issym('+') = 1 then call nexttok
+  call term
+  if neg = 1 then do
+    call rvalue
+    d = nreg()
+    if isreal(rt) = 1 then call emit 'fsub ' || rg(d) || ',0.0,' || rg(rr)
+    else if isint(rt) = 1 then call emit 'isub ' || rg(d) || ',0,' || rg(rr)
+    else call error "cannot negate a " || tname(rt)
+    rr = d
+  end
+  do forever
+    op = ''
+    if issym('+') = 1 then op = '+'
+    else if issym('-') = 1 then op = '-'
+    else if isid('OR') = 1 then op = 'OR'
+    else if isid('XOR') = 1 then op = 'XOR'
+    else leave
+    call nexttok
+    call rvalue
+    lt = rt
+    lr = rr
+    if op = 'OR' & isbool(lt) = 1 then do
+      lab = newlab()
+      call emit 'brt ' || lab || ',' || rg(lr)
+      call term
+      call rvalue
+      if isbool(rt) = 0 then call error "boolean expected after 'or'"
+      call emit 'icopy ' || rg(lr) || ',' || rg(rr)
+      call emitl lab || ':'
+      rr = lr
+      rt = 3
+      rk = 'V'
+    end
+    else do
+      call term
+      call rvalue
+      if op = 'OR' | op = 'XOR' then do
+        if isint(lt) = 0 | isint(rt) = 0 then do
+          if isbool(lt) = 0 | isbool(rt) = 0 then call error "'" || lower(op) || "' needs boolean or integer operands"
+        end
+        d = nreg()
+        if op = 'OR' then call emit 'ior ' || rg(d) || ',' || rg(lr) || ',' || rg(rr)
+        else call emit 'ixor ' || rg(d) || ',' || rg(lr) || ',' || rg(rr)
+        rr = d
+        if isbool(lt) = 1 then rt = 3
+        else rt = 1
+      end
+      else call arith op, lt, lr
+    end
+  end
+  return
+
+expr: procedure = .void
+  call simpleexpr
+  op = relop()
+  if op <> '' then do
+    call nexttok
+    call rvalue
+    lt = rt
+    lr = rr
+    call simpleexpr
+    call rvalue
+    call compare op, lt, lr
+  end
+  return
+
+/* ----------------------------------------------------------- built-ins */
+/* parse "( expr )" leaving the value in (rt,rr) */
+oneval: procedure = .void
+  call expectsym '('
+  call expr
+  call rvalue
+  call expectsym ')'
+  return
+
+/* parse a real-valued argument: "( expr )" converted to real */
+onereal: procedure = .int
+  call oneval
+  return toreal(rt, rr)
+
+builtinfunc: procedure = .void
+  arg name = .string
+  rk = 'V'
+  rlv = 0
+  if name = 'PI' then do
+    rr = loadint('3.14159265358979323846')
+    rt = 2
+    return
+  end
+  if name = 'ABS' then do
+    call oneval
+    x = rr
+    d = nreg()
+    t = nreg()
+    lab = newlab()
+    if isreal(rt) = 1 then do
+      call emit 'fcopy ' || rg(d) || ',' || rg(x)
+      call emit 'flt ' || rg(t) || ',' || rg(x) || ',0.0'
+      call emit 'brf ' || lab || ',' || rg(t)
+      call emit 'fsub ' || rg(d) || ',0.0,' || rg(x)
+    end
+    else do
+      if isint(rt) = 0 then call error "number expected for abs"
+      call emit 'icopy ' || rg(d) || ',' || rg(x)
+      call emit 'ilt ' || rg(t) || ',' || rg(x) || ',0'
+      call emit 'brf ' || lab || ',' || rg(t)
+      call emit 'isub ' || rg(d) || ',0,' || rg(x)
+    end
+    call emitl lab || ':'
+    rr = d
+    return
+  end
+  if name = 'SQR' then do
+    call oneval
+    d = nreg()
+    if isreal(rt) = 1 then call emit 'fmult ' || rg(d) || ',' || rg(rr) || ',' || rg(rr)
+    else do
+      if isint(rt) = 0 then call error "number expected for sqr"
+      call emit 'imult ' || rg(d) || ',' || rg(rr) || ',' || rg(rr)
+    end
+    rr = d
+    return
+  end
+  if name = 'SQRT' | name = 'SIN' | name = 'COS' | name = 'ARCTAN' | name = 'LN' | name = 'EXP' then do
+    x = onereal()
+    fn = 'p' || lower(name)
+    rr = rtcall(fn, x, 0, 0, 0, 1)
+    rt = 2
+    return
+  end
+  if name = 'ROUND' | name = 'TRUNC' then do
+    x = onereal()
+    rr = rtcall('p' || lower(name), x, 0, 0, 0, 1)
+    rt = 1
+    return
+  end
+  if name = 'FRAC' | name = 'INT' then do
+    x = onereal()
+    rr = rtcall('p' || lower(name), x, 0, 0, 0, 1)
+    rt = 2
+    return
+  end
+  if name = 'POWER' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    a = toreal(rt, rr)
+    call expectsym ','
+    call expr
+    call rvalue
+    b = toreal(rt, rr)
+    call expectsym ')'
+    d = nreg()
+    call emit 'fpow ' || rg(d) || ',' || rg(a) || ',' || rg(b)
+    rr = d
+    rt = 2
+    return
+  end
+  if name = 'ODD' then do
+    call oneval
+    if isint(rt) = 0 then call error "integer expected for odd"
+    d = nreg()
+    call emit 'imod ' || rg(d) || ',' || rg(rr) || ',2'
+    call emit 'ine ' || rg(d) || ',' || rg(d) || ',0'
+    rr = d
+    rt = 3
+    return
+  end
+  if name = 'ORD' then do
+    call oneval
+    if isordinal(rt) = 0 then call error "ordinal expected for ord"
+    rt = 1
+    return
+  end
+  if name = 'CHR' then do
+    call oneval
+    if isint(rt) = 0 then call error "integer expected for chr"
+    rt = 4
+    return
+  end
+  if name = 'SUCC' | name = 'PRED' then do
+    call oneval
+    if isordinal(rt) = 0 then call error "ordinal expected"
+    d = nreg()
+    if name = 'SUCC' then call emit 'iadd ' || rg(d) || ',' || rg(rr) || ',1'
+    else call emit 'isub ' || rg(d) || ',' || rg(rr) || ',1'
+    rr = d
+    return
+  end
+  if name = 'RANDOM' then do
+    if issym('(') = 1 then do
+      call oneval
+      if isint(rt) = 0 then call error "integer expected for random"
+      rr = rtcall('prandom', rr, 0, 0, 0, 1)
+      rt = 1
+    end
+    else do
+      rr = rtcall('prandomr', 0, 0, 0, 0, 0)
+      rt = 2
+    end
+    return
+  end
+  if name = 'LENGTH' then do
+    call oneval
+    s = tostr(rt, rr)
+    d = nreg()
+    call emit 'strlen ' || rg(d) || ',' || rg(s)
+    rr = d
+    rt = 1
+    return
+  end
+  if name = 'COPY' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    s = tostr(rt, rr)
+    call expectsym ','
+    call expr
+    call rvalue
+    if isint(rt) = 0 then call error "integer expected"
+    i = rr
+    call expectsym ','
+    call expr
+    call rvalue
+    if isint(rt) = 0 then call error "integer expected"
+    n = rr
+    call expectsym ')'
+    rr = rtcall('pscopy', s, i, n, 0, 3)
+    rt = 5
+    return
+  end
+  if name = 'POS' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    a = tostr(rt, rr)
+    call expectsym ','
+    call expr
+    call rvalue
+    b = tostr(rt, rr)
+    call expectsym ')'
+    rr = rtcall('ppos', a, b, 0, 0, 2)
+    rt = 1
+    return
+  end
+  if name = 'CONCAT' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    acc = tostr(rt, rr)
+    do while acceptsym(',') = 1
+      call expr
+      call rvalue
+      b = tostr(rt, rr)
+      d = nreg()
+      call emit 'concat ' || rg(d) || ',' || rg(acc) || ',' || rg(b)
+      acc = d
+    end
+    call expectsym ')'
+    rr = acc
+    rt = 5
+    return
+  end
+  if name = 'UPCASE' | name = 'LOWERCASE' then do
+    call oneval
+    if ischar(rt) = 1 then do
+      rr = rtcall('p' || lower(name) || 'c', rr, 0, 0, 0, 1)
+      rt = 4
+    end
+    else do
+      s = tostr(rt, rr)
+      rr = rtcall('p' || lower(name) || 's', s, 0, 0, 0, 1)
+      rt = 5
+    end
+    return
+  end
+  if name = 'EOF' | name = 'EOLN' then do
+    if issym('(') = 1 then do
+      call nexttok
+      do while issym(')') = 0
+        call nexttok
+      end
+      call nexttok
+    end
+    rr = rtcall('p' || lower(name), 0, 0, 0, 0, 0)
+    rt = 3
+    return
+  end
+  if name = 'HIGH' | name = 'LOW' | name = 'SIZEOF' then do
+    call expectsym '('
+    t = 0
+    if tkk[ti] = 'I' then do
+      x = lookup(tkv[ti])
+      if x > 0 then do
+        if sk[x] = 'T' then do
+          t = st[x]
+          call nexttok
+        end
+      end
+    end
+    if t = 0 then do
+      call expr
+      t = rt
+    end
+    call expectsym ')'
+    if name = 'SIZEOF' then v = tsz[t]
+    else if name = 'HIGH' then v = thi[t]
+    else v = tlo[t]
+    if name <> 'SIZEOF' & tk[t] <> 'A' & isordinal(t) = 0 then call error "ordinal or array type expected"
+    rr = loadint(v || '')
+    rt = 1
+    if name <> 'SIZEOF' & tk[t] <> 'A' then rt = basetype(t)
+    return
+  end
+  call error "'" || lower(name) || "' cannot be used in an expression"
+  return
+
+/* ----------------------------------------------------- built-in procedures */
+/* optional ":width[:decimals]" after a write argument; returns registers */
+wfmt: procedure = .void
+  /* sets wreg and dreg (-1 constants when absent) */
+  wreg = loadint('-1')
+  dreg = loadint('-1')
+  if acceptsym(':') = 1 then do
+    call expr
+    call rvalue
+    if isint(rt) = 0 then call error "integer field width expected"
+    wreg = rr
+    if acceptsym(':') = 1 then do
+      call expr
+      call rvalue
+      if isint(rt) = 0 then call error "integer number of decimals expected"
+      dreg = rr
+    end
+  end
+  return
+
+/* the formatted text of the current value as a string register (for write/str) */
+fmtvalue: procedure = .int
+  arg wr = .int, dr = .int, hasw = .int
+  t = rt
+  r = rr
+  if isreal(t) = 1 then return rtcall('pfmtr', r, wr, dr, 0, 3)
+  if isbool(t) = 1 then return rtcall('pfmtb', r, wr, 0, 0, 2)
+  if isint(t) = 1 then do
+    if hasw = 0 then do
+      d = nreg()
+      call emit 'copy ' || rg(d) || ',' || rg(r)
+      call emit 'itos ' || rg(d)
+      return d
+    end
+    return rtcall('pfmti', r, wr, 0, 0, 2)
+  end
+  if ischar(t) = 1 | isstr(t) = 1 then do
+    s = tostr(t, r)
+    if hasw = 0 then return s
+    return rtcall('pfmts', s, wr, 0, 0, 2)
+  end
+  call error "cannot write a value of type " || tname(t)
+  return 0
+
+builtinproc: procedure = .void
+  arg name = .string
+  if name = 'WRITE' | name = 'WRITELN' then do
+    if issym('(') = 1 then do
+      call nexttok
+      if isid('OUTPUT') = 1 then do
+        call nexttok
+        call acceptsym ','
+      end
+      do while issym(')') = 0
+        call expr
+        call rvalue
+        sv = rr
+        st0 = rt
+        hasw = 0
+        if issym(':') = 1 then hasw = 1
+        call wfmt
+        rr = sv
+        rt = st0
+        s = fmtvalue(wreg, dreg, hasw)
+        call emit 'sayx ' || rg(s)
+        if acceptsym(',') = 0 then leave
+      end
+      call expectsym ')'
+    end
+    if name = 'WRITELN' then call emit 'say ""'
+    return
+  end
+  if name = 'READ' | name = 'READLN' then do
+    if issym('(') = 1 then do
+      call nexttok
+      if isid('INPUT') = 1 then do
+        call nexttok
+        call acceptsym ','
+      end
+      do while issym(')') = 0
+        call expr
+        if rk <> 'A' | rlv = 0 then call error "variable expected in read"
+        lb = rb
+        lo = ro
+        lt = rt
+        if isint(lt) = 1 then v = rtcall('preadi', 0, 0, 0, 0, 0)
+        else if ischar(lt) = 1 then v = rtcall('preadc', 0, 0, 0, 0, 0)
+        else if isreal(lt) = 1 then v = rtcall('preadr', 0, 0, 0, 0, 0)
+        else if isstr(lt) = 1 then v = rtcall('preads', 0, 0, 0, 0, 0)
+        else call error "cannot read a value of type " || tname(lt)
+        call storecell lt, lb, lo, v
+        if acceptsym(',') = 0 then leave
+      end
+      call expectsym ')'
+    end
+    if name = 'READLN' then call emit 'call pasrt.preadln()'
+    return
+  end
+  if name = 'INC' | name = 'DEC' then do
+    call expectsym '('
+    call expr
+    if rk <> 'A' | rlv = 0 then call error "variable expected"
+    if isordinal(rt) = 0 then call error "ordinal variable expected"
+    lb = rb
+    lo = ro
+    lt = rt
+    cur = loadcell(lt, lb, lo)
+    if acceptsym(',') = 1 then do
+      call expr
+      call rvalue
+      if isint(rt) = 0 then call error "integer expected"
+      n = rr
+    end
+    else n = loadint('1')
+    call expectsym ')'
+    d = nreg()
+    if name = 'INC' then call emit 'iadd ' || rg(d) || ',' || rg(cur) || ',' || rg(n)
+    else call emit 'isub ' || rg(d) || ',' || rg(cur) || ',' || rg(n)
+    call storecell lt, lb, lo, d
+    return
+  end
+  if name = 'NEW' | name = 'DISPOSE' then do
+    call expectsym '('
+    call expr
+    if rk <> 'A' | rlv = 0 then call error "variable expected"
+    if tk[rt] <> 'P' then call error "pointer variable expected"
+    if tel[rt] = 0 then call error "pointer type is not resolved"
+    lb = rb
+    lo = ro
+    lt = rt
+    call expectsym ')'
+    sz = loadint(tsz[tel[lt]] || '')
+    if name = 'NEW' then do
+      mk = loadint(tmsk[tel[lt]] || '')
+      p = rtcall('pnew', sz, mk, 0, 0, 2)
+      call storecell lt, lb, lo, p
+    end
+    else do
+      p = loadcell(lt, lb, lo)
+      junk = rtcall('pdispose', p, sz, 0, 0, 2)
+    end
+    return
+  end
+  if name = 'EXIT' then do
+    if issym('(') = 1 then do
+      call nexttok
+      call expectsym ')'
+    end
+    call emit 'br ' || endlab
+    return
+  end
+  if name = 'HALT' then do
+    if issym('(') = 1 then do
+      call oneval
+      call emit 'exit ' || rg(rr)
+    end
+    else call emit 'exit'
+    return
+  end
+  if name = 'RANDOMIZE' then do
+    junk = rtcall('prandomize', 0, 0, 0, 0, 0)
+    return
+  end
+  if name = 'DELETE' then do
+    call expectsym '('
+    call expr
+    if rk <> 'A' | rlv = 0 | isstr(rt) = 0 then call error "string variable expected"
+    lb = rb
+    lo = ro
+    lt = rt
+    s = loadcell(lt, lb, lo)
+    call expectsym ','
+    call expr
+    call rvalue
+    p = rr
+    call expectsym ','
+    call expr
+    call rvalue
+    n = rr
+    call expectsym ')'
+    res = rtcall('pdelete', s, p, n, 0, 3)
+    call storecell lt, lb, lo, res
+    return
+  end
+  if name = 'INSERT' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    src = tostr(rt, rr)
+    call expectsym ','
+    call expr
+    if rk <> 'A' | rlv = 0 | isstr(rt) = 0 then call error "string variable expected"
+    lb = rb
+    lo = ro
+    lt = rt
+    s = loadcell(lt, lb, lo)
+    call expectsym ','
+    call expr
+    call rvalue
+    p = rr
+    call expectsym ')'
+    res = rtcall('pinsert', src, s, p, 0, 3)
+    call storecell lt, lb, lo, res
+    return
+  end
+  if name = 'STR' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    sv = rr
+    st0 = rt
+    hasw = 0
+    if issym(':') = 1 then hasw = 1
+    call wfmt
+    rr = sv
+    rt = st0
+    f = fmtvalue(wreg, dreg, hasw)
+    call expectsym ','
+    call expr
+    if rk <> 'A' | rlv = 0 | isstr(rt) = 0 then call error "string variable expected"
+    call expectsym ')'
+    call storecell rt, rb, ro, f
+    return
+  end
+  if name = 'VAL' then do
+    call expectsym '('
+    call expr
+    call rvalue
+    s = tostr(rt, rr)
+    call expectsym ','
+    call expr
+    if rk <> 'A' | rlv = 0 then call error "variable expected"
+    vb = rb
+    vo = ro
+    vt = rt
+    call expectsym ','
+    call expr
+    if rk <> 'A' | rlv = 0 | isint(rt) = 0 then call error "integer variable expected"
+    cb = rb
+    co = ro
+    ct = rt
+    call expectsym ')'
+    cr = rtcall('pvalcode', s, 0, 0, 0, 1)
+    if isreal(vt) = 1 then vr = rtcall('pvalr', s, 0, 0, 0, 1)
+    else if isint(vt) = 1 then vr = rtcall('pvali', s, 0, 0, 0, 1)
+    else call error "numeric variable expected"
+    call storecell vt, vb, vo, vr
+    call storecell ct, cb, co, cr
+    return
+  end
+  call error "'" || lower(name) || "' cannot be used as a statement"
+  return
+
+/* -------------------------------------------------------------- statements */
+iswithname: procedure = .int
+  arg name = .string
+  do w = nwith to 1 by -1
+    rtype = wtype[w]
+    do i = tf0[rtype] to tf0[rtype] + tnf[rtype] - 1
+      if fname[i] = name then return 1
+    end
+  end
+  return 0
+
+compound: procedure = .void
+  do forever
+    call statement
+    if acceptsym(';') = 0 then leave
+  end
+  return
+
+isstmtend: procedure = .int
+  if tkk[ti] = 'E' then return 1
+  if tkk[ti] = 'I' then do
+    v = tkv[ti]
+    if v = 'END' | v = 'ELSE' | v = 'UNTIL' then return 1
+  end
+  if issym(';') = 1 | issym('.') = 1 then return 1
+  return 0
+
+cond: procedure = .int
+  call expr
+  call rvalue
+  if isbool(rt) = 0 then call error "boolean expression expected but found " || tname(rt)
+  return rr
+
+statement: procedure = .void
+  save = nr
+  if isstmtend() = 1 then return
+  if tkk[ti] <> 'I' then call error "statement expected but found '" || tkv[ti] || "'"
+  name = tkv[ti]
+  if name = 'BEGIN' then do
+    call nexttok
+    call compound
+    call expectid 'END'
+    nr = save
+    return
+  end
+  if name = 'IF' then do
+    call nexttok
+    c = cond()
+    call expectid 'THEN'
+    lelse = newlab()
+    lend = newlab()
+    call emit 'brf ' || lelse || ',' || rg(c)
+    call statement
+    if isid('ELSE') = 1 then do
+      call nexttok
+      call emit 'br ' || lend
+      call emitl lelse || ':'
+      call statement
+      call emitl lend || ':'
+    end
+    else call emitl lelse || ':'
+    nr = save
+    return
+  end
+  if name = 'WHILE' then do
+    call nexttok
+    ltop = newlab()
+    lend = newlab()
+    call emitl ltop || ':'
+    c = cond()
+    call expectid 'DO'
+    call emit 'brf ' || lend || ',' || rg(c)
+    call statement
+    call emit 'br ' || ltop
+    call emitl lend || ':'
+    nr = save
+    return
+  end
+  if name = 'REPEAT' then do
+    call nexttok
+    ltop = newlab()
+    call emitl ltop || ':'
+    do forever
+      call statement
+      if acceptsym(';') = 0 then leave
+    end
+    call expectid 'UNTIL'
+    c = cond()
+    call emit 'brf ' || ltop || ',' || rg(c)
+    nr = save
+    return
+  end
+  if name = 'FOR' then do
+    call nexttok
+    call expr
+    if rk <> 'A' | rlv = 0 | isordinal(rt) = 0 then call error "ordinal control variable expected in for"
+    vb = rb
+    vo = ro
+    vt = rt
+    call expectsym ':='
+    call expr
+    call rvalue
+    call coerce vt
+    call storecell vt, vb, vo, rr
+    down = 0
+    if isid('DOWNTO') = 1 then down = 1
+    else if isid('TO') = 0 then call error "'to' or 'downto' expected"
+    call nexttok
+    call expr
+    call rvalue
+    call coerce vt
+    lim = rr
+    call expectid 'DO'
+    ltop = newlab()
+    lend = newlab()
+    call emitl ltop || ':'
+    cur = loadcell(vt, vb, vo)
+    t = nreg()
+    if down = 1 then call emit 'ilt ' || rg(t) || ',' || rg(cur) || ',' || rg(lim)
+    else call emit 'igt ' || rg(t) || ',' || rg(cur) || ',' || rg(lim)
+    call emit 'brt ' || lend || ',' || rg(t)
+    call statement
+    cur = loadcell(vt, vb, vo)
+    n = nreg()
+    if down = 1 then call emit 'isub ' || rg(n) || ',' || rg(cur) || ',1'
+    else call emit 'iadd ' || rg(n) || ',' || rg(cur) || ',1'
+    call storecell vt, vb, vo, n
+    call emit 'br ' || ltop
+    call emitl lend || ':'
+    nr = save
+    return
+  end
+  if name = 'CASE' then do
+    call nexttok
+    call expr
+    call rvalue
+    if isordinal(rt) = 0 then call error "ordinal expression expected in case"
+    sel = rr
+    call expectid 'OF'
+    lend = newlab()
+    do while isid('END') = 0 & isid('ELSE') = 0
+      lbody = newlab()
+      lnext = newlab()
+      do forever
+        call constexpr
+        v1 = cvi
+        t = nreg()
+        if acceptsym('..') = 1 then do
+          call constexpr
+          v2 = cvi
+          lskip = newlab()
+          call emit 'igte ' || rg(t) || ',' || rg(sel) || ',' || v1
+          call emit 'brf ' || lskip || ',' || rg(t)
+          call emit 'ilte ' || rg(t) || ',' || rg(sel) || ',' || v2
+          call emit 'brt ' || lbody || ',' || rg(t)
+          call emitl lskip || ':'
+        end
+        else do
+          call emit 'ieq ' || rg(t) || ',' || rg(sel) || ',' || v1
+          call emit 'brt ' || lbody || ',' || rg(t)
+        end
+        if acceptsym(',') = 0 then leave
+      end
+      call expectsym ':'
+      call emit 'br ' || lnext
+      call emitl lbody || ':'
+      call statement
+      call emit 'br ' || lend
+      call emitl lnext || ':'
+      if acceptsym(';') = 0 then leave
+    end
+    if isid('ELSE') = 1 then do
+      call nexttok
+      call compound
+    end
+    call expectid 'END'
+    call emitl lend || ':'
+    nr = save
+    return
+  end
+  if name = 'WITH' then do
+    call nexttok
+    cnt = 0
+    do forever
+      call expr
+      if rk <> 'A' | tk[rt] <> 'D' then call error "record variable expected in with"
+      ra = addrreg()
+      cell = fsize
+      fsize = fsize + 1
+      if curlvl = 0 then call storecell 1, -1, cell, ra
+      else call storecell 1, 0, cell, ra
+      nwith = nwith + 1
+      wtype[nwith] = rt
+      woff[nwith] = cell
+      cnt = cnt + 1
+      if acceptsym(',') = 0 then leave
+    end
+    call expectid 'DO'
+    call statement
+    nwith = nwith - cnt
+    nr = save
+    return
+  end
+  /* assignment or procedure call */
+  isvar = 0
+  if nwith > 0 then do
+    if iswithname(name) = 1 then isvar = 1
+  end
+  x = 0
+  if isvar = 0 then do
+    x = lookup(name)
+    if x = 0 then call error "unknown identifier '" || lower(name) || "'"
+    if sk[x] = 'V' then isvar = 1
+  end
+  if isvar = 1 then do
+    call factor
+    if rk <> 'A' | rlv = 0 then call error "cannot assign to this expression"
+    lb = rb
+    lo = ro
+    lt = rt
+    call expectsym ':='
+    call expr
+    call rvalue
+    call coerce lt
+    if cat(lt) = 'M' then do
+      rb = lb
+      ro = lo
+      dst = addrreg()
+      sz = loadint(tsz[lt] || '')
+      mk = loadint(tmsk[lt] || '')
+      junk = rtcall('pcopy', dst, rr, sz, mk, 4)
+    end
+    else call storecell lt, lb, lo, rr
+    nr = save
+    return
+  end
+  kind = sk[x]
+  if kind = 'F' & soff[x] = curproc & curproc > 0 & tkk[ti + 1] = 'Y' & tkv[ti + 1] = ':=' then do
+    call nexttok
+    call nexttok
+    call expr
+    call rvalue
+    rtype = pres[curproc]
+    call coerce rtype
+    call storecell rtype, 0, 1, rr
+    nr = save
+    return
+  end
+  if kind = 'P' | kind = 'F' then do
+    call nexttok
+    call callproc x
+    nr = save
+    return
+  end
+  if kind = 'B' then do
+    call nexttok
+    call builtinproc saux[x]
+    nr = save
+    return
+  end
+  call error "'" || lower(name) || "' cannot be used as a statement"
+  return
+
+/* ------------------------------------------------- procedures and blocks */
+lookupcur: procedure = .int
+  arg name = .string
+  lo = 1
+  if nscope > 0 then lo = scopemark[nscope] + 1
+  do i = nsym to lo by -1
+    if sn[i] = name then return i
+  end
+  return 0
+
+declarations: procedure = .void
+  do forever
+    if isid('CONST') = 1 then do
+      call nexttok
+      call constdecl
+    end
+    else if isid('TYPE') = 1 then do
+      call nexttok
+      call typedecl
+    end
+    else if isid('VAR') = 1 then do
+      call nexttok
+      call vardecl
+    end
+    else if isid('PROCEDURE') = 1 | isid('FUNCTION') = 1 then call procdecl
+    else if isid('LABEL') = 1 then call error "labels and goto are not supported"
+    else leave
+  end
+  return
+
+procdecl: procedure = .void
+  isfunc = 0
+  if isid('FUNCTION') = 1 then isfunc = 1
+  call nexttok
+  nm = getident()
+  fx = lookupcur(nm)
+  pid = 0
+  if fx > 0 then do
+    if (sk[fx] = 'P' | sk[fx] = 'F') & pfwd[soff[fx]] = 1 then pid = soff[fx]
+    else call error "identifier '" || lower(nm) || "' is already declared"
+  end
+  /* parameters */
+  p0 = npar + 1
+  cnt = 0
+  off = 2
+  if issym('(') = 1 then do
+    call nexttok
+    do while issym(')') = 0
+      byref = 0
+      if isid('VAR') = 1 then do
+        byref = 1
+        call nexttok
+      end
+      else if isid('CONST') = 1 then call nexttok
+      names = .string[]
+      nn = 0
+      do forever
+        nn = nn + 1
+        names[nn] = getident()
+        if acceptsym(',') = 0 then leave
+      end
+      call expectsym ':'
+      pty = gettype()
+      do i = 1 to nn
+        npar = npar + 1
+        parn[npar] = names[i]
+        part[npar] = pty
+        parref[npar] = byref
+        paroff[npar] = off
+        if byref = 1 then off = off + 1
+        else off = off + tsz[pty]
+        cnt = cnt + 1
+      end
+      if acceptsym(';') = 0 then leave
+    end
+    call expectsym ')'
+  end
+  res = 0
+  if isfunc = 1 then do
+    if pid > 0 & issym(':') = 0 then res = pres[pid]
+    else do
+      call expectsym ':'
+      res = gettype()
+      if cat(res) = 'M' then call error "functions cannot return arrays or records"
+    end
+  end
+  call expectsym ';'
+  if pid = 0 then do
+    nproc = nproc + 1
+    pid = nproc
+    pn[pid] = nm
+    plbl[pid] = 'P' || pid || '_' || nm
+    plvl[pid] = curlvl
+    pfwd[pid] = 0
+    if isfunc = 1 then k = addsym(nm, 'F', res, curlvl, pid)
+    else k = addsym(nm, 'P', 0, curlvl, pid)
+  end
+  pres[pid] = res
+  if cnt > 0 | pnp[pid] = 0 then do
+    pnp[pid] = cnt
+    pp0[pid] = p0
+  end
+  if isid('FORWARD') = 1 then do
+    call nexttok
+    call expectsym ';'
+    pfwd[pid] = 1
+    return
+  end
+  pfwd[pid] = 0
+  /* the body */
+  svnr = nr
+  svmax = maxr
+  svfsize = fsize
+  svproc = curproc
+  svend = endlab
+  svwith = nwith
+  curlvl = curlvl + 1
+  curproc = pid
+  fsize = off
+  nr = 1
+  maxr = 1
+  endlab = newlab()
+  call pushscope
+  do i = 1 to pnp[pid]
+    q = pp0[pid] + i - 1
+    k = addsym(parn[q], 'V', part[q], curlvl, paroff[q])
+    sref[k] = parref[q]
+  end
+  call declarations
+  hdr = nc + 1
+  call emitl plbl[pid] || '() .locals=0'
+  pro = nc + 1
+  call emit 'iadd g3,a1,0'
+  t = nreg()
+  call emit 'igte ' || rg(t) || ',g3,' || hbase
+  lso = newlab()
+  call emit 'brt ' || lso || ',' || rg(t)
+  nr = 1
+  call expectid 'BEGIN'
+  call compound
+  call expectid 'END'
+  call expectsym ';'
+  call emitl endlab || ':'
+  if res > 0 then do
+    r = loadcell(res, 0, 1)
+    call emit 'icopy g3,a1'
+    call emit 'ret ' || rg(r)
+  end
+  else do
+    call emit 'icopy g3,a1'
+    call emit 'ret'
+  end
+  call emitl lso || ':'
+  call emit 'call pasrt.pstackovf()'
+  call emit 'ret'
+  code[hdr] = plbl[pid] || '() .locals=' || (maxr + 2)
+  code[pro] = '   iadd g3,a1,' || fsize
+  call popscope
+  curlvl = curlvl - 1
+  nr = svnr
+  maxr = svmax
+  fsize = svfsize
+  curproc = svproc
+  endlab = svend
+  nwith = svwith
+  return
+
+compileprogram: procedure = .void
+  if isid('PROGRAM') = 1 then do
+    call nexttok
+    progname = getident()
+    if issym('(') = 1 then do
+      do while issym(')') = 0
+        call nexttok
+      end
+      call nexttok
+    end
+    call expectsym ';'
+  end
+  if isid('USES') = 1 then do
+    do while issym(';') = 0
+      call nexttok
+    end
+    call nexttok
+  end
+  call emitl '.globals=5'
+  call emitl 'g0 .expose=pasrt.mi'
+  call emitl 'g1 .expose=pasrt.mf'
+  call emitl 'g2 .expose=pasrt.ms'
+  call emitl 'g3 .expose=pasrt.sp'
+  call emitl 'g4 .expose=pasrt.hp'
+  call emitl ''
+  curlvl = 0
+  fsize = 1
+  curproc = 0
+  nr = 1
+  maxr = 1
+  call pushscope
+  call declarations
+  hdr = nc + 1
+  call emitl 'main() .locals=0'
+  pro = nc + 1
+  call emit 'load g3,0'
+  call emit 'load g4,' || hbase
+  endlab = newlab()
+  call expectid 'BEGIN'
+  call compound
+  call expectid 'END'
+  call expectsym '.'
+  call emitl endlab || ':'
+  call emit 'ret'
+  code[hdr] = 'main() .locals=' || (maxr + 2)
+  code[pro] = '   load g3,' || fsize
+  call emitl ''
+  names = 'pcopy pnew pdispose psqrt psin pcos parctan pln pexp pround ptrunc pfrac pint prandom prandomr prandomize'
+  names = names 'pscopy ppos pupcasec pupcases plowercasec plowercases peof peoln pfmtr pfmtb pfmti pfmts'
+  names = names 'preadi preadc preadr preads preadln pdelete pinsert pvalcode pvali pvalr pstackovf'
+  do i = 1 to words(names)
+    w = word(names, i)
+    call emitl 'pasrt.' || w || '() .expose=pasrt.' || w
+  end
+  return
+

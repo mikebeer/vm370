@@ -1,0 +1,4 @@
+#!/bin/sh
+# snobol -- SNOBOL4 in cREXX (github.com/mikebeer/snobol) on VM/370+ Linux
+#   snobol [-f] prog.sno [args]
+exec /usr/local/bin/rxvm /usr/local/share/snobol/snobol.rxbin -a "$@"

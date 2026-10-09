@@ -1,0 +1,15 @@
+/* SNOBOL EXEC -- SNOBOL4 in cREXX (github.com/mikebeer/snobol), VM/370+ */
+/*   SNOBOL [-f] fn.sno [args]   run a SNOBOL4 program                  */
+/* Runs SNOBOL RXBIN (linked with RXFLOAT and the library) on RXBVM8.   */
+PARSE ARG ARGS
+'STATE SNOBOL RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'SNOBOL: SNOBOL RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+IF ARGS = '' THEN DO
+  SAY 'SNOBOL: usage: SNOBOL [-f] fn.sno [args]'
+  EXIT 24
+END
+'RXBVM8 SNOBOL -a' ARGS
+EXIT RC
