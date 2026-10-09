@@ -15,6 +15,32 @@ DMKVCS   CSECT                                                 XA0054DK
          USING VCSTAB,R10                                      XA0054DK         
          ENTRY DMKVCSEX,DMKVCSSE,DMKVCSIN,DMKVCSSN             XA0054DK         
 DMKVCSEX DS    0H             GOTO FROM DMKPRV: B212, B23X     XA0054DK         
+*  M7.8: ONE ESA/390 GUEST IN DMKVCS AT A TIME. ITS WORK       XA0054DK         
+*  FIELDS ARE STATIC AND LIVE ACROSS GUESTIO'S DEFERRED        XA0054DK         
+*  TRANS;                                                      XA0054DK         
+*  A SECOND GUEST'S SSCH CONVERTED ITS CHAIN WITH THE FIRST    XA0054DK         
+*  ONE'S VCSNEW/VCSVIS (TWO DEBIANS: SIGSEGV IN INIT). THE     XA0054DK         
+*  OWNER HOLDS THE LOCK ONLY WHILE IT WAITS; OTHERWISE IT IS   XA0054DK         
+*  STALE AND TAKEN. A GUEST THAT FINDS IT HELD RE-EXECUTES.    XA0054DK         
+         L     R1,VCSLOCK                                      XA0054DK         
+         LTR   R1,R1                                           XA0054DK         
+         BZ    VCSLKOWN                                        XA0054DK         
+         CR    R1,R11                                          XA0054DK         
+         BE    VCSLKOWN                                        XA0054DK         
+         TM    VMRSTAT-VMBLOK(R1),VMPGWAIT+VMEXWAIT+VMIOWAIT   XA0054DK         
+         BZ    VCSLKOWN                                        XA0054DK         
+         SR    R1,R1          BUSY: BACK THE PSW UP BY THE     XA0054DK         
+         IC    R1,VMINST      INSTRUCTION LENGTH (00: 2,       XA0054DK         
+         SRL   R1,6           01/10: 4, 11: 6) AND LET IT      XA0054DK         
+         LA    R1,1(,R1)      COME AGAIN                       XA0054DK         
+         SRL   R1,1                                            XA0054DK         
+         SLL   R1,1                                            XA0054DK         
+         LA    R1,2(,R1)                                       XA0054DK         
+         L     R0,VMPSW+4                                      XA0054DK         
+         SR    R0,R1                                           XA0054DK         
+         ST    R0,VMPSW+4                                      XA0054DK         
+         GOTO  DMKDSPCH                                        XA0054DK         
+VCSLKOWN ST    R11,VCSLOCK                                     XA0054DK         
          NI    VMPSW+2,X'CF'  CC 0                             XA0054DK         
          BAL   R9,GETTAB      R10 = THE USER'S TABLE           XA0054DK         
          MVI   VCSOP,0                                         XA0054DK         
@@ -957,6 +983,7 @@ AVCSSE   DC    A(DMKVCS)                                       XA0054DK
          ENTRY DMKVCSRG                                        XA0054DK         
 DMKVCSRG DC    C'VCRING  '                                     XA0054DK         
 VCRNXT   DC    F'0'                                            XA0054DK         
+VCSLOCK  DC    F'0'           M7.8: THE VMBLOK IN DMKVCS       XA0054DK         
 VCRLAST  DC    A(VCRING)                                       XA0054DK         
 AVCRING  DC    A(VCRING)      THE RING: LAST, PAST R12'S 4 KB  XA0054DK         
 STFLN3   DC    X'80000000'                                     XA0054DK         
