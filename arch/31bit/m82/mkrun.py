@@ -49,14 +49,14 @@ for d in decks:
 t('query disk', RDY)
 t('highstor reset', RDY)
 if mode == 'full':
-    t('exec crx82mk', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP', 36000)
+    t('exec crx82mk', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 36000)
 elif mode == 'deck':
     for c in CMDS:
         t(c, RDY + '|DMSABN|DMSITP', 7200)
 elif mode == 'link':
-    t('exec crx82mk link', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP', 3600)
+    t('exec crx82mk link', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 3600)
 else:
-    t('exec crx82mk ' + ' '.join(sys.argv[2:]), RDY + '|DMSABN|DMSITP', 7200)
+    t('exec crx82mk ' + ' '.join(sys.argv[2:]), RDY + '|DMSABN|DMSITP|DMSFRE', 7200)
 t('highstor query', 'HIGHSTOR')
 t('cp logoff', 'LOGOFF AT', 60)
 s('/cp shutdown', 'HHCCP011I|SHUTDOWN COMPLETE|SHUTDOWN', 40)

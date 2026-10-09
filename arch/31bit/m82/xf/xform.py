@@ -326,7 +326,7 @@ class Xform:
                         d.init = self.x(d.init, sc2)
             else:
                 n.init = self.x(n.init, sc2)
-            n.cond = self.x(n.cond, sc2)
+            n.cond = self.boolify(self.x(n.cond, sc2), sc2)
             n.next = self.x(n.next, sc2)
             n.stmt = self.x(n.stmt, sc2)
             return n
@@ -367,10 +367,35 @@ class Xform:
                                       c_ast.Constant('int', '0'))
         return e
 
+    def boolify(self, e, sc):
+        """a 64-bit value used as a condition: compare by call"""
+        if e is None:
+            return e
+        e = self.cmp64(e, sc)
+        t = self.typeof(e, sc)
+        if is64(t):
+            self.count += 1
+            return c_ast.BinaryOp('!=', call('crxucm64' if t[2] else 'crxcmp64',
+                                             cast(ULLT if t[2] else LLT, e),
+                                             cast(ULLT if t[2] else LLT, c_ast.Constant('int', '0'))),
+                                  c_ast.Constant('int', '0'))
+        return e
+
     def rewrite(self, n, sc):
+        # every 64-bit comparison and 64-bit truth test by call: GCC380
+        # folds pairs into range tests (an add it cannot do) and runs out
+        # of register pairs reloading its DImode compare-and-branch
         if isinstance(n, c_ast.BinaryOp) and n.op in ('&&', '||'):
-            n.left = self.cmp64(n.left, sc)
-            n.right = self.cmp64(n.right, sc)
+            n.left = self.boolify(n.left, sc)
+            n.right = self.boolify(n.right, sc)
+            return n
+        if isinstance(n, c_ast.BinaryOp) and n.op in ('<', '>', '<=', '>=', '==', '!='):
+            return self.cmp64(n, sc)
+        if isinstance(n, c_ast.UnaryOp) and n.op == '!':
+            n.expr = self.boolify(n.expr, sc)
+            return n
+        if isinstance(n, (c_ast.If, c_ast.While, c_ast.DoWhile, c_ast.TernaryOp)):
+            n.cond = self.boolify(n.cond, sc)
             return n
         if isinstance(n, c_ast.Switch):
             t = self.typeof(n.cond, sc)
@@ -516,6 +541,85 @@ CPP = ['s390x-linux-gnu-gcc', '-E', '-m31', '-undef', '-nostdinc', '-D__CMS__', 
        '-D__extension__=', '-D__asm__(x)=']
 
 
+def const_value(e):
+    neg = False
+    if isinstance(e, c_ast.UnaryOp) and e.op == '-':
+        e, neg = e.expr, True
+    if isinstance(e, c_ast.Cast):
+        e = e.expr
+    if not isinstance(e, c_ast.Constant) or e.type not in ('int', 'unsigned int', 'long int',
+                                                           'unsigned long int', 'char'):
+        return None
+    v = e.value.rstrip('uUlL')
+    try:
+        n = int(v, 16) if v.lower().startswith('0x') else int(v, 8) if (len(v) > 1 and v[0] == '0') \
+            else ord(eval(v)) if v.startswith("'") else int(v)
+    except Exception:
+        return None
+    return -n if neg else n
+
+
+def replace_ids(n, names):
+    """replace ID nodes named in names by the node names[name] builds"""
+    for slot in n.__slots__:
+        if slot in ('coord', '__weakref__'):
+            continue
+        v = getattr(n, slot, None)
+        if isinstance(v, c_ast.ID) and v.name in names and not (isinstance(n, c_ast.StructRef) and slot == 'field'):
+            setattr(n, slot, names[v.name]())
+        elif isinstance(v, c_ast.Node):
+            replace_ids(v, names)
+        elif isinstance(v, list):
+            for i, it in enumerate(v):
+                if isinstance(it, c_ast.ID) and it.name in names:
+                    v[i] = names[it.name]()
+                elif isinstance(it, c_ast.Node):
+                    replace_ids(it, names)
+
+
+def pack_tables(ast, ty, limit=2000):
+    """GCC380 writes one DC per array element and a CMS file holds 65,533
+    records: big constant integer tables (lemon's yy_action, yy_lookahead)
+    become a union of the bytes, initialised by a string, and the array"""
+    names = {}
+    for i, n in enumerate(ast.ext):
+        if not (isinstance(n, c_ast.Decl) and isinstance(n.type, c_ast.ArrayDecl)
+                and isinstance(n.init, c_ast.InitList) and len(n.init.exprs) > limit):
+            continue
+        et = ty.resolve(n.type.type)
+        if not et or et[0] != 'int' or et[1] not in (8, 16, 32):
+            continue
+        vals = [const_value(e) for e in n.init.exprs]
+        if any(v is None for v in vals):
+            continue
+        size = et[1] // 8
+        dim = const_value(n.type.dim) if n.type.dim is not None else len(vals)
+        if dim is None or dim < len(vals):
+            continue
+        vals += [0] * (dim - len(vals))
+        data = b''.join((v & ((1 << et[1]) - 1)).to_bytes(size, 'big') for v in vals)
+        lit = ''.join('\\x%02x' % b for b in data)
+        uname = 'U' + n.name
+        elt = n.type.type
+        un = c_ast.Union(None, [
+            c_ast.Decl('b', [], [], [], [], c_ast.ArrayDecl(
+                c_ast.TypeDecl('b', [], None, c_ast.IdentifierType(['unsigned', 'char'])),
+                c_ast.Constant('int', str(len(data))), []), None, None),
+            c_ast.Decl('a', [], [], [], [], c_ast.ArrayDecl(
+                c_ast.TypeDecl('a', [], None, elt.type), c_ast.Constant('int', str(dim)), []), None, None)])
+        d = c_ast.Decl(uname, n.quals, n.align, n.storage, n.funcspec,
+                       c_ast.TypeDecl(uname, n.type.type.quals, None, un),
+                       c_ast.InitList([c_ast.Constant('string', '"' + lit + '"')]), None)
+        d.coord = n.coord
+        ast.ext[i] = d
+        names[n.name] = (lambda u=uname: c_ast.StructRef(c_ast.ID(u), '.', c_ast.ID('a')))
+    if names:
+        for n in ast.ext:
+            if isinstance(n, c_ast.FuncDef):
+                replace_ids(n, names)
+    return len(names)
+
+
 def declname_set(t, new):
     while not isinstance(t, c_ast.TypeDecl):
         if not hasattr(t, 'type'):
@@ -631,17 +735,90 @@ def split(ast, unit, maxlines, outdir, counter):
         if isinstance(n, c_ast.FuncDef):
             Renamer(names).run(n)
     # partition the unit's function definitions by size
+    # and by external symbols: the assembler takes about 400 ESD entries
     funcs = [n for n in own if isinstance(n, c_ast.FuncDef)]
-    parts, cur, size = [], [], 0
+    globs = set()
+    for n in ast.ext:
+        if isinstance(n, c_ast.FuncDef):
+            globs.add(n.decl.name)
+        elif isinstance(n, c_ast.Decl) and n.name and 'typedef' not in (n.storage or []):
+            if 'static' not in (n.storage or []) or isinstance(n.type, c_ast.FuncDecl):
+                globs.add(n.name)
+    statvars = set(names.values())
+    budget = int(os.environ.get('XFMAXESD', '330'))
+    parts, cur, size, syms = [], [], 0, set()
     for f in funcs:
         l = gen.visit(f).count('\n')
-        if cur and size + l > maxlines:
+        nm = Names()
+        nm.visit(f.body)
+        fs = {x for x in nm.ids if x in globs} | {f.decl.name}
+        if cur and (size + l > maxlines or len(syms | fs) > budget):
             parts.append(cur)
-            cur, size = [], 0
+            cur, size, syms = [], 0, set()
         cur.append(f)
         size += l
+        syms |= fs
     if cur:
         parts.append(cur)
+    # a single function that alone calls too many external functions (the
+    # VM's run(): one call per outlined handler) calls those through a
+    # table, which each part fills for its own functions
+    import copy as _copy
+    extra_defs = {}             # part index -> items to append
+    extra_top = {}              # part index -> items to insert before defs
+    where = {}
+    for k, part in enumerate(parts):
+        for f in part:
+            where[f.decl.name] = k
+    fdef = {f.decl.name: f for f in funcs}
+    for k, part in enumerate(parts):
+        if len(part) != 1:
+            continue
+        g = part[0]
+        nm = Names()
+        nm.visit(g.body)
+        callees = sorted(x for x in nm.ids if x in where and where[x] != k)
+        if len(callees) + len([x for x in nm.ids if x in globs]) <= budget:
+            continue
+        tbl = 'CY%05d' % counter[0]
+        flag = 'CY%05d' % (counter[0] + 1)
+        counter[0] += 2
+        idx = {c: i for i, c in enumerate(callees)}
+
+        def fptr(name):
+            ft = _copy.deepcopy(fdef[name].decl.type)
+            t = ft.type
+            while not isinstance(t, c_ast.TypeDecl):
+                t = t.type
+            t.declname = None
+            return c_ast.Typename(None, [], None, c_ast.PtrDecl([], ft))
+
+        def ref(name):
+            return c_ast.Cast(fptr(name), c_ast.ArrayRef(c_ast.ID(tbl), c_ast.Constant('int', str(idx[name]))))
+        replace_ids(g.body, {c: (lambda c=c: ref(c)) for c in callees})
+        regs = {}
+        for c in callees:
+            regs.setdefault(where[c], []).append(c)
+        vptr = lambda: c_ast.Typename(None, [], None, c_ast.PtrDecl([], c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['void']))))
+        top_g = [c_ast.Decl(tbl, [], [], [], [], c_ast.ArrayDecl(c_ast.PtrDecl([], c_ast.TypeDecl(tbl, [], None, c_ast.IdentifierType(['void']))),
+                                                                 c_ast.Constant('int', str(len(callees))), []), None, None),
+                 c_ast.Decl(flag, [], [], [], [], c_ast.TypeDecl(flag, [], None, c_ast.IdentifierType(['int'])), None, None)]
+        calls = []
+        for j, cs in sorted(regs.items()):
+            rn = 'CY%05d' % counter[0]
+            counter[0] += 1
+            body = [c_ast.Assignment('=', c_ast.ArrayRef(c_ast.ID(tbl), c_ast.Constant('int', str(idx[c]))),
+                                     c_ast.Cast(vptr(), c_ast.ID(c))) for c in cs]
+            rdecl = c_ast.Decl(rn, [], [], [], [], c_ast.FuncDecl(c_ast.ParamList([c_ast.Typename(None, [], None, c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['void'])))]),
+                                                                  c_ast.TypeDecl(rn, [], None, c_ast.IdentifierType(['void']))), None, None)
+            ext_tbl = c_ast.Decl(tbl, [], [], ['extern'], [], c_ast.ArrayDecl(c_ast.PtrDecl([], c_ast.TypeDecl(tbl, [], None, c_ast.IdentifierType(['void']))), None, []), None, None)
+            extra_defs.setdefault(j, []).extend([ext_tbl, c_ast.FuncDef(_copy.deepcopy(rdecl), None, c_ast.Compound(body))])
+            top_g.append(rdecl)
+            calls.append(c_ast.FuncCall(c_ast.ID(rn), c_ast.ExprList([])))
+        init = c_ast.If(c_ast.UnaryOp('!', c_ast.ID(flag)),
+                        c_ast.Compound([c_ast.Assignment('=', c_ast.ID(flag), c_ast.Constant('int', '1'))] + calls), None)
+        g.body.block_items = [init] + (g.body.block_items or [])
+        extra_top.setdefault(k, []).extend(top_g)
     import copy
     outs = []
     for k, part in enumerate(parts):
@@ -674,6 +851,13 @@ def split(ast, unit, maxlines, outdir, counter):
                     items.append(d)
             else:
                 items.append(n)
+        # registration functions and the table go before this part's
+        # first definition of the unit's own
+        first = next((i for i, n in enumerate(items) if id(n) in pid), len(items))
+        items[first:first] = extra_top.get(k, [])
+        items += extra_defs.get(k, [])
+        for n in extra_top.get(k, []) + extra_defs.get(k, []):
+            roots.add(id(n))
         a = c_ast.FileAST(items)
         prune(a, unit + '.c', roots)
         pname = unit if k == 0 else (unit[:6] + 'P%d' % k)
@@ -701,10 +885,16 @@ def main():
         elif isinstance(n, c_ast.Decl) and n.init is not None and n.type is not None \
                 and not isinstance(n.type, c_ast.FuncDecl):
             pass                     # static initialisers are constant-folded
+    packed = pack_tables(ast, ty)
+    if packed:
+        print('%s: %d tables packed' % (unit, packed))
     text = c_generator.CGenerator().visit(ast)
     maxl = int(os.environ.get('XFMAXLINES', '15000'))
     pf = os.path.join(outdir, unit + '.parts')
-    if text.count('\n') > maxl * 1.3:
+    nmx = Names()
+    nmx.visit(ast)
+    ext_est = len([x for x in nmx.ids if x in ty.globals])
+    if text.count('\n') > maxl * 1.3 or ext_est > int(os.environ.get('XFMAXESD', '330')):
         cf = os.path.join(outdir, 'split.counter')
         counter = [int(open(cf).read()) if os.path.exists(cf) else 0]
         parts, nren = split(ast, unit, maxl, outdir, counter)
