@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """M8.2: the reader deck and the build EXEC for the native cREXX build.
 
-    mkcms.py STAGE OUTDIR  -> OUTDIR/crx82src.txt (READCARD deck, every staged
-                              file), OUTDIR/crx82mk.txt (CRX82MK EXEC + CRX82 PARM)
+    mkcms.py STAGE OUTDIR  -> OUTDIR/crx82src.txt (READCARD deck: every staged
+                              file and the EXEC), OUTDIR/crx82mk.txt (CRX82MK EXEC + CRX82 PARM)
 
 CRX82MK EXEC compiles every unit with GCC380 (GCC31 EXEC, GCCLIB31's headers
 on G), then links RXBVM82, RXAS82 and RXC82 with GCCLIB31 TXTLIB.
@@ -15,7 +15,8 @@ C = '/home/claude/adesutherland/crexx'
 sys.path.insert(0, os.path.join(HERE, '..', 'crexx'))
 from mkdeck import cards  # noqa: E402
 
-PARM = '-O1 -S -DNDEBUG -D__CMS__ -o dd:out -'
+PARM = '-w -O1 -S -DNDEBUG -D__CMS__ -o dd:out -'
+EXTRN = '@@DIVDI3,@@UDIVDI,@@MODDI3,@@UMODDI,@@MULDI3,@@NEGDI2,@@CMPDI2,@@UCMPDI'
 
 
 def units_of(stage):
@@ -40,15 +41,16 @@ def programs(stage):
         p = p.replace('$C', C).replace('$H', '/home/claude/crexx-host')
         p = p.replace('/home/claude/crexx-host/assembler/rxasscan.c', HERE + '/gen/rxasscan.c')
         asm.append(m[p])
-    rt = m[os.path.join(HERE, 'inc', 'crxrt.c')]
+    rt = m[os.path.join(HERE, 'inc', 'crxrt.c')] + ' ' + m[os.path.join(HERE, 'inc', 'crxlgcc.c')]
     main = {k: m[C + v] for k, v in (('vm', '/interpreter/rxvmmain.c'),
                                      ('as', '/assembler/rxasmain.c'),
                                      ('c', '/compiler/rxc_main.c'))}
-    used = set(vm) | set(asm) | set(main.values()) | {rt, m[C + '/interpreter/rxvml.c']}
+    rt = rt.split()
+    used = set(vm) | set(asm) | set(main.values()) | set(rt) | {m[C + '/interpreter/rxvml.c']}
     comp = [m[p] for p in srcs if m[p] not in used]
-    return [('RXBVM82', [main['vm']] + vm + [rt]),
-            ('RXAS82', [main['as']] + asm + vm + [rt]),
-            ('RXC82', [main['c']] + comp + [m[C + '/interpreter/rxvml.c']] + vm + asm + [rt])]
+    return [('RXBVM82', [main['vm']] + vm + rt),
+            ('RXAS82', [main['as']] + asm + vm + rt),
+            ('RXC82', [main['c']] + comp + [m[C + '/interpreter/rxvml.c']] + vm + asm + rt)]
 
 
 def exec_text(stage):
@@ -74,12 +76,15 @@ def exec_text(stage):
         line += ' ' + u.upper()
     if line:
         L.append("UNITS = UNITS '%s'" % line.strip())
-    L += ["IF ONLY = 'LINK' THEN SIGNAL LINKALL",
+    L += ["/* CRX82 MACLIB: GCC31's macros, PDPTOP with the 64-bit helpers */",
+          "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
+          "'MACLIB ADD CRX82 VTABLE'",
+          "IF ONLY = 'LINK' THEN SIGNAL LINKALL",
           "IF ONLY <> '' THEN UNITS = ONLY",
           'DO I = 1 TO WORDS(UNITS)',
           '  U = WORD(UNITS, I)',
           "  SAY 'CRX82MK: COMPILING' U '(' I 'OF' WORDS(UNITS) ')'",
-          "  'EXEC GCC31' U 'C' SRC '( LIB GCC31 PARM CRX82'",
+          "  'EXEC GCC31' U 'C' SRC '( LIB CRX82 PARM CRX82'",
           "  IF RC <> 0 THEN DO; SAY 'CRX82MK: ***' U 'RC' RC; BAD = BAD + 1; END",
           'END',
           "IF ONLY <> '' THEN EXIT BAD",
@@ -111,11 +116,17 @@ def main():
         fn, ft = f.split('.')
         deck.append(':READ  %-8s %-8s A1' % (fn.upper(), ft.upper()))
         deck.extend(cards(os.path.join(stage, f), ft.upper()))
-    with open(os.path.join(out, 'crx82src.txt'), 'w', encoding='latin-1') as fo:
-        for c in deck:
-            fo.write(c.ljust(80) + '\n')
-    mk = ['ID CMSUSER NAME CRX82 MK', ':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
+    mk = [':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
     mk += [':READ  CRX82    PARM     A1', PARM]
+    top = open(os.path.join(HERE, '..', 'gcclib31', 'src', 'pdptop.copy')).read().rstrip('\n').split('\n')
+    top += ['* M8.2: GCC380 calls its 64-bit helpers by =A(), so declare them',
+            '         EXTRN %s' % ','.join(EXTRN.split(',')[:4]),
+            '         EXTRN %s' % ','.join(EXTRN.split(',')[4:])]
+    mk += [':READ  PDPTOP   COPY     A1'] + top
+    with open(os.path.join(out, 'crx82src.txt'), 'w', encoding='latin-1') as fo:
+        for c in deck + mk:
+            fo.write(c.ljust(80) + '\n')
+    mk = ['ID CMSUSER NAME CRX82 MK'] + mk
     with open(os.path.join(out, 'crx82mk.txt'), 'w', encoding='latin-1') as fo:
         for c in mk:
             fo.write(c.ljust(80) + '\n')

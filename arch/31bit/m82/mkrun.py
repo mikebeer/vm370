@@ -12,6 +12,8 @@ def t(term, expect, tmo=120, cont=True, **k):
     d = {'term': term, 'expect': expect, 'timeout': tmo, 'cont': cont}; d.update(k); R.append(d)
 RDY = 'Ready\\(|Ready;|CP ENTERED'
 mode = sys.argv[1]
+if mode == 'deck':   # deck FILE CMD... : load FILE onto A (194), type CMDs
+    DECK, CMDS = sys.argv[2], sys.argv[3:]
 load = mode in ('full', 'smoke')
 s('ipl 6A1', 'DMKCPI966I|Start \\(\\(Warm', 180)
 s('/', 'Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP', 15)
@@ -23,7 +25,7 @@ s('/ipl 190', 'VM Community|Ready', 120, cont=False)
 s('/', 'Ready|Start \\(\\(Warm|AUTO LOGON|\\?CP', 15)
 s('/cp purge rdr cmsuser all', 'Ready|PURGED', 60)
 s('/cp spool 00c class *', 'Ready', 60)
-decks = ['crx82src.txt', 'crx82mk.txt'] if load else ['crx82mk.txt']
+decks = ['crx82src.txt'] if load else [DECK] if mode == 'deck' else ['crx82mk.txt']
 for d in decks:
     s('devinit 000c io/%s ascii eof trunc' % d, 'HHCPN098I|initialized', 30)
     s('/cp start 00c', 'Ready', 1800)
@@ -48,6 +50,9 @@ t('query disk', RDY)
 t('highstor reset', RDY)
 if mode == 'full':
     t('exec crx82mk', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP', 36000)
+elif mode == 'deck':
+    for c in CMDS:
+        t(c, RDY + '|DMSABN|DMSITP', 7200)
 elif mode == 'link':
     t('exec crx82mk link', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP', 3600)
 else:

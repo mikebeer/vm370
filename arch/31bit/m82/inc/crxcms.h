@@ -15,6 +15,7 @@
 #define CREXX_VM_NO_CLOCK 1
 #define CREXX_VM_PORTABLE_ALLOC 1
 #define CREXX_VM_COMPACT 1
+#define NUTF8 1
 #define RXVM_MEMORY_SLAB_SIZE 4096
 #define RXVM_MEMORY_MAX_STANDARD_SIZE 2048
 #include <stddef.h>

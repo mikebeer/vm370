@@ -112,11 +112,12 @@ def main():
     srcs = [l.strip() for l in open(os.path.join(HERE, 'srcs.txt')) if l.strip()]
     namer = Namer()
     rt = os.path.join(SHIM, 'crxrt.c')
-    namer.units = set(srcs) | {rt}
+    lg = os.path.join(SHIM, 'crxlgcc.c')
+    namer.units = set(srcs) | {rt, lg}
     for fixed in ('crxcms.h',):
         namer.by_path[os.path.join(SHIM, fixed)] = (fixed[:-2].upper(), 'H')
         namer.used['H'].add(fixed[:-2].upper())
-    todo = list(srcs) + [os.path.join(SHIM, 'crxcms.h'), rt]
+    todo = list(srcs) + [os.path.join(SHIM, 'crxcms.h'), rt, lg]
     applied = {}
     units = []
     done = set()
@@ -138,7 +139,7 @@ def main():
         out = []
         if ft == 'C':
             units.append(fn.lower())
-        if ft == 'C' and path != rt:
+        if ft == 'C' and path not in (rt, lg):
             out += ['#include "crxcms.h"']
         for line in text.split('\n'):
             if re.match(r'\s*#\s*line\b', line):

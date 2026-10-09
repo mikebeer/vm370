@@ -14,7 +14,7 @@ for u in units:
                          capture_output=True, text=True).stdout
     for l in out.splitlines():
         p = l.split()
-        if len(p) == 3 and p[1] in 'TDBRCG':
+        if len(p) == 3 and p[1] in 'TDBRCG' and not p[2].startswith('__'):
             defs.add(p[2])
 short = {}
 for d in defs:
