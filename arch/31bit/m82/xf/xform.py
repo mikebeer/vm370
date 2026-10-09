@@ -42,8 +42,12 @@ long long crxadd64(long long a, long long b);
 long long crxsub64(long long a, long long b);
 long long crxadt64(long long *p, long long b);
 long long crxinc64(long long *p, long long d, int post);
+int crxcmp64(long long a, long long b);
+int crxucm64(unsigned long long a, unsigned long long b);
+long crxsw64(long long a);
 '''
 HELPERS = ('crxadd64', 'crxsub64', 'crxadt64', 'crxinc64')
+IHELPERS = ('crxcmp64', 'crxucm64', 'crxsw64')
 
 INT = {'char': 8, 'short': 16, 'int': 32, 'long': 32, '_Bool': 8}
 
@@ -55,8 +59,11 @@ class Types:
         self.globals = {}
         self.enumconst = set()
         LL = c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['long', 'long']))
+        INTT = c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['int']))
         for h in HELPERS:
             self.globals[h] = c_ast.FuncDecl(None, LL)
+        for h in IHELPERS:
+            self.globals[h] = c_ast.FuncDecl(None, INTT)
         for ext in ast.ext:
             self.note(ext)
 
@@ -346,7 +353,31 @@ class Xform:
                         v[i] = self.x(it, sc)
         return self.rewrite(n, sc)
 
+    def cmp64(self, e, sc):
+        """a 64-bit comparison under && or ||: GCC folds those pairs into
+        range tests, which subtract a constant -- an add.  Compare by call."""
+        if isinstance(e, c_ast.BinaryOp) and e.op in ('<', '>', '<=', '>=', '==', '!='):
+            a, b = self.typeof(e.left, sc), self.typeof(e.right, sc)
+            t = arith(a, b)
+            if is64(t):
+                self.count += 1
+                f = 'crxucm64' if t[2] else 'crxcmp64'
+                ct = ULLT if t[2] else LLT
+                return c_ast.BinaryOp(e.op, call(f, cast(ct, e.left), cast(ct, e.right)),
+                                      c_ast.Constant('int', '0'))
+        return e
+
     def rewrite(self, n, sc):
+        if isinstance(n, c_ast.BinaryOp) and n.op in ('&&', '||'):
+            n.left = self.cmp64(n.left, sc)
+            n.right = self.cmp64(n.right, sc)
+            return n
+        if isinstance(n, c_ast.Switch):
+            t = self.typeof(n.cond, sc)
+            if is64(t):
+                self.count += 1
+                n.cond = call('crxsw64', cast(LLT, n.cond))
+            return n
         if isinstance(n, c_ast.BinaryOp) and n.op in ('+', '-'):
             t = self.typeof(n, sc)
             if t is None:
@@ -437,8 +468,8 @@ def defines(n):
     return names, tags
 
 
-def prune(ast, unitfile):
-    """keep the unit's own items and what they reach"""
+def prune(ast, unitfile, roots=None):
+    """keep the unit's own items (or the items in roots) and what they reach"""
     items = ast.ext
     info = []
     for n in items:
@@ -455,7 +486,10 @@ def prune(ast, unitfile):
             by_name.setdefault(x, []).append(i)
         for x in dt:
             by_tag.setdefault(x, []).append(i)
-    work = [i for i, inf in enumerate(info) if inf[1]]
+    if roots is None:
+        work = [i for i, inf in enumerate(info) if inf[1]]
+    else:
+        work = [i for i, n in enumerate(items) if id(n) in roots]
     for x in need_ids:
         work += by_name.get(x, [])
     while work:
@@ -482,6 +516,173 @@ CPP = ['s390x-linux-gnu-gcc', '-E', '-m31', '-undef', '-nostdinc', '-D__CMS__', 
        '-D__extension__=', '-D__asm__(x)=']
 
 
+def declname_set(t, new):
+    while not isinstance(t, c_ast.TypeDecl):
+        if not hasattr(t, 'type'):
+            return
+        t = t.type
+    t.declname = new
+
+
+class Renamer:
+    """rename file-scope names, respecting local shadowing"""
+    def __init__(self, names):
+        self.names = names
+
+    def run(self, n, shadow=frozenset()):
+        if n is None:
+            return
+        if isinstance(n, c_ast.ID):
+            if n.name in self.names and n.name not in shadow:
+                n.name = self.names[n.name]
+            return
+        if isinstance(n, c_ast.FuncDef):
+            sh = set(shadow)
+            ft = n.decl.type
+            if isinstance(ft, c_ast.FuncDecl) and ft.args:
+                for p in ft.args.params:
+                    if isinstance(p, c_ast.Decl) and p.name:
+                        sh.add(p.name)
+            self.run(n.body, frozenset(sh))
+            return
+        if isinstance(n, c_ast.Compound):
+            sh = set(shadow)
+            for it in n.block_items or []:
+                if isinstance(it, c_ast.Decl) and it.name:
+                    if it.init is not None:
+                        self.run(it.init, frozenset(sh))
+                    sh.add(it.name)
+                    self.run_type(it.type, frozenset(sh))
+                else:
+                    self.run(it, frozenset(sh))
+            return
+        if isinstance(n, c_ast.For) and isinstance(n.init, c_ast.DeclList):
+            sh = set(shadow)
+            for d in n.init.decls:
+                if d.init is not None:
+                    self.run(d.init, frozenset(sh))
+                sh.add(d.name)
+            for c in (n.cond, n.next, n.stmt):
+                self.run(c, frozenset(sh))
+            return
+        if isinstance(n, c_ast.StructRef):
+            self.run(n.name, shadow)
+            return
+        for name in n.__slots__:
+            if name in ('coord', '__weakref__'):
+                continue
+            v = getattr(n, name, None)
+            if isinstance(v, c_ast.Node):
+                self.run(v, shadow)
+            elif isinstance(v, list):
+                for it in v:
+                    if isinstance(it, c_ast.Node):
+                        self.run(it, shadow)
+
+    def run_type(self, t, shadow):
+        # array dimensions may use file-scope names
+        while t is not None and hasattr(t, 'type'):
+            if isinstance(t, c_ast.ArrayDecl) and t.dim is not None:
+                self.run(t.dim, shadow)
+            t = t.type
+
+
+def split(ast, unit, maxlines, outdir, counter):
+    """cut a unit too big for one CMS file of assembler into parts: its
+    static functions and variables become external (renamed CYnnnnn),
+    each part defines some of the functions and declares the rest"""
+    def is_own(n):
+        f = str(n.coord.file) if n.coord is not None else ''
+        if os.path.basename(f) == unit + '.c':
+            return True
+        if 'gcclib31' in f:
+            return False
+        if isinstance(n, c_ast.FuncDef):        # out-of-line code from .inc files
+            return 'inline' not in (n.decl.funcspec or [])
+        if isinstance(n, c_ast.Decl) and 'static' in (n.storage or []) and \
+                not isinstance(n.type, c_ast.FuncDecl):
+            return True                         # one copy of static data
+        return False
+    own = [n for n in ast.ext if is_own(n)]
+    ownids = set(id(n) for n in own)
+    gen = c_generator.CGenerator()
+    names = {}
+    for n in own:
+        d = n.decl if isinstance(n, c_ast.FuncDef) else n
+        if isinstance(d, c_ast.Decl) and d.name and 'static' in (d.storage or []):
+            if isinstance(n, c_ast.FuncDef) or not isinstance(d.type, c_ast.FuncDecl):
+                names[d.name] = 'CY%05d' % counter[0]
+                counter[0] += 1
+    # static prototypes of those functions are renamed too
+    for n in ast.ext:
+        if isinstance(n, c_ast.Decl) and n.name in names:
+            n.storage = [x for x in n.storage if x != 'static']
+            n.funcspec = [x for x in n.funcspec if x != 'inline']
+            n.name = names[n.name]
+            declname_set(n.type, n.name)
+        elif isinstance(n, c_ast.FuncDef) and n.decl.name in names:
+            d = n.decl
+            d.storage = [x for x in d.storage if x != 'static']
+            d.funcspec = [x for x in d.funcspec if x != 'inline']
+            d.name = names[d.name]
+            declname_set(d.type, d.name)
+    Renamer(names).run(ast)
+    for n in ast.ext:
+        if isinstance(n, c_ast.FuncDef):
+            Renamer(names).run(n)
+    # partition the unit's function definitions by size
+    funcs = [n for n in own if isinstance(n, c_ast.FuncDef)]
+    parts, cur, size = [], [], 0
+    for f in funcs:
+        l = gen.visit(f).count('\n')
+        if cur and size + l > maxlines:
+            parts.append(cur)
+            cur, size = [], 0
+        cur.append(f)
+        size += l
+    if cur:
+        parts.append(cur)
+    import copy
+    outs = []
+    for k, part in enumerate(parts):
+        pid = set(id(f) for f in part)
+        items = []
+        roots = set()
+        for n in ast.ext:
+            if isinstance(n, c_ast.FuncDef) and id(n) in ownids:
+                if id(n) in pid:
+                    items.append(n)
+                    roots.add(id(n))
+                else:
+                    d = copy.copy(n.decl)
+                    d.storage = [x for x in (d.storage or []) if x not in ('static', 'extern')]
+                    d.funcspec = [x for x in (d.funcspec or []) if x != 'inline']
+                    d.coord = n.coord
+                    items.append(d)
+            elif isinstance(n, c_ast.Decl) and id(n) in ownids and n.name and \
+                    not isinstance(n.type, c_ast.FuncDecl) and 'extern' not in (n.storage or []) \
+                    and 'typedef' not in (n.storage or []):
+                if k == 0:
+                    d = copy.copy(n)
+                    d.storage = [x for x in (n.storage or []) if x != 'static']
+                    items.append(d)
+                    roots.add(id(d))
+                else:
+                    d = copy.copy(n)
+                    d.storage = ['extern'] + [x for x in (n.storage or []) if x not in ('static', 'extern')]
+                    d.init = None
+                    items.append(d)
+            else:
+                items.append(n)
+        a = c_ast.FileAST(items)
+        prune(a, unit + '.c', roots)
+        pname = unit if k == 0 else (unit[:6] + 'P%d' % k)
+        with open(os.path.join(outdir, pname + '.c'), 'w', encoding='latin-1') as f:
+            f.write(PROLOGUE + gen.visit(a))
+        outs.append(pname)
+    return outs, len(names)
+
+
 def main():
     stage, unit, outdir = sys.argv[1:4]
     src = subprocess.run(CPP + ['-I' + stage, '-I' + os.path.join(HERE, 'inc'),
@@ -501,6 +702,19 @@ def main():
                 and not isinstance(n.type, c_ast.FuncDecl):
             pass                     # static initialisers are constant-folded
     text = c_generator.CGenerator().visit(ast)
+    maxl = int(os.environ.get('XFMAXLINES', '15000'))
+    pf = os.path.join(outdir, unit + '.parts')
+    if text.count('\n') > maxl * 1.3:
+        cf = os.path.join(outdir, 'split.counter')
+        counter = [int(open(cf).read()) if os.path.exists(cf) else 0]
+        parts, nren = split(ast, unit, maxl, outdir, counter)
+        open(cf, 'w').write(str(counter[0]))
+        open(pf, 'w').write(' '.join(parts) + '\n')
+        print('%s: %d items kept, %d rewritten, %d untyped, %d lines; split in %d (%d statics made external)'
+              % (unit, kept, xf.count, xf.unknown, text.count('\n'), len(parts), nren))
+        return
+    if os.path.exists(pf):
+        os.remove(pf)
     with open(os.path.join(outdir, unit + '.c'), 'w', encoding='latin-1') as f:
         f.write(PROLOGUE + text)
     print('%s: %d items kept, %d rewritten, %d untyped, %d lines' % (unit, kept, xf.count, xf.unknown, text.count('\n')))

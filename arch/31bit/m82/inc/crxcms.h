@@ -8,7 +8,7 @@
 #define CREXX_CMS_GCC 1
 #define CREXX_VM_SINGLE_THREADED 1
 #define NTHREADED 1
-#define CREXX_VM_HANDLER_PANEL 20
+#define CREXX_VM_HANDLER_PANEL 1   /* handlers out of line: run() stays small */
 #define MANUAL_PLUGIN_LINK 1
 #define CREXX_VM_STATIC_ONLY 1
 #define CREXX_VM_NO_SOCKETS 1

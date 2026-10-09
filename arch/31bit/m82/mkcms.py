@@ -29,6 +29,17 @@ def units_of(stage):
     return m
 
 
+XF = None   # the xform output: a unit split in parts lists them in UNIT.parts
+
+
+def expand(us):
+    out = []
+    for u in us:
+        pf = os.path.join(XF, u.lower() + '.parts') if XF else ''
+        out += open(pf).read().split() if pf and os.path.exists(pf) else [u]
+    return out
+
+
 def programs(stage):
     m = units_of(stage)
     srcs = [l.strip() for l in open(os.path.join(HERE, 'srcs.txt')) if l.strip()]
@@ -48,9 +59,9 @@ def programs(stage):
     rt = rt.split()
     used = set(vm) | set(asm) | set(main.values()) | set(rt) | {m[C + '/interpreter/rxvml.c']}
     comp = [m[p] for p in srcs if m[p] not in used]
-    return [('RXBVM82', [main['vm']] + vm + rt),
-            ('RXAS82', [main['as']] + asm + vm + rt),
-            ('RXC82', [main['c']] + comp + [m[C + '/interpreter/rxvml.c']] + vm + asm + rt)]
+    return [('RXBVM82', expand([main['vm']] + vm + rt)),
+            ('RXAS82', expand([main['as']] + asm + vm + rt)),
+            ('RXC82', expand([main['c']] + comp + [m[C + '/interpreter/rxvml.c']] + vm + asm + rt))]
 
 
 def exec_text(stage):
@@ -133,7 +144,9 @@ def exec_text(stage):
 
 
 def main():
+    global XF
     stage, xfdir, out = sys.argv[1:4]
+    XF = xfdir
     deck = ['ID CMSUSER NAME CRX82 SRC']
     files = sorted(f for f in os.listdir(xfdir) if f.endswith('.c'))
     for f in files:

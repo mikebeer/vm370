@@ -261,3 +261,31 @@ long long crxinc64(long long *p, long long d, int post)   /* ++ -- */
     *p = x.s;
     return post ? old.s : x.s;
 }
+
+/* 64-bit comparisons under && and ||, and 64-bit switch: GCC380 folds them
+   into range tests that subtract a constant (= an add, which it cannot) */
+int crxcmp64(long long a, long long b)
+{
+    du x, y;
+    x.s = a; y.s = b;
+    if ((long)x.w.hi != (long)y.w.hi) return (long)x.w.hi < (long)y.w.hi ? -1 : 1;
+    if (x.w.lo != y.w.lo) return x.w.lo < y.w.lo ? -1 : 1;
+    return 0;
+}
+
+int crxucm64(unsigned long long a, unsigned long long b)
+{
+    du x, y;
+    x.u = a; y.u = b;
+    return ucmp(x.w, y.w);
+}
+
+long crxsw64(long long a)        /* out of range: a value no case uses */
+{
+    du x;
+    x.s = a;
+    if ((x.w.hi == 0 && !(x.w.lo & 0x80000000UL)) ||
+        (x.w.hi == 0xFFFFFFFFUL && (x.w.lo & 0x80000000UL)))
+        return (long)x.w.lo;
+    return (long)0x80000000UL;
+}
