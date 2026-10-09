@@ -19,13 +19,24 @@ The kit was verified on a fresh CE (kt14).
 | M7.1–M7.7 | done: ESA/390 guests with DAT (DMKVAX shadow tables), the Linux 4.0 31-bit kernel, BusyBox, Debian 7.11 from a 3390 with SSH over CTC |
 | **M7.8** | **done**: LINUX EXEC on MAINT 19D, a parameter file per user, `SET ESA ON` pending until the next device IPL, CMS first and then Linux, Linux and CMS users side by side (`M7.8-MULTIUSER.md`, tests `m7-linux-cms-coexist*`) |
 | Guide | done (b5) |
-| **next: M8.2** | the current cREXX built natively on CMS |
+| **now: M8.2** | the current cREXX built natively on CMS: RXC82 and RXAS82 work on CMS; RXBVM82 being fixed (`41-M8.2-NATIVE-CREXX.md`) |
+| Debian session | Python 2.7/3.2, cREXX for Linux, Prolog and LOGO under Debian (gcc 4.6.3 already installed) |
+| M7.10 | `IPL LINUX`: zipl on the Debian disk and a CP name LINUX |
 | M7.9 | lift the 64-CCW CVTCHN limit |
 | M4b.3 | CP using real frames above 16 MB; needed for two Debians at once (I-254) |
 | CP leftovers | I-235 models, I-201 DMKDMP dump, the LPSW fast path for PSWs above 16 MB |
-| gcc under Debian | needs the -dev package set uploaded |
+| gcc under Debian | done: gcc 4.6.3, g++, make |
+| CPWATCH | get it running again (I-251) |
 | M6 | 31-bit CMS proper |
 | M9 | 64-bit |
+
+**Backlog (agreed, not scheduled before M9 unless said):**
+- Languages: Prolog and LOGO on CMS (cREXX, via RXBVM8) and Linux; FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
+- CP/M 2.2 as a guest (from ivop/cpm22-from-source, needs PL/M): an 8080 emulator first under Linux, then as a CMS command, then stand-alone IPLable.
+- 3270 full-screen panel library for CMS (cREXX and C); a 3270 console for Linux.
+- A VisiCalc-style spreadsheet of our own for CMS, on the 3270 panel library (geoffmoss0/VisiCalc has no licence, so it is a model only).
+- VM/370+ Office, PROFS-style, in REXX/cREXX: mail with internet e-mail to other users, calendar, notes, documents, a Projects module, an optional web-browser client.
+- A BookMaster-compatible layer for Waterloo SCRIPT.
 
 **Open issues that matter:** I-254 (two Debians, real storage), I-253 (SPOOL TO SYSTEM, cosmetic), I-251 (CPWATCH, worked around), I-235 models, I-201.
 
