@@ -20,15 +20,12 @@ cat > /etc/network/interfaces <<N
 auto lo
 iface lo inet loopback
 
-# the CTC pair to the PC (Hercules CTCI); the initramfs groups and
-# activates the adapters before switch_root
+# the CTC pair to the PC (Hercules CTCI).  The initramfs groups the
+# adapters and configures ctc0 from the IPL parameters (vmip=, vmpeer=;
+# default 10.1.1.2 / 10.1.1.1) before switch_root, so the same disk
+# works for every user; Debian leaves it alone.
 auto ctc0
-iface ctc0 inet static
-    address 10.1.1.2
-    netmask 255.255.255.255
-    pointopoint 10.1.1.1
-    gateway 10.1.1.1
-    mtu 1500
+iface ctc0 inet manual
 N
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 cat > /etc/apt/sources.list <<S

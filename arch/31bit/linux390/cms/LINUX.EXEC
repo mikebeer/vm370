@@ -1,0 +1,41 @@
+/* LINUX EXEC -- VM/370+: IPL Linux/390 in this virtual machine.   */
+/*                                                                 */
+/* LINUX48 KERNEL1/KERNEL2 (one kernel; a CMS file holds at most  */
+/* 65533 records) and the IPL parameters (userid LXPARM, else      */
+/* DEFAULT LXPARM) are on MAINT's 19D (the U disk).  The EXEC      */
+/* punches them into your own reader, holds whatever else is in    */
+/* the reader, and IPLs the reader as an ESA/390 machine.          */
+/* Debian also needs, in this virtual machine: 64 MB of storage,   */
+/* your own 3390 at 250 and your own CTC pair at 620 and 630.      */
+/* Afterwards:  CP CHANGE RDR ALL NOHOLD  gives your files back.   */
+u = userid()
+parm = u
+'STATE' u 'LXPARM *'
+if rc <> 0 then do
+  parm = 'DEFAULT'
+  'STATE DEFAULT LXPARM *'
+  if rc <> 0 then do
+    say 'LINUX: no LXPARM file found (LINK MAINT 19D 19D RR, ACCESS 19D U)'
+    exit 28
+  end
+end
+'STATE LINUX48 KERNEL2 *'
+if rc <> 0 then do
+  say 'LINUX: LINUX48 KERNEL2 not found (LINK MAINT 19D 19D RR, ACCESS 19D U)'
+  exit 28
+end
+say 'LINUX: punching the kernel and' parm 'LXPARM to your reader ...'
+'CP CHANGE RDR ALL HOLD'
+'CP SPOOL PUNCH TO * CONT'
+'PUNCH LINUX48 KERNEL1 * (NOHEADER'
+if rc <> 0 then exit rc
+'PUNCH LINUX48 KERNEL2 * (NOHEADER'
+if rc <> 0 then exit rc
+'CP SPOOL PUNCH NOCONT'
+'CP CLOSE PUNCH'
+'PUNCH' parm 'LXPARM * (NOHEADER'
+if rc <> 0 then exit rc
+'CP SPOOL PUNCH TO SYSTEM'
+say 'LINUX: IPL 00C as an ESA/390 machine'
+'CP SET ESA ON'
+'CP IPL 00C'

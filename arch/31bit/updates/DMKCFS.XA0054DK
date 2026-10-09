@@ -2,10 +2,20 @@
          B     SETESA         SET ESA ON|OFF (M7)              XA0054DK         
 ./ I 00719000 $ 00719110 010                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
-SETESA   TM    VMPSTAT,VMV370R  M7: AN ESA/390 MACHINE.        XA0054DK         
-         BZ    SETESA1        SHADOW TABLES LEFT FROM AN       XA0054DK         
+* SET ESA ON|OFF.  ON TAKES EFFECT AT THE NEXT IPL OF A        XA0054DK         
+* DEVICE (M7.8), SO CMS CAN SAY IT AND KEEP RUNNING.  ONLY     XA0054DK         
+* OFF IS TESTED: THE SECOND ARGUMENT WAS SEEN AS 'KEEP'        XA0054DK         
+* AFTER AN ATTACH TO THE USER (I-253, OPEN), AND ON IS THE     XA0054DK         
+* ONLY USE THAT MATTERS.                                       XA0054DK         
+SETESA   CLC   SAVEWRK5(4),=C'OFF '                            XA0054DK         
+         BE    SETESAOF                                        XA0054DK         
+         TM    VMPSTAT,VMV370R  SHADOW TABLES LEFT FROM AN     XA0054DK         
+         BZ    SETESAON       EARLIER SYSTEM GO FIRST          XA0054DK         
          EXTRN DMKVATBC                                        XA0054DK         
-         CALL  DMKVATBC       EARLIER SYSTEM GO FIRST          XA0054DK         
-SETESA1  BAL   R9,EXECONF                                      XA0054DK         
-         OI    VMFSTAT,VMESA390                                XA0054DK         
+         CALL  DMKVATBC                                        XA0054DK         
+         B     SETESAON                                        XA0054DK         
+SETESAOF NI    VMLCLRSV,X'BF'  OFF: NOT PENDING, AND NOT NOW   XA0054DK         
          NI    VMFSTAT,X'FF'-VMESA390                          XA0054DK         
+         B     SETCOMP                                         XA0054DK         
+SETESAON OI    VMLCLRSV,X'40'  ON: PENDING (DMKCFG IPLBYDEV)   XA0054DK         
+         B     SETCOMP                                         XA0054DK         

@@ -3314,8 +3314,9 @@ VCSCODE = [
 ]
 
 
-LEAVE_CFG = ['         TM    SAVEWRK1,NOCLEAR  CLEARED (NOT NOCLEAR)?', '         BO    CFGSHX', '         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO', '         BZ    CFGSHX       NO NAMED SYSTEM RUNS ANY MORE:', 'CFGSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE', '         BZ    CFGSHW       COUNT AND VMSHR WITH THEM', '         MVC   VMASSIST,0(R1) (VMAFPNT)', '         LA    R0,2           (VMASIZE)', '         CALL  DMKFRET', '         B     CFGSHV', 'CFGSHW    XC    VMSHRSYS,VMSHRSYS', '         NI    VMOSTAT,255-VMSHR', 'CFGSHX    DS    0H']
+LEAVE_CFG = M7EQU[:1] + ['         TM    SAVEWRK1,NOCLEAR  CLEARED (NOT NOCLEAR)?', '         BO    CFGSHX', '         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO', '         BZ    CFGSHX       NO NAMED SYSTEM RUNS ANY MORE:', 'CFGSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE', '         BZ    CFGSHW       COUNT AND VMSHR WITH THEM', '         MVC   VMASSIST,0(R1) (VMAFPNT)', '         LA    R0,2           (VMASIZE)', '         CALL  DMKFRET', '         B     CFGSHV', 'CFGSHW    XC    VMSHRSYS,VMSHRSYS', '         NI    VMOSTAT,255-VMSHR', 'CFGSHX    DS    0H']
 LEAVE_DEH = ['         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO', '         BZ    DEHSHX       NO NAMED SYSTEM RUNS ANY MORE:', 'DEHSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE', '         BZ    DEHSHW       COUNT AND VMSHR WITH THEM', '         MVC   VMASSIST,0(R1) (VMAFPNT)', '         LA    R0,2           (VMASIZE)', '         CALL  DMKFRET', '         B     DEHSHV', 'DEHSHW    XC    VMSHRSYS,VMSHRSYS', '         NI    VMOSTAT,255-VMSHR', 'DEHSHX    DS    0H']
+LEAVE_CFN = ['         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO', '         BZ    CFNSHX       NO NAMED SYSTEM RUNS ANY MORE:', 'CFNSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE', '         BZ    CFNSHW       COUNT AND VMSHR WITH THEM', '         MVC   VMASSIST,0(R1) (VMAFPNT)', '         LA    R0,2           (VMASIZE)', '         CALL  DMKFRET', '         B     CFNSHV', 'CFNSHW    XC    VMSHRSYS,VMSHRSYS', '         NI    VMOSTAT,255-VMSHR', 'CFNSHX    DS    0H']
 
 
 def m7decks():
@@ -3644,10 +3645,24 @@ def m7decks():
     # ("EC, translate and shared"), and DMKPRV fetched Linux's
     # instructions through a zero shadow CR1: PROGRAM INTERRUPT LOOP in
     # the first program check handler (lx150-lx158, CMS first, then Linux).
+    # IPL of a device defaults to NOCLEAR, which keeps the pages -- and
+    # with them the copies of the shared CMS frames, which the guest
+    # would then write into (lxm4/lxm6: CMS, then LINUX EXEC).  A user
+    # in a named system IPLs a device CLEAR.
+    d.insert('00456000', first='00456100', inc=100,
+             limit=next_seq(src('DMKCFG'), '00456000'), lines=M7EQU[:1] + [
+        "         TM    VMOSTAT,VMSHR  I-235: IN A NAMED SYSTEM, THE",
+        "         BZ    CFGNSHR        SHARED COPIES MUST GO: CLEAR",
+        "         NI    SAVEWRK1,X'FF'-NOCLEAR",
+        "CFGNSHR  DS    0H"])
     d.insert('00464100', first='00464110', inc=10,
-             limit=next_seq(src('DMKCFG'), '00464100'), lines=LEAVE_CFG)
+             limit=next_seq(src('DMKCFG'), '00464100'), lines=LEAVE_CFG[1:] + [
+        "         TM    VMLCLRSV,X'40'  M7.8: SET ESA ON PENDING: THIS",
+        "         BZ    CFGESAX        DEVICE IPLS AN ESA/390 MACHINE",
+        "         OI    VMFSTAT,VMESA390",
+        "CFGESAX  DS    0H"])
     d.insert('00512000', first='00512110', inc=10,
-             limit=next_seq(src('DMKCFG'), '00512000'), lines=M7EQU[:1] + [
+             limit=next_seq(src('DMKCFG'), '00512000'), lines=[
         "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST: THE",
         "         BZ    CFGNESA        IPL DEVICE'S SUBSYSTEM ID",
         "         L     R1,SAVEWRK2    AT X'B8' (DMKVMI KEEPS IT)",
@@ -3658,6 +3673,13 @@ def m7decks():
         "         XC    188(4,R2),188(R2)",
         "CFGNESA  DS    0H",
     ])
+    d.insert('00558000', first='00558010', inc=10,
+             limit=next_seq(src('DMKCFG'), '00558000'), lines=[
+        "         NI    VMFSTAT,X'FF'-VMESA390  M7.8: A NAMED SYSTEM",
+        "*                             (CMS) IS S/370; SET ESA ON",
+        "*                             STAYS PENDING"])
+    d.insert('00561000', first='00561010', inc=10,
+             limit=next_seq(src('DMKCFG'), '00561000'), lines=LEAVE_CFN)
     decks['DMKCFG'] = d
 
     d = Deck(XA54)
@@ -3868,13 +3890,23 @@ def m7decks():
     ])
     d.insert('00719000', first='00719110', inc=10,
              limit=next_seq(src('DMKCFS'), '00719000'), lines=M7EQU[:1] + [
-        "SETESA   TM    VMPSTAT,VMV370R  M7: AN ESA/390 MACHINE.",
-        "         BZ    SETESA1        SHADOW TABLES LEFT FROM AN",
+        "* SET ESA ON|OFF.  ON TAKES EFFECT AT THE NEXT IPL OF A",
+        "* DEVICE (M7.8), SO CMS CAN SAY IT AND KEEP RUNNING.  ONLY",
+        "* OFF IS TESTED: THE SECOND ARGUMENT WAS SEEN AS 'KEEP'",
+        "* AFTER AN ATTACH TO THE USER (I-253, OPEN), AND ON IS THE",
+        "* ONLY USE THAT MATTERS.",
+        "SETESA   CLC   SAVEWRK5(4),=C'OFF '",
+        "         BE    SETESAOF",
+        "         TM    VMPSTAT,VMV370R  SHADOW TABLES LEFT FROM AN",
+        "         BZ    SETESAON       EARLIER SYSTEM GO FIRST",
         "         EXTRN DMKVATBC",
-        "         CALL  DMKVATBC       EARLIER SYSTEM GO FIRST",
-        "SETESA1  BAL   R9,EXECONF",
-        "         OI    VMFSTAT,VMESA390",
+        "         CALL  DMKVATBC",
+        "         B     SETESAON",
+        "SETESAOF NI    VMLCLRSV,X'BF'  OFF: NOT PENDING, AND NOT NOW",
         "         NI    VMFSTAT,X'FF'-VMESA390",
+        "         B     SETCOMP",
+        "SETESAON OI    VMLCLRSV,X'40'  ON: PENDING (DMKCFG IPLBYDEV)",
+        "         B     SETCOMP",
     ])
     decks['DMKCFS'] = d
     return decks
