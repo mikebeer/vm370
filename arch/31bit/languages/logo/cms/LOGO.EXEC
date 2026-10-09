@@ -1,0 +1,14 @@
+/* LOGO EXEC -- LOGO in cREXX (github.com/mikebeer/LOGO) on VM/370+ CMS */
+/*   LOGO fn.logo [out.svg]   run a LOGO program; the turtle drawing is */
+/*                            written as SVG (default LOGO SVG A)       */
+/*   LOGO                     built-in demo                             */
+/* Runs LOGO RXBIN (linked with its library) on RXBVM8 (M8.1).          */
+PARSE ARG ARGS
+'STATE LOGO RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'LOGO: LOGO RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+IF ARGS = '' THEN 'RXBVM8 LOGO'
+ELSE 'RXBVM8 LOGO -a' ARGS
+EXIT RC

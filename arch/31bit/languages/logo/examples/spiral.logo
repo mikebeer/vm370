@@ -1,0 +1,5 @@
+; square spiral using FOR and a procedure
+TO SPIRAL :N
+  FOR [I 1 :N 1] [SETPC REMAINDER :I 16 FD :I * 3 RT 91]
+END
+SPIRAL 90

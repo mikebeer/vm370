@@ -1,0 +1,17 @@
+/* PROLOG EXEC -- Prolog in cREXX (prolog.crexx) on VM/370+ CMS.       */
+/*   PROLOG              the interactive top level                     */
+/*   PROLOG fn.pl        consult FN PL first (e.g. PROLOG family.pl)  */
+/* End a query with ?  (female(ann)?), a fact or rule with .  ;        */
+/* consult('recur.pl')?  loads RECUR PL; halt. ends the session.       */
+/* Runs PROLOG RXBIN (linked with its library) on RXBVM8, the cREXX    */
+/* VM cross-built for CMS (M8.1); finds RXBIN and .pl files on any    */
+/* accessed disk.                                                       */
+PARSE ARG ARGS
+'STATE PROLOG RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'PROLOG: PROLOG RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+IF ARGS = '' THEN 'RXBVM8 PROLOG'
+ELSE 'RXBVM8 PROLOG -a' ARGS
+EXIT RC

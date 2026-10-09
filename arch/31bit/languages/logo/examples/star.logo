@@ -1,0 +1,6 @@
+; five-pointed star, then a coloured ring of them
+TO STAR :SIZE
+  REPEAT 5 [FD :SIZE RT 144]
+END
+SETPENSIZE 2
+REPEAT 12 [SETPC REPCOUNT STAR 90 RT 30]

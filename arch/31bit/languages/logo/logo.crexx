@@ -1,0 +1,1202 @@
+/*
+ * logo.crexx - a LOGO (turtle graphics) interpreter written in CREXX Level B
+ *
+ * Usage:   crexx logo.crexx [program.logo [output.svg]]
+ *
+ *   With no arguments a small built-in demo is run. The turtle's drawing is
+ *   written as an SVG file (default: logo.svg); PRINT / SHOW output goes to
+ *   standard output.
+ *
+ * Supported language (case-insensitive):
+ *   Turtle   FD BK RT LT PU PD HOME CS CLEAN SETXY SETX SETY SETH SETHEADING
+ *            SETPC SETPENCOLOR SETCOLOR SETPENSIZE SETBG HT ST LABEL
+ *            HEADING XCOR YCOR PENDOWNP
+ *   Control  REPEAT IF IFELSE FOR WHILE RUN STOP OUTPUT/OP
+ *   Procs    TO name :a :b ... END   (recursion, dynamic scoping)
+ *   Data     MAKE LOCAL THING :var "word [list] numbers
+ *   Math     + - * / = < > <= >= <>  and  SUM DIFFERENCE PRODUCT QUOTIENT
+ *            REMAINDER MODULO INT ROUND ABS SQRT POWER SIN COS PI RANDOM
+ *   Lists    FIRST LAST BUTFIRST/BF BUTLAST/BL COUNT ITEM FPUT LPUT WORD
+ *            SENTENCE/SE LIST EMPTYP MEMBERP NUMBERP LISTP WORDP
+ *   Logic    NOT AND OR EQUALP LESSP GREATERP
+ *   I/O      PRINT/PR SHOW
+ *   Comments start with ';' and run to the end of the line.
+ *
+ * Note: arguments of prefix operations are full expressions, so
+ * "SQRT 16 + 9" means SQRT(25).
+ */
+options levelb
+namespace logo expose tk tko pnames pparams pstart pend sname sval nsv gname gval ngv cp lim stopflag retval depth tx ty th pen pcolor psize bg svg minx maxx miny maxy outfile palette
+
+import rxfnsb
+
+arg argv = .string[]
+
+/* ---------------------------------------------------------------- state */
+tk       = .string[]      /* token array for the whole program (upper case) */
+tko      = .string[]      /* the same tokens in their original case        */
+pnames   = .string[]      /* user procedure names                         */
+pparams  = .string[]      /* user procedure parameters  (":A :B")         */
+pstart   = .string[]      /* first body token of each procedure           */
+pend     = .string[]      /* last body token of each procedure            */
+sname    = .string[]      /* local variable stack: names                  */
+sval     = .string[]      /* local variable stack: values                 */
+gname    = .string[]      /* global variable names                        */
+gval     = .string[]      /* global variable values                       */
+svg      = .string[]      /* SVG elements produced by the turtle          */
+nsv      = 0              /* depth of the local variable stack            */
+ngv      = 0              /* number of global variables                   */
+cp      = 1              /* current token                                */
+lim      = 0              /* last token of the block being executed       */
+stopflag = 0              /* 0 normal, 1 STOP, 2 OUTPUT                   */
+retval   = ""             /* value of OUTPUT                              */
+depth    = 0              /* procedure call depth                         */
+tx       = 0.0            /* turtle x                                     */
+ty       = 0.0            /* turtle y                                     */
+th       = 0.0            /* turtle heading in degrees, 0 = up, clockwise */
+pen      = 1              /* 1 = pen down                                 */
+pcolor   = "black"
+psize    = 1.0
+bg       = "white"
+minx     = 0.0
+maxx     = 0.0
+miny     = 0.0
+maxy     = 0.0
+outfile  = "logo.svg"
+palette  = "black blue green cyan red magenta yellow white brown tan forestgreen aquamarine salmon purple orange gray"
+
+nl = '0a'x
+source = ""
+
+if argv.0 >= 1 then do
+  srclines = readlines(argv[1])
+  do i = 1 to srclines.0
+    source = source || srclines[i] || nl
+  end
+  if argv.0 >= 2 then outfile = argv[2]
+end
+else do
+  say "logo.crexx: no program given, running the built-in demo"
+  source = demoprogram()
+end
+
+call tokenize source
+call scanprocs
+cp = 1
+lim = tk[0]
+call execblock 1, tk[0]
+call writesvg
+say "LOGO done - drawing written to" outfile
+exit 0
+
+/* ------------------------------------------------------------- demo text */
+demoprogram: procedure = .string
+  nl = '0a'x
+  s = "; built-in demo: a ring of squares" || nl
+  s = s || "TO SQUARE :SIZE" || nl
+  s = s || "  REPEAT 4 [FD :SIZE RT 90]" || nl
+  s = s || "END" || nl
+  s = s || "SETPENSIZE 2" || nl
+  s = s || "REPEAT 36 [SETPC REMAINDER REPCOUNT 16 SQUARE 80 RT 10]" || nl
+  s = s || "PRINT [demo finished]" || nl
+  return s
+
+/* ------------------------------------------------------------- tokenizer */
+isws: procedure = .int
+  arg c = .string
+  if c = ' ' | c = '0a'x | c = '0d'x | c = '09'x then return 1
+  return 0
+
+isbracket: procedure = .int
+  arg c = .string
+  if c = '[' | c = ']' | c = '(' | c = ')' then return 1
+  return 0
+
+isoperator: procedure = .int
+  arg c = .string
+  if c = '+' | c = '-' | c = '*' | c = '/' | c = '=' | c = '<' | c = '>' then return 1
+  return 0
+
+isdigitc: procedure = .int
+  arg c = .string
+  if c >= '0' & c <= '9' & length(c) = 1 then return 1
+  return 0
+
+tokenize: procedure = .void
+  arg src = .string
+  n = length(src)
+  i = 1
+  do while i <= n
+    c = substr(src, i, 1)
+    if isws(c) = 1 then do
+      i = i + 1
+      iterate
+    end
+    if c = ';' then do
+      /* comment: skip to the end of the line */
+      do while i <= n & substr(src, i, 1) <> '0a'x
+        i = i + 1
+      end
+      iterate
+    end
+    if isbracket(c) = 1 then do
+      call addtok c, c
+      i = i + 1
+      iterate
+    end
+    if isoperator(c) = 1 then do
+      two = substr(src, i, 2)
+      if two = '<=' | two = '>=' | two = '<>' then do
+        call addtok two, two
+        i = i + 2
+      end
+      else do
+        call addtok c, c
+        i = i + 1
+      end
+      iterate
+    end
+    if c = '"' | c = ':' then do
+      j = i + 1
+      do while j <= n
+        d = substr(src, j, 1)
+        if isws(d) = 1 | isbracket(d) = 1 then leave
+        j = j + 1
+      end
+      wd = substr(src, i, j - i)
+      if c = ':' then wd = upper(wd)
+      call addtok wd, wd
+      i = j
+      iterate
+    end
+    if isdigitc(c) = 1 | (c = '.' & isdigitc(substr(src, i + 1, 1)) = 1) then do
+      j = i
+      do while j <= n
+        d = substr(src, j, 1)
+        if isdigitc(d) = 0 & d <> '.' then leave
+        j = j + 1
+      end
+      call addtok substr(src, i, j - i), substr(src, i, j - i)
+      i = j
+      iterate
+    end
+    /* identifier */
+    j = i
+    do while j <= n
+      d = substr(src, j, 1)
+      if isws(d) = 1 | isbracket(d) = 1 | isoperator(d) = 1 | d = ';' then leave
+      j = j + 1
+    end
+    call addtok upper(substr(src, i, j - i)), substr(src, i, j - i)
+    i = j
+  end
+  return
+
+addtok: procedure = .void
+  arg t = .string, o = .string
+  call arrayappend tk, t
+  call arrayappend tko, o
+  return
+
+tokat: procedure = .string
+  arg i = .int
+  if i < 1 | i > tk[0] then return ""
+  return tk[i]
+
+/* find all TO ... END definitions before running anything */
+scanprocs: procedure = .void
+  n = tk[0]
+  i = 1
+  do while i <= n
+    if tk[i] = 'TO' then do
+      name = tokat(i + 1)
+      params = ""
+      j = i + 2
+      do while j <= n
+        if left(tk[j], 1) <> ':' then leave
+        params = params tk[j]
+        j = j + 1
+      end
+      k = j
+      do while k <= n
+        if tk[k] = 'END' then leave
+        k = k + 1
+      end
+      call arrayappend pnames, name
+      call arrayappend pparams, strip(params)
+      call arrayappend pstart, j
+      call arrayappend pend, k - 1
+      i = k + 1
+    end
+    else i = i + 1
+  end
+  return
+
+/* ---------------------------------------------------------------- errors */
+lerror: procedure = .void
+  arg msg = .string
+  say "LOGO error:" msg
+  call writesvg
+  exit 1
+
+/* --------------------------------------------------------- number helpers */
+isnum: procedure = .int
+  arg s = .string
+  if s = "" then return 0
+  if datatype(s, 'N') = '1' then return 1
+  return 0
+
+tonum: procedure = .float
+  arg s = .string
+  if isnum(s) = 0 then call lerror "expected a number but got" s
+  x = s as .float
+  return x
+
+/* number -> compact text: at most 6 decimals, no trailing zeros */
+numtostr: procedure = .string
+  arg x = .float
+  s = format(x, , 6, 0)
+  if pos('.', s) > 0 then do
+    s = strip(s, 'T', '0')
+    if right(s, 1) = '.' then s = left(s, length(s) - 1)
+  end
+  if s = '-0' | s = '' then s = '0'
+  return strip(s)
+
+/* coordinate -> text with 2 decimals (for SVG) */
+coord: procedure = .string
+  arg x = .float
+  s = format(x, , 2, 0)
+  return strip(s)
+
+valeq: procedure = .int
+  arg a = .string, b = .string
+  if isnum(a) = 1 & isnum(b) = 1 then do
+    x = tonum(a)
+    y = tonum(b)
+    if x = y then return 1
+    return 0
+  end
+  if upper(a) = upper(b) then return 1
+  return 0
+
+truth: procedure = .string
+  arg b = .int
+  if b = 1 then return 'TRUE'
+  return 'FALSE'
+
+istrue: procedure = .int
+  arg v = .string
+  u = upper(v)
+  if u = 'TRUE' | u = '1' then return 1
+  if u = 'FALSE' | u = '0' then return 0
+  call lerror "expected TRUE or FALSE but got" v
+  return 0
+
+/* ---------------------------------------------------- trigonometry (deg) */
+/* sine of an angle in degrees using a Taylor series after reduction      */
+sind: procedure = .float
+  arg deg = .float
+  d = deg
+  do while d > 180.0
+    d = d - 360.0
+  end
+  do while d < -180.0
+    d = d + 360.0
+  end
+  if d = 0.0 | d = 180.0 | d = -180.0 then return 0.0
+  if d = 90.0 then return 1.0
+  if d = -90.0 then return -1.0
+  r = d * 3.14159265358979323846 / 180.0
+  term = r
+  sum = r
+  r2 = r * r
+  do k = 1 to 14
+    term = 0.0 - term * r2 / ((2 * k) * (2 * k + 1))
+    sum = sum + term
+  end
+  return sum
+
+cosd: procedure = .float
+  arg deg = .float
+  return sind(deg + 90.0)
+
+/* ------------------------------------------------------- variable stack */
+pushvar: procedure = .void
+  arg name = .string, val = .string
+  nsv = nsv + 1
+  if nsv > sname[0] then do
+    call arrayappend sname, name
+    call arrayappend sval, val
+  end
+  else do
+    sname[nsv] = name
+    sval[nsv] = val
+  end
+  return
+
+getvar: procedure = .string
+  arg name = .string
+  do i = nsv to 1 by -1
+    if sname[i] = name then return sval[i]
+  end
+  do i = 1 to ngv
+    if gname[i] = name then return gval[i]
+  end
+  call lerror name "has no value"
+  return ""
+
+setvar: procedure = .void
+  arg name = .string, val = .string
+  do i = nsv to 1 by -1
+    if sname[i] = name then do
+      sval[i] = val
+      return
+    end
+  end
+  do i = 1 to ngv
+    if gname[i] = name then do
+      gval[i] = val
+      return
+    end
+  end
+  ngv = ngv + 1
+  call arrayappend gname, name
+  call arrayappend gval, val
+  return
+
+findproc: procedure = .int
+  arg name = .string
+  do i = 1 to pnames[0]
+    if pnames[i] = name then return i
+  end
+  return 0
+
+/* ------------------------------------------------------------ list helpers */
+islist: procedure = .int
+  arg s = .string
+  if length(s) >= 2 then do
+    if left(s, 1) = '[' & right(s, 1) = ']' then return 1
+  end
+  return 0
+
+/* split a list text "[a b [c d]]" into its top level items */
+lsplit: procedure = .string[]
+  arg s = .string
+  items = .string[]
+  body = substr(s, 2, length(s) - 2)
+  m = length(body)
+  dp = 0
+  cur = ""
+  do i = 1 to m
+    c = substr(body, i, 1)
+    if c = '[' then dp = dp + 1
+    if c = ']' then dp = dp - 1
+    if c = ' ' & dp = 0 then do
+      if cur <> "" then call arrayappend items, cur
+      cur = ""
+    end
+    else cur = cur || c
+  end
+  if cur <> "" then call arrayappend items, cur
+  return items
+
+/* join items lo..hi into a list text */
+lrange: procedure = .string
+  arg items = .string[], lo = .int, hi = .int
+  s = "["
+  first = 1
+  do i = lo to hi
+    if first = 0 then s = s || " "
+    s = s || items[i]
+    first = 0
+  end
+  return s || "]"
+
+printable: procedure = .string
+  arg v = .string
+  if islist(v) = 1 then return substr(v, 2, length(v) - 2)
+  return v
+
+/* ----------------------------------------------------------- token ranges */
+/* index of the ']' matching the '[' at token index i */
+matchend: procedure = .int
+  arg i = .int
+  dp = 0
+  do k = i to tk[0]
+    if tk[k] = '[' then dp = dp + 1
+    if tk[k] = ']' then do
+      dp = dp - 1
+      if dp = 0 then return k
+    end
+  end
+  call lerror "missing ]"
+  return 0
+
+peek: procedure = .string
+  if cp > lim then return ""
+  return tk[cp]
+
+/* ------------------------------------------------------------- evaluator */
+numarg: procedure = .float
+  v = expr()
+  return tonum(v)
+
+intarg: procedure = .int
+  x = numarg()
+  s = format(x, , 0, 0)
+  i = strip(s) as .int
+  return i
+
+/* evaluate the tokens s..e as one expression */
+evalrange: procedure = .string
+  arg s = .int, e = .int
+  savepos = cp
+  savelim = lim
+  cp = s
+  lim = e
+  v = expr()
+  cp = savepos
+  lim = savelim
+  return v
+
+expr: procedure = .string
+  a = addexpr()
+  do forever
+    op = peek()
+    if op = '=' | op = '<' | op = '>' | op = '<=' | op = '>=' | op = '<>' then do
+      cp = cp + 1
+      b = addexpr()
+      r = 0
+      if op = '=' then r = valeq(a, b)
+      else if op = '<>' then do
+        if valeq(a, b) = 0 then r = 1
+      end
+      else do
+        x = tonum(a)
+        y = tonum(b)
+        if op = '<' & x < y then r = 1
+        if op = '>' & x > y then r = 1
+        if op = '<=' & x <= y then r = 1
+        if op = '>=' & x >= y then r = 1
+      end
+      a = truth(r)
+    end
+    else leave
+  end
+  return a
+
+addexpr: procedure = .string
+  a = mulexpr()
+  do forever
+    op = peek()
+    if op = '+' | op = '-' then do
+      cp = cp + 1
+      b = mulexpr()
+      if op = '+' then a = numtostr(tonum(a) + tonum(b))
+      else a = numtostr(tonum(a) - tonum(b))
+    end
+    else leave
+  end
+  return a
+
+mulexpr: procedure = .string
+  a = unary()
+  do forever
+    op = peek()
+    if op = '*' | op = '/' then do
+      cp = cp + 1
+      b = unary()
+      if op = '*' then a = numtostr(tonum(a) * tonum(b))
+      else do
+        d = tonum(b)
+        if d = 0.0 then call lerror "division by zero"
+        a = numtostr(tonum(a) / d)
+      end
+    end
+    else leave
+  end
+  return a
+
+unary: procedure = .string
+  if peek() = '-' then do
+    cp = cp + 1
+    v = unary()
+    x = tonum(v)
+    return numtostr(0.0 - x)
+  end
+  return primary()
+
+primary: procedure = .string
+  t = peek()
+  if t = "" then call lerror "unexpected end of instructions"
+  cp = cp + 1
+  c = left(t, 1)
+  if t = '(' then do
+    v = expr()
+    if peek() <> ')' then call lerror "missing )"
+    cp = cp + 1
+    return v
+  end
+  if t = '[' then do
+    /* list literal: rebuild its text from the tokens */
+    cp = cp - 1
+    e = matchend(cp)
+    s = "["
+    first = 1
+    do k = cp + 1 to e - 1
+      w = tko[k]
+      if left(w, 1) = '"' then w = substr(w, 2)
+      if w = '[' then do
+        if first = 0 then s = s || " "
+        s = s || "["
+        first = 1
+      end
+      else if w = ']' then do
+        s = s || "]"
+        first = 0
+      end
+      else do
+        if first = 0 then s = s || " "
+        s = s || w
+        first = 0
+      end
+    end
+    cp = e + 1
+    return s || "]"
+  end
+  if c = '"' then return substr(t, 2)
+  if c = ':' then return getvar(substr(t, 2))
+  if isnum(t) = 1 then return t
+  return callfn(t)
+
+/* ---------------------------------------------- functions (value returning) */
+callfn: procedure = .string
+  arg name = .string
+  v1 = ""
+  v2 = ""
+  x = 0.0
+  y = 0.0
+  select
+    when name = 'SUM' then do
+      x = numarg()
+      y = numarg()
+      return numtostr(x + y)
+    end
+    when name = 'DIFFERENCE' then do
+      x = numarg()
+      y = numarg()
+      return numtostr(x - y)
+    end
+    when name = 'PRODUCT' then do
+      x = numarg()
+      y = numarg()
+      return numtostr(x * y)
+    end
+    when name = 'QUOTIENT' then do
+      x = numarg()
+      y = numarg()
+      if y = 0.0 then call lerror "division by zero"
+      return numtostr(x / y)
+    end
+    when name = 'REMAINDER' | name = 'MODULO' then do
+      a = intarg()
+      b = intarg()
+      if b = 0 then call lerror "division by zero"
+      r = a % b
+      if name = 'MODULO' & r <> 0 & ((r < 0 & b > 0) | (r > 0 & b < 0)) then r = r + b
+      return r as .string
+    end
+    when name = 'INT' then do
+      x = numarg()
+      s = format(x, , 6, 0)
+      s = strip(s)
+      p = pos('.', s)
+      if p > 0 then s = left(s, p - 1)
+      if s = '' | s = '-' then s = '0'
+      return s
+    end
+    when name = 'ROUND' then do
+      x = numarg()
+      return strip(format(x, , 0, 0))
+    end
+    when name = 'ABS' then do
+      x = numarg()
+      if x < 0.0 then x = 0.0 - x
+      return numtostr(x)
+    end
+    when name = 'SQRT' then do
+      x = numarg()
+      if x < 0.0 then call lerror "SQRT doesn't like negative input"
+      g = x
+      if g < 1.0 then g = 1.0
+      do 60
+        g = (g + x / g) / 2.0
+      end
+      if x = 0.0 then g = 0.0
+      return numtostr(g)
+    end
+    when name = 'POWER' then do
+      x = numarg()
+      b = intarg()
+      pw = 1.0
+      if b >= 0 then do
+        do b
+          pw = pw * x
+        end
+      end
+      else do
+        do 0 - b
+          pw = pw * x
+        end
+        if pw = 0.0 then call lerror "division by zero"
+        pw = 1.0 / pw
+      end
+      return numtostr(pw)
+    end
+    when name = 'SIN' then do
+      x = numarg()
+      return numtostr(sind(x))
+    end
+    when name = 'COS' then do
+      x = numarg()
+      return numtostr(cosd(x))
+    end
+    when name = 'PI' then return "3.141593"
+    when name = 'RANDOM' then do
+      a = intarg()
+      if a < 1 then call lerror "RANDOM needs a positive input"
+      r = random(0, a - 1)
+      return r as .string
+    end
+    when name = 'REPCOUNT' then do
+      return getvar('REPCOUNT')
+    end
+    when name = 'HEADING' then return numtostr(th)
+    when name = 'XCOR' then return numtostr(tx)
+    when name = 'YCOR' then return numtostr(0.0 - ty)
+    when name = 'PENDOWNP' then return truth(pen)
+    when name = 'THING' then do
+      v1 = expr()
+      return getvar(upper(v1))
+    end
+    when name = 'NOT' then do
+      v1 = expr()
+      if istrue(v1) = 1 then return 'FALSE'
+      return 'TRUE'
+    end
+    when name = 'AND' then do
+      v1 = expr()
+      v2 = expr()
+      if istrue(v1) = 1 & istrue(v2) = 1 then return 'TRUE'
+      return 'FALSE'
+    end
+    when name = 'OR' then do
+      v1 = expr()
+      v2 = expr()
+      if istrue(v1) = 1 | istrue(v2) = 1 then return 'TRUE'
+      return 'FALSE'
+    end
+    when name = 'EQUALP' then do
+      v1 = expr()
+      v2 = expr()
+      return truth(valeq(v1, v2))
+    end
+    when name = 'LESSP' then do
+      x = numarg()
+      y = numarg()
+      if x < y then return 'TRUE'
+      return 'FALSE'
+    end
+    when name = 'GREATERP' then do
+      x = numarg()
+      y = numarg()
+      if x > y then return 'TRUE'
+      return 'FALSE'
+    end
+    when name = 'NUMBERP' then do
+      v1 = expr()
+      return truth(isnum(v1))
+    end
+    when name = 'LISTP' then do
+      v1 = expr()
+      return truth(islist(v1))
+    end
+    when name = 'WORDP' then do
+      v1 = expr()
+      if islist(v1) = 1 then return 'FALSE'
+      return 'TRUE'
+    end
+    when name = 'EMPTYP' then do
+      v1 = expr()
+      if v1 = '[]' | v1 = '' then return 'TRUE'
+      return 'FALSE'
+    end
+    when name = 'COUNT' then do
+      v1 = expr()
+      if islist(v1) = 1 then do
+        items = lsplit(v1)
+        return items[0] as .string
+      end
+      return length(v1) as .string
+    end
+    when name = 'FIRST' then do
+      v1 = expr()
+      if islist(v1) = 1 then do
+        items = lsplit(v1)
+        if items[0] = 0 then call lerror "FIRST doesn't like [] as input"
+        return items[1]
+      end
+      return left(v1, 1)
+    end
+    when name = 'LAST' then do
+      v1 = expr()
+      if islist(v1) = 1 then do
+        items = lsplit(v1)
+        if items[0] = 0 then call lerror "LAST doesn't like [] as input"
+        return items[items[0]]
+      end
+      return right(v1, 1)
+    end
+    when name = 'BUTFIRST' | name = 'BF' then do
+      v1 = expr()
+      if islist(v1) = 1 then do
+        items = lsplit(v1)
+        if items[0] = 0 then call lerror "BUTFIRST doesn't like [] as input"
+        return lrange(items, 2, items[0])
+      end
+      return substr(v1, 2)
+    end
+    when name = 'BUTLAST' | name = 'BL' then do
+      v1 = expr()
+      if islist(v1) = 1 then do
+        items = lsplit(v1)
+        if items[0] = 0 then call lerror "BUTLAST doesn't like [] as input"
+        return lrange(items, 1, items[0] - 1)
+      end
+      return left(v1, length(v1) - 1)
+    end
+    when name = 'ITEM' then do
+      n = intarg()
+      v1 = expr()
+      if islist(v1) = 1 then do
+        items = lsplit(v1)
+        if n < 1 | n > items[0] then call lerror "ITEM index out of range"
+        return items[n]
+      end
+      if n < 1 | n > length(v1) then call lerror "ITEM index out of range"
+      return substr(v1, n, 1)
+    end
+    when name = 'FPUT' then do
+      v1 = expr()
+      v2 = expr()
+      if islist(v2) = 0 then call lerror "FPUT needs a list as its second input"
+      items = lsplit(v2)
+      if items[0] = 0 then return "[" || v1 || "]"
+      return "[" || v1 || " " || substr(v2, 2)
+    end
+    when name = 'LPUT' then do
+      v1 = expr()
+      v2 = expr()
+      if islist(v2) = 0 then call lerror "LPUT needs a list as its second input"
+      items = lsplit(v2)
+      if items[0] = 0 then return "[" || v1 || "]"
+      return left(v2, length(v2) - 1) || " " || v1 || "]"
+    end
+    when name = 'WORD' then do
+      v1 = expr()
+      v2 = expr()
+      return v1 || v2
+    end
+    when name = 'LIST' then do
+      v1 = expr()
+      v2 = expr()
+      return "[" || v1 || " " || v2 || "]"
+    end
+    when name = 'SENTENCE' | name = 'SE' then do
+      v1 = expr()
+      v2 = expr()
+      s = ""
+      if islist(v1) = 1 then s = printable(v1)
+      else s = v1
+      t2 = ""
+      if islist(v2) = 1 then t2 = printable(v2)
+      else t2 = v2
+      if s = "" then return "[" || t2 || "]"
+      if t2 = "" then return "[" || s || "]"
+      return "[" || s || " " || t2 || "]"
+    end
+    when name = 'MEMBERP' then do
+      v1 = expr()
+      v2 = expr()
+      if islist(v2) = 1 then do
+        items = lsplit(v2)
+        do i = 1 to items[0]
+          if valeq(items[i], v1) = 1 then return 'TRUE'
+        end
+        return 'FALSE'
+      end
+      if pos(v1, v2) > 0 then return 'TRUE'
+      return 'FALSE'
+    end
+    when name = 'UPPERCASE' then do
+      v1 = expr()
+      return upper(v1)
+    end
+    when name = 'LOWERCASE' then do
+      v1 = expr()
+      return lower(v1)
+    end
+    otherwise do
+      idx = findproc(name)
+      if idx = 0 then call lerror "I don't know how to" name
+      return callproc(idx)
+    end
+  end
+  return ""
+
+/* ------------------------------------------------------- user procedures */
+callproc: procedure = .string
+  arg idx = .int
+  params = pparams[idx]
+  cnt = words(params)
+  vals = .string[]
+  do i = 1 to cnt
+    v = expr()
+    call arrayappend vals, v
+  end
+  savensv = nsv
+  do i = 1 to cnt
+    pname = substr(word(params, i), 2)
+    pval = vals[i]
+    call pushvar pname, pval
+  end
+  depth = depth + 1
+  if depth > 300 then call lerror "stack overflow (recursion too deep)"
+  bs = pstart[idx] as .int
+  be = pend[idx] as .int
+  call execblock bs, be
+  depth = depth - 1
+  nsv = savensv
+  r = ""
+  if stopflag = 2 then r = retval
+  stopflag = 0
+  return r
+
+/* ------------------------------------------------------------- commands */
+execblock: procedure = .void
+  arg s = .int, e = .int
+  savepos = cp
+  savelim = lim
+  cp = s
+  lim = e
+  do while cp <= lim & stopflag = 0
+    call execcmd
+  end
+  cp = savepos
+  lim = savelim
+  return
+
+/* parse "[ ... ]" at the current position; returns "first last" token range */
+listrange: procedure = .string
+  if peek() <> '[' then call lerror "expected [ but found" peek()
+  e = matchend(cp)
+  r = (cp + 1) || " " || (e - 1)
+  cp = e + 1
+  return r
+
+execcmd: procedure = .void
+  t = peek()
+  cp = cp + 1
+  d = 0.0
+  v = ""
+  select
+    when t = 'FD' | t = 'FORWARD' then do
+      d = numarg()
+      call move d
+    end
+    when t = 'BK' | t = 'BACK' then do
+      d = numarg()
+      call move 0.0 - d
+    end
+    when t = 'RT' | t = 'RIGHT' then do
+      d = numarg()
+      th = th + d
+      call normheading
+    end
+    when t = 'LT' | t = 'LEFT' then do
+      d = numarg()
+      th = th - d
+      call normheading
+    end
+    when t = 'PU' | t = 'PENUP' then pen = 0
+    when t = 'PD' | t = 'PENDOWN' then pen = 1
+    when t = 'HT' | t = 'HIDETURTLE' | t = 'ST' | t = 'SHOWTURTLE' then nop
+    when t = 'HOME' then do
+      call moveto 0.0, 0.0
+      th = 0.0
+    end
+    when t = 'CS' | t = 'CLEARSCREEN' | t = 'CLEAN' then do
+      call arraydrop svg
+      minx = 0.0
+      maxx = 0.0
+      miny = 0.0
+      maxy = 0.0
+      if t <> 'CLEAN' then do
+        tx = 0.0
+        ty = 0.0
+        th = 0.0
+      end
+    end
+    when t = 'SETXY' then do
+      d = numarg()
+      y2 = numarg()
+      call moveto d, 0.0 - y2
+    end
+    when t = 'SETX' then do
+      d = numarg()
+      call moveto d, ty
+    end
+    when t = 'SETY' then do
+      d = numarg()
+      call moveto tx, 0.0 - d
+    end
+    when t = 'SETH' | t = 'SETHEADING' then do
+      th = numarg()
+      call normheading
+    end
+    when t = 'SETPC' | t = 'SETPENCOLOR' | t = 'SETCOLOR' then do
+      v = expr()
+      pcolor = colorname(v)
+    end
+    when t = 'SETBG' | t = 'SETSCREENCOLOR' then do
+      v = expr()
+      bg = colorname(v)
+    end
+    when t = 'SETPENSIZE' | t = 'SETWIDTH' then do
+      psize = numarg()
+    end
+    when t = 'LABEL' then do
+      v = expr()
+      el = '<text x="' || coord(tx) || '" y="' || coord(ty) || '" fill="' || pcolor || '" font-size="14">' || printable(v) || '</text>'
+      call arrayappend svg, el
+    end
+    when t = 'PRINT' | t = 'PR' then do
+      v = expr()
+      say printable(v)
+    end
+    when t = 'SHOW' then do
+      v = expr()
+      say v
+    end
+    when t = 'MAKE' then do
+      v = expr()
+      v2 = expr()
+      call setvar upper(v), v2
+    end
+    when t = 'LOCAL' then do
+      v = expr()
+      call pushvar upper(v), ""
+    end
+    when t = 'STOP' then stopflag = 1
+    when t = 'OUTPUT' | t = 'OP' then do
+      retval = expr()
+      stopflag = 2
+    end
+    when t = 'REPEAT' then do
+      n = intarg()
+      rg = listrange()
+      bs = word(rg, 1) as .int
+      be = word(rg, 2) as .int
+      call pushvar 'REPCOUNT', "0"
+      slot = nsv
+      do i = 1 to n
+        sval[slot] = i as .string
+        call execblock bs, be
+        if stopflag <> 0 then leave
+      end
+      nsv = slot - 1
+    end
+    when t = 'IF' then do
+      v = expr()
+      rg = listrange()
+      bs = word(rg, 1) as .int
+      be = word(rg, 2) as .int
+      hasElse = 0
+      es = 0
+      ee = 0
+      if peek() = '[' then do
+        rg2 = listrange()
+        es = word(rg2, 1) as .int
+        ee = word(rg2, 2) as .int
+        hasElse = 1
+      end
+      if istrue(v) = 1 then call execblock bs, be
+      else if hasElse = 1 then call execblock es, ee
+    end
+    when t = 'IFELSE' then do
+      v = expr()
+      rg = listrange()
+      rg2 = listrange()
+      bs = 0
+      be = 0
+      if istrue(v) = 1 then do
+        bs = word(rg, 1) as .int
+        be = word(rg, 2) as .int
+      end
+      else do
+        bs = word(rg2, 1) as .int
+        be = word(rg2, 2) as .int
+      end
+      call execblock bs, be
+    end
+    when t = 'WHILE' then do
+      cr = listrange()
+      br = listrange()
+      cs = word(cr, 1) as .int
+      ce = word(cr, 2) as .int
+      bs = word(br, 1) as .int
+      be = word(br, 2) as .int
+      do forever
+        v = evalrange(cs, ce)
+        if istrue(v) = 0 then leave
+        call execblock bs, be
+        if stopflag <> 0 then leave
+      end
+    end
+    when t = 'FOR' then do
+      /* FOR [var start end step] [body] */
+      cr = listrange()
+      br = listrange()
+      cs = word(cr, 1) as .int
+      ce = word(cr, 2) as .int
+      bs = word(br, 1) as .int
+      be = word(br, 2) as .int
+      vname = tk[cs]
+      savepos = cp
+      savelim = lim
+      cp = cs + 1
+      lim = ce
+      fstart = numarg()
+      fend = numarg()
+      fstep = 1.0
+      if cp <= lim then fstep = numarg()
+      cp = savepos
+      lim = savelim
+      if fstep = 0.0 then call lerror "FOR needs a non-zero step"
+      call pushvar upper(vname), numtostr(fstart)
+      slot = nsv
+      cur = fstart
+      do forever
+        if fstep > 0.0 & cur > fend then leave
+        if fstep < 0.0 & cur < fend then leave
+        sval[slot] = numtostr(cur)
+        call execblock bs, be
+        if stopflag <> 0 then leave
+        cur = cur + fstep
+      end
+      nsv = slot - 1
+    end
+    when t = 'RUN' then do
+      v = expr()
+      call runtext v
+    end
+    when t = 'TO' then do
+      /* definitions were collected up front: skip to END */
+      do while cp <= lim
+        if tk[cp] = 'END' then leave
+        cp = cp + 1
+      end
+      cp = cp + 1
+    end
+    otherwise do
+      idx = findproc(t)
+      if idx > 0 then do
+        v = callproc(idx)
+      end
+      else do
+        cp = cp - 1
+        v = expr()
+        call lerror "You don't say what to do with" v
+      end
+    end
+  end
+  return
+
+/* RUN a list value: tokenize it onto the end of the token array and execute */
+runtext: procedure = .void
+  arg txt = .string
+  if islist(txt) = 0 then call lerror "RUN needs a list"
+  first = tk[0] + 1
+  call tokenize substr(txt, 2, length(txt) - 2)
+  last = tk[0]
+  if last >= first then call execblock first, last
+  return
+
+/* ---------------------------------------------------------------- turtle */
+normheading: procedure = .void
+  do while th >= 360.0
+    th = th - 360.0
+  end
+  do while th < 0.0
+    th = th + 360.0
+  end
+  return
+
+move: procedure = .void
+  arg dist = .float
+  nx = tx + dist * sind(th)
+  ny = ty - dist * cosd(th)
+  call moveto nx, ny
+  return
+
+/* tx / ty are held in SVG orientation (y grows downwards) */
+moveto: procedure = .void
+  arg nx = .float, ny = .float
+  if pen = 1 then do
+    el = '<line x1="' || coord(tx) || '" y1="' || coord(ty) || '" x2="' || coord(nx) || '" y2="' || coord(ny) || '" stroke="' || pcolor || '" stroke-width="' || numtostr(psize) || '" stroke-linecap="round"/>'
+    call arrayappend svg, el
+    if tx < minx then minx = tx
+    if tx > maxx then maxx = tx
+    if ty < miny then miny = ty
+    if ty > maxy then maxy = ty
+    if nx < minx then minx = nx
+    if nx > maxx then maxx = nx
+    if ny < miny then miny = ny
+    if ny > maxy then maxy = ny
+  end
+  tx = nx
+  ty = ny
+  return
+
+colorname: procedure = .string
+  arg v = .string
+  if isnum(v) = 1 then do
+    n = v as .int
+    if n < 0 | n > 15 then call lerror "colour number must be 0..15"
+    return word(palette, n + 1)
+  end
+  return lower(printable(v))
+
+/* ---------------------------------------------------------------- output */
+writesvg: procedure = .void
+  w = maxx - minx
+  h = maxy - miny
+  if w < 10.0 then w = 10.0
+  if h < 10.0 then h = 10.0
+  pad = 20.0
+  vx = minx - pad
+  vy = miny - pad
+  vw = w + 2.0 * pad
+  vh = h + 2.0 * pad
+  scale = 700.0 / vw
+  if 700.0 / vh < scale then scale = 700.0 / vh
+  out = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' || coord(vx) || ' ' || coord(vy) || ' ' || coord(vw) || ' ' || coord(vh) || '" width="' || coord(vw * scale) || '" height="' || coord(vh * scale) || '">' || '0a'x
+  out = out || '<rect x="' || coord(vx) || '" y="' || coord(vy) || '" width="' || coord(vw) || '" height="' || coord(vh) || '" fill="' || bg || '"/>' || '0a'x
+  do i = 1 to svg[0]
+    out = out || svg[i] || '0a'x
+  end
+  out = out || '</svg>'
+  call lineout outfile, out
+  call lineout outfile
+  return

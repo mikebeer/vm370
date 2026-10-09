@@ -1,0 +1,12 @@
+; non-graphical: functions, OUTPUT, lists and PRINT
+TO FACT :N
+  IF :N < 2 [OUTPUT 1]
+  OUTPUT :N * FACT :N - 1
+END
+PRINT FACT 10
+PRINT SQRT 2
+PRINT SENTENCE [hello] [world]
+PRINT BF [a b c]
+PRINT COUNT [1 2 3 4]
+MAKE "X 5
+PRINT :X * 2 + 1

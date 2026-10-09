@@ -1,0 +1,10 @@
+; recursive tree - exercises recursion and dynamic scoping
+TO TREE :LEN
+  IF :LEN < 6 [STOP]
+  FD :LEN
+  LT 25 TREE :LEN * 0.7 RT 50 TREE :LEN * 0.7 LT 25
+  PU BK :LEN PD
+END
+PU SETY -150 PD
+SETPC 2
+TREE 70
