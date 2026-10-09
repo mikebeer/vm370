@@ -36,15 +36,3 @@ CFGNESA  DS    0H                                              XA0054DK
          NI    VMFSTAT,X'FF'-VMESA390  M7.8: A NAMED SYSTEM    XA0054DK         
 *                             (CMS) IS S/370; SET ESA ON       XA0054DK         
 *                             STAYS PENDING                    XA0054DK         
-./ I 00561000 $ 00561010 010                                                    
-         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO   XA0054DK         
-         BZ    CFNSHX       NO NAMED SYSTEM RUNS ANY MORE:     XA0054DK         
-CFNSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE        XA0054DK         
-         BZ    CFNSHW       COUNT AND VMSHR WITH THEM          XA0054DK         
-         MVC   VMASSIST,0(R1) (VMAFPNT)                        XA0054DK         
-         LA    R0,2           (VMASIZE)                        XA0054DK         
-         CALL  DMKFRET                                         XA0054DK         
-         B     CFNSHV                                          XA0054DK         
-CFNSHW    XC    VMSHRSYS,VMSHRSYS                              XA0054DK         
-         NI    VMOSTAT,255-VMSHR                               XA0054DK         
-CFNSHX    DS    0H                                             XA0054DK         

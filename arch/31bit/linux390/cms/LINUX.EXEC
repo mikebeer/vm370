@@ -7,7 +7,8 @@
 /* the reader, and IPLs the reader as an ESA/390 machine.          */
 /* Debian also needs, in this virtual machine: 64 MB of storage,   */
 /* your own 3390 at 250 and your own CTC pair at 620 and 630.      */
-/* Afterwards:  CP CHANGE RDR ALL NOHOLD  gives your files back.   */
+/* Afterwards:  CP CHANGE RDR ALL NOHOLD  gives your files back;   */
+/* your punch stays spooled to your own reader (CP SPOOL PUNCH).   */
 u = userid()
 parm = u
 'STATE' u 'LXPARM *'
@@ -35,7 +36,6 @@ if rc <> 0 then exit rc
 'CP CLOSE PUNCH'
 'PUNCH' parm 'LXPARM * (NOHEADER'
 if rc <> 0 then exit rc
-'CP SPOOL PUNCH TO SYSTEM'
 say 'LINUX: IPL 00C as an ESA/390 machine'
 'CP SET ESA ON'
 'CP IPL 00C'

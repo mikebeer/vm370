@@ -3621,6 +3621,23 @@ def m7decks():
         "         N     R0,=X'FFFF3FFF'  CONTROL",
         "GETMASK2 DS    0H",
     ])
+    # M7.8: an ESA/390 guest leaves its CR3 (PSW-key mask), CR7 and
+    # CR13 in the real registers, and nothing on the S/370 path loads
+    # them (EC users get CR4-CR13 from the ECBLOK, CR3 from nobody).
+    # With CR3 = FFFF0000 left by Linux, CMS's key switching went wrong:
+    # every IPL CMS after a Linux had run took DMSITP141T in NUCXTEXT
+    # (XC to X'574', PSW key E, page key F -- cm6 pgmtrace).
+    d.insert('02415000', first='02415100', inc=100,
+             limit=next_seq(src('DMKDSP'), '02415000'), lines=[
+        "         TM    VMFSTAT,VMESA390  M7.8: S/370 GUEST: CR3, CR7",
+        "         BO    DSPCR3X        AND CR13 AS CP'S OWN (ZERO);",
+        "         LCTL  C3,C3,DSPZERO  AN EC USER'S CR7/CR13 COME",
+        "         LCTL  C7,C7,DSPZERO  FROM ITS ECBLOK BELOW",
+        "         LCTL  C13,C13,DSPZERO",
+        "         B     DSPCR3X",
+        "DSPZERO  DC    F'0'",
+        "DSPCR3X  DS    0H",
+    ])
     d.insert('02424000', first='02424110', inc=10,
              limit=next_seq(src('DMKDSP'), '02424000'), lines=[
         "         TM    VMFSTAT,VMESA390  M7.3: AN ESA/390 GUEST IN",
@@ -3678,8 +3695,8 @@ def m7decks():
         "         NI    VMFSTAT,X'FF'-VMESA390  M7.8: A NAMED SYSTEM",
         "*                             (CMS) IS S/370; SET ESA ON",
         "*                             STAYS PENDING"])
-    d.insert('00561000', first='00561010', inc=10,
-             limit=next_seq(src('DMKCFG'), '00561000'), lines=LEAVE_CFN)
+    # (Not at NAMEHIT: leaving there broke the next IPL CMS of every user,
+    # DMSITP141T in NUCXTEXT -- lxm8.  The named IPL keeps VM/370's count.)
     decks['DMKCFG'] = d
 
     d = Deck(XA54)

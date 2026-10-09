@@ -61,6 +61,15 @@ DSPS370  DS    0H                                              XA0054DK
          BZ    GETMASK2       16-17 ARE THE ADDRESS-SPACE      XA0054DK         
          N     R0,=X'FFFF3FFF'  CONTROL                        XA0054DK         
 GETMASK2 DS    0H                                              XA0054DK         
+./ I 02415000 $ 02415100 100                                                    
+         TM    VMFSTAT,VMESA390  M7.8: S/370 GUEST: CR3, CR7   XA0054DK         
+         BO    DSPCR3X        AND CR13 AS CP'S OWN (ZERO);     XA0054DK         
+         LCTL  C3,C3,DSPZERO  AN EC USER'S CR7/CR13 COME       XA0054DK         
+         LCTL  C7,C7,DSPZERO  FROM ITS ECBLOK BELOW            XA0054DK         
+         LCTL  C13,C13,DSPZERO                                 XA0054DK         
+         B     DSPCR3X                                         XA0054DK         
+DSPZERO  DC    F'0'                                            XA0054DK         
+DSPCR3X  DS    0H                                              XA0054DK         
 ./ I 02424000 $ 02424110 010                                                    
          TM    VMFSTAT,VMESA390  M7.3: AN ESA/390 GUEST IN     XA0054DK         
          BZ    DSPV370        TRANSLATE MODE RUNS ON THE       XA0054DK         

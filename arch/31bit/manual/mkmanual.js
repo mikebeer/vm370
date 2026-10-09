@@ -28,20 +28,22 @@ function runs(text, base = {}) {
 }
 
 const C = [];             // document body
+const HEADS = [];         // [level, text] for the contents
 let chapNo = 0, figNo = 0, appendix = false, appLetter = 64;
 const P = (t, o = {}) => C.push(new Paragraph({ children: runs(t), spacing: { after: 120 }, ...o }));
 const H1 = (t) => {
   let label;
   if (appendix) { appLetter++; label = `Appendix ${String.fromCharCode(appLetter)}. ${t}`; }
   else { chapNo++; label = `Chapter ${chapNo}. ${t}`; }
+  HEADS.push([1, label]);
   C.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun(label)] }));
 };
-const H1plain = (t) => C.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun(t)] }));
-const H2 = (t) => C.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(t)] }));
+const H1plain = (t) => HEADS.push([1, t]) && C.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun(t)] }));
+const H2 = (t) => HEADS.push([2, t]) && C.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(t)] }));
 const H3 = (t) => C.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun(t)] }));
 const B = (items, ref = 'bullets') => items.forEach(t => C.push(new Paragraph({ numbering: { reference: ref, level: 0 }, children: runs(t), spacing: { after: 60 } })));
 let numList = 0;
-const N = (items) => { numList++; items.forEach(t => C.push(new Paragraph({ numbering: { reference: 'steps', level: 0, instance: numList }, children: runs(t), spacing: { after: 60 } }))); };
+const N = (items, cont) => { if (!cont) numList++; items.forEach(t => C.push(new Paragraph({ numbering: { reference: 'steps', level: 0, instance: numList }, children: runs(t), spacing: { after: 60 } }))); };
 const NOTE = (t) => C.push(new Paragraph({
   children: [new TextRun({ text: 'Note: ', bold: true, font: BODY }), ...runs(t)],
   indent: { left: 567 }, spacing: { before: 60, after: 120 },
@@ -59,7 +61,7 @@ function SCREEN(lines, caption) {
   }));
   C.push(new Table({
     width: { size: W, type: WidthType.DXA }, columnWidths: [W],
-    rows: [new TableRow({ children: [new TableCell({
+    rows: [new TableRow({ cantSplit: true, children: [new TableCell({
       width: { size: W, type: WidthType.DXA },
       shading: { fill: 'F2F2F2', type: ShadingType.CLEAR, color: 'auto' },
       margins: { top: 100, bottom: 100, left: 140, right: 140 },
@@ -71,14 +73,13 @@ function SCREEN(lines, caption) {
 }
 // a table with a header row; widths in DXA summing to W
 function TABLE(head, rows, widths, caption) {
-  const cell = (t, hdr) => new TableCell({
-    width: { size: 0, type: WidthType.DXA },
+  const border = { style: BorderStyle.SINGLE, size: 4, color: '808080' };
+  const mk = (r, hdr) => new TableRow({ tableHeader: hdr, cantSplit: true, children: r.map((t, i) => new TableCell({
+    width: { size: widths[i], type: WidthType.DXA },
     shading: hdr ? { fill: 'D9D9D9', type: ShadingType.CLEAR, color: 'auto' } : undefined,
     margins: { top: 60, bottom: 60, left: 100, right: 100 },
     children: [new Paragraph({ children: hdr ? [new TextRun({ text: t, bold: true, font: HEAD, size: 18 })] : runs(t, { size: 19 }) })],
-  });
-  const mk = (r, hdr) => new TableRow({ tableHeader: hdr, children: r.map((t, i) => { const c = cell(t, hdr); c.options = c.options; return new TableCell({ ...c.options, width: { size: widths[i], type: WidthType.DXA } }); }) });
-  const border = { style: BorderStyle.SINGLE, size: 4, color: '808080' };
+  })) });
   C.push(new Table({
     width: { size: W, type: WidthType.DXA }, columnWidths: widths,
     borders: { top: border, bottom: border, left: border, right: border, insideHorizontal: border, insideVertical: border },
@@ -92,6 +93,8 @@ module.exports = { P, H1, H1plain, H2, H3, B, N, NOTE, ATTN, SCREEN, TABLE, C, s
 
 // ---------- the content ----------
 require('./content.js')(module.exports);
+
+fs.writeFileSync(__dirname + '/headings.json', JSON.stringify(HEADS));
 
 // ---------- title page and front matter ----------
 const title = [
@@ -115,9 +118,16 @@ const edition = [
      'The project repository holds the update decks, the build tools, the issue register and the test runs from which every statement in this manual can be checked. Comments on this publication may be addressed to the project.'].map(t => new Paragraph({ children: runs(t), spacing: { after: 160 } })),
   new Paragraph({ children: [new PageBreak()] }),
 ];
+// static contents from a first pass (TOCJSON: [[level, text, page], ...])
+const tocItems = process.env.TOCJSON ? JSON.parse(fs.readFileSync(process.env.TOCJSON)) : [];
 const toc = [
   new Paragraph({ children: [new TextRun({ text: 'Contents', font: HEAD, bold: true, size: 32 })], spacing: { after: 240 } }),
-  new TableOfContents('Contents', { hyperlink: true, headingStyleRange: '1-2' }),
+  ...tocItems.map(([lvl, text, page]) => new Paragraph({
+    tabStops: [{ type: TabStopType.RIGHT, position: W, leader: 'dot' }],
+    indent: { left: lvl === 1 ? 0 : 400 },
+    spacing: { before: lvl === 1 ? 160 : 20, after: 20 },
+    children: [new TextRun({ text, font: lvl === 1 ? HEAD : BODY, bold: lvl === 1, size: lvl === 1 ? 21 : 20 }),
+               new TextRun({ text: '\t' + page, font: lvl === 1 ? HEAD : BODY, bold: lvl === 1, size: lvl === 1 ? 21 : 20 })] })),
 ];
 
 const doc = new Document({
