@@ -206,7 +206,34 @@ def call(name, *args):
     return c_ast.FuncCall(c_ast.ID(name), c_ast.ExprList(list(args)))
 
 
+KONST = {}                 # value -> static variable (crxkNNN)
+
+
+def kref(v):
+    """GCC380 moves a small 64-bit constant with MVC 8 bytes from a
+    4-byte =F'n' literal (the other 4 bytes are whatever follows it in the
+    literal pool): use a static long long holding the value instead"""
+    if v not in KONST:
+        KONST[v] = 'crxk%d' % len(KONST)
+    return c_ast.ID(KONST[v])
+
+
+def konst(e):
+    """the value of an integer constant expression node, or None"""
+    if isinstance(e, c_ast.Cast):
+        return konst(e.expr)
+    v = const_value(e) if isinstance(e, (c_ast.Constant, c_ast.UnaryOp)) else None
+    return v
+
+
+def k64(e):
+    v = konst(e)
+    return kref(v) if v is not None else e
+
+
 def cast(t, e):
+    if t is LLT or t is ULLT:
+        e = k64(e)
     return c_ast.Cast(t, e)
 
 
@@ -215,6 +242,7 @@ class Xform:
         self.ty = ty
         self.count = 0
         self.unknown = 0
+        self.ret = None
 
     # ---- scopes
     def lookup(self, scopes, name):
@@ -307,6 +335,7 @@ class Xform:
                 for p in ft.args.params:
                     if isinstance(p, c_ast.Decl) and p.name:
                         s[p.name] = p.type
+            self.ret = self.ty.resolve(ft.type) if isinstance(ft, c_ast.FuncDecl) else None
             n.body = self.x(n.body, sc + [s])
             return n
         if isinstance(n, c_ast.Compound):
@@ -320,6 +349,8 @@ class Xform:
                     self.ty.tags_in(it.type)
                     if it.init is not None:
                         it.init = self.x(it.init, sc2)
+                        if is64(self.ty.resolve(it.type)) and konst(it.init) is not None:
+                            it.init = k64(it.init)
                 elif isinstance(it, c_ast.Typedef):
                     self.ty.typedefs[it.name] = it.type
                     self.ty.tags_in(it.type)
@@ -392,6 +423,33 @@ class Xform:
         return e
 
     def rewrite(self, n, sc):
+        if isinstance(n, c_ast.Return) and n.expr is not None and is64(self.ret) and konst(n.expr) is not None:
+            n.expr = k64(n.expr)
+            return n
+        if isinstance(n, c_ast.Assignment) and n.op == '=' and konst(n.rvalue) is not None:
+            if is64(self.typeof(n.lvalue, sc)):
+                n.rvalue = k64(n.rvalue)
+                return n
+        if isinstance(n, c_ast.FuncCall) and n.args is not None:
+            f = self.typeof(n.name, sc)
+            if f and f[0] == 'ptr' and f[1] is not None:
+                f = None
+            ft = None
+            if isinstance(n.name, c_ast.ID):
+                for s_ in reversed(sc):
+                    if n.name.name in s_:
+                        ft = s_[n.name.name]
+                        break
+                else:
+                    ft = self.ty.globals.get(n.name.name)
+            while isinstance(ft, c_ast.TypeDecl) and False:
+                pass
+            if isinstance(ft, c_ast.FuncDecl) and ft.args:
+                ps = ft.args.params
+                for i, a in enumerate(n.args.exprs):
+                    if i < len(ps) and isinstance(ps[i], (c_ast.Decl, c_ast.Typename)) and \
+                            is64(self.ty.resolve(ps[i].type)) and konst(a) is not None:
+                        n.args.exprs[i] = k64(a)
         # every 64-bit comparison and 64-bit truth test by call: GCC380
         # folds pairs into range tests (an add it cannot do) and runs out
         # of register pairs reloading its DImode compare-and-branch
@@ -932,6 +990,14 @@ def main():
         elif isinstance(n, c_ast.Decl) and n.init is not None and n.type is not None \
                 and not isinstance(n.type, c_ast.FuncDecl):
             pass                     # static initialisers are constant-folded
+    if KONST:
+        ks = []
+        for v, nm in sorted(KONST.items(), key=lambda x: x[1]):
+            d = c_ast.Decl(nm, [], None, ['static'], [], c_ast.TypeDecl(nm, [], None, c_ast.IdentifierType(['long', 'long'])),
+                           c_ast.Constant('int', '%dLL' % v if v >= 0 else '(%dLL)' % v), None)
+            ks.append(d)
+        first = next((i for i, n in enumerate(ast.ext) if isinstance(n, c_ast.FuncDef)), len(ast.ext))
+        ast.ext[first:first] = ks
     cf = os.path.join(outdir, 'table.counter')
     TABLES[0] = int(open(cf).read()) if os.path.exists(cf) else 0
     unit_name[0] = unit
