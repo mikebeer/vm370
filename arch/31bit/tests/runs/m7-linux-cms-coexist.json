@@ -1,0 +1,349 @@
+[
+ {
+  "send": "ipl 6A1",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 150
+ },
+ {
+  "send": "/",
+  "expect": "Start \\(\\(Warm",
+  "timeout": 60
+ },
+ {
+  "send": "/cold",
+  "expect": "DMKCPI966I Initialization complete",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "/enable all",
+  "expect": "COMMAND COMPLETE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Online|ONLINE",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "logon maint cpcms",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "cp purge rdr all",
+  "expect": "PURGED|NO RDR",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "cp def stor 64m",
+  "expect": "STORAGE",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "send": "/cp attach 600 to maint as 620",
+  "settle": 3
+ },
+ {
+  "send": "/cp attach 601 to maint as 630",
+  "settle": 3
+ },
+ {
+  "send": "/cp attach 190 to maint as 250",
+  "settle": 3
+ },
+ {
+  "term": "ipl cms",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "access 19d u",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "linux",
+  "expect": "login:|INTERRUPT LOOP|Kernel panic|LINUX: no|DMS",
+  "timeout": 2400,
+  "cont": true
+ },
+ {
+  "term": "root",
+  "expect": "assword",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "vm370plus",
+  "expect": "#",
+  "timeout": 180,
+  "cont": true
+ },
+ {
+  "term": "echo WAITING-FOR-EXPERIMENT",
+  "expect": "EXPERIMENT-DONE",
+  "timeout": 10800,
+  "cont": true
+ },
+ {
+  "term": "poweroff",
+  "expect": "DISABLED WAIT",
+  "timeout": 600,
+  "cont": true
+ },
+ {
+  "term": "cp change rdr all nohold",
+  "expect": "FILE|NO RDR",
+  "timeout": 30,
+  "cont": true
+ },
+ {
+  "term": "ipl cms",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "",
+  "expect": "Ready",
+  "timeout": 15,
+  "cont": true
+ },
+ {
+  "term": "query disk",
+  "expect": "Ready",
+  "timeout": 120,
+  "cont": true
+ },
+ {
+  "term": "#cp logoff",
+  "settle": 5
+ },
+ {
+  "send": "/shutdown",
+  "expect": "HHCCP011I|SHUTDOWN COMPLETE",
+  "timeout": 90,
+  "cont": true
+ },
+ {
+  "send": "exit"
+ }
+]

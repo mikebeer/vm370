@@ -1,4 +1,4 @@
-VM/370+  --  overlay kit, 9 October 2026 (build 4)
+VM/370+  --  overlay kit, 9 October 2026 (build 5)
 =========================================
 
 VM/370 Community Edition V1 R1.2, with CP converted to ESA/390 (AMODE 31)
@@ -16,7 +16,8 @@ INSTALL
   1. Unzip VM370CE_V1_R1_2.zip into a new directory.
   2. Unzip kit parts 1-3 OVER it (part 1: config, shadows, tools;
      part 2: disks/vm50-4.cckd; part 3: the CMSUSER volume's shadow;
-     part 4: Linux, vm370plus/linux/; parts 5-7: the Debian disk, see
+     part 4: Linux, vm370plus/linux/ and the VM50-2 shadow (MAINT's
+     19D with LINUX EXEC); parts 5-7: the Debian disk, see
      LINUX/390 below),
      so the files below replace or add:
         vm370ce.conf                 ARCHMODE ESA/390, CPUMODEL 3090,
@@ -109,8 +110,23 @@ LINUX/390 ON VM/370+  (milestone M7, 9 October 2026)
     KEEP A COPY of lnx190.cckd: it is your Linux system disk, and
     Hercules writes to it.
 
-  BOOT DEBIAN
-  1. vm370ce.conf has MAINSIZE 64 (CP uses 16 MB as real storage and the
+  THE FULL MANUAL is vm370plus/linux/VM370PLUS-Guide.docx (Word): what
+  VM/370+ is, the differences to CE, installation, Linux, cREXX.
+
+  START LINUX FROM CMS (build 5): the kernel, the LINUX EXEC and the
+  parameter files are on MAINT's 19D (your U disk).  With 64 MB and the
+  devices attached (step 3 below):
+        cp def stor 64m
+        ipl cms
+        linux
+  The EXEC punches the kernel into your own reader and IPLs it as an
+  ESA/390 machine.  Your IP address comes from  userid LXPARM  on 19D
+  (MAINT 10.1.1.2, CMSUSER 10.1.2.2), else DEFAULT LXPARM.
+  Two Debian systems at once are too slow until CP uses real storage
+  above 16 MB (M4b.3); Debian next to CMS users works.
+
+  BOOT DEBIAN (by hand)
+  1. vm370ce.conf has MAINSIZE 256 (CP uses 16 MB as real storage and the
      rest as paging store).  Keep it.  For the network remove the # in
      front of  #0600.2  CTCI ...  (see NETWORK below).
   2. With VM/370+ up (step 4 of INSTALL), at the HERCULES console spool
@@ -184,7 +200,7 @@ RULES THAT MATTER
   - Do not IPL something else after IPL CMS (the shared saved system) in
     the same session: leaving a shared system is not finished yet
     (I-235).  Log off and on, or use IPL 190 / IPL 290 (unshared).
-  - CP's own machine is 16 MB; with MAINSIZE above 16 (this kit: 64)
+  - CP's own machine is 16 MB; with MAINSIZE above 16 (this kit: 256)
     the rest is CP's paging store (milestone M4b).  Virtual machines
     may be up to 256 MB.
   - CPWATCH is no longer autologged (AUTOLOG1's PROFILE EXEC: the two

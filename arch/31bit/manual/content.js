@@ -41,7 +41,7 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['M5', 'EC-mode CMS with storage above 16 MB (HIGHSTOR), 31-bit C (cross and native)', 'complete'],
   ['M6', 'a CMS nucleus that is itself 31-bit', 'planned, before M9'],
   ['M7', 'ESA/390 virtual machines, Linux/390, Debian, SSH', 'complete'],
-  ['M7.8', 'Linux for several users from a linkable disk (LINUX EXEC)', 'complete'],
+  ['M7.8', 'Linux for several users from a linkable disk (LINUX EXEC); Linux and CMS side by side', 'complete; two Debians at once need M4b.3'],
   ['M7.9', 'channel programs of any length for ESA/390 guests (no 64-CCW limit)', 'planned'],
   ['M8', 'cREXX: 2022 release built natively; current release cross-built', 'native build of the current release pending'],
   ['\u2014', 'GNU C under Debian (development packages)', 'planned'],
@@ -205,7 +205,9 @@ H2('Several Linux users');
 P('Each Linux user needs his own copy of the Debian disk, his own CTC pair with a CTCI line in `vm370ce.conf` and his own IP address in `userid LXPARM`. The kit’s example: MAINT on 600/601 and 190, address 10.1.1.2; CMSUSER on 602/603 and 191, address 10.1.2.2.');
 SCREEN(['0600.2  CTCI    10.1.1.2 10.1.1.1', '0602.2  CTCI    10.1.2.2 10.1.2.1', '0190    3390    disks/lnx190.cckd', '0191    3390    disks/lnx191.cckd'], 'Two Linux users in vm370ce.conf');
 P('Make `lnx191.cckd` a copy of the Debian disk. The disks are identical: the address comes from the IPL parameters, not from the disk. Give Hercules enough storage for CP\u2019s paging store: `MAINSIZE 256` (the kit\u2019s value) for two Linux users, more for more. With too little, CP fills its DASD paging space (`DMKPGT400I SYSTEM TEMP SPACE FULL`) and the Linux machines fail.');
-NOTE('Real storage is the limit: CP keeps its frames in 16 MB, so two 64 MB Linux machines page constantly and respond slowly until CP uses frames above 16 MB (milestone M4b.3).');
+ATTN('Today one Debian system at a time is practical. Two Debian systems run correctly side by side, but CP keeps its frames in 16 MB of real storage, and two Debian working sets (about 13 MB and 7 MB) do not fit: the scheduler keeps one machine waiting for storage, and it barely moves. Using frames above 16 MB (milestone M4b.3) removes this limit. A Debian system and small Linux systems in storage, or a Debian system and any number of CMS users, run together without problems.');
+H2('Linux and CMS side by side');
+P('Linux users and CMS users share the system as any two VM/370 users do. Tested: one user runs Debian and writes and reads files under load, while another user works in CMS (LISTFILE, COPYFILE, TYPE, ERASE), defines 64 MB, starts Linux with `LINUX`, stops it with `poweroff` and goes back to CMS with `IPL CMS`; the Debian system\u2019s files are unchanged throughout.');
 
 // ---------------------------------------------------------------- chapter 6
 H1('cREXX on VM/370+');
