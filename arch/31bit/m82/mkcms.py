@@ -62,12 +62,61 @@ def programs(stage):
     rt = rt.split()
     used = set(vm) | set(asm) | set(main.values()) | set(rt) | {m[C + '/interpreter/rxvml.c']}
     comp = [m[p] for p in srcs if m[p] not in used]
-    # the VM and the assembler go into TXTLIBs, so each program takes only
-    # what it calls (as M8.1's link does): CRX82VM (VM, runtime) and CRX82AS
-    return [('RXBVM82', expand([main['vm']]), ['CRX82VM']),
-            ('RXAS82', expand([main['as']]), ['CRX82AS', 'CRX82VM']),
-            ('RXC82', expand([main['c']] + comp + [m[C + '/interpreter/rxvml.c']]), ['CRX82AS', 'CRX82VM'])], \
-        {'CRX82VM': expand(vm + rt), 'CRX82AS': expand(asm)}
+    # the VM and the assembler are libraries: each program takes only the
+    # units it reaches (as the PC build's archives do).  CMS TXTLIB will not
+    # take GCC380's large TEXT decks, so the selection is made here, from
+    # the same units compiled on the PC (objects in XF/obj)
+    lib = expand(asm) + expand(vm + rt)
+    progs = [('RXBVM82', expand([main['vm']] + rt)),
+             ('RXAS82', expand([main['as']] + rt)),
+             ('RXC82', expand([main['c']] + comp + [m[C + '/interpreter/rxvml.c']] + rt))]
+    return [(n, close(us, lib)) for n, us in progs], {}
+
+
+def symbols(u):
+    import subprocess
+    o = os.path.join(XF, 'obj', u.lower() + '.o')
+    want = u.lower() + ('.assemble' if u.upper().startswith('CT') else '.c')
+    src = os.path.join(XF, next((f for f in os.listdir(XF) if f.lower() == want), want))
+    if u.upper().startswith('CT'):
+        return {u.upper()}, set()
+    if not os.path.exists(o) or os.path.getmtime(o) < os.path.getmtime(src):
+        os.makedirs(os.path.dirname(o), exist_ok=True)
+        subprocess.run(['s390x-linux-gnu-gcc', '-m31', '-march=z900', '-O0', '-w', '-c', src, '-o', o], check=True)
+    d, un = set(), set()
+    for l in subprocess.run(['s390x-linux-gnu-nm', o], capture_output=True, text=True).stdout.splitlines():
+        p = l.split()
+        if len(p) == 3 and p[1] in 'TDBRCG':
+            d.add(p[2])
+        elif len(p) == 2 and p[0] == 'U':
+            un.add(p[1])
+    return d, un
+
+
+def close(units, lib):
+    """units plus the library units they reach, in link order"""
+    out = list(units)
+    defined, need = set(), set()
+    for u in out:
+        d, un = symbols(u)
+        defined |= d
+        need |= un
+    provider = {}
+    for u in lib:
+        for x in symbols(u)[0]:
+            provider.setdefault(x, u)
+    changed = True
+    while changed:
+        changed = False
+        for x in sorted(need - defined):
+            u = provider.get(x)
+            if u and u not in out:
+                out.append(u)
+                d, un = symbols(u)
+                defined |= d
+                need |= un
+                changed = True
+    return out
 
 
 def csname(u, used):
@@ -82,10 +131,32 @@ def csname(u, used):
     return c
 
 
+def link_exec(progs, cs):
+    """CRX82LK EXEC (CMS EXEC language): link the three modules"""
+    L = ['&CONTROL ERROR', '* CRX82LK EXEC -- M8.2: link RXBVM82, RXAS82, RXC82',
+         '* (CMS EXEC: LOAD may not run from REXX, which sits in the user area)',
+         'GLOBAL TXTLIB GCCLIB31']
+    for name, us in progs:
+        rest = [u.upper() for u in us[1:]]
+        L.append('&TYPE CRX82LK: LINKING %s' % name)
+        L.append('LOAD %s ( NOAUTO NOLIBE CLEAR' % us[0].upper())
+        for i in range(0, len(rest), 5):
+            last = i + 5 >= len(rest)
+            L.append('INCLUDE %s ( NOAUTO%s' % (' '.join(rest[i:i + 5]), '' if last else ' NOLIBE'))
+        # GENMOD's default start is the loader table's third entry (here
+        # the main unit's MAIN), which leaves out the entry @@MAIN and the
+        # static data in front of it: start at the main unit's CSECT
+        L.append('GENMOD %s ( FROM %s' % (name, cs[us[0].upper()]))
+    L.append('&TYPE CRX82LK: DONE')
+    for l in L:
+        assert len(l) <= 72, l
+    return L
+
+
 def exec_text(stage):
     progs, libs = programs(stage)
     allu = []
-    for us in [p[1] for p in progs] + list(libs.values()):
+    for us in [p[1] for p in progs]:
         for u in us:
             if u not in allu:
                 allu.append(u)
@@ -123,25 +194,11 @@ def exec_text(stage):
           "  END",
           'END',
           "IF ONLY <> '' THEN EXIT BAD",
-          'LINKALL:']
-    for lib, us in libs.items():
-        L.append("SAY 'CRX82MK: TXTLIB %s'" % lib)
-        L.append("'ERASE %s TXTLIB A'" % lib)
-        L.append("'TXTLIB GEN %s %s'" % (lib, us[0].upper()))
-        for i in range(1, len(us), 5):
-            L.append("'TXTLIB ADD %s %s'" % (lib, ' '.join(u.upper() for u in us[i:i + 5])))
-            L.append("IF RC <> 0 THEN BAD = BAD + 1")
-    for name, us, ls in progs:
-        L.append("SAY 'CRX82MK: LINKING %s'" % name)
-        L.append("'GLOBAL TXTLIB %s GCCLIB31'" % ' '.join(ls))
-        rest = [u.upper() for u in us[1:]]
-        L.append("'LOAD %s (NOAUTO%s CLEAR'" % (us[0].upper(), ' NOLIBE' if rest else ''))
-        for i in range(0, len(rest), 5):
-            last = i + 5 >= len(rest)
-            L.append("'INCLUDE %s (NOAUTO%s'" % (' '.join(rest[i:i + 5]), '' if last else ' NOLIBE'))
-        L.append("IF RC <> 0 THEN BAD = BAD + 1")
-        L.append("'GENMOD %s'" % name)
-        L.append("IF RC <> 0 THEN BAD = BAD + 1")
+          'LINKALL:',
+          "/* LOAD and GENMOD may not run from a REXX EXEC: the interpreter */",
+          "/* is in the user area the program loads into.  CRX82LK is a    */",
+          "/* CMS EXEC (EXEC 1, in the nucleus), run from the command line */",
+          "SAY 'CRX82MK: COMPILED -- NOW LINK WITH:  EXEC CRX82LK'"]
     L += ["IF BAD > 0 THEN SAY 'CRX82MK: *****' BAD 'ERRORS *****'",
           "ELSE SAY 'CRX82MK: BUILD OK'",
           'EXIT BAD',
@@ -245,6 +302,17 @@ def main():
         deck.append(':READ  %-8s C        A1' % fn.upper())
         deck.extend(main)
     mk = [':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
+    progs = programs(stage)[0]
+    used, cs = set(), {}
+    allu = []
+    for p in progs:
+        for u in p[1]:
+            if u not in allu:
+                allu.append(u)
+    for u in allu:
+        if not u.upper().startswith('CT'):
+            cs[u.upper()] = csname(u, used)
+    mk += [':READ  CRX82LK  EXEC     A1'] + link_exec(progs, cs)
     mk += [':READ  CRX82    PARM     A1', PARM]
     mk += [':READ  CRX82O0  PARM     A1', PARM.replace('-O1', '-O0')]
     top = open(os.path.join(HERE, '..', 'gcclib31', 'src', 'pdptop.copy')).read().rstrip('\n').split('\n')
@@ -262,8 +330,7 @@ def main():
             fo.write(c.ljust(80) + '\n')
     progs, libs = programs(stage)
     print('%d files, %d cards; %s; %s' % (len(files), len(deck),
-          ' '.join('%s=%d' % (p[0], len(p[1])) for p in progs),
-          ' '.join('%s=%d' % (n, len(u)) for n, u in libs.items())))
+          ' '.join('%s=%d' % (p[0], len(p[1])) for p in progs), ''))
 
 
 if __name__ == '__main__':

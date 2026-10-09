@@ -45,6 +45,8 @@ long long crxinc64(long long *p, long long d, int post);
 int crxcmp64(long long a, long long b);
 int crxucm64(unsigned long long a, unsigned long long b);
 long crxsw64(long long a);
+#define _Alignof __alignof__
+#define _Noreturn
 long long crxmul64(long long a, long long b);
 long long crxmut64(long long *p, long long b);
 int crxaov64(long long a, long long b, long long *r);
@@ -912,6 +914,15 @@ def main():
     if src.returncode:
         raise SystemExit(src.stderr)
     ast = c_parser.CParser().parse(src.stdout, unit + '.c')
+    # C11 _Static_assert: GCC 3.2 has none (they hold on the PC check)
+    ast.ext = [n for n in ast.ext if type(n).__name__ != 'StaticAssert']
+
+    class _NoSA(c_ast.NodeVisitor):
+        def visit_Compound(self, n):
+            if n.block_items:
+                n.block_items = [x for x in n.block_items if type(x).__name__ != 'StaticAssert']
+            self.generic_visit(n)
+    _NoSA().visit(ast)
     kept = prune(ast, unit + '.c')
     ty = Types(ast)
     xf = Xform(ty)

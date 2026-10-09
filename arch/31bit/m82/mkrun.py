@@ -49,12 +49,17 @@ for d in decks:
 t('query disk', RDY)
 t('highstor reset', RDY)
 if mode == 'full':
-    t('exec crx82mk', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 36000)
+    t('exec crx82mk', 'NOW LINK|BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 36000)
+    t('exec crx82lk', 'CRX82LK: DONE|DMSABN|DMSITP|CP ENTERED', 1800)
+    for c in ('rxbvm82 -v', 'rxas82 -v', 'rxc82 -v'):
+        t(c, RDY + '|DMSABN|DMSITP', 120)
 elif mode == 'deck':
     for c in CMDS:
         t(c, RDY + '|DMSABN|DMSITP', 7200)
 elif mode == 'link':
-    t('exec crx82mk link', 'BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 3600)
+    t('exec crx82lk', 'CRX82LK: DONE|DMSABN|DMSITP|CP ENTERED', 1800)
+    for c in ('rxbvm82 -v', 'rxas82 -v', 'rxc82 -v'):
+        t(c, RDY + '|DMSABN|DMSITP', 120)
 else:
     t('exec crx82mk ' + ' '.join(sys.argv[2:]), RDY + '|DMSABN|DMSITP|DMSFRE', 7200)
 t('highstor query', 'HIGHSTOR')

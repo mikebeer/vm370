@@ -480,3 +480,9 @@ int closedir(DIR *d)
     if (d) { free(d->names); free(d); }
     return 0;
 }
+
+/* GCC380 copies some structures with bcopy() */
+void bcopy(const void *s, void *d, size_t n)
+{
+    memmove(d, s, n);
+}
