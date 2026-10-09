@@ -1,0 +1,14 @@
+* 3
+* SQ
+* 144
+* "a string"
+* (A B C)
+* Error: the value 5 is not a list
+* 10
+* 100
+* hello
+NIL
+* 1
+* Error: the variable UNDEFINED-VAR is unbound
+* (1.5 #\a)
+* 

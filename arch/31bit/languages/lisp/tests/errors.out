@@ -1,0 +1,28 @@
+caught: the value 5 is not a list
+caught: the value "a" is not of type NUMBER
+caught: undefined function UNDEFINED-FUNCTION
+caught: the variable UNDEFINED-VARIABLE is unbound
+caught: arithmetic error DIVISION-BY-ZERO signalled
+caught: arithmetic error DIVISION-BY-ZERO signalled
+caught: index 5 is out of bounds for the vector
+caught: the value 5 is not a function
+caught: custom MSG "text"
+caught: too few arguments
+caught: too many arguments
+caught: too few arguments to GETHASH
+caught: junk in "abc"
+caught: the variable NOPE is unbound
+caught: the value A is not of type INTEGER
+caught: assertion failed: NIL
+caught: attempt to throw to a tag that does not exist: NOWHERE
+caught: index 9 out of bounds
+caught: the value 5 is not a string designator
+caught: SQRT of a negative number is not supported
+after errors
+
+2 
+"outer from inner" caught: in protect
+cleanup runs
+
+(2 :BAD 6) 
+Error: undefined function UNDEFINED-AT-TOPLEVEL

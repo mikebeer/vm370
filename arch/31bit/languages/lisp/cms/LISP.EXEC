@@ -1,0 +1,16 @@
+/* LISP EXEC -- Common Lisp subset in cREXX (github.com/mikebeer/lisp)  */
+/*   LISP fn.lisp [more.lisp ...]   load and run the files              */
+/*   LISP                           read-eval-print loop                */
+/* Runs LISP RXBIN (linked with the library) on RXBVM8.                 */
+PARSE ARG ARGS
+'STATE LISP RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'LISP: LISP RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+IF ARGS = '' THEN 'RXBVM8 LISP'
+ELSE DO
+  QUEUE ARGS              /* CMS would cut each argument to 8 chars */
+  'RXBVM8 LISP -a =STACK'
+END
+EXIT RC

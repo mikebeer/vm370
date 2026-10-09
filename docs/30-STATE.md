@@ -27,12 +27,13 @@ The kit was verified on a fresh CE (kt14).
 | CP leftovers | I-235 models, I-201 DMKDMP dump, the LPSW fast path for PSWs above 16 MB |
 | gcc under Debian | done: gcc 4.6.3, g++, make |
 | CPWATCH | get it running again (I-251) |
-| M6 | 31-bit CMS proper |
+| M6 | 31-bit CMS proper, including larger minidisks (4K blocks, past the 65,535-block limit of the 800-byte format) |
 | M9 | 64-bit |
 
 **Backlog (agreed, not scheduled before M9 unless said):**
-- Languages in cREXX, for CMS (via RXBVM8, later RXBVM82) and Linux, built by `arch/31bit/languages/mklangs.sh` with a cREXX `rxfloat` (`languages/common`): BASIC (mikebeer/basic, 13/13 tests), SNOBOL4 (mikebeer/snobol, 10/10), Pascal (mikebeer/pascal, 11/11), Prolog, LOGO -- all pass on the PC; next on CMS (RXBVM8) and Debian. Smalltalk (mikebeer/smalltalk) and Lisp (mikebeer/lisp): as soon as the repositories have commits. Others: FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
-- Java: OpenJDK under Debian and a fuller Java on CMS, both after M9.
+- Languages in cREXX, for CMS (via RXBVM8, later RXBVM82) and Linux, built by `arch/31bit/languages/mklangs.sh` with a cREXX `rxfloat` (`languages/common`): BASIC (mikebeer/basic, 13/13 tests), SNOBOL4 (mikebeer/snobol, 10/10), Pascal (mikebeer/pascal, 11/11), Lisp (mikebeer/lisp, 12/12), Prolog, LOGO -- all pass on the PC, and run on CMS through RXBVM8 (run lg2; `mkcmsdeck.py`). Smalltalk (mikebeer/smalltalk) and PL/M (mikebeer/PLM): as soon as the repositories have commits. Others: FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
+- Java: OpenJDK 7 under Debian (soon, a package download like Python); a fuller Java on CMS after M9.
+- SQL: SQLite on CMS (cross-built like M8.1, with a CMS file layer and a REXX interface); MariaDB/MySQL 5.5 or PostgreSQL 9.1 under Debian.
 - CMS sockets (over the Hercules TCP/IP instruction) and a web server (httpd) on CMS; Apache under Debian. The Office's internet mail and web client build on these.
 - CP/M 2.2 as a guest (from ivop/cpm22-from-source, needs PL/M): an 8080 emulator first under Linux, then as a CMS command, then stand-alone IPLable.
 - 3270 full-screen panel library for CMS (cREXX and C); a 3270 console for Linux.

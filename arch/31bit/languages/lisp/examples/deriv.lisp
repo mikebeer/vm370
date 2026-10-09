@@ -1,0 +1,32 @@
+;;; Symbolic differentiation with simplification, using a macro to define rules.
+(defmacro defrule (name args &body body)
+  `(defun ,name ,args ,@body))
+
+(defun simplify-sum (a b)
+  (cond ((and (numberp a) (numberp b)) (+ a b))
+        ((eql a 0) b)
+        ((eql b 0) a)
+        (t (list '+ a b))))
+
+(defun simplify-product (a b)
+  (cond ((and (numberp a) (numberp b)) (* a b))
+        ((or (eql a 0) (eql b 0)) 0)
+        ((eql a 1) b)
+        ((eql b 1) a)
+        (t (list '* a b))))
+
+(defrule deriv (e x)
+  (cond ((numberp e) 0)
+        ((symbolp e) (if (eq e x) 1 0))
+        ((eq (first e) '+)
+         (simplify-sum (deriv (second e) x) (deriv (third e) x)))
+        ((eq (first e) '*)
+         (simplify-sum (simplify-product (second e) (deriv (third e) x))
+                       (simplify-product (deriv (second e) x) (third e))))
+        (t (error "cannot differentiate ~S" e))))
+
+(dolist (e '((+ x 3)
+             (* x x)
+             (* 3 (* x x))
+             (+ (* a x) (* b (* x x)))))
+  (format t "d/dx ~S = ~S~%" e (deriv e 'x)))

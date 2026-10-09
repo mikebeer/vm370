@@ -1,0 +1,6961 @@
+/*
+ * lisp.crexx - a Common Lisp interpreter written in CREXX Level B
+ *
+ * Usage:   rxvm lisp.rxbin -a [file.lisp ...]
+ *
+ *   With one or more files, each is loaded and run. Without arguments an
+ *   interactive read-eval-print loop reads from standard input.
+ *
+ * Data model: every Lisp object is an integer "reference".
+ *   reference < 0   a fixnum:  n >= 0 is -(2n+1), n < 0 is 2n
+ *   reference > 0   a cell in the heap arrays ctag ccar ccdr cext cnum cstr
+ *   reference 1     NIL        reference 2   T        reference 0  "none"
+ * Cell tags: 1 cons, 2 symbol, 3 float, 4 string, 5 primitive, 6 closure,
+ *   7 macro, 8 character, 9 vector, 10 hash table, 11 structure type.
+ */
+options levelb
+namespace lisp expose ctag ccar ccdr cext cnum cstr chn ncell hbk vdat nvdat htk htv htn nhte htb nht gensymn unw unwtag unwval errmsg outcol hasfenv ndepth maxdepth loadmode nprim primname sNIL sT sQUOTE sFUNCTION sQUASI sUNQ sUNQS sLAMBDA sOPT sREST sKEY sELSE sERROR sTHEN src rp rlen cspec cfk cpl cslot pmin pmax hto hpv mvlist curfn errkind capdepth capbuf eofflag fidx fstop sOTHERWISE sBLOCK sLAMBDALIST seed catchtags fsemi sRETFROM sRETURN sAUX sXLOOP sBODY
+
+import rxfnsb
+
+arg argv = .string[]
+
+/* ------------------------------------------------------------------ heap */
+ctag = .int[]        /* cell type                                           */
+ccar = .int[]        /* car / symbol value / closure parameters             */
+ccdr = .int[]        /* cdr / symbol function / closure body                */
+cext = .int[]        /* special-form id, primitive id, closure environment  */
+cnum = .float[]      /* float value                                         */
+cstr = .string[]     /* string value / symbol name                          */
+chn = .int[]         /* symbol hash chain                                   */
+ncell = 0
+hbk = .int[]         /* symbol hash buckets                                 */
+vdat = .int[]        /* vector storage                                      */
+nvdat = 0
+htk = .int[]         /* hash table entry: key                               */
+htv = .int[]         /* hash table entry: value                             */
+htn = .int[]         /* hash table entry: next in chain                     */
+nhte = 0
+htb = .int[]         /* hash table buckets (table id * 256 + hash)          */
+nht = 0
+gensymn = 0
+
+unw = 0              /* non-local exit: 0 none, 1 error, 2 throw, 3 return-from */
+unwtag = 1
+unwval = 1
+errmsg = ''
+outcol = 0           /* output column, for fresh-line */
+hasfenv = 0          /* 1 once flet/labels has been used */
+ndepth = 0           /* evaluation depth */
+maxdepth = 0
+loadmode = 0
+nprim = 0
+primname = .string[]
+
+/* well known symbols, set by initlisp */
+sNIL = 1
+sT = 2
+sQUOTE = 0
+sFUNCTION = 0
+sQUASI = 0
+sUNQ = 0
+sUNQS = 0
+sLAMBDA = 0
+sOPT = 0
+sREST = 0
+sKEY = 0
+sELSE = 0
+sERROR = 0
+sTHEN = 0
+
+src = ''             /* text being read */
+rp = 1               /* read position */
+rlen = 0
+
+
+cspec = .int[]       /* symbol flag: 1 special variable, 2 constant */
+cfk = .int[]         /* cached local-function key symbol */
+cpl = .int[]         /* symbol property list */
+cslot = .int[]       /* structure accessor: slot index + 1 */
+pmin = .int[]        /* primitive minimum argument count */
+pmax = .int[]        /* primitive maximum argument count, -1 for any */
+hto = .int[]         /* hash table entry: next in insertion order */
+hpv = .int[]         /* hash table entry: previous in insertion order */
+mvlist = 0           /* list of multiple values from the latest VALUES */
+curfn = 0            /* the primitive being called */
+errkind = 'ERROR'
+capdepth = 0         /* with-output-to-string nesting */
+capbuf = ''
+eofflag = 0          /* the reader ran out of input inside a list */
+fidx = 0             /* FORMAT argument index */
+fstop = 0            /* FORMAT ~^ seen */
+sOTHERWISE = 0
+sBLOCK = 0
+sLAMBDALIST = 0
+seed = 12345
+catchtags = 1       /* tags of the active CATCH forms */
+
+fsemi = ''           /* positions of ~; found by fmtfind */
+sRETFROM = 0
+sRETURN = 0
+sAUX = 0
+sXLOOP = 0
+sBODY = 0
+
+/* ---------------------------------------------------------------- driver */
+call initlisp
+call initprims
+call initprelude
+if argv.0 >= 1 then do
+  rc = 0
+  do ai = 1 to argv.0
+    rc = loadfile(argv[ai])
+    if rc <> 0 then leave
+  end
+  call freshline
+  exit rc
+end
+call repl
+exit 0
+
+
+newcell: procedure = .int
+  arg tag = .int
+  ncell = ncell + 1
+  ctag[ncell] = tag
+  ccar[ncell] = 1
+  ccdr[ncell] = 1
+  cext[ncell] = 0
+  return ncell
+
+mkint: procedure = .int
+  arg n = .int
+  if n >= 0 then return 0 - (2 * n + 1)
+  return 2 * n
+
+isint: procedure = .int
+  arg r = .int
+  if r < 0 then return 1
+  return 0
+
+intval: procedure = .int
+  arg r = .int
+  if r % 2 = 0 then return r / 2
+  return (0 - r - 1) / 2
+
+mkfloat: procedure = .int
+  arg x = .float
+  c = newcell(3)
+  cnum[c] = x
+  return c
+
+mkstr: procedure = .int
+  arg s = .string
+  c = newcell(4)
+  cstr[c] = s
+  return c
+
+mkchar: procedure = .int
+  arg code = .int
+  c = newcell(8)
+  cext[c] = code
+  return c
+
+cons: procedure = .int
+  arg a = .int, d = .int
+  c = newcell(1)
+  ccar[c] = a
+  ccdr[c] = d
+  return c
+
+list1: procedure = .int
+  arg a = .int
+  return cons(a, 1)
+
+list2: procedure = .int
+  arg a = .int, b = .int
+  return cons(a, cons(b, 1))
+
+list3: procedure = .int
+  arg a = .int, b = .int, c = .int
+  return cons(a, cons(b, cons(c, 1)))
+
+iscons: procedure = .int
+  arg r = .int
+  if r > 0 then do
+    if ctag[r] = 1 then return 1
+  end
+  return 0
+
+issym: procedure = .int
+  arg r = .int
+  if r > 0 then do
+    if ctag[r] = 2 then return 1
+  end
+  return 0
+
+isstring: procedure = .int
+  arg r = .int
+  if r > 0 then do
+    if ctag[r] = 4 then return 1
+  end
+  return 0
+
+isfloat: procedure = .int
+  arg r = .int
+  if r > 0 then do
+    if ctag[r] = 3 then return 1
+  end
+  return 0
+
+ischar: procedure = .int
+  arg r = .int
+  if r > 0 then do
+    if ctag[r] = 8 then return 1
+  end
+  return 0
+
+isnum: procedure = .int
+  arg r = .int
+  if r < 0 then return 1
+  if r > 0 then do
+    if ctag[r] = 3 then return 1
+  end
+  return 0
+
+truth: procedure = .int
+  arg b = .int
+  if b <> 0 then return 2
+  return 1
+
+/* ---------------------------------------------------------------- errors */
+lerror: procedure = .int
+  arg msg = .string
+  if unw = 0 then do
+    unw = 1
+    errmsg = msg
+    errkind = 'ERROR'
+  end
+  return 1
+
+/* the safe versions of car and cdr */
+car: procedure = .int
+  arg r = .int
+  if r = 1 then return 1
+  if iscons(r) = 1 then return ccar[r]
+  junk = lerrk('TYPE-ERROR', 'the value ' || printobj(r, 1) || ' is not a list')
+  return 1
+
+cdr: procedure = .int
+  arg r = .int
+  if r = 1 then return 1
+  if iscons(r) = 1 then return ccdr[r]
+  junk = lerrk('TYPE-ERROR', 'the value ' || printobj(r, 1) || ' is not a list')
+  return 1
+
+/* ------------------------------------------------------------ list helpers */
+listlen: procedure = .int
+  arg l = .int
+  n = 0
+  do while iscons(l) = 1
+    n = n + 1
+    l = ccdr[l]
+  end
+  return n
+
+/* build a Lisp list from av[from..n] */
+arr2list: procedure = .int
+  arg expose av = .int[], from = .int, n = .int
+  l = 1
+  do i = n to from by -1
+    l = cons(av[i], l)
+  end
+  return l
+
+list2arr: procedure = .int
+  arg l = .int, expose av = .int[]
+  n = 0
+  do while iscons(l) = 1
+    n = n + 1
+    av[n] = ccar[l]
+    l = ccdr[l]
+  end
+  return n
+
+reverse: procedure = .int
+  arg l = .int
+  r = 1
+  do while iscons(l) = 1
+    r = cons(ccar[l], r)
+    l = ccdr[l]
+  end
+  return r
+
+/* destructively reverse (fresh conses only) */
+nreverse: procedure = .int
+  arg l = .int
+  prev = 1
+  do while iscons(l) = 1
+    nx = ccdr[l]
+    ccdr[l] = prev
+    prev = l
+    l = nx
+  end
+  return prev
+
+append2: procedure = .int
+  arg a = .int, b = .int
+  if iscons(a) = 0 then return b
+  r = 1
+  do while iscons(a) = 1
+    r = cons(ccar[a], r)
+    a = ccdr[a]
+  end
+  do while iscons(r) = 1
+    nx = ccdr[r]
+    ccdr[r] = b
+    b = r
+    r = nx
+  end
+  return b
+
+/* ------------------------------------------------------------- symbols */
+hashname: procedure = .int
+  arg s = .string
+  h = 7
+  do i = 1 to length(s)
+    h = (h * 31 + c2d(substr(s, i, 1))) % 8191
+  end
+  return h
+
+intern: procedure = .int
+  arg name = .string
+  h = hashname(name)
+  c = hbk[h]
+  do while c <> 0
+    if cstr[c] == name then return c
+    c = chn[c]
+  end
+  c = newcell(2)
+  cstr[c] = name
+  ccar[c] = 0
+  ccdr[c] = 0
+  chn[c] = hbk[h]
+  hbk[h] = c
+  if left(name, 1) = ':' then do
+    ccar[c] = c
+    cspec[c] = 2
+  end
+  return c
+
+mksym: procedure = .int
+  arg name = .string
+  return intern(upper(name))
+
+symname: procedure = .string
+  arg r = .int
+  return cstr[r]
+
+/* ------------------------------------------------------------- numbers */
+/* numeric value of a number reference as a float */
+fval: procedure = .float
+  arg r = .int
+  if r < 0 then do
+    n = intval(r)
+    f = n * 1.0
+    return f
+  end
+  return cnum[r]
+
+/* text of a float: always shows a decimal point or an exponent */
+floattext: procedure = .string
+  arg x = .float
+  ax = x
+  sg = ''
+  if x < 0.0 then do
+    ax = 0.0 - x
+    sg = '-'
+  end
+  if ax >= 10000000.0 | (ax < 0.001 & ax > 0.0) then do
+    m = ax
+    ex = 0
+    do while m >= 10.0
+      m = m / 10.0
+      ex = ex + 1
+    end
+    do while m < 1.0
+      m = m * 10.0
+      ex = ex - 1
+    end
+    ms = m || ''
+    if pos('.', ms) = 0 then ms = ms || '.0'
+    return sg || ms || 'e' || ex
+  end
+  s = x || ''
+  if pos('.', s) = 0 & pos('e', s) = 0 & pos('E', s) = 0 then s = s || '.0'
+  if left(s, 1) = '.' then s = '0' || s
+  if left(s, 2) = '-.' then s = '-0' || substr(s, 2)
+  return s
+
+/* --------------------------------------------------------------- printer */
+charname: procedure = .string
+  arg code = .int
+  if code = 32 then return 'Space'
+  if code = 10 then return 'Newline'
+  if code = 9 then return 'Tab'
+  if code = 13 then return 'Return'
+  return d2c(code)
+
+printstring: procedure = .string
+  arg s = .string
+  o = '"'
+  do i = 1 to length(s)
+    c = substr(s, i, 1)
+    if c = '"' then o = o || '\"'
+    else if c = '\' then o = o || '\\'
+    else o = o || c
+  end
+  return o || '"'
+
+printobj: procedure = .string
+  arg r = .int, esc = .int
+  if r < 0 then return intval(r) || ''
+  if r = 0 then return '#<none>'
+  t = ctag[r]
+  if t = 2 then do
+    if cspec[r] = 3 & esc = 1 then return '#:' || cstr[r]
+    return cstr[r]
+  end
+  if t = 3 then return floattext(cnum[r])
+  if t = 4 then do
+    if esc = 1 then return printstring(cstr[r])
+    return cstr[r]
+  end
+  if t = 8 then do
+    if esc = 1 then return '#\' || charname(cext[r])
+    return d2c(cext[r])
+  end
+  if t = 1 then do
+    h = ccar[r]
+    if h = sQUOTE & iscons(ccdr[r]) = 1 & ccdr[ccdr[r]] = 1 then return "'" || printobj(ccar[ccdr[r]], esc)
+    if h = sFUNCTION & iscons(ccdr[r]) = 1 & ccdr[ccdr[r]] = 1 then return "#'" || printobj(ccar[ccdr[r]], esc)
+    s = '('
+    first = 1
+    n = 0
+    do while iscons(r) = 1
+      if first = 0 then s = s || ' '
+      first = 0
+      s = s || printobj(ccar[r], esc)
+      r = ccdr[r]
+      n = n + 1
+      if n > 100000 then do
+        s = s || ' ...'
+        r = 1
+      end
+    end
+    if r <> 1 then s = s || ' . ' || printobj(r, esc)
+    return s || ')'
+  end
+  if t = 5 then return '#<FUNCTION ' || cstr[r] || '>'
+  if t = 6 then return '#<FUNCTION (LAMBDA ' || printobj(ccar[r], 1) || ')>'
+  if t = 7 then return '#<MACRO>'
+  if t = 9 then do
+    s = '#('
+    n = ccdr[r]
+    do i = 1 to n
+      if i > 1 then s = s || ' '
+      s = s || printobj(vdat[cext[r] + i - 1], esc)
+    end
+    return s || ')'
+  end
+  if t = 10 then return '#<HASH-TABLE>'
+  if t = 11 then do
+    s = '#S(' || cstr[ccar[r]]
+    fl = ccdr[ccar[r]]
+    i = 0
+    do while iscons(fl) = 1
+      s = s || ' :' || printobj(ccar[fl], 1) || ' ' || printobj(vdat[cext[r] + i], esc)
+      i = i + 1
+      fl = ccdr[fl]
+    end
+    return s || ')'
+  end
+  return '#<OBJECT>'
+
+/* ---------------------------------------------------------------- reader */
+isdelim: procedure = .int
+  arg c = .string
+  if c = '' then return 1
+  if pos(c, ' ()' || "'" || '"' || ';' || '`' || ',' || '0a'x || '09'x || '0d'x) > 0 then return 1
+  return 0
+
+skipws: procedure = .void
+  do forever
+    if rp > rlen then return
+    c = substr(src, rp, 1)
+    if c = ' ' | c = '0a'x | c = '09'x | c = '0d'x then do
+      rp = rp + 1
+    end
+    else if c = ';' then do
+      do while rp <= rlen & substr(src, rp, 1) <> '0a'x
+        rp = rp + 1
+      end
+    end
+    else if c = '#' & substr(src, rp + 1, 1) = '|' then do
+      d = 1
+      rp = rp + 2
+      do while rp <= rlen & d > 0
+        if substr(src, rp, 2) = '|#' then do
+          d = d - 1
+          rp = rp + 2
+        end
+        else if substr(src, rp, 2) = '#|' then do
+          d = d + 1
+          rp = rp + 2
+        end
+        else rp = rp + 1
+      end
+    end
+    else return
+  end
+  return
+
+isnumtext: procedure = .int
+  arg t = .string
+  c = left(t, 1)
+  if pos(c, '0123456789+-.') = 0 then return 0
+  if t = '+' | t = '-' | t = '.' then return 0
+  if datatype(t, 'N') = '1' then return 1
+  return 0
+
+parseatom: procedure = .int
+  arg t = .string
+  if isnumtext(t) = 1 then do
+    if datatype(t, 'W') = '1' & pos('.', t) = 0 & pos('E', upper(t)) = 0 & length(t) < 18 then do
+      n = t as .int
+      return mkint(n)
+    end
+    x = t as .float
+    return mkfloat(x)
+  end
+  return intern(upper(t))
+
+/* read one object; returns 0 at end of input */
+readobj: procedure = .int
+  call skipws
+  if rp > rlen then return 0
+  c = substr(src, rp, 1)
+  if c = '(' then do
+    rp = rp + 1
+    return readlist()
+  end
+  if c = ')' then do
+    rp = rp + 1
+    junk = lerror('unmatched close parenthesis')
+    return 1
+  end
+  if c = "'" then do
+    rp = rp + 1
+    x = readobj()
+    if x = 0 then do
+      eofflag = 1
+      return lerror('end of input after quote')
+    end
+    return list2(sQUOTE, x)
+  end
+  if c = '`' then do
+    rp = rp + 1
+    x = readobj()
+    return list2(sQUASI, x)
+  end
+  if c = ',' then do
+    rp = rp + 1
+    if substr(src, rp, 1) = '@' then do
+      rp = rp + 1
+      x = readobj()
+      return list2(sUNQS, x)
+    end
+    x = readobj()
+    return list2(sUNQ, x)
+  end
+  if c = '"' then do
+    rp = rp + 1
+    s = ''
+    do while rp <= rlen & substr(src, rp, 1) <> '"'
+      d = substr(src, rp, 1)
+      if d = '\' then do
+        rp = rp + 1
+        d = substr(src, rp, 1)
+        if d = 'n' then d = '0a'x
+        else if d = 't' then d = '09'x
+      end
+      s = s || d
+      rp = rp + 1
+    end
+    rp = rp + 1
+    return mkstr(s)
+  end
+  if c = '#' then do
+    d = substr(src, rp + 1, 1)
+    if d = "'" then do
+      rp = rp + 2
+      x = readobj()
+      return list2(sFUNCTION, x)
+    end
+    if d = '\' then do
+      rp = rp + 2
+      ch = substr(src, rp, 1)
+      rp = rp + 1
+      nm = ch
+      do while rp <= rlen & isdelim(substr(src, rp, 1)) = 0
+        nm = nm || substr(src, rp, 1)
+        rp = rp + 1
+      end
+      if length(nm) = 1 then return mkchar(c2d(nm))
+      u = upper(nm)
+      if u = 'SPACE' then return mkchar(32)
+      if u = 'NEWLINE' | u = 'LINEFEED' then return mkchar(10)
+      if u = 'TAB' then return mkchar(9)
+      if u = 'RETURN' then return mkchar(13)
+      return mkchar(c2d(left(nm, 1)))
+    end
+    if d = '(' then do
+      rp = rp + 2
+      l = readlist()
+      return makevector(l)
+    end
+    if pos(d, 'xXbBoO') > 0 & d <> '' then do
+      rp = rp + 2
+      tk = ''
+      do while rp <= rlen & isdelim(substr(src, rp, 1)) = 0
+        tk = tk || substr(src, rp, 1)
+        rp = rp + 1
+      end
+      base = 16
+      if upper(d) = 'B' then base = 2
+      if upper(d) = 'O' then base = 8
+      return mkint(parsebase(tk, base))
+    end
+  end
+  /* a symbol or a number */
+  t = ''
+  if c = '|' then do
+    rp = rp + 1
+    do while rp <= rlen & substr(src, rp, 1) <> '|'
+      t = t || substr(src, rp, 1)
+      rp = rp + 1
+    end
+    rp = rp + 1
+    return intern(t)
+  end
+  do while rp <= rlen & isdelim(substr(src, rp, 1)) = 0
+    t = t || substr(src, rp, 1)
+    rp = rp + 1
+  end
+  return parseatom(t)
+
+readlist: procedure = .int
+  head = 1
+  tail = 1
+  do forever
+    call skipws
+    if rp > rlen then do
+      eofflag = 1
+      return lerror('end of input inside a list')
+    end
+    c = substr(src, rp, 1)
+    if c = ')' then do
+      rp = rp + 1
+      return head
+    end
+    if c = '.' & isdelim(substr(src, rp + 1, 1)) = 1 & tail <> 1 then do
+      rp = rp + 1
+      x = readobj()
+      ccdr[tail] = x
+      call skipws
+      if substr(src, rp, 1) = ')' then rp = rp + 1
+      return head
+    end
+    x = readobj()
+    if unw <> 0 then return 1
+    cell = cons(x, 1)
+    if head = 1 then head = cell
+    else ccdr[tail] = cell
+    tail = cell
+  end
+  return head
+
+makevector: procedure = .int
+  arg l = .int
+  n = listlen(l)
+  v = newcell(9)
+  cext[v] = nvdat + 1
+  ccdr[v] = n
+  do while iscons(l) = 1
+    nvdat = nvdat + 1
+    vdat[nvdat] = ccar[l]
+    l = ccdr[l]
+  end
+  return v
+
+
+parsebase: procedure = .int
+  arg tk = .string, base = .int
+  neg = 0
+  if left(tk, 1) = '-' then do
+    neg = 1
+    tk = substr(tk, 2)
+  end
+  v = 0
+  do i = 1 to length(tk)
+    d = pos(upper(substr(tk, i, 1)), '0123456789ABCDEF') - 1
+    if d < 0 | d >= base then do
+      junk = lerror('bad digit in number')
+      return 0
+    end
+    v = v * base + d
+  end
+  if neg = 1 then v = 0 - v
+  return v
+
+
+/* ===================================================================== */
+/*                               EVALUATOR                               */
+/* ===================================================================== */
+emit: procedure = .void
+  arg s = .string
+  if length(s) = 0 then return
+  if capdepth > 0 then do
+    capbuf = capbuf || s
+    return
+  end
+  call charout 'stdout', s
+  if right(s, 1) = '0a'x then outcol = 0
+  else outcol = 1
+  return
+
+freshline: procedure = .void
+  if capdepth > 0 then do
+    if length(capbuf) > 0 & right(capbuf, 1) <> '0a'x then capbuf = capbuf || '0a'x
+    return
+  end
+  if outcol <> 0 then call emit '0a'x
+  return
+
+reporterr: procedure = .void
+  call freshline
+  if unw = 1 then call emit 'Error: ' || errmsg || '0a'x
+  else if unw = 2 then call emit 'Error: attempt to throw to a tag that does not exist: ' || printobj(unwtag, 1) || '0a'x
+  else if unw = 3 then call emit 'Error: return from unknown block ' || printobj(unwtag, 1) || '0a'x
+  unw = 0
+  capdepth = 0
+  capbuf = ''
+  ndepth = 0
+  return
+
+/* ----------------------------------------------------------- variables */
+fkey: procedure = .int
+  arg f = .int
+  if cfk[f] = 0 then cfk[f] = intern('#F:' || cstr[f])
+  return cfk[f]
+
+symval: procedure = .int
+  arg s = .int, env = .int
+  if cspec[s] = 2 then return ccar[s]
+  e = env
+  do while e <> 1
+    b = ccar[e]
+    if ccar[b] = s then return ccdr[b]
+    e = ccdr[e]
+  end
+  v = ccar[s]
+  if v = 0 then return lerrk('UNBOUND-VARIABLE', 'the variable ' || cstr[s] || ' is unbound')
+  return v
+
+setvar: procedure = .int
+  arg s = .int, v = .int, env = .int
+  if cspec[s] = 2 then return lerror('cannot assign to the constant ' || cstr[s])
+  e = env
+  do while e <> 1
+    b = ccar[e]
+    if ccar[b] = s then do
+      ccdr[b] = v
+      return v
+    end
+    e = ccdr[e]
+  end
+  ccar[s] = v
+  return v
+
+getfn: procedure = .int
+  arg f = .int, env = .int
+  if hasfenv = 1 then do
+    k = fkey(f)
+    e = env
+    do while e <> 1
+      b = ccar[e]
+      if ccar[b] = k then return ccdr[b]
+      e = ccdr[e]
+    end
+  end
+  fn = ccdr[f]
+  if fn = 0 | fn = 1 then return lerrk('UNDEFINED-FUNCTION', 'undefined function ' || cstr[f])
+  return fn
+
+/* resolve a function designator */
+fnof: procedure = .int
+  arg x = .int
+  if x < 0 then return lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a function')
+  if ctag[x] = 2 then do
+    fn = ccdr[x]
+    if fn = 0 | fn = 1 then return lerrk('UNDEFINED-FUNCTION', 'undefined function ' || cstr[x])
+    return fn
+  end
+  if ctag[x] = 5 | ctag[x] = 6 then return x
+  return lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a function')
+
+mkclosure: procedure = .int
+  arg params = .int, body = .int, env = .int
+  c = newcell(6)
+  ccar[c] = params
+  ccdr[c] = body
+  cext[c] = env
+  cstr[c] = ''
+  return c
+
+/* does a tree mention the symbol RETURN-FROM or RETURN ? */
+hasreturn: procedure = .int
+  arg x = .int
+  do while iscons(x) = 1
+    a = ccar[x]
+    if a = sRETFROM | a = sRETURN then return 1
+    if iscons(a) = 1 then do
+      if hasreturn(a) = 1 then return 1
+    end
+    x = ccdr[x]
+  end
+  return 0
+
+/* does a tree mention LAMBDA or FUNCTION ? (a closure may capture a loop variable) */
+hasclosure: procedure = .int
+  arg x = .int
+  do while iscons(x) = 1
+    a = ccar[x]
+    if a = sLAMBDA | a = sFUNCTION then return 1
+    if iscons(a) = 1 then do
+      if hasclosure(a) = 1 then return 1
+    end
+    x = ccdr[x]
+  end
+  return 0
+
+/* ------------------------------------------------- parameter binding */
+bindparams: procedure = .int
+  arg params = .int, expose av = .int[], n = .int, cenv = .int
+  env = cenv
+  i = 1
+  mode = 0
+  kstart = 0
+  p = params
+  do while iscons(p) = 1
+    s = ccar[p]
+    p = ccdr[p]
+    if s = sOPT then mode = 1
+    else if s = sREST | s = sBODY then mode = 2
+    else if s = sKEY then do
+      mode = 3
+      kstart = i
+    end
+    else if s = sAUX then mode = 4
+    else if mode = 0 then do
+      if i > n then return lerror('too few arguments')
+      env = cons(cons(s, av[i]), env)
+      i = i + 1
+    end
+    else if mode = 1 then do
+      dflt = 1
+      sv = 0
+      if iscons(s) = 1 then do
+        dflt = car(cdr(s))
+        sv = car(cdr(cdr(s)))
+        s = ccar[s]
+      end
+      if i <= n then do
+        env = cons(cons(s, av[i]), env)
+        if sv > 1 then env = cons(cons(sv, 2), env)
+        i = i + 1
+      end
+      else do
+        v = 1
+        if dflt <> 1 then v = eval(dflt, env)
+        if unw <> 0 then return 1
+        env = cons(cons(s, v), env)
+        if sv > 1 then env = cons(cons(sv, 1), env)
+      end
+    end
+    else if mode = 2 then do
+      if i <= n then env = cons(cons(s, arr2list(av, i, n)), env)
+      else env = cons(cons(s, 1), env)
+      i = n + 1
+    end
+    else if mode = 3 then do
+      dflt = 1
+      if iscons(s) = 1 then do
+        dflt = car(cdr(s))
+        s = ccar[s]
+      end
+      kw = intern(':' || cstr[s])
+      found = 0
+      j = kstart
+      do while j < n & found = 0
+        if av[j] = kw then found = j + 1
+        j = j + 2
+      end
+      if found > 0 then env = cons(cons(s, av[found]), env)
+      else do
+        v = 1
+        if dflt <> 1 then v = eval(dflt, env)
+        if unw <> 0 then return 1
+        env = cons(cons(s, v), env)
+      end
+      i = n + 1
+    end
+    else do
+      /* &aux */
+      dflt = 1
+      if iscons(s) = 1 then do
+        dflt = car(cdr(s))
+        s = ccar[s]
+      end
+      v = 1
+      if dflt <> 1 then v = eval(dflt, env)
+      if unw <> 0 then return 1
+      env = cons(cons(s, v), env)
+    end
+  end
+  if i <= n & mode < 2 then return lerror('too many arguments')
+  return env
+
+/* evaluate all but the last form of a body; return the last form, 0 if none */
+evalprefix: procedure = .int
+  arg body = .int, env = .int
+  if body = 1 then return 0
+  do while ccdr[body] <> 1
+    junk = eval(ccar[body], env)
+    if unw <> 0 then return 0
+    body = ccdr[body]
+  end
+  return ccar[body]
+
+evalbody: procedure = .int
+  arg body = .int, env = .int
+  x = evalprefix(body, env)
+  if x = 0 then return 1
+  return eval(x, env)
+
+/* evaluate an argument list into av; returns the count */
+evalargs: procedure = .int
+  arg l = .int, env = .int, expose av = .int[]
+  n = 0
+  do while l > 1
+    n = n + 1
+    f = ccar[l]
+    if f < 0 then av[n] = f
+    else if ctag[f] = 2 then av[n] = symval(f, env)
+    else if ctag[f] = 1 then av[n] = eval(f, env)
+    else av[n] = f
+    if unw <> 0 then return n
+    l = ccdr[l]
+  end
+  return n
+
+/* ---------------------------------------------------- function calling */
+applyfn: procedure = .int
+  arg fn = .int, expose av = .int[], n = .int
+  if fn < 0 then return lerror('the value ' || printobj(fn, 1) || ' is not a function')
+  t = ctag[fn]
+  if t = 5 then do
+    curfn = fn
+    id = cext[fn]
+    if n < pmin[id] then return lerror('too few arguments to ' || cstr[fn])
+    if pmax[id] >= 0 & n > pmax[id] then return lerror('too many arguments to ' || cstr[fn])
+    return callprim(id, av, n)
+  end
+  if t = 6 then do
+    env = bindparams(ccar[fn], av, n, cext[fn])
+    if unw <> 0 then return 1
+    return evalbody(ccdr[fn], env)
+  end
+  if t = 2 then return applyfn(fnof(fn), av, n)
+  return lerror('the value ' || printobj(fn, 1) || ' is not a function')
+
+call1: procedure = .int
+  arg fn = .int, a = .int
+  v = .int[]
+  v[1] = a
+  return applyfn(fn, v, 1)
+
+call2: procedure = .int
+  arg fn = .int, a = .int, b = .int
+  v = .int[]
+  v[1] = a
+  v[2] = b
+  return applyfn(fn, v, 2)
+
+/* ------------------------------------------------------------ equality */
+eql: procedure = .int
+  arg a = .int, b = .int
+  if a = b then return 1
+  if a < 0 | b < 0 then return 0
+  if a = 0 | b = 0 then return 0
+  if ctag[a] <> ctag[b] then return 0
+  if ctag[a] = 3 then do
+    if cnum[a] = cnum[b] then return 1
+    return 0
+  end
+  if ctag[a] = 8 then do
+    if cext[a] = cext[b] then return 1
+    return 0
+  end
+  return 0
+
+equal: procedure = .int
+  arg a = .int, b = .int
+  do forever
+    if eql(a, b) = 1 then return 1
+    if a < 0 | b < 0 | a = 0 | b = 0 then return 0
+    if ctag[a] <> ctag[b] then return 0
+    t = ctag[a]
+    if t = 4 then do
+      if cstr[a] == cstr[b] then return 1
+      return 0
+    end
+    if t = 1 then do
+      if equal(ccar[a], ccar[b]) = 0 then return 0
+      a = ccdr[a]
+      b = ccdr[b]
+    end
+    else if t = 9 then do
+      if ccdr[a] <> ccdr[b] then return 0
+      do i = 0 to ccdr[a] - 1
+        if equal(vdat[cext[a] + i], vdat[cext[b] + i]) = 0 then return 0
+      end
+      return 1
+    end
+    else return 0
+  end
+  return 0
+
+equalp: procedure = .int
+  arg a = .int, b = .int
+  do forever
+    if eql(a, b) = 1 then return 1
+    if isnum(a) = 1 & isnum(b) = 1 then do
+      if fval(a) = fval(b) then return 1
+      return 0
+    end
+    if a < 0 | b < 0 | a = 0 | b = 0 then return 0
+    if ctag[a] <> ctag[b] then return 0
+    t = ctag[a]
+    if t = 4 then do
+      if upper(cstr[a]) == upper(cstr[b]) then return 1
+      return 0
+    end
+    if t = 8 then do
+      if upper(d2c(cext[a])) == upper(d2c(cext[b])) then return 1
+      return 0
+    end
+    if t = 1 then do
+      if equalp(ccar[a], ccar[b]) = 0 then return 0
+      a = ccdr[a]
+      b = ccdr[b]
+    end
+    else if t = 9 then do
+      if ccdr[a] <> ccdr[b] then return 0
+      do i = 0 to ccdr[a] - 1
+        if equalp(vdat[cext[a] + i], vdat[cext[b] + i]) = 0 then return 0
+      end
+      return 1
+    end
+    else return 0
+  end
+  return 0
+
+/* ------------------------------------------------------- special forms */
+eval: procedure = .int
+  arg x = .int, env = .int
+  if x < 0 then return x
+  tg = ctag[x]
+  if tg = 2 then return symval(x, env)
+  if tg <> 1 then return x
+  ndepth = ndepth + 1
+  if ndepth > maxdepth then do
+    ndepth = ndepth - 1
+    return lerror('evaluation nested too deeply (stack exhausted)')
+  end
+  r = eval1(x, env)
+  ndepth = ndepth - 1
+  return r
+
+eval1: procedure = .int
+  arg x = .int, env = .int
+  av = .int[]
+  do forever
+    if x < 0 then return x
+    t = ctag[x]
+    if t = 2 then return symval(x, env)
+    if t <> 1 then return x
+    f = ccar[x]
+    sid = 0
+    fn = 0
+    if f > 0 then do
+      if ctag[f] = 2 then sid = cext[f]
+    end
+    if sid = 0 then do
+      if f > 0 then do
+        if ctag[f] = 1 then do
+          if ccar[f] = sLAMBDA then do
+            fn = mkclosure(car(cdr(f)), ccdr[ccdr[f]], env)
+          end
+          else return lerror('illegal function call')
+        end
+        else if ctag[f] = 2 then fn = getfn(f, env)
+        else return lerror('illegal function call')
+      end
+      else return lerror('illegal function call')
+      if unw <> 0 then return 1
+      tf = ctag[fn]
+      if tf = 6 then do
+        n = evalargs(ccdr[x], env, av)
+        if unw <> 0 then return 1
+        env2 = bindparams(ccar[fn], av, n, cext[fn])
+        if unw <> 0 then return 1
+        x = evalprefix(ccdr[fn], env2)
+        if x = 0 then return 1
+        env = env2
+      end
+      else if tf = 5 then do
+        n = evalargs(ccdr[x], env, av)
+        if unw <> 0 then return 1
+        id = cext[fn]
+        if id <= 17 then do
+          res = fastprim(id, av, n)
+          if res <> 0 then return res
+        end
+        if n < pmin[id] then return lerror('too few arguments to ' || cstr[fn])
+        if pmax[id] >= 0 & n > pmax[id] then return lerror('too many arguments to ' || cstr[fn])
+        curfn = fn
+        return callprim(id, av, n)
+      end
+      else if tf = 7 then do
+        n = list2arr(ccdr[x], av)
+        env2 = bindparams(ccar[fn], av, n, cext[fn])
+        if unw <> 0 then return 1
+        ex = evalbody(ccdr[fn], env2)
+        if unw <> 0 then return 1
+        if iscons(ex) = 1 then do
+          ccar[x] = ccar[ex]
+          ccdr[x] = ccdr[ex]
+        end
+        else x = ex
+      end
+      else return lerror('the value ' || printobj(fn, 1) || ' is not a function')
+    end
+    else if sid = 1 then return ccar[ccdr[x]]
+    else if sid = 2 then do
+      a = ccar[ccdr[x]]
+      if iscons(a) = 1 then return mkclosure(car(cdr(a)), ccdr[ccdr[a]], env)
+      return getfn(a, env)
+    end
+    else if sid = 3 then do
+      p = ccdr[x]
+      c = eval(ccar[p], env)
+      if unw <> 0 then return 1
+      p = ccdr[p]
+      if c <> 1 then x = ccar[p]
+      else do
+        p = ccdr[p]
+        if p = 1 then return 1
+        x = ccar[p]
+      end
+    end
+    else if sid = 4 then do
+      x = evalprefix(ccdr[x], env)
+      if x = 0 then return 1
+    end
+    else if sid = 5 | sid = 6 then do
+      /* let, let* */
+      bl = car(ccdr[x])
+      body = ccdr[ccdr[x]]
+      nenv = env
+      ev = env
+      if sid = 6 then ev = 0
+      dyn = 1
+      s = 0
+      v = 1
+      do while iscons(bl) = 1
+        b = ccar[bl]
+        if iscons(b) = 1 then do
+          s = ccar[b]
+          v = 1
+          if ccdr[b] <> 1 then do
+            if sid = 5 then v = eval(car(ccdr[b]), env)
+            else v = eval(car(ccdr[b]), nenv)
+          end
+        end
+        else do
+          s = b
+          v = 1
+        end
+        if unw <> 0 then do
+          call undyn dyn
+          return 1
+        end
+        if cspec[s] = 1 then do
+          dyn = cons(cons(s, ccar[s]), dyn)
+          ccar[s] = v
+        end
+        else nenv = cons(cons(s, v), nenv)
+        bl = ccdr[bl]
+      end
+      if dyn = 1 then do
+        x = evalprefix(body, nenv)
+        if x = 0 then return 1
+        env = nenv
+      end
+      else do
+        r = evalbody(body, nenv)
+        call undyn dyn
+        return r
+      end
+    end
+    else if sid = 7 then do
+      cl = ccdr[x]
+      found = 0
+      do while iscons(cl) = 1 & found = 0
+        c = ccar[cl]
+        v = eval(ccar[c], env)
+        if unw <> 0 then return 1
+        if v <> 1 then do
+          if ccdr[c] = 1 then return v
+          x = evalprefix(ccdr[c], env)
+          if x = 0 then return 1
+          found = 1
+        end
+        cl = ccdr[cl]
+      end
+      if found = 0 then return 1
+    end
+    else if sid = 8 | sid = 13 then do
+      k = eval(car(ccdr[x]), env)
+      if unw <> 0 then return 1
+      cl = ccdr[ccdr[x]]
+      found = 0
+      do while iscons(cl) = 1 & found = 0
+        c = ccar[cl]
+        ks = ccar[c]
+        hit = 0
+        if ks = 2 | ks = sOTHERWISE then hit = 1
+        else if iscons(ks) = 1 then do
+          do while iscons(ks) = 1
+            if eql(ccar[ks], k) = 1 then hit = 1
+            ks = ccdr[ks]
+          end
+        end
+        else if eql(ks, k) = 1 then hit = 1
+        if hit = 1 then do
+          found = 1
+          x = evalprefix(ccdr[c], env)
+          if x = 0 then return 1
+        end
+        cl = ccdr[cl]
+      end
+      if found = 0 then do
+        if sid = 13 then return lerror('no matching ECASE clause for ' || printobj(k, 1))
+        return 1
+      end
+    end
+    else if sid = 9 then do
+      p = ccdr[x]
+      if p = 1 then return 2
+      do while ccdr[p] <> 1
+        v = eval(ccar[p], env)
+        if unw <> 0 then return 1
+        if v = 1 then return 1
+        p = ccdr[p]
+      end
+      x = ccar[p]
+    end
+    else if sid = 10 then do
+      p = ccdr[x]
+      if p = 1 then return 1
+      do while ccdr[p] <> 1
+        v = eval(ccar[p], env)
+        if unw <> 0 then return 1
+        if v <> 1 then return v
+        p = ccdr[p]
+      end
+      x = ccar[p]
+    end
+    else if sid = 11 | sid = 12 then do
+      c = eval(car(ccdr[x]), env)
+      if unw <> 0 then return 1
+      if sid = 11 & c = 1 then return 1
+      if sid = 12 & c <> 1 then return 1
+      x = evalprefix(ccdr[ccdr[x]], env)
+      if x = 0 then return 1
+    end
+    else if sid = 14 then do
+      /* loop: a simple loop or the extended form */
+      if iscons(ccdr[x]) = 1 & iscons(car(ccdr[x])) = 1 then return simpleloop(ccdr[x], env)
+      ccar[x] = sXLOOP
+    end
+    else return evalspecial(sid, x, env)
+  end
+  return 1
+
+/* inline versions of the commonest primitives; 0 when not applicable */
+fastprim: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if n = 2 then do
+    a = av[1]
+    b = av[2]
+    if id = 3 then return cons(a, b)
+    if id = 17 then do
+      if a = b then return 2
+      return 1
+    end
+    if a < 0 & b < 0 then do
+      x = intval(a)
+      y = intval(b)
+      if id = 4 then return mkint(x + y)
+      if id = 5 then return mkint(x - y)
+      if id = 6 then return mkint(x * y)
+      if id = 8 then do
+        if x = y then return 2
+        return 1
+      end
+      if id = 9 then do
+        if x < y then return 2
+        return 1
+      end
+      if id = 10 then do
+        if x > y then return 2
+        return 1
+      end
+      if id = 11 then do
+        if x <= y then return 2
+        return 1
+      end
+      if id = 12 then do
+        if x >= y then return 2
+        return 1
+      end
+    end
+    return 0
+  end
+  if n = 1 then do
+    a = av[1]
+    if id = 1 then do
+      if a = 1 then return 1
+      if a > 0 then do
+        if ctag[a] = 1 then return ccar[a]
+      end
+      return 0
+    end
+    if id = 2 then do
+      if a = 1 then return 1
+      if a > 0 then do
+        if ctag[a] = 1 then return ccdr[a]
+      end
+      return 0
+    end
+    if id = 14 & a < 0 then return mkint(intval(a) + 1)
+    if id = 15 & a < 0 then return mkint(intval(a) - 1)
+    if id = 16 then do
+      if a = 1 then return 2
+      return 1
+    end
+  end
+  return 0
+
+/* restore dynamic bindings made by let */
+undyn: procedure = .void
+  arg d = .int
+  do while d <> 1
+    b = ccar[d]
+    ccar[ccar[b]] = ccdr[b]
+    d = ccdr[d]
+  end
+  return
+
+simpleloop: procedure = .int
+  arg body = .int, env = .int
+  do forever
+    p = body
+    do while iscons(p) = 1
+      junk = eval(ccar[p], env)
+      if unw <> 0 then do
+        if unw = 3 & unwtag = 1 then do
+          unw = 0
+          return unwval
+        end
+        return 1
+      end
+      p = ccdr[p]
+    end
+  end
+  return 1
+
+/* check for (return) out of a loop; returns 1 when the loop should stop */
+loopexit: procedure = .int
+  if unw = 0 then return 0
+  return 1
+
+
+/* status after evaluating something inside a loop body:
+   0 carry on, 1 left by (return) with value in unwval, 2 other unwinding */
+loopstat: procedure = .int
+  if unw = 0 then return 0
+  if unw = 3 & unwtag = 1 then do
+    unw = 0
+    return 1
+  end
+  return 2
+
+blockwrap: procedure = .int
+  arg name = .int, body = .int
+  if hasreturn(body) = 1 then return list1(cons(sBLOCK, cons(name, body)))
+  return body
+
+stripdoc: procedure = .int
+  arg body = .int
+  if iscons(body) = 1 then do
+    if isstring(ccar[body]) = 1 & ccdr[body] <> 1 then return ccdr[body]
+  end
+  return body
+
+/* bind the pattern of destructuring-bind */
+destruct: procedure = .int
+  arg pat = .int, val = .int, env = .int
+  mode = 0
+  do while iscons(pat) = 1
+    p = ccar[pat]
+    if p = sOPT then mode = 1
+    else if p = sREST | p = sBODY then mode = 2
+    else if mode = 2 then do
+      env = cons(cons(p, val), env)
+      val = 1
+      mode = 3
+    end
+    else if iscons(p) = 1 then do
+      env = destruct(p, car(val), env)
+      val = cdr(val)
+    end
+    else do
+      if mode = 0 & val = 1 then return lerror('too few elements for destructuring')
+      env = cons(cons(p, car(val)), env)
+      val = cdr(val)
+    end
+    if unw <> 0 then return env
+    pat = ccdr[pat]
+  end
+  if pat <> 1 then env = cons(cons(pat, val), env)
+  return env
+
+/* backquote */
+qq: procedure = .int
+  arg x = .int, env = .int
+  if iscons(x) = 0 then return x
+  if ccar[x] = sUNQ then return eval(car(ccdr[x]), env)
+  res = 1
+  p = x
+  tail = 1
+  dotted = 0
+  do while iscons(p) = 1
+    if ccar[p] = sUNQ then do
+      tail = eval(car(ccdr[p]), env)
+      dotted = 1
+      p = 1
+    end
+    else do
+      e = ccar[p]
+      if iscons(e) = 1 & ccar[e] = sUNQS then do
+        l = eval(car(ccdr[e]), env)
+        if unw <> 0 then return 1
+        do while iscons(l) = 1
+          res = cons(ccar[l], res)
+          l = ccdr[l]
+        end
+      end
+      else do
+        res = cons(qq(e, env), res)
+        if unw <> 0 then return 1
+      end
+      p = ccdr[p]
+    end
+  end
+  if dotted = 0 then tail = p
+  do while res <> 1
+    nx = ccdr[res]
+    ccdr[res] = tail
+    tail = res
+    res = nx
+  end
+  return tail
+
+/* does the condition type name match the pending error ? */
+condmatch: procedure = .int
+  arg ty = .int
+  if ty = 2 then return 1
+  nm = cstr[ty]
+  if nm = 'ERROR' | nm = 'CONDITION' | nm = 'SERIOUS-CONDITION' then return 1
+  if nm = errkind then return 1
+  if nm = 'SIMPLE-ERROR' & errkind = 'ERROR' then return 1
+  if nm = 'ARITHMETIC-ERROR' & errkind = 'DIVISION-BY-ZERO' then return 1
+  if nm = 'CELL-ERROR' & (errkind = 'UNBOUND-VARIABLE' | errkind = 'UNDEFINED-FUNCTION') then return 1
+  return 0
+
+/* the place access functions used by setf, incf, push ... */
+setplace: procedure = .int
+  arg pl = .int, v = .int, env = .int
+  if issym(pl) = 1 then return setvar(pl, v, env)
+  if iscons(pl) = 0 then return lerror('invalid place')
+  h = ccar[pl]
+  a = ccdr[pl]
+  if issym(h) = 0 then return lerror('invalid place')
+  nm = cstr[h]
+  if cslot[h] > 0 then do
+    o = eval(car(a), env)
+    if unw <> 0 then return 1
+    if o <= 0 then return lerror('not a structure')
+    if ctag[o] <> 11 then return lerror('not a structure')
+    vdat[cext[o] + cslot[h] - 1] = v
+    return v
+  end
+  if nm = 'GETHASH' then do
+    k = eval(car(a), env)
+    t = eval(car(cdr(a)), env)
+    if unw <> 0 then return 1
+    call htput t, k, v
+    return v
+  end
+  if nm = 'GET' then do
+    s = eval(car(a), env)
+    k = eval(car(cdr(a)), env)
+    if unw <> 0 then return 1
+    call putprop s, k, v
+    return v
+  end
+  if nm = 'SYMBOL-VALUE' then do
+    s = eval(car(a), env)
+    ccar[s] = v
+    return v
+  end
+  o = eval(car(a), env)
+  if unw <> 0 then return 1
+  if nm = 'CAR' | nm = 'FIRST' then do
+    if iscons(o) = 0 then return lerror('not a cons: ' || printobj(o, 1))
+    ccar[o] = v
+    return v
+  end
+  if nm = 'CDR' | nm = 'REST' then do
+    if iscons(o) = 0 then return lerror('not a cons: ' || printobj(o, 1))
+    ccdr[o] = v
+    return v
+  end
+  if nm = 'CADR' | nm = 'SECOND' then do
+    o = cdr(o)
+    if iscons(o) = 0 then return lerror('not a cons')
+    ccar[o] = v
+    return v
+  end
+  if nm = 'THIRD' then do
+    o = cdr(cdr(o))
+    if iscons(o) = 0 then return lerror('not a cons')
+    ccar[o] = v
+    return v
+  end
+  if nm = 'CDDR' then do
+    o = cdr(o)
+    if iscons(o) = 0 then return lerror('not a cons')
+    ccdr[o] = v
+    return v
+  end
+  idx = eval(car(cdr(a)), env)
+  if unw <> 0 then return 1
+  if nm = 'NTH' then do
+    tmp = idx
+    idx = o
+    o = tmp
+  end
+  if idx >= 0 then return lerror('bad index ' || printobj(idx, 1))
+  i = intval(idx)
+  if o = 1 | iscons(o) = 1 then do
+    do while i > 0 & iscons(o) = 1
+      o = ccdr[o]
+      i = i - 1
+    end
+    if iscons(o) = 0 then return lerror('index too large')
+    ccar[o] = v
+    return v
+  end
+  if o > 0 then do
+    if ctag[o] = 9 then do
+      if i < 0 | i >= ccdr[o] then return lerror('index ' || i || ' out of bounds')
+      vdat[cext[o] + i] = v
+      return v
+    end
+    if ctag[o] = 4 then do
+      s = cstr[o]
+      if i < 0 | i >= length(s) then return lerror('index ' || i || ' out of bounds')
+      cstr[o] = left(s, i) || d2c(cext[v]) || substr(s, i + 2)
+      return v
+    end
+  end
+  return lerror('invalid place: ' || printobj(pl, 1))
+
+evalspecial: procedure = .int
+  arg sid = .int, x = .int, env = .int
+  if sid = 21 then do
+    /* setq */
+    p = ccdr[x]
+    v = 1
+    do while iscons(p) = 1
+      v = eval(car(ccdr[p]), env)
+      if unw <> 0 then return 1
+      junk = setvar(ccar[p], v, env)
+      if unw <> 0 then return 1
+      p = ccdr[ccdr[p]]
+    end
+    return v
+  end
+  if sid = 22 then do
+    /* defun */
+    name = car(ccdr[x])
+    params = car(ccdr[ccdr[x]])
+    body = stripdoc(ccdr[ccdr[ccdr[x]]])
+    c = mkclosure(params, blockwrap(name, body), env)
+    cstr[c] = cstr[name]
+    ccdr[name] = c
+    return name
+  end
+  if sid = 23 | sid = 24 | sid = 51 then do
+    /* defvar defparameter defconstant */
+    name = car(ccdr[x])
+    cspec[name] = 1
+    if sid = 51 then cspec[name] = 2
+    if sid = 24 | sid = 51 | ccar[name] = 0 then do
+      init = car(ccdr[ccdr[x]])
+      v = eval(init, env)
+      if unw <> 0 then return 1
+      ccar[name] = v
+    end
+    return name
+  end
+  if sid = 25 then do
+    /* defmacro */
+    name = car(ccdr[x])
+    c = newcell(7)
+    ccar[c] = car(ccdr[ccdr[x]])
+    ccdr[c] = stripdoc(ccdr[ccdr[ccdr[x]]])
+    cext[c] = env
+    cstr[c] = cstr[name]
+    ccdr[name] = c
+    return name
+  end
+  if sid = 26 then return mkclosure(car(ccdr[x]), ccdr[ccdr[x]], env)
+  if sid = 27 then do
+    /* setf */
+    p = ccdr[x]
+    v = 1
+    do while iscons(p) = 1
+      v = eval(car(ccdr[p]), env)
+      if unw <> 0 then return 1
+      junk = setplace(ccar[p], v, env)
+      if unw <> 0 then return 1
+      p = ccdr[ccdr[p]]
+    end
+    return v
+  end
+  if sid = 28 | sid = 29 then do
+    /* incf decf */
+    pl = car(ccdr[x])
+    cur = eval(pl, env)
+    if unw <> 0 then return 1
+    d = mkint(1)
+    if ccdr[ccdr[x]] <> 1 then do
+      d = eval(car(ccdr[ccdr[x]]), env)
+      if unw <> 0 then return 1
+    end
+    if sid = 29 then d = numneg(d)
+    v = numadd(cur, d)
+    if unw <> 0 then return 1
+    return setplace(pl, v, env)
+  end
+  if sid = 30 | sid = 52 then do
+    /* push pushnew */
+    v = eval(car(ccdr[x]), env)
+    if unw <> 0 then return 1
+    pl = car(ccdr[ccdr[x]])
+    cur = eval(pl, env)
+    if unw <> 0 then return 1
+    if sid = 52 then do
+      q = cur
+      do while iscons(q) = 1
+        if eql(ccar[q], v) = 1 then return cur
+        q = ccdr[q]
+      end
+    end
+    return setplace(pl, cons(v, cur), env)
+  end
+  if sid = 31 then do
+    pl = car(ccdr[x])
+    cur = eval(pl, env)
+    if unw <> 0 then return 1
+    junk = setplace(pl, cdr(cur), env)
+    return car(cur)
+  end
+  if sid = 32 | sid = 33 then do
+    /* do, do* */
+    specs = car(ccdr[x])
+    endc = car(ccdr[ccdr[x]])
+    body = ccdr[ccdr[ccdr[x]]]
+    nenv = env
+    blist = 1
+    slist = 1
+    p = specs
+    do while iscons(p) = 1
+      spc = ccar[p]
+      stp = 1
+      init = 1
+      vrb = spc
+      if iscons(spc) = 1 then do
+        vrb = ccar[spc]
+        init = car(ccdr[spc])
+        stp = ccdr[ccdr[spc]]
+      end
+      if sid = 32 then v = eval(init, env)
+      else v = eval(init, nenv)
+      if unw <> 0 then return 1
+      b = cons(vrb, v)
+      nenv = cons(b, nenv)
+      blist = cons(b, blist)
+      slist = cons(stp, slist)
+      p = ccdr[p]
+    end
+    blist = nreverse(blist)
+    slist = nreverse(slist)
+    vals = .int[]
+    do forever
+      t = eval(car(endc), nenv)
+      if unw <> 0 then return 1
+      if t <> 1 then return evalbody(cdr(endc), nenv)
+      q = body
+      do while iscons(q) = 1
+        junk = eval(ccar[q], nenv)
+        st = loopstat()
+        if st = 1 then return unwval
+        if st = 2 then return 1
+        q = ccdr[q]
+      end
+      bl = blist
+      sl = slist
+      k = 0
+      do while iscons(bl) = 1
+        k = k + 1
+        if ccar[sl] <> 1 then do
+          v = eval(car(ccar[sl]), nenv)
+          if unw <> 0 then return 1
+          if sid = 33 then ccdr[ccar[bl]] = v
+          else vals[k] = v
+        end
+        else vals[k] = ccdr[ccar[bl]]
+        bl = ccdr[bl]
+        sl = ccdr[sl]
+      end
+      if sid = 32 then do
+        bl = blist
+        k = 0
+        do while iscons(bl) = 1
+          k = k + 1
+          ccdr[ccar[bl]] = vals[k]
+          bl = ccdr[bl]
+        end
+      end
+    end
+  end
+  if sid = 34 then do
+    /* dolist */
+    spec = car(ccdr[x])
+    vrb = car(spec)
+    l = eval(car(cdr(spec)), env)
+    if unw <> 0 then return 1
+    b = cons(vrb, 1)
+    nenv = cons(b, env)
+    body = ccdr[ccdr[x]]
+    fresh = hasclosure(body)
+    do while iscons(l) = 1
+      if fresh = 1 then do
+        b = cons(vrb, 1)
+        nenv = cons(b, env)
+      end
+      ccdr[b] = ccar[l]
+      q = body
+      do while iscons(q) = 1
+        junk = eval(ccar[q], nenv)
+        st = loopstat()
+        if st = 1 then return unwval
+        if st = 2 then return 1
+        q = ccdr[q]
+      end
+      l = ccdr[l]
+    end
+    nenv = cons(cons(vrb, 1), env)
+    r = car(cdr(cdr(spec)))
+    return eval(r, nenv)
+  end
+  if sid = 35 then do
+    /* dotimes */
+    spec = car(ccdr[x])
+    vrb = car(spec)
+    cnt = eval(car(cdr(spec)), env)
+    if unw <> 0 then return 1
+    if cnt >= 0 then return lerror('dotimes needs an integer count')
+    nmax = intval(cnt)
+    b = cons(vrb, 1)
+    nenv = cons(b, env)
+    body = ccdr[ccdr[x]]
+    fresh = hasclosure(body)
+    do i = 0 to nmax - 1
+      if fresh = 1 then do
+        b = cons(vrb, 1)
+        nenv = cons(b, env)
+      end
+      ccdr[b] = mkint(i)
+      q = body
+      do while iscons(q) = 1
+        junk = eval(ccar[q], nenv)
+        st = loopstat()
+        if st = 1 then return unwval
+        if st = 2 then return 1
+        q = ccdr[q]
+      end
+    end
+    nenv = cons(cons(vrb, mkint(nmax)), env)
+    r = car(cdr(cdr(spec)))
+    return eval(r, nenv)
+  end
+  if sid = 37 | sid = 38 then do
+    /* flet, labels */
+    hasfenv = 1
+    nenv = env
+    cl = 1
+    p = car(ccdr[x])
+    do while iscons(p) = 1
+      d = ccar[p]
+      name = ccar[d]
+      c = mkclosure(car(ccdr[d]), blockwrap(name, ccdr[ccdr[d]]), env)
+      cstr[c] = cstr[name]
+      nenv = cons(cons(fkey(name), c), nenv)
+      cl = cons(c, cl)
+      p = ccdr[p]
+    end
+    if sid = 38 then do
+      do while iscons(cl) = 1
+        cext[ccar[cl]] = nenv
+        cl = ccdr[cl]
+      end
+    end
+    return evalbody(ccdr[ccdr[x]], nenv)
+  end
+  if sid = 39 then do
+    name = car(ccdr[x])
+    r = evalbody(ccdr[ccdr[x]], env)
+    if unw = 3 & unwtag = name then do
+      unw = 0
+      r = unwval
+    end
+    return r
+  end
+  if sid = 40 | sid = 41 then do
+    tag = 1
+    vf = 1
+    if sid = 40 then do
+      tag = car(ccdr[x])
+      vf = car(ccdr[ccdr[x]])
+    end
+    else do
+      tag = 1
+      vf = car(ccdr[x])
+    end
+    v = eval(vf, env)
+    if unw <> 0 then return 1
+    unw = 3
+    unwtag = tag
+    unwval = v
+    return 1
+  end
+  if sid = 42 then do
+    tag = eval(car(ccdr[x]), env)
+    if unw <> 0 then return 1
+    catchtags = cons(tag, catchtags)
+    r = evalbody(ccdr[ccdr[x]], env)
+    catchtags = ccdr[catchtags]
+    if unw = 2 & eql(unwtag, tag) = 1 then do
+      unw = 0
+      r = unwval
+    end
+    return r
+  end
+  if sid = 43 then do
+    tag = eval(car(ccdr[x]), env)
+    if unw <> 0 then return 1
+    v = eval(car(ccdr[ccdr[x]]), env)
+    if unw <> 0 then return 1
+    q = catchtags
+    found = 0
+    do while iscons(q) = 1
+      if eql(ccar[q], tag) = 1 then found = 1
+      q = ccdr[q]
+    end
+    if found = 0 then return lerrk('CONTROL-ERROR', 'attempt to throw to a tag that does not exist: ' || printobj(tag, 1))
+    unw = 2
+    unwtag = tag
+    unwval = v
+    return 1
+  end
+  if sid = 44 then do
+    /* handler-case */
+    r = eval(car(ccdr[x]), env)
+    if unw = 1 then do
+      cl = ccdr[ccdr[x]]
+      do while iscons(cl) = 1
+        c = ccar[cl]
+        if condmatch(ccar[c]) = 1 then do
+          cond = mkstr(errmsg)
+          unw = 0
+          nenv = env
+          vr = car(car(ccdr[c]))
+          if vr <> 1 then nenv = cons(cons(vr, cond), env)
+          return evalbody(ccdr[ccdr[c]], nenv)
+        end
+        cl = ccdr[cl]
+      end
+    end
+    return r
+  end
+  if sid = 45 then do
+    r = evalbody(ccdr[x], env)
+    if unw = 1 then do
+      unw = 0
+      return 1
+    end
+    return r
+  end
+  if sid = 46 then do
+    r = eval(car(ccdr[x]), env)
+    su = unw
+    st = unwtag
+    sv = unwval
+    sm = errmsg
+    sk = errkind
+    unw = 0
+    junk = evalbody(ccdr[ccdr[x]], env)
+    if unw = 0 then do
+      unw = su
+      unwtag = st
+      unwval = sv
+      errmsg = sm
+      errkind = sk
+    end
+    return r
+  end
+  if sid = 47 then return qq(car(ccdr[x]), env)
+  if sid = 48 then return eval(car(ccdr[ccdr[x]]), env)
+  if sid = 49 then return 1
+  if sid = 50 then return defstruct(x, env)
+  if sid = 53 then do
+    v = eval(car(ccdr[x]), env)
+    if unw <> 0 then return 1
+    if v = 1 then return lerror('assertion failed: ' || printobj(car(ccdr[x]), 1))
+    return 1
+  end
+  if sid = 54 then do
+    /* multiple-value-bind */
+    mvlist = 0
+    r = eval(car(ccdr[ccdr[x]]), env)
+    if unw <> 0 then return 1
+    vals = mvlist
+    if vals = 0 then vals = list1(r)
+    mvlist = 0
+    nenv = env
+    vs = car(ccdr[x])
+    do while iscons(vs) = 1
+      nenv = cons(cons(ccar[vs], car(vals)), nenv)
+      vals = cdr(vals)
+      vs = ccdr[vs]
+    end
+    return evalbody(ccdr[ccdr[ccdr[x]]], nenv)
+  end
+  if sid = 55 then do
+    /* with-output-to-string */
+    old = capbuf
+    capbuf = ''
+    capdepth = capdepth + 1
+    nenv = cons(cons(car(car(ccdr[x])), 2), env)
+    r = evalbody(ccdr[ccdr[x]], nenv)
+    capdepth = capdepth - 1
+    res = capbuf
+    capbuf = old
+    return mkstr(res)
+  end
+  if sid = 56 | sid = 57 then do
+    /* prog1 prog2 */
+    body = ccdr[x]
+    if sid = 57 then do
+      junk = eval(ccar[body], env)
+      if unw <> 0 then return 1
+      body = ccdr[body]
+    end
+    r = eval(ccar[body], env)
+    if unw <> 0 then return 1
+    junk = evalbody(ccdr[body], env)
+    return r
+  end
+  if sid = 58 then do
+    v = eval(car(ccdr[ccdr[x]]), env)
+    if unw <> 0 then return 1
+    nenv = destruct(car(ccdr[x]), v, env)
+    if unw <> 0 then return 1
+    return evalbody(ccdr[ccdr[ccdr[x]]], nenv)
+  end
+  if sid = 59 then do
+    /* typecase */
+    k = eval(car(ccdr[x]), env)
+    if unw <> 0 then return 1
+    cl = ccdr[ccdr[x]]
+    do while iscons(cl) = 1
+      c = ccar[cl]
+      ty = ccar[c]
+      if ty = 2 | ty = sOTHERWISE then return evalbody(ccdr[c], env)
+      if typep(k, ty) = 1 then return evalbody(ccdr[c], env)
+      cl = ccdr[cl]
+    end
+    return 1
+  end
+  if sid = 60 then return eval(car(ccdr[x]), env)
+  if sid = 61 then do
+    mvlist = 0
+    r = eval(car(ccdr[x]), env)
+    if unw <> 0 then return 1
+    if mvlist <> 0 then do
+      l = mvlist
+      mvlist = 0
+      return l
+    end
+    return list1(r)
+  end
+  if sid = 62 then do
+    /* nth-value */
+    nn = eval(car(ccdr[x]), env)
+    mvlist = 0
+    r = eval(car(ccdr[ccdr[x]]), env)
+    if unw <> 0 then return 1
+    vals = mvlist
+    if vals = 0 then vals = list1(r)
+    mvlist = 0
+    do i = 1 to intval(nn)
+      vals = cdr(vals)
+    end
+    return car(vals)
+  end
+  if sid = 63 then do
+    /* rotatef */
+    pls = ccdr[x]
+    if pls = 1 then return 1
+    first = ccar[pls]
+    cur = eval(first, env)
+    p = pls
+    do while ccdr[p] <> 1
+      nxt = eval(ccar[ccdr[p]], env)
+      junk = setplace(ccar[p], nxt, env)
+      p = ccdr[p]
+    end
+    junk = setplace(ccar[p], cur, env)
+    return 1
+  end
+  if sid = 64 then do
+    /* psetq */
+    p = ccdr[x]
+    tmp = 1
+    q = p
+    do while iscons(q) = 1
+      tmp = cons(eval(car(ccdr[q]), env), tmp)
+      q = ccdr[ccdr[q]]
+    end
+    tmp = nreverse(tmp)
+    do while iscons(p) = 1
+      junk = setvar(ccar[p], ccar[tmp], env)
+      tmp = ccdr[tmp]
+      p = ccdr[ccdr[p]]
+    end
+    return 1
+  end
+  return lerror('unknown special form ' || sid)
+
+
+/* ===================================================================== */
+/*                       NUMBERS, TABLES, STRUCTURES                     */
+/* ===================================================================== */
+lerrk: procedure = .int
+  arg kind = .string, msg = .string
+  if unw = 0 then do
+    unw = 1
+    errmsg = msg
+    errkind = kind
+  end
+  return 1
+
+notnum: procedure = .int
+  arg a = .int
+  return lerrk('TYPE-ERROR', 'the value ' || printobj(a, 1) || ' is not of type NUMBER')
+
+numadd: procedure = .int
+  arg a = .int, b = .int
+  if a < 0 & b < 0 then return mkint(intval(a) + intval(b))
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  return mkfloat(fval(a) + fval(b))
+
+numsub: procedure = .int
+  arg a = .int, b = .int
+  if a < 0 & b < 0 then return mkint(intval(a) - intval(b))
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  return mkfloat(fval(a) - fval(b))
+
+nummul: procedure = .int
+  arg a = .int, b = .int
+  if a < 0 & b < 0 then return mkint(intval(a) * intval(b))
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  return mkfloat(fval(a) * fval(b))
+
+numneg: procedure = .int
+  arg a = .int
+  return numsub(mkint(0), a)
+
+numdiv: procedure = .int
+  arg a = .int, b = .int
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  if a < 0 & b < 0 then do
+    x = intval(a)
+    y = intval(b)
+    if y = 0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+    if x % y = 0 then return mkint(x / y)
+    return mkfloat(x / (y * 1.0))
+  end
+  d = fval(b)
+  if d = 0.0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+  return mkfloat(fval(a) / d)
+
+/* -1, 0, 1 */
+numcmp: procedure = .int
+  arg a = .int, b = .int
+  if a < 0 & b < 0 then do
+    x = intval(a)
+    y = intval(b)
+    if x < y then return -1
+    if x > y then return 1
+    return 0
+  end
+  if isnum(a) = 0 then do
+    junk = notnum(a)
+    return 0
+  end
+  if isnum(b) = 0 then do
+    junk = notnum(b)
+    return 0
+  end
+  x = fval(a)
+  y = fval(b)
+  if x < y then return -1
+  if x > y then return 1
+  return 0
+
+/* integer or float to a Level B integer (truncating) */
+toint: procedure = .int
+  arg a = .int
+  if a < 0 then return intval(a)
+  if isfloat(a) = 1 then do
+    t = trunc(cnum[a])
+    v = t as .int
+    return v
+  end
+  junk = lerrk('TYPE-ERROR', 'the value ' || printobj(a, 1) || ' is not of type INTEGER')
+  return 0
+
+/* ---------------------------------------------------------------- math */
+lsqrt: procedure = .float
+  arg x = .float
+  if x <= 0.0 then return 0.0
+  m = x
+  e = 0
+  do while m >= 4.0
+    m = m / 4.0
+    e = e + 1
+  end
+  do while m < 0.25
+    m = m * 4.0
+    e = e - 1
+  end
+  r = (1.0 + m) / 2.0
+  do 8
+    r = (r + m / r) / 2.0
+  end
+  do while e > 0
+    r = r * 2.0
+    e = e - 1
+  end
+  do while e < 0
+    r = r / 2.0
+    e = e + 1
+  end
+  return r
+
+lsin: procedure = .float
+  arg x = .float
+  pi = 3.14159265358979323846
+  twopi = 6.28318530717958647692
+  r = x
+  if r > twopi | r < 0.0 - twopi then do
+    q = trunc(r / twopi) as .int
+    r = r - q * twopi
+  end
+  if r > pi then r = r - twopi
+  if r < 0.0 - pi then r = r + twopi
+  if r > pi / 2.0 then r = pi - r
+  if r < 0.0 - pi / 2.0 then r = 0.0 - pi - r
+  r2 = r * r
+  term = r
+  sum = r
+  do k = 1 to 12
+    term = 0.0 - term * r2 / ((2 * k) * (2 * k + 1))
+    sum = sum + term
+  end
+  return sum
+
+lcos: procedure = .float
+  arg x = .float
+  return lsin(x + 1.57079632679489661923)
+
+latan: procedure = .float
+  arg x = .float
+  neg = 0
+  a = x
+  if a < 0.0 then do
+    neg = 1
+    a = 0.0 - a
+  end
+  inv = 0
+  if a > 1.0 then do
+    inv = 1
+    a = 1.0 / a
+  end
+  do 3
+    a = a / (1.0 + lsqrt(1.0 + a * a))
+  end
+  a2 = a * a
+  term = a
+  sum = a
+  do k = 1 to 14
+    term = 0.0 - term * a2
+    sum = sum + term / (2 * k + 1)
+  end
+  sum = sum * 8.0
+  if inv = 1 then sum = 1.57079632679489661923 - sum
+  if neg = 1 then sum = 0.0 - sum
+  return sum
+
+lln: procedure = .float
+  arg x = .float
+  e = 0
+  m = x
+  do while m >= 2.0
+    m = m / 2.0
+    e = e + 1
+  end
+  do while m < 0.5
+    m = m * 2.0
+    e = e - 1
+  end
+  z = (m - 1.0) / (m + 1.0)
+  z2 = z * z
+  term = z
+  sum = z
+  do k = 1 to 30
+    term = term * z2
+    sum = sum + term / (2 * k + 1)
+  end
+  return 2.0 * sum + e * 0.69314718055994530942
+
+lexp: procedure = .float
+  arg x = .float
+  k = 0
+  r = x
+  do while r > 0.5 | r < -0.5
+    r = r / 2.0
+    k = k + 1
+  end
+  term = 1.0
+  sum = 1.0
+  do i = 1 to 20
+    term = term * r / i
+    sum = sum + term
+  end
+  do k
+    sum = sum * sum
+  end
+  return sum
+
+/* integer power by repeated squaring */
+ipow: procedure = .int
+  arg b = .int, e = .int
+  r = 1
+  do while e > 0
+    if e % 2 = 1 then r = r * b
+    b = b * b
+    e = e / 2
+  end
+  return r
+
+nextrand: procedure = .int
+  seed = (seed * 1103515245 + 12345) % 2147483648
+  return seed
+
+/* ---------------------------------------------------------- hash tables */
+mkhash: procedure = .int
+  arg mode = .string
+  c = newcell(10)
+  nht = nht + 1
+  cext[c] = nht * 1024
+  cstr[c] = mode
+  ccar[c] = 0
+  ccdr[c] = 0
+  chn[c] = 0
+  return c
+
+hkey: procedure = .int
+  arg t = .int, k = .int
+  mode = cstr[t]
+  h = 0
+  if k < 0 then h = intval(k)
+  else if k = 0 then h = 0
+  else do
+    tg = ctag[k]
+    if tg = 3 then do
+      q = trunc(cnum[k])
+      h = q as .int
+    end
+    else if tg = 4 then do
+      if mode = '0' then h = k
+      else if mode = '1' then h = hashname(cstr[k])
+      else h = hashname(upper(cstr[k]))
+    end
+    else if tg = 8 then h = cext[k]
+    else if tg = 1 | tg = 9 then do
+      if mode = '0' then h = k
+      else h = hashname(printobj(k, 1))
+    end
+    else h = k
+  end
+  if h < 0 then h = 0 - h
+  return h % 1024
+
+hkeq: procedure = .int
+  arg t = .int, a = .int, b = .int
+  mode = cstr[t]
+  if mode = '0' then return eql(a, b)
+  if mode = '1' then return equal(a, b)
+  return equalp(a, b)
+
+htfind: procedure = .int
+  arg t = .int, k = .int
+  e = htb[cext[t] + hkey(t, k)]
+  do while e <> 0
+    if hkeq(t, htk[e], k) = 1 then return e
+    e = htn[e]
+  end
+  return 0
+
+htput: procedure = .void
+  arg t = .int, k = .int, v = .int
+  e = htfind(t, k)
+  if e > 0 then do
+    htv[e] = v
+    return
+  end
+  b = cext[t] + hkey(t, k)
+  nhte = nhte + 1
+  e = nhte
+  htk[e] = k
+  htv[e] = v
+  htn[e] = htb[b]
+  htb[b] = e
+  hto[e] = 0
+  hpv[e] = chn[t]
+  if chn[t] <> 0 then hto[chn[t]] = e
+  else ccar[t] = e
+  chn[t] = e
+  ccdr[t] = ccdr[t] + 1
+  return
+
+htrem: procedure = .int
+  arg t = .int, k = .int
+  b = cext[t] + hkey(t, k)
+  e = htb[b]
+  prev = 0
+  do while e <> 0
+    if hkeq(t, htk[e], k) = 1 then do
+      if prev = 0 then htb[b] = htn[e]
+      else htn[prev] = htn[e]
+      if hpv[e] <> 0 then hto[hpv[e]] = hto[e]
+      else ccar[t] = hto[e]
+      if hto[e] <> 0 then hpv[hto[e]] = hpv[e]
+      else chn[t] = hpv[e]
+      ccdr[t] = ccdr[t] - 1
+      return 1
+    end
+    prev = e
+    e = htn[e]
+  end
+  return 0
+
+htclear: procedure = .void
+  arg t = .int
+  e = ccar[t]
+  do while e <> 0
+    htb[cext[t] + hkey(t, htk[e])] = 0
+    e = hto[e]
+  end
+  ccar[t] = 0
+  chn[t] = 0
+  ccdr[t] = 0
+  return
+
+/* ---------------------------------------------------- property lists */
+getprop: procedure = .int
+  arg s = .int, k = .int
+  p = cpl[s]
+  do while iscons(p) = 1
+    if ccar[ccar[p]] = k then return ccdr[ccar[p]]
+    p = ccdr[p]
+  end
+  return 1
+
+putprop: procedure = .void
+  arg s = .int, k = .int, v = .int
+  p = cpl[s]
+  do while iscons(p) = 1
+    if ccar[ccar[p]] = k then do
+      ccdr[ccar[p]] = v
+      return
+    end
+    p = ccdr[p]
+  end
+  if cpl[s] = 0 then cpl[s] = 1
+  cpl[s] = cons(cons(k, v), cpl[s])
+  return
+
+/* -------------------------------------------------------------- types */
+typep: procedure = .int
+  arg o = .int, ty = .int
+  if ty = 2 then return 1
+  if ty = 1 then return 0
+  if iscons(ty) = 1 then do
+    h = cstr[ccar[ty]]
+    if h = 'OR' then do
+      p = ccdr[ty]
+      do while iscons(p) = 1
+        if typep(o, ccar[p]) = 1 then return 1
+        p = ccdr[p]
+      end
+      return 0
+    end
+    if h = 'AND' then do
+      p = ccdr[ty]
+      do while iscons(p) = 1
+        if typep(o, ccar[p]) = 0 then return 0
+        p = ccdr[p]
+      end
+      return 1
+    end
+    if h = 'NOT' then return 1 - typep(o, car(ccdr[ty]))
+    if h = 'MEMBER' then do
+      p = ccdr[ty]
+      do while iscons(p) = 1
+        if eql(o, ccar[p]) = 1 then return 1
+        p = ccdr[p]
+      end
+      return 0
+    end
+    if h = 'INTEGER' then do
+      if o >= 0 then return 0
+      lo = car(ccdr[ty])
+      hi = car(cdr(ccdr[ty]))
+      if lo < 0 then do
+        if intval(o) < intval(lo) then return 0
+      end
+      if hi < 0 then do
+        if intval(o) > intval(hi) then return 0
+      end
+      return 1
+    end
+    return 0
+  end
+  nm = cstr[ty]
+  if nm = 'INTEGER' | nm = 'FIXNUM' | nm = 'RATIONAL' | nm = 'BIGNUM' then do
+    if o < 0 then return 1
+    return 0
+  end
+  if nm = 'NUMBER' | nm = 'REAL' then return isnum(o)
+  if nm = 'FLOAT' | nm = 'SINGLE-FLOAT' | nm = 'DOUBLE-FLOAT' then return isfloat(o)
+  if nm = 'STRING' | nm = 'SIMPLE-STRING' then return isstring(o)
+  if nm = 'SYMBOL' then return issym(o)
+  if nm = 'KEYWORD' then do
+    if issym(o) = 1 then do
+      if left(cstr[o], 1) = ':' then return 1
+    end
+    return 0
+  end
+  if nm = 'LIST' then do
+    if o = 1 then return 1
+    return iscons(o)
+  end
+  if nm = 'CONS' then return iscons(o)
+  if nm = 'NULL' then do
+    if o = 1 then return 1
+    return 0
+  end
+  if nm = 'ATOM' then return 1 - iscons(o)
+  if nm = 'CHARACTER' then return ischar(o)
+  if nm = 'BOOLEAN' then do
+    if o = 1 | o = 2 then return 1
+    return 0
+  end
+  if nm = 'FUNCTION' | nm = 'COMPILED-FUNCTION' then do
+    if o > 0 then do
+      if ctag[o] = 5 | ctag[o] = 6 then return 1
+    end
+    return 0
+  end
+  if nm = 'VECTOR' | nm = 'ARRAY' | nm = 'SIMPLE-VECTOR' then do
+    if o > 0 then do
+      if ctag[o] = 9 then return 1
+      if nm <> 'SIMPLE-VECTOR' & ctag[o] = 4 then return 1
+    end
+    return 0
+  end
+  if nm = 'SEQUENCE' then do
+    if o = 1 | iscons(o) = 1 then return 1
+    if o > 0 then do
+      if ctag[o] = 9 | ctag[o] = 4 then return 1
+    end
+    return 0
+  end
+  if nm = 'HASH-TABLE' then do
+    if o > 0 then do
+      if ctag[o] = 10 then return 1
+    end
+    return 0
+  end
+  if o > 0 then do
+    if ctag[o] = 11 then do
+      if cstr[ccar[o]] == nm then return 1
+    end
+  end
+  return 0
+
+lobjtype: procedure = .int
+  arg o = .int
+  if o < 0 then return intern('INTEGER')
+  if o = 1 then return intern('NULL')
+  if o = 2 then return intern('BOOLEAN')
+  t = ctag[o]
+  if t = 1 then return intern('CONS')
+  if t = 2 then do
+    if left(cstr[o], 1) = ':' then return intern('KEYWORD')
+    return intern('SYMBOL')
+  end
+  if t = 3 then return intern('SINGLE-FLOAT')
+  if t = 4 then return intern('STRING')
+  if t = 5 | t = 6 then return intern('FUNCTION')
+  if t = 8 then return intern('CHARACTER')
+  if t = 9 then return intern('VECTOR')
+  if t = 10 then return intern('HASH-TABLE')
+  if t = 11 then return intern(cstr[ccar[o]])
+  return intern('T')
+
+/* ----------------------------------------------------------- defstruct */
+pidof: procedure = .int
+  arg name = .string
+  return cext[ccdr[intern(name)]]
+
+defstruct: procedure = .int
+  arg x = .int, env = .int
+  spec = car(ccdr[x])
+  name = spec
+  if iscons(spec) = 1 then name = ccar[spec]
+  nm = cstr[name]
+  sl = stripdoc2(ccdr[ccdr[x]])
+  ty = newcell(13)
+  cstr[ty] = nm
+  syms = 1
+  dfl = 1
+  do while iscons(sl) = 1
+    sp = ccar[sl]
+    d = 1
+    s = sp
+    if iscons(sp) = 1 then do
+      s = ccar[sp]
+      d = car(ccdr[sp])
+    end
+    syms = cons(s, syms)
+    dfl = cons(d, dfl)
+    sl = ccdr[sl]
+  end
+  ccdr[ty] = nreverse(syms)
+  ccar[ty] = nreverse(dfl)
+  mk = newcell(5)
+  cext[mk] = pidof('%MKSTRUCT')
+  cstr[mk] = 'MAKE-' || nm
+  ccar[mk] = ty
+  ccdr[intern('MAKE-' || nm)] = mk
+  pr = newcell(5)
+  cext[pr] = pidof('%STRUCTP')
+  cstr[pr] = nm || '-P'
+  ccar[pr] = ty
+  ccdr[intern(nm || '-P')] = pr
+  cp = newcell(5)
+  cext[cp] = pidof('%COPYSTRUCT')
+  cstr[cp] = 'COPY-' || nm
+  ccar[cp] = ty
+  ccdr[intern('COPY-' || nm)] = cp
+  p = ccdr[ty]
+  i = 0
+  do while iscons(p) = 1
+    an = nm || '-' || cstr[ccar[p]]
+    asym = intern(an)
+    ac = newcell(5)
+    cext[ac] = pidof('%STRUCTGET')
+    cstr[ac] = an
+    ccar[ac] = mkint(i)
+    ccdr[ac] = ty
+    ccdr[asym] = ac
+    cslot[asym] = i + 1
+    i = i + 1
+    p = ccdr[p]
+  end
+  return name
+
+stripdoc2: procedure = .int
+  arg l = .int
+  if iscons(l) = 1 then do
+    if isstring(ccar[l]) = 1 then return ccdr[l]
+  end
+  return l
+
+
+/* ===================================================================== */
+/*                                FORMAT                                 */
+/* ===================================================================== */
+radixstr: procedure = .string
+  arg n = .int, base = .int
+  if n = 0 then return '0'
+  neg = 0
+  if n < 0 then do
+    neg = 1
+    n = 0 - n
+  end
+  s = ''
+  digs = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  do while n > 0
+    q = n / base
+    r = n - q * base
+    s = substr(digs, r + 1, 1) || s
+    n = q
+  end
+  if neg = 1 then s = '-' || s
+  return s
+
+commas: procedure = .string
+  arg s = .string
+  neg = 0
+  if left(s, 1) = '-' then do
+    neg = 1
+    s = substr(s, 2)
+  end
+  o = ''
+  do while length(s) > 3
+    o = ',' || right(s, 3) || o
+    s = left(s, length(s) - 3)
+  end
+  o = s || o
+  if neg = 1 then o = '-' || o
+  return o
+
+/* x with d digits after the decimal point */
+fixedfmt: procedure = .string
+  arg x = .float, d = .int
+  neg = 0
+  if x < 0.0 then do
+    neg = 1
+    x = 0.0 - x
+  end
+  sc = 1
+  do d
+    sc = sc * 10
+  end
+  r = trunc(x * sc + 0.5) as .int
+  s = r || ''
+  if d > 0 then do
+    do while length(s) <= d
+      s = '0' || s
+    end
+    s = left(s, length(s) - d) || '.' || right(s, d)
+  end
+  if neg = 1 & r <> 0 then s = '-' || s
+  return s
+
+fmtpad: procedure = .string
+  arg s = .string, w = .int, padc = .string, leftpad = .int
+  if w <= length(s) then return s
+  if leftpad = 1 then return copies(padc, w - length(s)) || s
+  return s || copies(padc, w - length(s))
+
+/* find the closing directive for an opener; fsemi gets the ~; positions */
+fmtfind: procedure = .int
+  arg ctl = .string, start = .int
+  len = length(ctl)
+  depth = 0
+  fsemi = ''
+  i = start
+  do while i <= len
+    if substr(ctl, i, 1) = '~' then do
+      j = i + 1
+      colon = 0
+      do while j <= len & pos(substr(ctl, j, 1), '0123456789,-+#vV:@') > 0
+        if substr(ctl, j, 1) = ':' then colon = 1
+        j = j + 1
+      end
+      if substr(ctl, j, 1) = "'" then j = j + 2
+      do while j <= len & pos(substr(ctl, j, 1), ':@') > 0
+        if substr(ctl, j, 1) = ':' then colon = 1
+        j = j + 1
+      end
+      dch = substr(ctl, j, 1)
+      if pos(dch, '[{(<') > 0 then depth = depth + 1
+      else if pos(dch, ']})>') > 0 then do
+        if depth = 0 then return i
+        depth = depth - 1
+      end
+      else if dch = ';' & depth = 0 then do
+        if colon = 1 then fsemi = fsemi || i || 'c '
+        else fsemi = fsemi || i || ' '
+      end
+      i = j + 1
+    end
+    else i = i + 1
+  end
+  return 0
+
+fmtarg: procedure = .int
+  arg expose fav = .int[], fnn = .int
+  if fidx > fnn then return lerror('not enough arguments for FORMAT')
+  v = fav[fidx]
+  fidx = fidx + 1
+  return v
+
+fmtrun: procedure = .string
+  arg ctl = .string, expose fav = .int[], fnn = .int
+  out = ''
+  i = 1
+  len = length(ctl)
+  pm = .int[]
+  do while i <= len
+    c = substr(ctl, i, 1)
+    if c <> '~' then do
+      j = pos('~', ctl, i)
+      if j = 0 then j = len + 1
+      out = out || substr(ctl, i, j - i)
+      i = j
+    end
+    else do
+      i = i + 1
+      pc = 0
+      colon = 0
+      at = 0
+      do forever
+        d = substr(ctl, i, 1)
+        if length(d) = 0 then leave
+        if pos(d, '0123456789-+') > 0 then do
+          j = i
+          i = i + 1
+          do while pos(substr(ctl, i, 1), '0123456789') > 0
+            i = i + 1
+          end
+          pc = pc + 1
+          pm[pc] = substr(ctl, j, i - j) as .int
+        end
+        else if d = "'" then do
+          pc = pc + 1
+          pm[pc] = c2d(substr(ctl, i + 1, 1))
+          i = i + 2
+        end
+        else if d = 'v' | d = 'V' then do
+          pc = pc + 1
+          pm[pc] = toint(fmtarg(fav, fnn))
+          i = i + 1
+        end
+        else if d = '#' then do
+          pc = pc + 1
+          pm[pc] = fnn - fidx + 1
+          i = i + 1
+        end
+        else if d = ',' then do
+          if pc = 0 then pc = 1
+          i = i + 1
+          if substr(ctl, i, 1) = ',' then do
+            pc = pc + 1
+            pm[pc] = -999999
+          end
+        end
+        else leave
+      end
+      do while substr(ctl, i, 1) = ':' | substr(ctl, i, 1) = '@'
+        if substr(ctl, i, 1) = ':' then colon = 1
+        else at = 1
+        i = i + 1
+      end
+      dch = upper(substr(ctl, i, 1))
+      i = i + 1
+      if unw <> 0 then return out
+      if dch = 'A' | dch = 'S' then do
+        v = fmtarg(fav, fnn)
+        if unw <> 0 then return out
+        if dch = 'A' then s = printobj(v, 0)
+        else s = printobj(v, 1)
+        if pc >= 1 then s = fmtpad(s, pm[1], ' ', at)
+        out = out || s
+      end
+      else if dch = 'D' | dch = 'B' | dch = 'O' | dch = 'X' then do
+        v = fmtarg(fav, fnn)
+        if unw <> 0 then return out
+        s = printobj(v, 0)
+        if isint(v) = 1 then do
+          base = 10
+          if dch = 'B' then base = 2
+          if dch = 'O' then base = 8
+          if dch = 'X' then base = 16
+          if base <> 10 then s = radixstr(intval(v), base)
+        end
+        if colon = 1 & dch = 'D' & isint(v) = 1 then s = commas(s)
+        if at = 1 & isint(v) = 1 then do
+          if intval(v) >= 0 then s = '+' || s
+        end
+        pch = ' '
+        if pc >= 2 then do
+          if pm[2] <> -999999 then pch = d2c(pm[2])
+        end
+        if pc >= 1 then s = fmtpad(s, pm[1], pch, 1)
+        out = out || s
+      end
+      else if dch = 'F' | dch = '$' then do
+        v = fmtarg(fav, fnn)
+        if unw <> 0 then return out
+        if isnum(v) = 0 then s = printobj(v, 0)
+        else do
+          dd = -1
+          w = 0
+          if dch = '$' then do
+            dd = 2
+            if pc >= 1 then dd = pm[1]
+          end
+          else do
+            if pc >= 2 then dd = pm[2]
+            if pc >= 1 then w = pm[1]
+          end
+          if dd >= 0 then s = fixedfmt(fval(v), dd)
+          else s = printobj(mkfloat(fval(v)), 0)
+          if dch = 'F' & pc >= 1 then s = fmtpad(s, w, ' ', 1)
+        end
+        out = out || s
+      end
+      else if dch = 'C' then do
+        v = fmtarg(fav, fnn)
+        if unw <> 0 then return out
+        if ischar(v) = 1 then out = out || printobj(v, 0)
+        else out = out || printobj(v, 0)
+      end
+      else if dch = '%' then do
+        cnt = 1
+        if pc >= 1 then cnt = pm[1]
+        out = out || copies('0a'x, cnt)
+      end
+      else if dch = '&' then do
+        if length(out) > 0 then do
+          if right(out, 1) <> '0a'x then out = out || '0a'x
+        end
+        else if capdepth = 0 & outcol <> 0 then out = out || '0a'x
+      end
+      else if dch = '~' then do
+        cnt = 1
+        if pc >= 1 then cnt = pm[1]
+        out = out || copies('~', cnt)
+      end
+      else if dch = '0a'x then do
+        do while i <= len & (substr(ctl, i, 1) = ' ' | substr(ctl, i, 1) = '09'x)
+          i = i + 1
+        end
+      end
+      else if dch = '*' then do
+        if colon = 1 then fidx = fidx - 1
+        else fidx = fidx + 1
+      end
+      else if dch = '^' then do
+        if fidx > fnn then do
+          fstop = 1
+          return out
+        end
+      end
+      else if dch = '{' then do
+        e = fmtfind(ctl, i)
+        if e = 0 then return out || lerror('unterminated ~{ in FORMAT')
+        body = substr(ctl, i, e - i)
+        i = e + 2
+        l = fmtarg(fav, fnn)
+        if unw <> 0 then return out
+        sub = .int[]
+        sn = 0
+        if at = 1 then do
+          sn = fnn - fidx + 1
+          do k = 1 to sn
+            sub[k] = fav[fidx + k - 1]
+          end
+          fidx = fnn + 1
+        end
+        else do
+          sn = list2arr(l, sub)
+        end
+        savei = fidx
+        fidx = 1
+        cnt = 0
+        do while fidx <= sn
+          before = fidx
+          out = out || fmtrun(body, sub, sn)
+          if unw <> 0 then return out
+          if fstop = 1 then do
+            fstop = 0
+            leave
+          end
+          if fidx = before then leave
+          cnt = cnt + 1
+        end
+        if at = 0 then fidx = savei
+        else fidx = fnn + 1
+      end
+      else if dch = '[' then do
+        e = fmtfind(ctl, i)
+        if e = 0 then return out || lerror('unterminated ~[ in FORMAT')
+        semis = fsemi
+        /* split into clauses */
+        cl = .string[]
+        dflt = 0
+        nc = 0
+        st = i
+        k = 1
+        do while k <= words(semis)
+          w = word(semis, k)
+          isc = 0
+          if right(w, 1) = 'c' then do
+            isc = 1
+            w = left(w, length(w) - 1)
+          end
+          p = w as .int
+          nc = nc + 1
+          cl[nc] = substr(ctl, st, p - st)
+          if isc = 1 then dflt = nc + 1
+          j = p + 1
+          do while substr(ctl, j, 1) <> ';'
+            j = j + 1
+          end
+          st = j + 1
+          k = k + 1
+        end
+        nc = nc + 1
+        cl[nc] = substr(ctl, st, e - st)
+        i = e + 2
+        v = fmtarg(fav, fnn)
+        if unw <> 0 then return out
+        pick = 0
+        if colon = 1 then do
+          if v = 1 then pick = 1
+          else pick = 2
+        end
+        else if at = 1 then do
+          if v = 1 then pick = 0
+          else do
+            pick = 1
+            fidx = fidx - 1
+          end
+        end
+        else do
+          if v < 0 then pick = intval(v) + 1
+          else pick = 0
+          if pick < 1 | pick > nc then pick = dflt
+        end
+        if pick >= 1 & pick <= nc then out = out || fmtrun(cl[pick], fav, fnn)
+      end
+      else if dch = '(' then do
+        e = fmtfind(ctl, i)
+        if e = 0 then return out || lerror('unterminated ~( in FORMAT')
+        body = substr(ctl, i, e - i)
+        i = e + 2
+        s = fmtrun(body, fav, fnn)
+        if colon = 1 & at = 1 then s = upper(s)
+        else if at = 1 then do
+          s = lower(s)
+          s = upper(left(s, 1)) || substr(s, 2)
+        end
+        else if colon = 1 then s = capitalize(s)
+        else s = lower(s)
+        out = out || s
+      end
+      else do
+        return out || lerror('unknown FORMAT directive ~' || dch)
+      end
+    end
+  end
+  return out
+
+capitalize: procedure = .string
+  arg s = .string
+  o = ''
+  prev = ' '
+  do k = 1 to length(s)
+    c = substr(s, k, 1)
+    if pos(prev, ' -_/.,;:!?()') > 0 then o = o || upper(c)
+    else o = o || lower(c)
+    prev = c
+  end
+  return o
+
+/* FORMAT with the control string in av[from] and the arguments after it */
+formatargs: procedure = .string
+  arg expose av = .int[], from = .int, n = .int
+  if isstring(av[from]) = 0 then do
+    junk = lerror('FORMAT control is not a string')
+    return ''
+  end
+  fa = .int[]
+  k = 0
+  do i = from + 1 to n
+    k = k + 1
+    fa[k] = av[i]
+  end
+  fidx = 1
+  fstop = 0
+  return fmtrun(cstr[av[from]], fa, k)
+
+
+/* ===================================================================== */
+/*                       HELPERS FOR THE BUILTINS                        */
+/* ===================================================================== */
+mkvec: procedure = .int
+  arg expose a = .int[], n = .int
+  v = newcell(9)
+  cext[v] = nvdat + 1
+  ccdr[v] = n
+  cnum[v] = n * 1.0
+  do i = 1 to n
+    nvdat = nvdat + 1
+    vdat[nvdat] = a[i]
+  end
+  return v
+
+mkvecn: procedure = .int
+  arg n = .int, init = .int
+  v = newcell(9)
+  cext[v] = nvdat + 1
+  ccdr[v] = n
+  cnum[v] = n * 1.0
+  do i = 1 to n
+    nvdat = nvdat + 1
+    vdat[nvdat] = init
+  end
+  return v
+
+/* sequence to array; returns the count */
+seq2arr: procedure = .int
+  arg s = .int, expose a = .int[]
+  if s = 1 then return 0
+  if iscons(s) = 1 then return list2arr(s, a)
+  if s > 0 then do
+    if ctag[s] = 9 then do
+      n = ccdr[s]
+      b = cext[s]
+      do i = 1 to n
+        a[i] = vdat[b + i - 1]
+      end
+      return n
+    end
+    if ctag[s] = 4 then do
+      t = cstr[s]
+      n = length(t)
+      do i = 1 to n
+        a[i] = mkchar(c2d(substr(t, i, 1)))
+      end
+      return n
+    end
+  end
+  junk = lerrk('TYPE-ERROR', 'the value ' || printobj(s, 1) || ' is not a sequence')
+  return 0
+
+/* build a sequence like proto (list, vector, string) from an array */
+arr2seq: procedure = .int
+  arg proto = .int, expose a = .int[], n = .int
+  if proto > 0 then do
+    if ctag[proto] = 9 then return mkvec(a, n)
+    if ctag[proto] = 4 then do
+      s = ''
+      do i = 1 to n
+        if ischar(a[i]) = 1 then s = s || d2c(cext[a[i]])
+      end
+      return mkstr(s)
+    end
+  end
+  return arr2list(a, 1, n)
+
+/* index of the value of keyword argument kname at or after position from, 0 if absent */
+kwidx: procedure = .int
+  arg expose av = .int[], n = .int, from = .int, kname = .string
+  kw = intern(':' || kname)
+  j = from
+  do while j < n
+    if av[j] = kw then return j + 1
+    j = j + 2
+  end
+  return 0
+
+/* the :test / :key functions of a call; 0 means default */
+kwfn: procedure = .int
+  arg expose av = .int[], n = .int, from = .int, kname = .string
+  j = kwidx(av, n, from, kname)
+  if j = 0 then return 0
+  if av[j] = 1 then return 0
+  return fnof(av[j])
+
+same: procedure = .int
+  arg tf = .int, a = .int, b = .int
+  if tf = 0 then return eql(a, b)
+  if call2(tf, a, b) <> 1 then return 1
+  return 0
+
+keyed: procedure = .int
+  arg kf = .int, x = .int
+  if kf = 0 then return x
+  return call1(kf, x)
+
+strcmp: procedure = .int
+  arg a = .string, b = .string
+  la = length(a)
+  lb = length(b)
+  m = la
+  if lb < m then m = lb
+  do i = 1 to m
+    x = c2d(substr(a, i, 1))
+    y = c2d(substr(b, i, 1))
+    if x < y then return -1
+    if x > y then return 1
+  end
+  if la < lb then return -1
+  if la > lb then return 1
+  return 0
+
+/* a string from a string designator */
+strof: procedure = .string
+  arg x = .int
+  if x > 0 then do
+    if ctag[x] = 4 then return cstr[x]
+    if ctag[x] = 2 then return cstr[x]
+    if ctag[x] = 8 then return d2c(cext[x])
+  end
+  junk = lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a string designator')
+  return ''
+
+isalpha: procedure = .int
+  arg c = .int
+  if c >= 65 & c <= 90 then return 1
+  if c >= 97 & c <= 122 then return 1
+  return 0
+
+/* merge sort of av[1..n] with the predicate pf and key kf; stable */
+msort: procedure = .void
+  arg expose a = .int[], n = .int, pf = .int, kf = .int
+  b = .int[]
+  w = 1
+  do while w < n
+    i = 1
+    do while i <= n
+      lo = i
+      mid = i + w
+      hi = i + 2 * w
+      if mid > n + 1 then mid = n + 1
+      if hi > n + 1 then hi = n + 1
+      l = lo
+      r = mid
+      k = lo
+      do while l < mid & r < hi
+        /* take from the right only when right < left */
+        if call2(pf, keyed(kf, a[r]), keyed(kf, a[l])) <> 1 then do
+          b[k] = a[r]
+          r = r + 1
+        end
+        else do
+          b[k] = a[l]
+          l = l + 1
+        end
+        k = k + 1
+        if unw <> 0 then return
+      end
+      do while l < mid
+        b[k] = a[l]
+        l = l + 1
+        k = k + 1
+      end
+      do while r < hi
+        b[k] = a[r]
+        r = r + 1
+        k = k + 1
+      end
+      i = i + 2 * w
+    end
+    do j = 1 to n
+      a[j] = b[j]
+    end
+    w = w * 2
+  end
+  return
+
+bitop: procedure = .int
+  arg a = .int, b = .int, op = .int
+  m = 4611686018427387904
+  if a < 0 then a = a + m
+  if b < 0 then b = b + m
+  r = 0
+  p = 1
+  do k = 0 to 61
+    x = a % 2
+    y = b % 2
+    a = a / 2
+    b = b / 2
+    z = 0
+    if op = 1 then do
+      if x = 1 & y = 1 then z = 1
+    end
+    else if op = 2 then do
+      if x = 1 | y = 1 then z = 1
+    end
+    else do
+      if x <> y then z = 1
+    end
+    if z = 1 then r = r + p
+    p = p * 2
+  end
+  if r >= 2305843009213693952 then r = r - m
+  return r
+
+cxr: procedure = .int
+  arg path = .string, x = .int
+  do i = length(path) to 1 by -1
+    if substr(path, i, 1) = 'A' then x = car(x)
+    else x = cdr(x)
+    if unw <> 0 then return 1
+  end
+  return x
+
+/* copy a sequence range into an array of bounds checked indices */
+subseqn: procedure = .int
+  arg s = .int, st = .int, en = .int
+  a = .int[]
+  n = seq2arr(s, a)
+  if unw <> 0 then return 1
+  if en < 0 then en = n
+  if st < 0 | st > en | en > n then return lerror('bad subsequence bounds ' || st || ' ' || en)
+  b = .int[]
+  k = 0
+  do i = st + 1 to en
+    k = k + 1
+    b[k] = a[i]
+  end
+  return arr2seq(s, b, k)
+
+/* position of item in array, 0 if absent */
+findpos: procedure = .int
+  arg expose a = .int[], n = .int, item = .int, tf = .int, kf = .int, fromend = .int
+  if fromend = 1 then do
+    do i = n to 1 by -1
+      if same(tf, item, keyed(kf, a[i])) = 1 then return i
+    end
+    return 0
+  end
+  do i = 1 to n
+    if same(tf, item, keyed(kf, a[i])) = 1 then return i
+  end
+  return 0
+
+parseint: procedure = .int
+  arg s = .string, junk = .int
+  t = strip(s)
+  if junk = 1 then do
+    i = 1
+    if left(t, 1) = '-' | left(t, 1) = '+' then i = 2
+    j = i
+    do while j <= length(t) & pos(substr(t, j, 1), '0123456789') > 0
+      j = j + 1
+    end
+    if j = i then return 1
+    t = left(t, j - 1)
+  end
+  if length(t) = 0 then return lerror('no integer in ' || printstring(s))
+  if datatype(t, 'W') = '1' & pos('.', t) = 0 & pos('E', upper(t)) = 0 then do
+    v = t as .int
+    return mkint(v)
+  end
+  return lerror('junk in ' || printstring(s))
+
+copytree: procedure = .int
+  arg x = .int
+  if iscons(x) = 0 then return x
+  r = 1
+  do while iscons(x) = 1
+    r = cons(copytree(ccar[x]), r)
+    x = ccdr[x]
+  end
+  r = nreverse(r)
+  return r
+
+subst: procedure = .int
+  arg new = .int, old = .int, x = .int
+  if eql(x, old) = 1 then return new
+  if iscons(x) = 0 then return x
+  return cons(subst(new, old, ccar[x]), subst(new, old, ccdr[x]))
+
+/* one step of macro expansion; 0 if the form is not a macro call */
+macroexp1: procedure = .int
+  arg x = .int
+  if iscons(x) = 0 then return 0
+  f = ccar[x]
+  if issym(f) = 0 then return 0
+  fn = ccdr[f]
+  if fn <= 1 then return 0
+  if ctag[fn] <> 7 then return 0
+  av = .int[]
+  n = list2arr(ccdr[x], av)
+  env = bindparams(ccar[fn], av, n, cext[fn])
+  if unw <> 0 then return 1
+  return evalbody(ccdr[fn], env)
+
+isblank: procedure = .int
+  arg s = .string
+  do i = 1 to length(s)
+    c = substr(s, i, 1)
+    if c <> ' ' & c <> '0a'x & c <> '09'x & c <> '0d'x then return 0
+  end
+  return 1
+
+
+/* ===================================================================== */
+/*                        INITIALISATION AND DRIVER                      */
+/* ===================================================================== */
+sf: procedure = .void
+  arg name = .string, id = .int
+  s = intern(name)
+  cext[s] = id
+  return
+
+defconst: procedure = .void
+  arg name = .string, v = .int
+  s = intern(name)
+  ccar[s] = v
+  cspec[s] = 2
+  return
+
+initlisp: procedure = .void
+  maxdepth = 24000
+  junk = intern('NIL')
+  junk = intern('T')
+  ccar[1] = 1
+  ccdr[1] = 1
+  ccar[2] = 2
+  cspec[1] = 2
+  cspec[2] = 2
+  sQUOTE = intern('QUOTE')
+  sFUNCTION = intern('FUNCTION')
+  sQUASI = intern('QUASIQUOTE')
+  sUNQ = intern('UNQUOTE')
+  sUNQS = intern('UNQUOTE-SPLICING')
+  sLAMBDA = intern('LAMBDA')
+  sOPT = intern('&OPTIONAL')
+  sREST = intern('&REST')
+  sKEY = intern('&KEY')
+  sAUX = intern('&AUX')
+  sBODY = intern('&BODY')
+  sELSE = intern('ELSE')
+  sERROR = intern('ERROR')
+  sTHEN = intern('THEN')
+  sOTHERWISE = intern('OTHERWISE')
+  sBLOCK = intern('BLOCK')
+  sRETFROM = intern('RETURN-FROM')
+  sRETURN = intern('RETURN')
+  sXLOOP = intern('%LOOP')
+  call sf 'QUOTE', 1
+  call sf 'FUNCTION', 2
+  call sf 'IF', 3
+  call sf 'PROGN', 4
+  call sf 'LOCALLY', 4
+  call sf 'LET', 5
+  call sf 'LET*', 6
+  call sf 'COND', 7
+  call sf 'CASE', 8
+  call sf 'AND', 9
+  call sf 'OR', 10
+  call sf 'WHEN', 11
+  call sf 'UNLESS', 12
+  call sf 'ECASE', 13
+  call sf 'LOOP', 14
+  call sf 'SETQ', 21
+  call sf 'DEFUN', 22
+  call sf 'DEFVAR', 23
+  call sf 'DEFPARAMETER', 24
+  call sf 'DEFMACRO', 25
+  call sf 'LAMBDA', 26
+  call sf 'SETF', 27
+  call sf 'INCF', 28
+  call sf 'DECF', 29
+  call sf 'PUSH', 30
+  call sf 'POP', 31
+  call sf 'DO', 32
+  call sf 'DO*', 33
+  call sf 'DOLIST', 34
+  call sf 'DOTIMES', 35
+  call sf 'FLET', 37
+  call sf 'LABELS', 38
+  call sf 'BLOCK', 39
+  call sf 'RETURN-FROM', 40
+  call sf 'RETURN', 41
+  call sf 'CATCH', 42
+  call sf 'THROW', 43
+  call sf 'HANDLER-CASE', 44
+  call sf 'IGNORE-ERRORS', 45
+  call sf 'UNWIND-PROTECT', 46
+  call sf 'QUASIQUOTE', 47
+  call sf 'THE', 48
+  call sf 'DECLARE', 49
+  call sf 'DECLAIM', 49
+  call sf 'PROCLAIM', 49
+  call sf 'IN-PACKAGE', 49
+  call sf 'DEFPACKAGE', 49
+  call sf 'DEFSTRUCT', 50
+  call sf 'DEFCONSTANT', 51
+  call sf 'PUSHNEW', 52
+  call sf 'ASSERT', 53
+  call sf 'MULTIPLE-VALUE-BIND', 54
+  call sf 'WITH-OUTPUT-TO-STRING', 55
+  call sf 'PROG1', 56
+  call sf 'PROG2', 57
+  call sf 'DESTRUCTURING-BIND', 58
+  call sf 'TYPECASE', 59
+  call sf 'ETYPECASE', 59
+  call sf 'TIME', 60
+  call sf 'MULTIPLE-VALUE-LIST', 61
+  call sf 'NTH-VALUE', 62
+  call sf 'ROTATEF', 63
+  call sf 'PSETQ', 64
+  call defconst 'PI', mkfloat(3.14159265358979323846)
+  call defconst 'MOST-POSITIVE-FIXNUM', mkint(4611686018427387903)
+  call defconst 'MOST-NEGATIVE-FIXNUM', mkint(-4611686018427387903)
+  call defconst 'INTERNAL-TIME-UNITS-PER-SECOND', mkint(1000)
+  ccar[intern('*STANDARD-OUTPUT*')] = 2
+  ccar[intern('*ERROR-OUTPUT*')] = 2
+  ccar[intern('*STANDARD-INPUT*')] = 2
+  ccar[intern('*PRINT-PRETTY*')] = 1
+  return
+
+registerprim: procedure = .void
+  arg name = .string, id = .int, mn = .int, mx = .int
+  s = intern(name)
+  c = newcell(5)
+  cext[c] = id
+  cstr[c] = name
+  ccdr[s] = c
+  pmin[id] = mn
+  pmax[id] = mx
+  return
+
+/* ------------------------------------------------------------- loading */
+runsource: procedure = .int
+  arg text = .string
+  osrc = src
+  orp = rp
+  orl = rlen
+  src = text
+  rp = 1
+  rlen = length(text)
+  rc = 0
+  do forever
+    x = readobj()
+    if unw <> 0 then do
+      call reporterr
+      rc = 1
+      leave
+    end
+    if x = 0 then leave
+    junk = eval(x, 1)
+    if unw <> 0 then do
+      call reporterr
+      rc = 1
+      leave
+    end
+  end
+  src = osrc
+  rp = orp
+  rlen = orl
+  return rc
+
+loadfile: procedure = .int
+  arg fname = .string
+  fl = readlines(fname, 1, 0, 'noraise')
+  if fl.0 >= 1 then do
+    if fl[1] = '-8 OPEN ERROR' then do
+      call emit 'Error: cannot open file ' || fname || '0a'x
+      return 1
+    end
+  end
+  s = ''
+  do i = 1 to fl.0
+    s = s || fl[i] || '0a'x
+  end
+  return runsource(s)
+
+repl: procedure = .void
+  buf = ''
+  call emit '* '
+  outcol = 0
+  do while lines() > 0
+    ln = linein()
+    buf = buf || ln || '0a'x
+    src = buf
+    rp = 1
+    rlen = length(buf)
+    do forever
+      eofflag = 0
+      save = rp
+      x = readobj()
+      if unw <> 0 then do
+        if eofflag = 1 then do
+          unw = 0
+          rp = save
+          leave
+        end
+        call reporterr
+        rp = rlen + 1
+        leave
+      end
+      if x = 0 then do
+        rp = rlen + 1
+        leave
+      end
+      mvlist = 0
+      r = eval(x, 1)
+      if unw <> 0 then call reporterr
+      else do
+        call freshline
+        call emit printobj(r, 1) || '0a'x
+      end
+    end
+    buf = substr(buf, rp)
+    if isblank(buf) = 1 then buf = ''
+    if length(buf) = 0 then do
+      call emit '* '
+      outcol = 0
+    end
+  end
+  call freshline
+  return
+
+
+/* ===================================================================== */
+/*                          BUILTIN FUNCTIONS                            */
+/* ===================================================================== */
+/* CAR */
+pf1: procedure = .int
+  arg expose av = .int[], n = .int
+  return car(av[1])
+  return 1
+
+/* CDR */
+pf2: procedure = .int
+  arg expose av = .int[], n = .int
+  return cdr(av[1])
+  return 1
+
+/* CONS */
+pf3: procedure = .int
+  arg expose av = .int[], n = .int
+  return cons(av[1], av[2])
+  return 1
+
+/* + */
+pf4: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 2 then return numadd(av[1], av[2])
+  r = mkint(0)
+  do i = 1 to n
+    r = numadd(r, av[i])
+  end
+  return r
+  return 1
+
+/* - */
+pf5: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 1 then return numneg(av[1])
+  r = av[1]
+  do i = 2 to n
+    r = numsub(r, av[i])
+  end
+  return r
+  return 1
+
+/* * */
+pf6: procedure = .int
+  arg expose av = .int[], n = .int
+  r = mkint(1)
+  do i = 1 to n
+    r = nummul(r, av[i])
+  end
+  return r
+  return 1
+
+/* / */
+pf7: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 1 then return numdiv(mkint(1), av[1])
+  r = av[1]
+  do i = 2 to n
+    r = numdiv(r, av[i])
+  end
+  return r
+  return 1
+
+/* = */
+pf8: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if numcmp(av[i], av[i + 1]) <> 0 then return 1
+  end
+  if unw <> 0 then return 1
+  return 2
+  return 1
+
+/* < */
+pf9: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if numcmp(av[i], av[i + 1]) >= 0 then return 1
+  end
+  return 2
+  return 1
+
+/* > */
+pf10: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if numcmp(av[i], av[i + 1]) <= 0 then return 1
+  end
+  return 2
+  return 1
+
+/* <= */
+pf11: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if numcmp(av[i], av[i + 1]) > 0 then return 1
+  end
+  return 2
+  return 1
+
+/* >= */
+pf12: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if numcmp(av[i], av[i + 1]) < 0 then return 1
+  end
+  return 2
+  return 1
+
+/* /= */
+pf13: procedure = .int
+  arg expose av = .int[], n = .int
+  if numcmp(av[1], av[2]) = 0 then return 1
+  return 2
+  return 1
+
+/* 1+ */
+pf14: procedure = .int
+  arg expose av = .int[], n = .int
+  return numadd(av[1], mkint(1))
+  return 1
+
+/* 1- */
+pf15: procedure = .int
+  arg expose av = .int[], n = .int
+  return numsub(av[1], mkint(1))
+  return 1
+
+/* NULL NOT */
+pf16: procedure = .int
+  arg expose av = .int[], n = .int
+  if av[1] = 1 then return 2
+  return 1
+  return 1
+
+/* EQ */
+pf17: procedure = .int
+  arg expose av = .int[], n = .int
+  if av[1] = av[2] then return 2
+  return 1
+  return 1
+
+/* EQL */
+pf18: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(eql(av[1], av[2]))
+  return 1
+
+/* EQUAL */
+pf19: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(equal(av[1], av[2]))
+  return 1
+
+/* EQUALP */
+pf20: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(equalp(av[1], av[2]))
+  return 1
+
+/* LIST */
+pf21: procedure = .int
+  arg expose av = .int[], n = .int
+  return arr2list(av, 1, n)
+  return 1
+
+/* LIST* */
+pf22: procedure = .int
+  arg expose av = .int[], n = .int
+  r = av[n]
+  do i = n - 1 to 1 by -1
+    r = cons(av[i], r)
+  end
+  return r
+  return 1
+
+/* ATOM */
+pf23: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(1 - iscons(av[1]))
+  return 1
+
+/* CONSP */
+pf24: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(iscons(av[1]))
+  return 1
+
+/* LISTP */
+pf25: procedure = .int
+  arg expose av = .int[], n = .int
+  if av[1] = 1 | iscons(av[1]) = 1 then return 2
+  return 1
+  return 1
+
+/* SYMBOLP */
+pf26: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(issym(av[1]))
+  return 1
+
+/* STRINGP */
+pf27: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(isstring(av[1]))
+  return 1
+
+/* NUMBERP REALP */
+pf28: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(isnum(av[1]))
+  return 1
+
+/* INTEGERP RATIONALP */
+pf29: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(isint(av[1]))
+  return 1
+
+/* FLOATP */
+pf30: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(isfloat(av[1]))
+  return 1
+
+/* CHARACTERP */
+pf31: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(ischar(av[1]))
+  return 1
+
+/* FUNCTIONP */
+pf32: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x > 0 then do
+    if ctag[x] = 5 | ctag[x] = 6 then return 2
+  end
+  return 1
+  return 1
+
+/* VECTORP */
+pf33: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x > 0 then do
+    if ctag[x] = 9 | ctag[x] = 4 then return 2
+  end
+  return 1
+  return 1
+
+/* ARRAYP SIMPLE-VECTOR-P */
+pf34: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x > 0 then do
+    if ctag[x] = 9 then return 2
+  end
+  return 1
+  return 1
+
+/* HASH-TABLE-P */
+pf35: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x > 0 then do
+    if ctag[x] = 10 then return 2
+  end
+  return 1
+  return 1
+
+/* KEYWORDP */
+pf36: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(typep(av[1], intern('KEYWORD')))
+  return 1
+
+/* ZEROP */
+pf37: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(numcmp(av[1], mkint(0)) = 0)
+  return 1
+
+/* PLUSP */
+pf38: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(numcmp(av[1], mkint(0)) > 0)
+  return 1
+
+/* MINUSP */
+pf39: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(numcmp(av[1], mkint(0)) < 0)
+  return 1
+
+/* EVENP */
+pf40: procedure = .int
+  arg expose av = .int[], n = .int
+  if av[1] >= 0 then return lerrk('TYPE-ERROR', 'the value ' || printobj(av[1], 1) || ' is not an INTEGER')
+  return truth(intval(av[1]) % 2 = 0)
+  return 1
+
+/* ODDP */
+pf41: procedure = .int
+  arg expose av = .int[], n = .int
+  if av[1] >= 0 then return lerrk('TYPE-ERROR', 'the value ' || printobj(av[1], 1) || ' is not an INTEGER')
+  return truth(intval(av[1]) % 2 <> 0)
+  return 1
+
+/* FIRST */
+pf42: procedure = .int
+  arg expose av = .int[], n = .int
+  return car(av[1])
+  return 1
+
+/* REST */
+pf43: procedure = .int
+  arg expose av = .int[], n = .int
+  return cdr(av[1])
+  return 1
+
+/* CAAR CADR CDAR CDDR CAAAR CAADR CADAR CADDR CDAAR CDADR CDDAR CDDDR CADDDR CDDDDR */
+pf44: procedure = .int
+  arg expose av = .int[], n = .int
+  nm = cstr[curfn]
+  return cxr(substr(nm, 2, length(nm) - 2), av[1])
+  return 1
+
+/* SECOND */
+pf45: procedure = .int
+  arg expose av = .int[], n = .int
+  return car(cdr(av[1]))
+  return 1
+
+/* THIRD */
+pf46: procedure = .int
+  arg expose av = .int[], n = .int
+  return car(cdr(cdr(av[1])))
+  return 1
+
+/* FOURTH */
+pf47: procedure = .int
+  arg expose av = .int[], n = .int
+  return car(cdr(cdr(cdr(av[1]))))
+  return 1
+
+/* FIFTH */
+pf48: procedure = .int
+  arg expose av = .int[], n = .int
+  return car(cdr(cdr(cdr(cdr(av[1])))))
+  return 1
+
+/* NTH */
+pf49: procedure = .int
+  arg expose av = .int[], n = .int
+  l = av[2]
+  k = toint(av[1])
+  do while k > 0 & iscons(l) = 1
+    l = ccdr[l]
+    k = k - 1
+  end
+  return car(l)
+  return 1
+
+/* NTHCDR */
+pf50: procedure = .int
+  arg expose av = .int[], n = .int
+  l = av[2]
+  k = toint(av[1])
+  do while k > 0 & iscons(l) = 1
+    l = ccdr[l]
+    k = k - 1
+  end
+  return l
+  return 1
+
+/* LENGTH */
+pf51: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x = 1 then return mkint(0)
+  if iscons(x) = 1 then return mkint(listlen(x))
+  if x > 0 then do
+    if ctag[x] = 4 then return mkint(length(cstr[x]))
+    if ctag[x] = 9 then return mkint(ccdr[x])
+    if ctag[x] = 10 then return mkint(ccdr[x])
+  end
+  return lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a sequence')
+  return 1
+
+/* APPEND */
+pf52: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 0 then return 1
+  r = av[n]
+  do i = n - 1 to 1 by -1
+    r = append2(av[i], r)
+  end
+  return r
+  return 1
+
+/* NCONC */
+pf53: procedure = .int
+  arg expose av = .int[], n = .int
+  r = 1
+  do i = n to 1 by -1
+    if av[i] <> 1 then do
+      if r = 1 then r = av[i]
+      else do
+        p = av[i]
+        do while iscons(ccdr[p]) = 1
+          p = ccdr[p]
+        end
+        ccdr[p] = r
+        r = av[i]
+      end
+    end
+  end
+  return r
+  return 1
+
+/* REVERSE */
+pf54: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x = 1 | iscons(x) = 1 then return reverse(x)
+  a = .int[]
+  k = seq2arr(x, a)
+  b = .int[]
+  do i = 1 to k
+    b[i] = a[k - i + 1]
+  end
+  return arr2seq(x, b, k)
+  return 1
+
+/* NREVERSE */
+pf55: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x = 1 | iscons(x) = 1 then return nreverse(x)
+  a = .int[]
+  k = seq2arr(x, a)
+  b = .int[]
+  do i = 1 to k
+    b[i] = a[k - i + 1]
+  end
+  return arr2seq(x, b, k)
+  return 1
+
+/* LAST */
+pf56: procedure = .int
+  arg expose av = .int[], n = .int
+  l = av[1]
+  k = 1
+  if n = 2 then k = toint(av[2])
+  m = listlen(l)
+  do while m > k
+    l = ccdr[l]
+    m = m - 1
+  end
+  return l
+  return 1
+
+/* BUTLAST */
+pf57: procedure = .int
+  arg expose av = .int[], n = .int
+  k = 1
+  if n = 2 then k = toint(av[2])
+  a = .int[]
+  m = list2arr(av[1], a)
+  m = m - k
+  if m < 0 then m = 0
+  return arr2list(a, 1, m)
+  return 1
+
+/* COPY-LIST */
+pf58: procedure = .int
+  arg expose av = .int[], n = .int
+  a = .int[]
+  m = list2arr(av[1], a)
+  return arr2list(a, 1, m)
+  return 1
+
+/* COPY-TREE */
+pf59: procedure = .int
+  arg expose av = .int[], n = .int
+  return copytree(av[1])
+  return 1
+
+/* LIST-LENGTH */
+pf60: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkint(listlen(av[1]))
+  return 1
+
+/* IDENTITY */
+pf61: procedure = .int
+  arg expose av = .int[], n = .int
+  return av[1]
+  return 1
+
+/* FUNCALL */
+pf62: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  b = .int[]
+  do i = 2 to n
+    b[i - 1] = av[i]
+  end
+  return applyfn(fn, b, n - 1)
+  return 1
+
+/* APPLY */
+pf63: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  b = .int[]
+  k = 0
+  do i = 2 to n - 1
+    k = k + 1
+    b[k] = av[i]
+  end
+  if n >= 2 then do
+    l = av[n]
+    do while iscons(l) = 1
+      k = k + 1
+      b[k] = ccar[l]
+      l = ccdr[l]
+    end
+  end
+  return applyfn(fn, b, k)
+  return 1
+
+/* VALUES */
+pf64: procedure = .int
+  arg expose av = .int[], n = .int
+  mvlist = arr2list(av, 1, n)
+  if n = 0 then return 1
+  return av[1]
+  return 1
+
+/* VALUES-LIST */
+pf65: procedure = .int
+  arg expose av = .int[], n = .int
+  mvlist = av[1]
+  return car(av[1])
+  return 1
+
+/* ASSOC */
+pf66: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  kf = kwfn(av, n, 3, 'KEY')
+  l = av[2]
+  do while iscons(l) = 1
+    e = ccar[l]
+    if iscons(e) = 1 then do
+      if same(tf, av[1], keyed(kf, ccar[e])) = 1 then return e
+    end
+    l = ccdr[l]
+  end
+  return 1
+  return 1
+
+/* RASSOC */
+pf67: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  l = av[2]
+  do while iscons(l) = 1
+    e = ccar[l]
+    if iscons(e) = 1 then do
+      if same(tf, av[1], ccdr[e]) = 1 then return e
+    end
+    l = ccdr[l]
+  end
+  return 1
+  return 1
+
+/* MEMBER */
+pf68: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  kf = kwfn(av, n, 3, 'KEY')
+  l = av[2]
+  do while iscons(l) = 1
+    if same(tf, av[1], keyed(kf, ccar[l])) = 1 then return l
+    l = ccdr[l]
+  end
+  return 1
+  return 1
+
+/* MEMQ */
+pf69: procedure = .int
+  arg expose av = .int[], n = .int
+  l = av[2]
+  do while iscons(l) = 1
+    if ccar[l] = av[1] then return l
+    l = ccdr[l]
+  end
+  return 1
+  return 1
+
+/* ADJOIN */
+pf70: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  l = av[2]
+  do while iscons(l) = 1
+    if same(tf, av[1], ccar[l]) = 1 then return av[2]
+    l = ccdr[l]
+  end
+  return cons(av[1], av[2])
+  return 1
+
+/* ACONS */
+pf71: procedure = .int
+  arg expose av = .int[], n = .int
+  return cons(cons(av[1], av[2]), av[3])
+  return 1
+
+/* PAIRLIS */
+pf72: procedure = .int
+  arg expose av = .int[], n = .int
+  a = .int[]
+  b = .int[]
+  k = list2arr(av[1], a)
+  m = list2arr(av[2], b)
+  r = 1
+  if n = 3 then r = av[3]
+  do i = k to 1 by -1
+    r = cons(cons(a[i], b[i]), r)
+  end
+  return r
+  return 1
+
+/* GETF */
+pf73: procedure = .int
+  arg expose av = .int[], n = .int
+  l = av[1]
+  do while iscons(l) = 1
+    if ccar[l] = av[2] then return car(ccdr[l])
+    l = cdr(ccdr[l])
+  end
+  if n = 3 then return av[3]
+  return 1
+  return 1
+
+/* MAKE-LIST */
+pf74: procedure = .int
+  arg expose av = .int[], n = .int
+  init = 1
+  j = kwidx(av, n, 2, 'INITIAL-ELEMENT')
+  if j > 0 then init = av[j]
+  r = 1
+  do i = 1 to toint(av[1])
+    r = cons(init, r)
+  end
+  return r
+  return 1
+
+/* SUBST */
+pf75: procedure = .int
+  arg expose av = .int[], n = .int
+  return subst(av[1], av[2], av[3])
+  return 1
+
+/* TREE-EQUAL */
+pf76: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(equal(av[1], av[2]))
+  return 1
+
+/* SET-DIFFERENCE */
+pf77: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  a = .int[]
+  k = list2arr(av[1], a)
+  r = 1
+  do i = 1 to k
+    l = av[2]
+    hit = 0
+    do while iscons(l) = 1 & hit = 0
+      if same(tf, a[i], ccar[l]) = 1 then hit = 1
+      l = ccdr[l]
+    end
+    if hit = 0 then r = cons(a[i], r)
+  end
+  return nreverse(r)
+  return 1
+
+/* INTERSECTION */
+pf78: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  a = .int[]
+  k = list2arr(av[1], a)
+  r = 1
+  do i = 1 to k
+    l = av[2]
+    hit = 0
+    do while iscons(l) = 1 & hit = 0
+      if same(tf, a[i], ccar[l]) = 1 then hit = 1
+      l = ccdr[l]
+    end
+    if hit = 1 then r = cons(a[i], r)
+  end
+  return nreverse(r)
+  return 1
+
+/* UNION */
+pf79: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  a = .int[]
+  k = list2arr(av[1], a)
+  r = av[2]
+  do i = k to 1 by -1
+    l = av[2]
+    hit = 0
+    do while iscons(l) = 1 & hit = 0
+      if same(tf, a[i], ccar[l]) = 1 then hit = 1
+      l = ccdr[l]
+    end
+    if hit = 0 then r = cons(a[i], r)
+  end
+  return r
+  return 1
+
+/* SUBSETP */
+pf80: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  a = .int[]
+  k = list2arr(av[1], a)
+  do i = 1 to k
+    l = av[2]
+    hit = 0
+    do while iscons(l) = 1 & hit = 0
+      if same(tf, a[i], ccar[l]) = 1 then hit = 1
+      l = ccdr[l]
+    end
+    if hit = 0 then return 1
+  end
+  return 2
+  return 1
+
+/* MAPCAR */
+pf81: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  nl = n - 1
+  ls = .int[]
+  do i = 1 to nl
+    ls[i] = av[i + 1]
+  end
+  r = 1
+  b = .int[]
+  do forever
+    do i = 1 to nl
+      if iscons(ls[i]) = 0 then do
+        return nreverse(r)
+      end
+      b[i] = ccar[ls[i]]
+      ls[i] = ccdr[ls[i]]
+    end
+    v = applyfn(fn, b, nl)
+    if unw <> 0 then return 1
+    r = cons(v, r)
+  end
+  return 1
+  return 1
+
+/* MAPC */
+pf82: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  nl = n - 1
+  ls = .int[]
+  do i = 1 to nl
+    ls[i] = av[i + 1]
+  end
+  b = .int[]
+  do forever
+    do i = 1 to nl
+      if iscons(ls[i]) = 0 then return av[2]
+      b[i] = ccar[ls[i]]
+      ls[i] = ccdr[ls[i]]
+    end
+    v = applyfn(fn, b, nl)
+    if unw <> 0 then return 1
+  end
+  return 1
+  return 1
+
+/* MAPCAN */
+pf83: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  nl = n - 1
+  ls = .int[]
+  do i = 1 to nl
+    ls[i] = av[i + 1]
+  end
+  r = 1
+  b = .int[]
+  do forever
+    do i = 1 to nl
+      if iscons(ls[i]) = 0 then return r
+      b[i] = ccar[ls[i]]
+      ls[i] = ccdr[ls[i]]
+    end
+    v = applyfn(fn, b, nl)
+    if unw <> 0 then return 1
+    r = append2(r, v)
+  end
+  return 1
+  return 1
+
+/* MAPLIST */
+pf84: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  l = av[2]
+  r = 1
+  do while iscons(l) = 1
+    v = call1(fn, l)
+    if unw <> 0 then return 1
+    r = cons(v, r)
+    l = ccdr[l]
+  end
+  return nreverse(r)
+  return 1
+
+/* MAP */
+pf85: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[2])
+  if unw <> 0 then return 1
+  nl = n - 2
+  sq = .int[]
+  cnt = 0
+  ls = .int[]
+  mn = 999999999
+  do i = 1 to nl
+    a = .int[]
+    k = seq2arr(av[i + 2], a)
+    if k < mn then mn = k
+    do j = 1 to k
+      sq[(i - 1) * 100000 + j] = a[j]
+    end
+  end
+  r = .int[]
+  b = .int[]
+  do j = 1 to mn
+    do i = 1 to nl
+      b[i] = sq[(i - 1) * 100000 + j]
+    end
+    v = applyfn(fn, b, nl)
+    if unw <> 0 then return 1
+    r[j] = v
+  end
+  ty = av[1]
+  if ty = 1 then return 1
+  nm = cstr[ty]
+  if nm = 'LIST' then return arr2list(r, 1, mn)
+  if nm = 'STRING' then return arr2seq(mkstr(''), r, mn)
+  return mkvec(r, mn)
+  return 1
+
+/* REDUCE */
+pf86: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  fe = 0
+  j = kwidx(av, n, 3, 'FROM-END')
+  if j > 0 then do
+    if av[j] <> 1 then fe = 1
+  end
+  j = kwidx(av, n, 3, 'INITIAL-VALUE')
+  hasinit = 0
+  if j > 0 then hasinit = 1
+  if fe = 0 then do
+    st = 1
+    if hasinit = 1 then acc = av[j]
+    else do
+      if k = 0 then return applyfn(fn, a, 0)
+      acc = keyed(kf, a[1])
+      st = 2
+    end
+    do i = st to k
+      acc = call2(fn, acc, keyed(kf, a[i]))
+      if unw <> 0 then return 1
+    end
+    return acc
+  end
+  st = k
+  if hasinit = 1 then acc = av[j]
+  else do
+    if k = 0 then return applyfn(fn, a, 0)
+    acc = keyed(kf, a[k])
+    st = k - 1
+  end
+  do i = st to 1 by -1
+    acc = call2(fn, keyed(kf, a[i]), acc)
+    if unw <> 0 then return 1
+  end
+  return acc
+  return 1
+
+/* REMOVE DELETE */
+pf87: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  b = .int[]
+  m = 0
+  do i = 1 to k
+    if same(tf, av[1], keyed(kf, a[i])) = 0 then do
+      m = m + 1
+      b[m] = a[i]
+    end
+    if unw <> 0 then return 1
+  end
+  return arr2seq(av[2], b, m)
+  return 1
+
+/* REMOVE-IF DELETE-IF */
+pf88: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  b = .int[]
+  m = 0
+  do i = 1 to k
+    v = call1(fn, keyed(kf, a[i]))
+    if unw <> 0 then return 1
+    if v = 1 then do
+      m = m + 1
+      b[m] = a[i]
+    end
+  end
+  return arr2seq(av[2], b, m)
+  return 1
+
+/* REMOVE-IF-NOT DELETE-IF-NOT */
+pf89: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  b = .int[]
+  m = 0
+  do i = 1 to k
+    v = call1(fn, keyed(kf, a[i]))
+    if unw <> 0 then return 1
+    if v <> 1 then do
+      m = m + 1
+      b[m] = a[i]
+    end
+  end
+  return arr2seq(av[2], b, m)
+  return 1
+
+/* REMOVE-DUPLICATES DELETE-DUPLICATES */
+pf90: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 2, 'TEST')
+  kf = kwfn(av, n, 2, 'KEY')
+  a = .int[]
+  k = seq2arr(av[1], a)
+  b = .int[]
+  m = 0
+  do i = 1 to k
+    dup = 0
+    do j = i + 1 to k
+      if same(tf, keyed(kf, a[i]), keyed(kf, a[j])) = 1 then do
+        dup = 1
+        leave
+      end
+    end
+    if dup = 0 then do
+      m = m + 1
+      b[m] = a[i]
+    end
+  end
+  return arr2seq(av[1], b, m)
+  return 1
+
+/* FIND */
+pf91: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  p = findpos(a, k, av[1], tf, kf, 0)
+  if p = 0 then return 1
+  return a[p]
+  return 1
+
+/* POSITION */
+pf92: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  fe = 0
+  j = kwidx(av, n, 3, 'FROM-END')
+  if j > 0 then do
+    if av[j] <> 1 then fe = 1
+  end
+  p = findpos(a, k, av[1], tf, kf, fe)
+  if p = 0 then return 1
+  return mkint(p - 1)
+  return 1
+
+/* FIND-IF */
+pf93: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  do i = 1 to k
+    if call1(fn, keyed(kf, a[i])) <> 1 then return a[i]
+    if unw <> 0 then return 1
+  end
+  return 1
+  return 1
+
+/* POSITION-IF */
+pf94: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  do i = 1 to k
+    if call1(fn, keyed(kf, a[i])) <> 1 then return mkint(i - 1)
+    if unw <> 0 then return 1
+  end
+  return 1
+  return 1
+
+/* COUNT */
+pf95: procedure = .int
+  arg expose av = .int[], n = .int
+  tf = kwfn(av, n, 3, 'TEST')
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  c = 0
+  do i = 1 to k
+    if same(tf, av[1], keyed(kf, a[i])) = 1 then c = c + 1
+  end
+  return mkint(c)
+  return 1
+
+/* COUNT-IF */
+pf96: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[2], a)
+  c = 0
+  do i = 1 to k
+    if call1(fn, keyed(kf, a[i])) <> 1 then c = c + 1
+    if unw <> 0 then return 1
+  end
+  return mkint(c)
+  return 1
+
+/* SOME */
+pf97: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  a = .int[]
+  k = seq2arr(av[2], a)
+  b = .int[]
+  m = k
+  if n = 3 then do
+    m = seq2arr(av[3], b)
+    if m < k then k = m
+  end
+  do i = 1 to k
+    if n = 3 then v = call2(fn, a[i], b[i])
+    else v = call1(fn, a[i])
+    if unw <> 0 then return 1
+    if v <> 1 then return v
+  end
+  return 1
+  return 1
+
+/* EVERY */
+pf98: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  a = .int[]
+  k = seq2arr(av[2], a)
+  b = .int[]
+  if n = 3 then do
+    m = seq2arr(av[3], b)
+    if m < k then k = m
+  end
+  do i = 1 to k
+    if n = 3 then v = call2(fn, a[i], b[i])
+    else v = call1(fn, a[i])
+    if unw <> 0 then return 1
+    if v = 1 then return 1
+  end
+  return 2
+  return 1
+
+/* NOTANY */
+pf99: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  a = .int[]
+  k = seq2arr(av[2], a)
+  do i = 1 to k
+    if call1(fn, a[i]) <> 1 then return 1
+    if unw <> 0 then return 1
+  end
+  return 2
+  return 1
+
+/* NOTEVERY */
+pf100: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  a = .int[]
+  k = seq2arr(av[2], a)
+  do i = 1 to k
+    if call1(fn, a[i]) = 1 then return 2
+    if unw <> 0 then return 1
+  end
+  return 1
+  return 1
+
+/* SORT STABLE-SORT */
+pf101: procedure = .int
+  arg expose av = .int[], n = .int
+  pf = fnof(av[2])
+  if unw <> 0 then return 1
+  kf = kwfn(av, n, 3, 'KEY')
+  a = .int[]
+  k = seq2arr(av[1], a)
+  call msort a, k, pf, kf
+  if unw <> 0 then return 1
+  if av[1] > 0 then do
+    if ctag[av[1]] = 9 then do
+      do i = 1 to k
+        vdat[cext[av[1]] + i - 1] = a[i]
+      end
+      return av[1]
+    end
+  end
+  return arr2seq(av[1], a, k)
+  return 1
+
+/* ELT AREF SVREF CHAR SCHAR */
+pf102: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  i = toint(av[2])
+  if unw <> 0 then return 1
+  if x = 1 | iscons(x) = 1 then do
+    do while i > 0 & iscons(x) = 1
+      x = ccdr[x]
+      i = i - 1
+    end
+    if iscons(x) = 0 then return lerror('index out of bounds')
+    return ccar[x]
+  end
+  if x > 0 then do
+    if ctag[x] = 9 then do
+      if i < 0 | i >= ccdr[x] then return lerror('index ' || i || ' is out of bounds for the vector')
+      return vdat[cext[x] + i]
+    end
+    if ctag[x] = 4 then do
+      if i < 0 | i >= length(cstr[x]) then return lerror('index ' || i || ' is out of bounds for the string')
+      return mkchar(c2d(substr(cstr[x], i + 1, 1)))
+    end
+  end
+  return lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a sequence')
+  return 1
+
+/* SUBSEQ */
+pf103: procedure = .int
+  arg expose av = .int[], n = .int
+  en = -1
+  if n = 3 then do
+    if av[3] <> 1 then en = toint(av[3])
+  end
+  return subseqn(av[1], toint(av[2]), en)
+  return 1
+
+/* COPY-SEQ */
+pf104: procedure = .int
+  arg expose av = .int[], n = .int
+  return subseqn(av[1], 0, -1)
+  return 1
+
+/* VECTOR */
+pf105: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkvec(av, n)
+  return 1
+
+/* MAKE-ARRAY */
+pf106: procedure = .int
+  arg expose av = .int[], n = .int
+  sz = 0
+  if av[1] > 0 | av[1] = 1 then do
+    if iscons(av[1]) = 1 then sz = toint(ccar[av[1]])
+  end
+  else sz = toint(av[1])
+  init = mkint(0)
+  j = kwidx(av, n, 2, 'INITIAL-ELEMENT')
+  if j > 0 then init = av[j]
+  v = mkvecn(sz, init)
+  j = kwidx(av, n, 2, 'INITIAL-CONTENTS')
+  if j > 0 then do
+    a = .int[]
+    k = seq2arr(av[j], a)
+    do i = 1 to k
+      vdat[cext[v] + i - 1] = a[i]
+    end
+  end
+  j = kwidx(av, n, 2, 'FILL-POINTER')
+  if j > 0 then do
+    if av[j] < 0 then ccdr[v] = intval(av[j])
+    else if av[j] = 2 then ccdr[v] = sz
+    else ccdr[v] = 0
+  end
+  return v
+  return 1
+
+/* VECTOR-PUSH */
+pf107: procedure = .int
+  arg expose av = .int[], n = .int
+  v = av[2]
+  cap = trunc(cnum[v]) as .int
+  if ccdr[v] >= cap then return 1
+  vdat[cext[v] + ccdr[v]] = av[1]
+  ccdr[v] = ccdr[v] + 1
+  return mkint(ccdr[v] - 1)
+  return 1
+
+/* VECTOR-PUSH-EXTEND */
+pf108: procedure = .int
+  arg expose av = .int[], n = .int
+  v = av[2]
+  cap = trunc(cnum[v]) as .int
+  if ccdr[v] >= cap then do
+    nc = cap * 2
+    if nc < 4 then nc = 4
+    nb = nvdat + 1
+    do i = 0 to ccdr[v] - 1
+      vdat[nb + i] = vdat[cext[v] + i]
+    end
+    nvdat = nvdat + nc
+    cext[v] = nb
+    cnum[v] = nc * 1.0
+  end
+  vdat[cext[v] + ccdr[v]] = av[1]
+  ccdr[v] = ccdr[v] + 1
+  return mkint(ccdr[v] - 1)
+  return 1
+
+/* VECTOR-POP */
+pf109: procedure = .int
+  arg expose av = .int[], n = .int
+  v = av[1]
+  if ccdr[v] = 0 then return lerror('nothing to pop')
+  ccdr[v] = ccdr[v] - 1
+  return vdat[cext[v] + ccdr[v]]
+  return 1
+
+/* FILL */
+pf110: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x > 0 then do
+    if ctag[x] = 9 then do
+      do i = 0 to ccdr[x] - 1
+        vdat[cext[x] + i] = av[2]
+      end
+      return x
+    end
+  end
+  l = x
+  do while iscons(l) = 1
+    ccar[l] = av[2]
+    l = ccdr[l]
+  end
+  return x
+  return 1
+
+/* CONCATENATE */
+pf111: procedure = .int
+  arg expose av = .int[], n = .int
+  a = .int[]
+  k = 0
+  do i = 2 to n
+    b = .int[]
+    m = seq2arr(av[i], b)
+    do j = 1 to m
+      k = k + 1
+      a[k] = b[j]
+    end
+  end
+  ty = cstr[av[1]]
+  if ty = 'STRING' then return arr2seq(mkstr(''), a, k)
+  if ty = 'LIST' then return arr2list(a, 1, k)
+  return mkvec(a, k)
+  return 1
+
+/* COERCE */
+pf112: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  ty = cstr[av[2]]
+  if ty = 'LIST' then do
+    a = .int[]
+    k = seq2arr(x, a)
+    return arr2list(a, 1, k)
+  end
+  if ty = 'VECTOR' | ty = 'SIMPLE-VECTOR' then do
+    a = .int[]
+    k = seq2arr(x, a)
+    return mkvec(a, k)
+  end
+  if ty = 'STRING' then do
+    if isstring(x) = 1 then return x
+    a = .int[]
+    k = seq2arr(x, a)
+    return arr2seq(mkstr(''), a, k)
+  end
+  if ty = 'FLOAT' | ty = 'DOUBLE-FLOAT' | ty = 'SINGLE-FLOAT' then return mkfloat(fval(x))
+  if ty = 'INTEGER' then return mkint(toint(x))
+  if ty = 'CHARACTER' then return x
+  if ty = 'FUNCTION' then return fnof(x)
+  return x
+  return 1
+
+/* MAX */
+pf113: procedure = .int
+  arg expose av = .int[], n = .int
+  r = av[1]
+  do i = 2 to n
+    if numcmp(av[i], r) > 0 then r = av[i]
+  end
+  if unw <> 0 then return 1
+  return r
+  return 1
+
+/* MIN */
+pf114: procedure = .int
+  arg expose av = .int[], n = .int
+  r = av[1]
+  do i = 2 to n
+    if numcmp(av[i], r) < 0 then r = av[i]
+  end
+  if unw <> 0 then return 1
+  return r
+  return 1
+
+/* ABS */
+pf115: procedure = .int
+  arg expose av = .int[], n = .int
+  if numcmp(av[1], mkint(0)) < 0 then return numneg(av[1])
+  return av[1]
+  return 1
+
+/* SIGNUM */
+pf116: procedure = .int
+  arg expose av = .int[], n = .int
+  c = numcmp(av[1], mkint(0))
+  if isfloat(av[1]) = 1 then return mkfloat(c * 1.0)
+  return mkint(c)
+  return 1
+
+/* FLOOR */
+pf117: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  if n = 2 then b = av[2]
+  else b = mkint(1)
+  if a < 0 & b < 0 then do
+    x = intval(a)
+    y = intval(b)
+    if y = 0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+    q = x / y
+    if x % y <> 0 & ((x < 0) <> (y < 0)) then q = q - 1
+    mvlist = list2(mkint(q), mkint(x - q * y))
+    return mkint(q)
+  end
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  fx = fval(a) / fval(b)
+  q = trunc(fx) as .int
+  if q > fx then q = q - 1
+  mvlist = list2(mkint(q), mkfloat(fval(a) - q * fval(b)))
+  return mkint(q)
+  return 1
+
+/* CEILING */
+pf118: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  if n = 2 then b = av[2]
+  else b = mkint(1)
+  if a < 0 & b < 0 then do
+    x = intval(a)
+    y = intval(b)
+    if y = 0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+    q = x / y
+    if x % y <> 0 & ((x < 0) = (y < 0)) then q = q + 1
+    mvlist = list2(mkint(q), mkint(x - q * y))
+    return mkint(q)
+  end
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  fx = fval(a) / fval(b)
+  q = trunc(fx) as .int
+  if q < fx then q = q + 1
+  mvlist = list2(mkint(q), mkfloat(fval(a) - q * fval(b)))
+  return mkint(q)
+  return 1
+
+/* TRUNCATE */
+pf119: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  if n = 2 then b = av[2]
+  else b = mkint(1)
+  if a < 0 & b < 0 then do
+    x = intval(a)
+    y = intval(b)
+    if y = 0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+    q = x / y
+    mvlist = list2(mkint(q), mkint(x - q * y))
+    return mkint(q)
+  end
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  fx = fval(a) / fval(b)
+  q = trunc(fx) as .int
+  mvlist = list2(mkint(q), mkfloat(fval(a) - q * fval(b)))
+  return mkint(q)
+  return 1
+
+/* ROUND */
+pf120: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  if n = 2 then b = av[2]
+  else b = mkint(1)
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  x = fval(a) / fval(b)
+  q = trunc(x) as .int
+  fr = x - q
+  if fr < 0.0 then fr = 0.0 - fr
+  if fr > 0.5 then do
+    if x > 0.0 then q = q + 1
+    else q = q - 1
+  end
+  else if fr = 0.5 then do
+    if q % 2 <> 0 then do
+      if x > 0.0 then q = q + 1
+      else q = q - 1
+    end
+  end
+  mvlist = list2(mkint(q), mkfloat(fval(a) - q * fval(b)))
+  return mkint(q)
+  return 1
+
+/* MOD */
+pf121: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  b = av[2]
+  if a < 0 & b < 0 then do
+    x = intval(a)
+    y = intval(b)
+    if y = 0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+    q = x / y
+    if x % y <> 0 & ((x < 0) <> (y < 0)) then q = q - 1
+    return mkint(x - q * y)
+  end
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  fx = fval(a) / fval(b)
+  q = trunc(fx) as .int
+  if q > fx then q = q - 1
+  return mkfloat(fval(a) - q * fval(b))
+  return 1
+
+/* REM */
+pf122: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  b = av[2]
+  if a < 0 & b < 0 then do
+    y = intval(b)
+    if y = 0 then return lerrk('DIVISION-BY-ZERO', 'arithmetic error DIVISION-BY-ZERO signalled')
+    return mkint(intval(a) % y)
+  end
+  if isnum(a) = 0 then return notnum(a)
+  if isnum(b) = 0 then return notnum(b)
+  x = fval(a) / fval(b)
+  q = trunc(x) as .int
+  return mkfloat(fval(a) - q * fval(b))
+  return 1
+
+/* SQRT */
+pf123: procedure = .int
+  arg expose av = .int[], n = .int
+  if isnum(av[1]) = 0 then return notnum(av[1])
+  x = fval(av[1])
+  if x < 0.0 then return lerrk('ERROR', 'SQRT of a negative number is not supported')
+  return mkfloat(lsqrt(x))
+  return 1
+
+/* ISQRT */
+pf124: procedure = .int
+  arg expose av = .int[], n = .int
+  k = toint(av[1])
+  if k < 0 then return lerror('ISQRT of a negative number')
+  r = trunc(lsqrt(k * 1.0)) as .int
+  do while r * r > k
+    r = r - 1
+  end
+  do while (r + 1) * (r + 1) <= k
+    r = r + 1
+  end
+  return mkint(r)
+  return 1
+
+/* EXP */
+pf125: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkfloat(lexp(fval(av[1])))
+  return 1
+
+/* LOG */
+pf126: procedure = .int
+  arg expose av = .int[], n = .int
+  x = fval(av[1])
+  if x <= 0.0 then return lerrk('DIVISION-BY-ZERO', 'LOG of a non-positive number')
+  if n = 2 then return mkfloat(lln(x) / lln(fval(av[2])))
+  return mkfloat(lln(x))
+  return 1
+
+/* SIN */
+pf127: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkfloat(lsin(fval(av[1])))
+  return 1
+
+/* COS */
+pf128: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkfloat(lcos(fval(av[1])))
+  return 1
+
+/* TAN */
+pf129: procedure = .int
+  arg expose av = .int[], n = .int
+  x = fval(av[1])
+  return mkfloat(lsin(x) / lcos(x))
+  return 1
+
+/* ATAN */
+pf130: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 1 then return mkfloat(latan(fval(av[1])))
+  y = fval(av[1])
+  x = fval(av[2])
+  pi = 3.14159265358979323846
+  if x > 0.0 then return mkfloat(latan(y / x))
+  if x < 0.0 then do
+    if y >= 0.0 then return mkfloat(latan(y / x) + pi)
+    return mkfloat(latan(y / x) - pi)
+  end
+  if y > 0.0 then return mkfloat(pi / 2.0)
+  if y < 0.0 then return mkfloat(0.0 - pi / 2.0)
+  return mkfloat(0.0)
+  return 1
+
+/* EXPT */
+pf131: procedure = .int
+  arg expose av = .int[], n = .int
+  b = av[1]
+  e = av[2]
+  if b < 0 & e < 0 then do
+    k = intval(e)
+    if k >= 0 then return mkint(ipow(intval(b), k))
+    return mkfloat(1.0 / ipow(intval(b), 0 - k))
+  end
+  if isnum(b) = 0 then return notnum(b)
+  if isnum(e) = 0 then return notnum(e)
+  if e < 0 then do
+    k = intval(e)
+    x = fval(b)
+    r = 1.0
+    m = k
+    if m < 0 then m = 0 - m
+    do m
+      r = r * x
+    end
+    if k < 0 then r = 1.0 / r
+    return mkfloat(r)
+  end
+  x = fval(b)
+  if x = 0.0 then return mkfloat(0.0)
+  if x < 0.0 then return lerrk('ERROR', 'EXPT of a negative number to a float power is not supported')
+  return mkfloat(lexp(fval(e) * lln(x)))
+  return 1
+
+/* FLOAT */
+pf132: procedure = .int
+  arg expose av = .int[], n = .int
+  if isnum(av[1]) = 0 then return notnum(av[1])
+  return mkfloat(fval(av[1]))
+  return 1
+
+/* GCD */
+pf133: procedure = .int
+  arg expose av = .int[], n = .int
+  r = 0
+  do i = 1 to n
+    a = toint(av[i])
+    if a < 0 then a = 0 - a
+    b = r
+    do while a <> 0
+      t = b % a
+      b = a
+      a = t
+    end
+    r = b
+  end
+  return mkint(r)
+  return 1
+
+/* LCM */
+pf134: procedure = .int
+  arg expose av = .int[], n = .int
+  r = 1
+  do i = 1 to n
+    a = toint(av[i])
+    if a < 0 then a = 0 - a
+    if a = 0 then return mkint(0)
+    x = r
+    y = a
+    do while y <> 0
+      t = x % y
+      x = y
+      y = t
+    end
+    r = r / x * a
+  end
+  return mkint(r)
+  return 1
+
+/* RANDOM */
+pf135: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x < 0 then do
+    k = intval(x)
+    if k <= 0 then return lerror('RANDOM needs a positive limit')
+    return mkint(nextrand() % k)
+  end
+  return mkfloat(nextrand() / 2147483648.0 * fval(x))
+  return 1
+
+/* ASH */
+pf136: procedure = .int
+  arg expose av = .int[], n = .int
+  a = toint(av[1])
+  s = toint(av[2])
+  if s >= 0 then return mkint(a * ipow(2, s))
+  d = ipow(2, 0 - s)
+  q = a / d
+  if a % d <> 0 & a < 0 then q = q - 1
+  return mkint(q)
+  return 1
+
+/* LOGAND */
+pf137: procedure = .int
+  arg expose av = .int[], n = .int
+  r = -1
+  if n = 0 then return mkint(-1)
+  r = toint(av[1])
+  do i = 2 to n
+    r = bitop(r, toint(av[i]), 1)
+  end
+  return mkint(r)
+  return 1
+
+/* LOGIOR */
+pf138: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 0 then return mkint(0)
+  r = toint(av[1])
+  do i = 2 to n
+    r = bitop(r, toint(av[i]), 2)
+  end
+  return mkint(r)
+  return 1
+
+/* LOGXOR */
+pf139: procedure = .int
+  arg expose av = .int[], n = .int
+  if n = 0 then return mkint(0)
+  r = toint(av[1])
+  do i = 2 to n
+    r = bitop(r, toint(av[i]), 3)
+  end
+  return mkint(r)
+  return 1
+
+/* LOGNOT */
+pf140: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkint(0 - toint(av[1]) - 1)
+  return 1
+
+/* PARSE-INTEGER */
+pf141: procedure = .int
+  arg expose av = .int[], n = .int
+  j = kwidx(av, n, 2, 'JUNK-ALLOWED')
+  junk = 0
+  if j > 0 then do
+    if av[j] <> 1 then junk = 1
+  end
+  return parseint(strof(av[1]), junk)
+  return 1
+
+/* CHAR-CODE CHAR-INT */
+pf142: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkint(cext[av[1]])
+  return 1
+
+/* CODE-CHAR */
+pf143: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkchar(toint(av[1]))
+  return 1
+
+/* CHAR-UPCASE */
+pf144: procedure = .int
+  arg expose av = .int[], n = .int
+  c = cext[av[1]]
+  if c >= 97 & c <= 122 then c = c - 32
+  return mkchar(c)
+  return 1
+
+/* CHAR-DOWNCASE */
+pf145: procedure = .int
+  arg expose av = .int[], n = .int
+  c = cext[av[1]]
+  if c >= 65 & c <= 90 then c = c + 32
+  return mkchar(c)
+  return 1
+
+/* ALPHA-CHAR-P */
+pf146: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(isalpha(cext[av[1]]))
+  return 1
+
+/* DIGIT-CHAR-P */
+pf147: procedure = .int
+  arg expose av = .int[], n = .int
+  c = cext[av[1]]
+  if c >= 48 & c <= 57 then return mkint(c - 48)
+  return 1
+  return 1
+
+/* ALPHANUMERICP */
+pf148: procedure = .int
+  arg expose av = .int[], n = .int
+  c = cext[av[1]]
+  if isalpha(c) = 1 | (c >= 48 & c <= 57) then return 2
+  return 1
+  return 1
+
+/* UPPER-CASE-P */
+pf149: procedure = .int
+  arg expose av = .int[], n = .int
+  c = cext[av[1]]
+  return truth(c >= 65 & c <= 90)
+  return 1
+
+/* LOWER-CASE-P */
+pf150: procedure = .int
+  arg expose av = .int[], n = .int
+  c = cext[av[1]]
+  return truth(c >= 97 & c <= 122)
+  return 1
+
+/* DIGIT-CHAR */
+pf151: procedure = .int
+  arg expose av = .int[], n = .int
+  d = toint(av[1])
+  return mkchar(c2d(substr('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', d + 1, 1)))
+  return 1
+
+/* CHAR= */
+pf152: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if cext[av[i]] <> cext[av[i + 1]] then return 1
+  end
+  return 2
+  return 1
+
+/* CHAR/= */
+pf153: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(cext[av[1]] <> cext[av[2]])
+  return 1
+
+/* CHAR< */
+pf154: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if cext[av[i]] >= cext[av[i + 1]] then return 1
+  end
+  return 2
+  return 1
+
+/* CHAR> */
+pf155: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if cext[av[i]] <= cext[av[i + 1]] then return 1
+  end
+  return 2
+  return 1
+
+/* CHAR<= */
+pf156: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if cext[av[i]] > cext[av[i + 1]] then return 1
+  end
+  return 2
+  return 1
+
+/* CHAR>= */
+pf157: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if cext[av[i]] < cext[av[i + 1]] then return 1
+  end
+  return 2
+  return 1
+
+/* CHAR-EQUAL */
+pf158: procedure = .int
+  arg expose av = .int[], n = .int
+  do i = 1 to n - 1
+    if upper(d2c(cext[av[i]])) <> upper(d2c(cext[av[i + 1]])) then return 1
+  end
+  return 2
+  return 1
+
+/* STRING */
+pf159: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(strof(av[1]))
+  return 1
+
+/* STRING= */
+pf160: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(strof(av[1]) == strof(av[2]))
+  return 1
+
+/* STRING-EQUAL */
+pf161: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(upper(strof(av[1])) == upper(strof(av[2])))
+  return 1
+
+/* STRING< */
+pf162: procedure = .int
+  arg expose av = .int[], n = .int
+  if strcmp(strof(av[1]), strof(av[2])) < 0 then return 2
+  return 1
+  return 1
+
+/* STRING> */
+pf163: procedure = .int
+  arg expose av = .int[], n = .int
+  if strcmp(strof(av[1]), strof(av[2])) > 0 then return 2
+  return 1
+  return 1
+
+/* STRING<= */
+pf164: procedure = .int
+  arg expose av = .int[], n = .int
+  if strcmp(strof(av[1]), strof(av[2])) <= 0 then return 2
+  return 1
+  return 1
+
+/* STRING>= */
+pf165: procedure = .int
+  arg expose av = .int[], n = .int
+  if strcmp(strof(av[1]), strof(av[2])) >= 0 then return 2
+  return 1
+  return 1
+
+/* STRING-LESSP */
+pf166: procedure = .int
+  arg expose av = .int[], n = .int
+  if strcmp(upper(strof(av[1])), upper(strof(av[2]))) < 0 then return 2
+  return 1
+  return 1
+
+/* STRING-GREATERP */
+pf167: procedure = .int
+  arg expose av = .int[], n = .int
+  if strcmp(upper(strof(av[1])), upper(strof(av[2]))) > 0 then return 2
+  return 1
+  return 1
+
+/* STRING-UPCASE */
+pf168: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(upper(strof(av[1])))
+  return 1
+
+/* STRING-DOWNCASE */
+pf169: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(lower(strof(av[1])))
+  return 1
+
+/* STRING-CAPITALIZE */
+pf170: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(capitalize(strof(av[1])))
+  return 1
+
+/* STRING-TRIM STRING-LEFT-TRIM STRING-RIGHT-TRIM */
+pf171: procedure = .int
+  arg expose av = .int[], n = .int
+  chars = strof(av[1])
+  s = strof(av[2])
+  nm = cstr[curfn]
+  if nm <> 'STRING-RIGHT-TRIM' then do
+    do while length(s) > 0 & pos(left(s, 1), chars) > 0
+      s = substr(s, 2)
+    end
+  end
+  if nm <> 'STRING-LEFT-TRIM' then do
+    do while length(s) > 0 & pos(right(s, 1), chars) > 0
+      s = left(s, length(s) - 1)
+    end
+  end
+  return mkstr(s)
+  return 1
+
+/* MAKE-STRING */
+pf172: procedure = .int
+  arg expose av = .int[], n = .int
+  c = ' '
+  j = kwidx(av, n, 2, 'INITIAL-ELEMENT')
+  if j > 0 then c = d2c(cext[av[j]])
+  return mkstr(copies(c, toint(av[1])))
+  return 1
+
+/* SEARCH */
+pf173: procedure = .int
+  arg expose av = .int[], n = .int
+  a = av[1]
+  b = av[2]
+  if isstring(a) = 1 & isstring(b) = 1 then do
+    p = pos(cstr[a], cstr[b])
+    if length(cstr[a]) = 0 then return mkint(0)
+    if p = 0 then return 1
+    return mkint(p - 1)
+  end
+  x = .int[]
+  y = .int[]
+  k = seq2arr(a, x)
+  m = seq2arr(b, y)
+  do i = 1 to m - k + 1
+    ok = 1
+    do j = 1 to k
+      if eql(x[j], y[i + j - 1]) = 0 then do
+        ok = 0
+        leave
+      end
+    end
+    if ok = 1 then return mkint(i - 1)
+  end
+  return 1
+  return 1
+
+/* SYMBOL-NAME */
+pf174: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(cstr[av[1]])
+  return 1
+
+/* INTERN */
+pf175: procedure = .int
+  arg expose av = .int[], n = .int
+  return intern(cstr[av[1]])
+  return 1
+
+/* MAKE-SYMBOL */
+pf176: procedure = .int
+  arg expose av = .int[], n = .int
+  c = newcell(2)
+  cstr[c] = cstr[av[1]]
+  ccar[c] = 0
+  ccdr[c] = 0
+  cspec[c] = 3
+  return c
+  return 1
+
+/* GENSYM GENTEMP */
+pf177: procedure = .int
+  arg expose av = .int[], n = .int
+  gensymn = gensymn + 1
+  c = newcell(2)
+  cstr[c] = 'G' || gensymn
+  ccar[c] = 0
+  ccdr[c] = 0
+  cspec[c] = 3
+  return c
+  return 1
+
+/* SYMBOL-VALUE */
+pf178: procedure = .int
+  arg expose av = .int[], n = .int
+  v = ccar[av[1]]
+  if v = 0 then return lerrk('UNBOUND-VARIABLE', 'the variable ' || cstr[av[1]] || ' is unbound')
+  return v
+  return 1
+
+/* SYMBOL-FUNCTION FDEFINITION */
+pf179: procedure = .int
+  arg expose av = .int[], n = .int
+  return fnof(av[1])
+  return 1
+
+/* SET */
+pf180: procedure = .int
+  arg expose av = .int[], n = .int
+  ccar[av[1]] = av[2]
+  return av[2]
+  return 1
+
+/* BOUNDP */
+pf181: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(ccar[av[1]] <> 0)
+  return 1
+
+/* FBOUNDP */
+pf182: procedure = .int
+  arg expose av = .int[], n = .int
+  f = ccdr[av[1]]
+  return truth(f > 1)
+  return 1
+
+/* MAKUNBOUND */
+pf183: procedure = .int
+  arg expose av = .int[], n = .int
+  ccar[av[1]] = 0
+  return av[1]
+  return 1
+
+/* GET */
+pf184: procedure = .int
+  arg expose av = .int[], n = .int
+  v = getprop(av[1], av[2])
+  if v = 1 & n = 3 then return av[3]
+  return v
+  return 1
+
+/* TYPEP */
+pf185: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(typep(av[1], av[2]))
+  return 1
+
+/* TYPE-OF */
+pf186: procedure = .int
+  arg expose av = .int[], n = .int
+  return lobjtype(av[1])
+  return 1
+
+/* MAKE-HASH-TABLE */
+pf187: procedure = .int
+  arg expose av = .int[], n = .int
+  mode = '0'
+  j = kwidx(av, n, 1, 'TEST')
+  if j > 0 then do
+    nm = cstr[av[j]]
+    if nm = 'EQUAL' then mode = '1'
+    else if nm = 'EQUALP' then mode = '2'
+    else if nm = 'EQL' | nm = 'EQ' then mode = '0'
+    else do
+      if av[j] > 0 then do
+        if ctag[av[j]] = 5 then do
+          nm = cstr[av[j]]
+          if nm = 'EQUAL' then mode = '1'
+          if nm = 'EQUALP' then mode = '2'
+        end
+      end
+    end
+  end
+  return mkhash(mode)
+  return 1
+
+/* GETHASH */
+pf188: procedure = .int
+  arg expose av = .int[], n = .int
+  e = htfind(av[2], av[1])
+  if e = 0 then do
+    mvlist = list2(1, 1)
+    if n = 3 then return av[3]
+    return 1
+  end
+  mvlist = list2(htv[e], 2)
+  return htv[e]
+  return 1
+
+/* REMHASH */
+pf189: procedure = .int
+  arg expose av = .int[], n = .int
+  return truth(htrem(av[2], av[1]))
+  return 1
+
+/* CLRHASH */
+pf190: procedure = .int
+  arg expose av = .int[], n = .int
+  call htclear av[1]
+  return av[1]
+  return 1
+
+/* HASH-TABLE-COUNT */
+pf191: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkint(ccdr[av[1]])
+  return 1
+
+/* MAPHASH */
+pf192: procedure = .int
+  arg expose av = .int[], n = .int
+  fn = fnof(av[1])
+  if unw <> 0 then return 1
+  ks = .int[]
+  vs = .int[]
+  e = ccar[av[2]]
+  k = 0
+  do while e <> 0
+    k = k + 1
+    ks[k] = htk[e]
+    vs[k] = htv[e]
+    e = hto[e]
+  end
+  do i = 1 to k
+    junk = call2(fn, ks[i], vs[i])
+    if unw <> 0 then return 1
+  end
+  return 1
+  return 1
+
+/* HASH-TABLE-KEYS */
+pf193: procedure = .int
+  arg expose av = .int[], n = .int
+  r = 1
+  e = ccar[av[1]]
+  do while e <> 0
+    r = cons(htk[e], r)
+    e = hto[e]
+  end
+  return nreverse(r)
+  return 1
+
+/* HASH-TABLE-VALUES */
+pf194: procedure = .int
+  arg expose av = .int[], n = .int
+  r = 1
+  e = ccar[av[1]]
+  do while e <> 0
+    r = cons(htv[e], r)
+    e = hto[e]
+  end
+  return nreverse(r)
+  return 1
+
+/* ERROR */
+pf195: procedure = .int
+  arg expose av = .int[], n = .int
+  if isstring(av[1]) = 0 then do
+    return lerror(printobj(av[1], 0))
+  end
+  return lerror(formatargs(av, 1, n))
+  return 1
+
+/* WARN */
+pf196: procedure = .int
+  arg expose av = .int[], n = .int
+  call freshline
+  call emit 'WARNING: ' || formatargs(av, 1, n) || '0a'x
+  return 1
+  return 1
+
+/* %MKSTRUCT */
+pf197: procedure = .int
+  arg expose av = .int[], n = .int
+  ty = ccar[curfn]
+  slots = ccdr[ty]
+  dfl = ccar[ty]
+  cnt = listlen(slots)
+  base = nvdat + 1
+  nvdat = nvdat + cnt
+  inst = newcell(11)
+  ccar[inst] = ty
+  cext[inst] = base
+  ccdr[inst] = cnt
+  i = 0
+  do while iscons(slots) = 1
+    j = kwidx(av, n, 1, cstr[ccar[slots]])
+    if j > 0 then vdat[base + i] = av[j]
+    else do
+      vdat[base + i] = eval(ccar[dfl], 1)
+      if unw <> 0 then return 1
+    end
+    i = i + 1
+    slots = ccdr[slots]
+    dfl = ccdr[dfl]
+  end
+  return inst
+  return 1
+
+/* %STRUCTP */
+pf198: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x > 0 then do
+    if ctag[x] = 11 then do
+      if ccar[x] = ccar[curfn] then return 2
+    end
+  end
+  return 1
+  return 1
+
+/* %STRUCTGET */
+pf199: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  if x <= 0 then return lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a ' || cstr[ccdr[curfn]])
+  if ctag[x] <> 11 then return lerrk('TYPE-ERROR', 'the value ' || printobj(x, 1) || ' is not a ' || cstr[ccdr[curfn]])
+  return vdat[cext[x] + intval(ccar[curfn])]
+  return 1
+
+/* %COPYSTRUCT */
+pf200: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  inst = newcell(11)
+  ccar[inst] = ccar[x]
+  ccdr[inst] = ccdr[x]
+  cext[inst] = nvdat + 1
+  do i = 0 to ccdr[x] - 1
+    nvdat = nvdat + 1
+    vdat[nvdat] = vdat[cext[x] + i]
+  end
+  return inst
+  return 1
+
+/* PRINT */
+pf201: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit '0a'x || printobj(av[1], 1) || ' '
+  return av[1]
+  return 1
+
+/* PRIN1 */
+pf202: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit printobj(av[1], 1)
+  return av[1]
+  return 1
+
+/* PRINC */
+pf203: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit printobj(av[1], 0)
+  return av[1]
+  return 1
+
+/* WRITE */
+pf204: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit printobj(av[1], 1)
+  return av[1]
+  return 1
+
+/* TERPRI */
+pf205: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit '0a'x
+  return 1
+  return 1
+
+/* FRESH-LINE */
+pf206: procedure = .int
+  arg expose av = .int[], n = .int
+  call freshline
+  return 1
+  return 1
+
+/* WRITE-STRING WRITE-LINE */
+pf207: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit strof(av[1])
+  if cstr[curfn] = 'WRITE-LINE' then call emit '0a'x
+  return av[1]
+  return 1
+
+/* WRITE-CHAR */
+pf208: procedure = .int
+  arg expose av = .int[], n = .int
+  call emit d2c(cext[av[1]])
+  return av[1]
+  return 1
+
+/* FORMAT */
+pf209: procedure = .int
+  arg expose av = .int[], n = .int
+  dest = av[1]
+  if isstring(dest) = 1 then do
+    s = formatargs(av, 1, n)
+    if unw <> 0 then return 1
+    call emit s
+    return 1
+  end
+  s = formatargs(av, 2, n)
+  if unw <> 0 then return 1
+  if dest = 1 then return mkstr(s)
+  call emit s
+  return 1
+  return 1
+
+/* PRINC-TO-STRING */
+pf210: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(printobj(av[1], 0))
+  return 1
+
+/* PRIN1-TO-STRING WRITE-TO-STRING */
+pf211: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkstr(printobj(av[1], 1))
+  return 1
+
+/* READ-LINE */
+pf212: procedure = .int
+  arg expose av = .int[], n = .int
+  if lines() = 0 then do
+    if n >= 3 then do
+      if av[2] = 1 then return av[3]
+    end
+    if n >= 2 then do
+      if av[2] <> 1 then return lerror('end of file on standard input')
+    end
+    return 1
+  end
+  return mkstr(linein())
+  return 1
+
+/* READ-FROM-STRING READ */
+pf213: procedure = .int
+  arg expose av = .int[], n = .int
+  txt = ''
+  if cstr[curfn] = 'READ' then do
+    if lines() = 0 then return 1
+    txt = linein()
+  end
+  else do
+    txt = strof(av[1])
+  end
+  osrc = src
+  orp = rp
+  orl = rlen
+  src = txt
+  rp = 1
+  rlen = length(txt)
+  x = readobj()
+  src = osrc
+  rp = orp
+  rlen = orl
+  if x = 0 then return 1
+  return x
+  return 1
+
+/* EVAL */
+pf214: procedure = .int
+  arg expose av = .int[], n = .int
+  return eval(av[1], 1)
+  return 1
+
+/* LOAD */
+pf215: procedure = .int
+  arg expose av = .int[], n = .int
+  rc = loadfile(strof(av[1]))
+  if rc <> 0 then return 1
+  return 2
+  return 1
+
+/* MACROEXPAND-1 MACROEXPAND */
+pf216: procedure = .int
+  arg expose av = .int[], n = .int
+  x = av[1]
+  do forever
+    nx = macroexp1(x)
+    if unw <> 0 then return 1
+    if nx = 0 then return x
+    x = nx
+    if cstr[curfn] = 'MACROEXPAND-1' then return x
+  end
+  return x
+  return 1
+
+/* FINISH-OUTPUT FORCE-OUTPUT GC ROOM */
+pf217: procedure = .int
+  arg expose av = .int[], n = .int
+  return 1
+  return 1
+
+/* GET-UNIVERSAL-TIME */
+pf218: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkint(time('S') as .int)
+  return 1
+
+/* GET-INTERNAL-REAL-TIME GET-INTERNAL-RUN-TIME */
+pf219: procedure = .int
+  arg expose av = .int[], n = .int
+  return mkint(time('US') as .int / 1000)
+  return 1
+
+/* SLEEP */
+pf220: procedure = .int
+  arg expose av = .int[], n = .int
+  return 1
+  return 1
+
+/* EXIT QUIT BYE */
+pf221: procedure = .int
+  arg expose av = .int[], n = .int
+  call freshline
+  rc = 0
+  if n = 1 then do
+    if av[1] < 0 then rc = intval(av[1])
+  end
+  exit rc
+  return 1
+  return 1
+
+/* SYMBOL-PLIST */
+pf222: procedure = .int
+  arg expose av = .int[], n = .int
+  if cpl[av[1]] = 0 then return 1
+  return cpl[av[1]]
+  return 1
+
+/* PROVIDE REQUIRE */
+pf223: procedure = .int
+  arg expose av = .int[], n = .int
+  return 1
+  return 1
+
+primg0: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 1 then return pf1(av, n)
+  if id = 2 then return pf2(av, n)
+  if id = 3 then return pf3(av, n)
+  if id = 4 then return pf4(av, n)
+  if id = 5 then return pf5(av, n)
+  if id = 6 then return pf6(av, n)
+  if id = 7 then return pf7(av, n)
+  if id = 8 then return pf8(av, n)
+  if id = 9 then return pf9(av, n)
+  if id = 10 then return pf10(av, n)
+  if id = 11 then return pf11(av, n)
+  if id = 12 then return pf12(av, n)
+  if id = 13 then return pf13(av, n)
+  if id = 14 then return pf14(av, n)
+  if id = 15 then return pf15(av, n)
+  if id = 16 then return pf16(av, n)
+  if id = 17 then return pf17(av, n)
+  if id = 18 then return pf18(av, n)
+  if id = 19 then return pf19(av, n)
+  if id = 20 then return pf20(av, n)
+  if id = 21 then return pf21(av, n)
+  if id = 22 then return pf22(av, n)
+  if id = 23 then return pf23(av, n)
+  if id = 24 then return pf24(av, n)
+  if id = 25 then return pf25(av, n)
+  if id = 26 then return pf26(av, n)
+  if id = 27 then return pf27(av, n)
+  if id = 28 then return pf28(av, n)
+  if id = 29 then return pf29(av, n)
+  if id = 30 then return pf30(av, n)
+  return 1
+
+primg1: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 31 then return pf31(av, n)
+  if id = 32 then return pf32(av, n)
+  if id = 33 then return pf33(av, n)
+  if id = 34 then return pf34(av, n)
+  if id = 35 then return pf35(av, n)
+  if id = 36 then return pf36(av, n)
+  if id = 37 then return pf37(av, n)
+  if id = 38 then return pf38(av, n)
+  if id = 39 then return pf39(av, n)
+  if id = 40 then return pf40(av, n)
+  if id = 41 then return pf41(av, n)
+  if id = 42 then return pf42(av, n)
+  if id = 43 then return pf43(av, n)
+  if id = 44 then return pf44(av, n)
+  if id = 45 then return pf45(av, n)
+  if id = 46 then return pf46(av, n)
+  if id = 47 then return pf47(av, n)
+  if id = 48 then return pf48(av, n)
+  if id = 49 then return pf49(av, n)
+  if id = 50 then return pf50(av, n)
+  if id = 51 then return pf51(av, n)
+  if id = 52 then return pf52(av, n)
+  if id = 53 then return pf53(av, n)
+  if id = 54 then return pf54(av, n)
+  if id = 55 then return pf55(av, n)
+  if id = 56 then return pf56(av, n)
+  if id = 57 then return pf57(av, n)
+  if id = 58 then return pf58(av, n)
+  if id = 59 then return pf59(av, n)
+  if id = 60 then return pf60(av, n)
+  return 1
+
+primg2: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 61 then return pf61(av, n)
+  if id = 62 then return pf62(av, n)
+  if id = 63 then return pf63(av, n)
+  if id = 64 then return pf64(av, n)
+  if id = 65 then return pf65(av, n)
+  if id = 66 then return pf66(av, n)
+  if id = 67 then return pf67(av, n)
+  if id = 68 then return pf68(av, n)
+  if id = 69 then return pf69(av, n)
+  if id = 70 then return pf70(av, n)
+  if id = 71 then return pf71(av, n)
+  if id = 72 then return pf72(av, n)
+  if id = 73 then return pf73(av, n)
+  if id = 74 then return pf74(av, n)
+  if id = 75 then return pf75(av, n)
+  if id = 76 then return pf76(av, n)
+  if id = 77 then return pf77(av, n)
+  if id = 78 then return pf78(av, n)
+  if id = 79 then return pf79(av, n)
+  if id = 80 then return pf80(av, n)
+  if id = 81 then return pf81(av, n)
+  if id = 82 then return pf82(av, n)
+  if id = 83 then return pf83(av, n)
+  if id = 84 then return pf84(av, n)
+  if id = 85 then return pf85(av, n)
+  if id = 86 then return pf86(av, n)
+  if id = 87 then return pf87(av, n)
+  if id = 88 then return pf88(av, n)
+  if id = 89 then return pf89(av, n)
+  if id = 90 then return pf90(av, n)
+  return 1
+
+primg3: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 91 then return pf91(av, n)
+  if id = 92 then return pf92(av, n)
+  if id = 93 then return pf93(av, n)
+  if id = 94 then return pf94(av, n)
+  if id = 95 then return pf95(av, n)
+  if id = 96 then return pf96(av, n)
+  if id = 97 then return pf97(av, n)
+  if id = 98 then return pf98(av, n)
+  if id = 99 then return pf99(av, n)
+  if id = 100 then return pf100(av, n)
+  if id = 101 then return pf101(av, n)
+  if id = 102 then return pf102(av, n)
+  if id = 103 then return pf103(av, n)
+  if id = 104 then return pf104(av, n)
+  if id = 105 then return pf105(av, n)
+  if id = 106 then return pf106(av, n)
+  if id = 107 then return pf107(av, n)
+  if id = 108 then return pf108(av, n)
+  if id = 109 then return pf109(av, n)
+  if id = 110 then return pf110(av, n)
+  if id = 111 then return pf111(av, n)
+  if id = 112 then return pf112(av, n)
+  if id = 113 then return pf113(av, n)
+  if id = 114 then return pf114(av, n)
+  if id = 115 then return pf115(av, n)
+  if id = 116 then return pf116(av, n)
+  if id = 117 then return pf117(av, n)
+  if id = 118 then return pf118(av, n)
+  if id = 119 then return pf119(av, n)
+  if id = 120 then return pf120(av, n)
+  return 1
+
+primg4: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 121 then return pf121(av, n)
+  if id = 122 then return pf122(av, n)
+  if id = 123 then return pf123(av, n)
+  if id = 124 then return pf124(av, n)
+  if id = 125 then return pf125(av, n)
+  if id = 126 then return pf126(av, n)
+  if id = 127 then return pf127(av, n)
+  if id = 128 then return pf128(av, n)
+  if id = 129 then return pf129(av, n)
+  if id = 130 then return pf130(av, n)
+  if id = 131 then return pf131(av, n)
+  if id = 132 then return pf132(av, n)
+  if id = 133 then return pf133(av, n)
+  if id = 134 then return pf134(av, n)
+  if id = 135 then return pf135(av, n)
+  if id = 136 then return pf136(av, n)
+  if id = 137 then return pf137(av, n)
+  if id = 138 then return pf138(av, n)
+  if id = 139 then return pf139(av, n)
+  if id = 140 then return pf140(av, n)
+  if id = 141 then return pf141(av, n)
+  if id = 142 then return pf142(av, n)
+  if id = 143 then return pf143(av, n)
+  if id = 144 then return pf144(av, n)
+  if id = 145 then return pf145(av, n)
+  if id = 146 then return pf146(av, n)
+  if id = 147 then return pf147(av, n)
+  if id = 148 then return pf148(av, n)
+  if id = 149 then return pf149(av, n)
+  if id = 150 then return pf150(av, n)
+  return 1
+
+primg5: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 151 then return pf151(av, n)
+  if id = 152 then return pf152(av, n)
+  if id = 153 then return pf153(av, n)
+  if id = 154 then return pf154(av, n)
+  if id = 155 then return pf155(av, n)
+  if id = 156 then return pf156(av, n)
+  if id = 157 then return pf157(av, n)
+  if id = 158 then return pf158(av, n)
+  if id = 159 then return pf159(av, n)
+  if id = 160 then return pf160(av, n)
+  if id = 161 then return pf161(av, n)
+  if id = 162 then return pf162(av, n)
+  if id = 163 then return pf163(av, n)
+  if id = 164 then return pf164(av, n)
+  if id = 165 then return pf165(av, n)
+  if id = 166 then return pf166(av, n)
+  if id = 167 then return pf167(av, n)
+  if id = 168 then return pf168(av, n)
+  if id = 169 then return pf169(av, n)
+  if id = 170 then return pf170(av, n)
+  if id = 171 then return pf171(av, n)
+  if id = 172 then return pf172(av, n)
+  if id = 173 then return pf173(av, n)
+  if id = 174 then return pf174(av, n)
+  if id = 175 then return pf175(av, n)
+  if id = 176 then return pf176(av, n)
+  if id = 177 then return pf177(av, n)
+  if id = 178 then return pf178(av, n)
+  if id = 179 then return pf179(av, n)
+  if id = 180 then return pf180(av, n)
+  return 1
+
+primg6: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 181 then return pf181(av, n)
+  if id = 182 then return pf182(av, n)
+  if id = 183 then return pf183(av, n)
+  if id = 184 then return pf184(av, n)
+  if id = 185 then return pf185(av, n)
+  if id = 186 then return pf186(av, n)
+  if id = 187 then return pf187(av, n)
+  if id = 188 then return pf188(av, n)
+  if id = 189 then return pf189(av, n)
+  if id = 190 then return pf190(av, n)
+  if id = 191 then return pf191(av, n)
+  if id = 192 then return pf192(av, n)
+  if id = 193 then return pf193(av, n)
+  if id = 194 then return pf194(av, n)
+  if id = 195 then return pf195(av, n)
+  if id = 196 then return pf196(av, n)
+  if id = 197 then return pf197(av, n)
+  if id = 198 then return pf198(av, n)
+  if id = 199 then return pf199(av, n)
+  if id = 200 then return pf200(av, n)
+  if id = 201 then return pf201(av, n)
+  if id = 202 then return pf202(av, n)
+  if id = 203 then return pf203(av, n)
+  if id = 204 then return pf204(av, n)
+  if id = 205 then return pf205(av, n)
+  if id = 206 then return pf206(av, n)
+  if id = 207 then return pf207(av, n)
+  if id = 208 then return pf208(av, n)
+  if id = 209 then return pf209(av, n)
+  if id = 210 then return pf210(av, n)
+  return 1
+
+primg7: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  if id = 211 then return pf211(av, n)
+  if id = 212 then return pf212(av, n)
+  if id = 213 then return pf213(av, n)
+  if id = 214 then return pf214(av, n)
+  if id = 215 then return pf215(av, n)
+  if id = 216 then return pf216(av, n)
+  if id = 217 then return pf217(av, n)
+  if id = 218 then return pf218(av, n)
+  if id = 219 then return pf219(av, n)
+  if id = 220 then return pf220(av, n)
+  if id = 221 then return pf221(av, n)
+  if id = 222 then return pf222(av, n)
+  if id = 223 then return pf223(av, n)
+  return 1
+
+callprim: procedure = .int
+  arg id = .int, expose av = .int[], n = .int
+  g = (id - 1) / 30
+  if g = 0 then return primg0(id, av, n)
+  if g = 1 then return primg1(id, av, n)
+  if g = 2 then return primg2(id, av, n)
+  if g = 3 then return primg3(id, av, n)
+  if g = 4 then return primg4(id, av, n)
+  if g = 5 then return primg5(id, av, n)
+  if g = 6 then return primg6(id, av, n)
+  if g = 7 then return primg7(id, av, n)
+  return 1
+
+initprims: procedure = .void
+  call registerprim 'CAR', 1, 1, 1
+  call registerprim 'CDR', 2, 1, 1
+  call registerprim 'CONS', 3, 2, 2
+  call registerprim '+', 4, 0, -1
+  call registerprim '-', 5, 1, -1
+  call registerprim '*', 6, 0, -1
+  call registerprim '/', 7, 1, -1
+  call registerprim '=', 8, 1, -1
+  call registerprim '<', 9, 1, -1
+  call registerprim '>', 10, 1, -1
+  call registerprim '<=', 11, 1, -1
+  call registerprim '>=', 12, 1, -1
+  call registerprim '/=', 13, 2, 2
+  call registerprim '1+', 14, 1, 1
+  call registerprim '1-', 15, 1, 1
+  call registerprim 'NULL', 16, 1, 1
+  call registerprim 'NOT', 16, 1, 1
+  call registerprim 'EQ', 17, 2, 2
+  call registerprim 'EQL', 18, 2, 2
+  call registerprim 'EQUAL', 19, 2, 2
+  call registerprim 'EQUALP', 20, 2, 2
+  call registerprim 'LIST', 21, 0, -1
+  call registerprim 'LIST*', 22, 1, -1
+  call registerprim 'ATOM', 23, 1, 1
+  call registerprim 'CONSP', 24, 1, 1
+  call registerprim 'LISTP', 25, 1, 1
+  call registerprim 'SYMBOLP', 26, 1, 1
+  call registerprim 'STRINGP', 27, 1, 1
+  call registerprim 'NUMBERP', 28, 1, 1
+  call registerprim 'REALP', 28, 1, 1
+  call registerprim 'INTEGERP', 29, 1, 1
+  call registerprim 'RATIONALP', 29, 1, 1
+  call registerprim 'FLOATP', 30, 1, 1
+  call registerprim 'CHARACTERP', 31, 1, 1
+  call registerprim 'FUNCTIONP', 32, 1, 1
+  call registerprim 'VECTORP', 33, 1, 1
+  call registerprim 'ARRAYP', 34, 1, 1
+  call registerprim 'SIMPLE-VECTOR-P', 34, 1, 1
+  call registerprim 'HASH-TABLE-P', 35, 1, 1
+  call registerprim 'KEYWORDP', 36, 1, 1
+  call registerprim 'ZEROP', 37, 1, 1
+  call registerprim 'PLUSP', 38, 1, 1
+  call registerprim 'MINUSP', 39, 1, 1
+  call registerprim 'EVENP', 40, 1, 1
+  call registerprim 'ODDP', 41, 1, 1
+  call registerprim 'FIRST', 42, 1, 1
+  call registerprim 'REST', 43, 1, 1
+  call registerprim 'CAAR', 44, 1, 1
+  call registerprim 'CADR', 44, 1, 1
+  call registerprim 'CDAR', 44, 1, 1
+  call registerprim 'CDDR', 44, 1, 1
+  call registerprim 'CAAAR', 44, 1, 1
+  call registerprim 'CAADR', 44, 1, 1
+  call registerprim 'CADAR', 44, 1, 1
+  call registerprim 'CADDR', 44, 1, 1
+  call registerprim 'CDAAR', 44, 1, 1
+  call registerprim 'CDADR', 44, 1, 1
+  call registerprim 'CDDAR', 44, 1, 1
+  call registerprim 'CDDDR', 44, 1, 1
+  call registerprim 'CADDDR', 44, 1, 1
+  call registerprim 'CDDDDR', 44, 1, 1
+  call registerprim 'SECOND', 45, 1, 1
+  call registerprim 'THIRD', 46, 1, 1
+  call registerprim 'FOURTH', 47, 1, 1
+  call registerprim 'FIFTH', 48, 1, 1
+  call registerprim 'NTH', 49, 2, 2
+  call registerprim 'NTHCDR', 50, 2, 2
+  call registerprim 'LENGTH', 51, 1, 1
+  call registerprim 'APPEND', 52, 0, -1
+  call registerprim 'NCONC', 53, 0, -1
+  call registerprim 'REVERSE', 54, 1, 1
+  call registerprim 'NREVERSE', 55, 1, 1
+  call registerprim 'LAST', 56, 1, 2
+  call registerprim 'BUTLAST', 57, 1, 2
+  call registerprim 'COPY-LIST', 58, 1, 1
+  call registerprim 'COPY-TREE', 59, 1, 1
+  call registerprim 'LIST-LENGTH', 60, 1, 1
+  call registerprim 'IDENTITY', 61, 1, 1
+  call registerprim 'FUNCALL', 62, 1, -1
+  call registerprim 'APPLY', 63, 1, -1
+  call registerprim 'VALUES', 64, 0, -1
+  call registerprim 'VALUES-LIST', 65, 1, 1
+  call registerprim 'ASSOC', 66, 2, -1
+  call registerprim 'RASSOC', 67, 2, -1
+  call registerprim 'MEMBER', 68, 2, -1
+  call registerprim 'MEMQ', 69, 2, 2
+  call registerprim 'ADJOIN', 70, 2, -1
+  call registerprim 'ACONS', 71, 3, 3
+  call registerprim 'PAIRLIS', 72, 2, 3
+  call registerprim 'GETF', 73, 2, 3
+  call registerprim 'MAKE-LIST', 74, 1, -1
+  call registerprim 'SUBST', 75, 3, 3
+  call registerprim 'TREE-EQUAL', 76, 2, 2
+  call registerprim 'SET-DIFFERENCE', 77, 2, -1
+  call registerprim 'INTERSECTION', 78, 2, -1
+  call registerprim 'UNION', 79, 2, -1
+  call registerprim 'SUBSETP', 80, 2, -1
+  call registerprim 'MAPCAR', 81, 2, -1
+  call registerprim 'MAPC', 82, 2, -1
+  call registerprim 'MAPCAN', 83, 2, -1
+  call registerprim 'MAPLIST', 84, 2, 2
+  call registerprim 'MAP', 85, 3, -1
+  call registerprim 'REDUCE', 86, 2, -1
+  call registerprim 'REMOVE', 87, 2, -1
+  call registerprim 'DELETE', 87, 2, -1
+  call registerprim 'REMOVE-IF', 88, 2, -1
+  call registerprim 'DELETE-IF', 88, 2, -1
+  call registerprim 'REMOVE-IF-NOT', 89, 2, -1
+  call registerprim 'DELETE-IF-NOT', 89, 2, -1
+  call registerprim 'REMOVE-DUPLICATES', 90, 1, -1
+  call registerprim 'DELETE-DUPLICATES', 90, 1, -1
+  call registerprim 'FIND', 91, 2, -1
+  call registerprim 'POSITION', 92, 2, -1
+  call registerprim 'FIND-IF', 93, 2, -1
+  call registerprim 'POSITION-IF', 94, 2, -1
+  call registerprim 'COUNT', 95, 2, -1
+  call registerprim 'COUNT-IF', 96, 2, -1
+  call registerprim 'SOME', 97, 2, 3
+  call registerprim 'EVERY', 98, 2, 3
+  call registerprim 'NOTANY', 99, 2, 2
+  call registerprim 'NOTEVERY', 100, 2, 2
+  call registerprim 'SORT', 101, 2, -1
+  call registerprim 'STABLE-SORT', 101, 2, -1
+  call registerprim 'ELT', 102, 2, -1
+  call registerprim 'AREF', 102, 2, -1
+  call registerprim 'SVREF', 102, 2, -1
+  call registerprim 'CHAR', 102, 2, -1
+  call registerprim 'SCHAR', 102, 2, -1
+  call registerprim 'SUBSEQ', 103, 2, 3
+  call registerprim 'COPY-SEQ', 104, 1, 1
+  call registerprim 'VECTOR', 105, 0, -1
+  call registerprim 'MAKE-ARRAY', 106, 1, -1
+  call registerprim 'VECTOR-PUSH', 107, 2, 2
+  call registerprim 'VECTOR-PUSH-EXTEND', 108, 2, 3
+  call registerprim 'VECTOR-POP', 109, 1, 1
+  call registerprim 'FILL', 110, 2, -1
+  call registerprim 'CONCATENATE', 111, 1, -1
+  call registerprim 'COERCE', 112, 2, 2
+  call registerprim 'MAX', 113, 1, -1
+  call registerprim 'MIN', 114, 1, -1
+  call registerprim 'ABS', 115, 1, 1
+  call registerprim 'SIGNUM', 116, 1, 1
+  call registerprim 'FLOOR', 117, 1, 2
+  call registerprim 'CEILING', 118, 1, 2
+  call registerprim 'TRUNCATE', 119, 1, 2
+  call registerprim 'ROUND', 120, 1, 2
+  call registerprim 'MOD', 121, 2, 2
+  call registerprim 'REM', 122, 2, 2
+  call registerprim 'SQRT', 123, 1, 1
+  call registerprim 'ISQRT', 124, 1, 1
+  call registerprim 'EXP', 125, 1, 1
+  call registerprim 'LOG', 126, 1, 2
+  call registerprim 'SIN', 127, 1, 1
+  call registerprim 'COS', 128, 1, 1
+  call registerprim 'TAN', 129, 1, 1
+  call registerprim 'ATAN', 130, 1, 2
+  call registerprim 'EXPT', 131, 2, 2
+  call registerprim 'FLOAT', 132, 1, 2
+  call registerprim 'GCD', 133, 0, -1
+  call registerprim 'LCM', 134, 0, -1
+  call registerprim 'RANDOM', 135, 1, 2
+  call registerprim 'ASH', 136, 2, 2
+  call registerprim 'LOGAND', 137, 0, -1
+  call registerprim 'LOGIOR', 138, 0, -1
+  call registerprim 'LOGXOR', 139, 0, -1
+  call registerprim 'LOGNOT', 140, 1, 1
+  call registerprim 'PARSE-INTEGER', 141, 1, -1
+  call registerprim 'CHAR-CODE', 142, 1, 1
+  call registerprim 'CHAR-INT', 142, 1, 1
+  call registerprim 'CODE-CHAR', 143, 1, 1
+  call registerprim 'CHAR-UPCASE', 144, 1, 1
+  call registerprim 'CHAR-DOWNCASE', 145, 1, 1
+  call registerprim 'ALPHA-CHAR-P', 146, 1, 1
+  call registerprim 'DIGIT-CHAR-P', 147, 1, 2
+  call registerprim 'ALPHANUMERICP', 148, 1, 1
+  call registerprim 'UPPER-CASE-P', 149, 1, 1
+  call registerprim 'LOWER-CASE-P', 150, 1, 1
+  call registerprim 'DIGIT-CHAR', 151, 1, 2
+  call registerprim 'CHAR=', 152, 1, -1
+  call registerprim 'CHAR/=', 153, 2, 2
+  call registerprim 'CHAR<', 154, 1, -1
+  call registerprim 'CHAR>', 155, 1, -1
+  call registerprim 'CHAR<=', 156, 1, -1
+  call registerprim 'CHAR>=', 157, 1, -1
+  call registerprim 'CHAR-EQUAL', 158, 1, -1
+  call registerprim 'STRING', 159, 1, 1
+  call registerprim 'STRING=', 160, 2, -1
+  call registerprim 'STRING-EQUAL', 161, 2, -1
+  call registerprim 'STRING<', 162, 2, -1
+  call registerprim 'STRING>', 163, 2, -1
+  call registerprim 'STRING<=', 164, 2, -1
+  call registerprim 'STRING>=', 165, 2, -1
+  call registerprim 'STRING-LESSP', 166, 2, -1
+  call registerprim 'STRING-GREATERP', 167, 2, -1
+  call registerprim 'STRING-UPCASE', 168, 1, 1
+  call registerprim 'STRING-DOWNCASE', 169, 1, 1
+  call registerprim 'STRING-CAPITALIZE', 170, 1, 1
+  call registerprim 'STRING-TRIM', 171, 2, 2
+  call registerprim 'STRING-LEFT-TRIM', 171, 2, 2
+  call registerprim 'STRING-RIGHT-TRIM', 171, 2, 2
+  call registerprim 'MAKE-STRING', 172, 1, -1
+  call registerprim 'SEARCH', 173, 2, -1
+  call registerprim 'SYMBOL-NAME', 174, 1, 1
+  call registerprim 'INTERN', 175, 1, 2
+  call registerprim 'MAKE-SYMBOL', 176, 1, 1
+  call registerprim 'GENSYM', 177, 0, 1
+  call registerprim 'GENTEMP', 177, 0, 1
+  call registerprim 'SYMBOL-VALUE', 178, 1, 1
+  call registerprim 'SYMBOL-FUNCTION', 179, 1, 1
+  call registerprim 'FDEFINITION', 179, 1, 1
+  call registerprim 'SET', 180, 2, 2
+  call registerprim 'BOUNDP', 181, 1, 1
+  call registerprim 'FBOUNDP', 182, 1, 1
+  call registerprim 'MAKUNBOUND', 183, 1, 1
+  call registerprim 'GET', 184, 2, 3
+  call registerprim 'TYPEP', 185, 2, 2
+  call registerprim 'TYPE-OF', 186, 1, 1
+  call registerprim 'MAKE-HASH-TABLE', 187, 0, -1
+  call registerprim 'GETHASH', 188, 2, 3
+  call registerprim 'REMHASH', 189, 2, 2
+  call registerprim 'CLRHASH', 190, 1, 1
+  call registerprim 'HASH-TABLE-COUNT', 191, 1, 1
+  call registerprim 'MAPHASH', 192, 2, 2
+  call registerprim 'HASH-TABLE-KEYS', 193, 1, 1
+  call registerprim 'HASH-TABLE-VALUES', 194, 1, 1
+  call registerprim 'ERROR', 195, 1, -1
+  call registerprim 'WARN', 196, 1, -1
+  call registerprim '%MKSTRUCT', 197, 0, -1
+  call registerprim '%STRUCTP', 198, 1, 1
+  call registerprim '%STRUCTGET', 199, 1, 1
+  call registerprim '%COPYSTRUCT', 200, 1, 1
+  call registerprim 'PRINT', 201, 1, 2
+  call registerprim 'PRIN1', 202, 1, 2
+  call registerprim 'PRINC', 203, 1, 2
+  call registerprim 'WRITE', 204, 1, -1
+  call registerprim 'TERPRI', 205, 0, 1
+  call registerprim 'FRESH-LINE', 206, 0, 1
+  call registerprim 'WRITE-STRING', 207, 1, -1
+  call registerprim 'WRITE-LINE', 207, 1, -1
+  call registerprim 'WRITE-CHAR', 208, 1, 2
+  call registerprim 'FORMAT', 209, 1, -1
+  call registerprim 'PRINC-TO-STRING', 210, 1, 1
+  call registerprim 'PRIN1-TO-STRING', 211, 1, -1
+  call registerprim 'WRITE-TO-STRING', 211, 1, -1
+  call registerprim 'READ-LINE', 212, 0, 4
+  call registerprim 'READ-FROM-STRING', 213, 1, -1
+  call registerprim 'READ', 213, 1, -1
+  call registerprim 'EVAL', 214, 1, 2
+  call registerprim 'LOAD', 215, 1, -1
+  call registerprim 'MACROEXPAND-1', 216, 1, 2
+  call registerprim 'MACROEXPAND', 216, 1, 2
+  call registerprim 'FINISH-OUTPUT', 217, 0, -1
+  call registerprim 'FORCE-OUTPUT', 217, 0, -1
+  call registerprim 'GC', 217, 0, -1
+  call registerprim 'ROOM', 217, 0, -1
+  call registerprim 'GET-UNIVERSAL-TIME', 218, 0, 0
+  call registerprim 'GET-INTERNAL-REAL-TIME', 219, 0, 0
+  call registerprim 'GET-INTERNAL-RUN-TIME', 219, 0, 0
+  call registerprim 'SLEEP', 220, 1, 1
+  call registerprim 'EXIT', 221, 0, 1
+  call registerprim 'QUIT', 221, 0, 1
+  call registerprim 'BYE', 221, 0, 1
+  call registerprim 'SYMBOL-PLIST', 222, 1, 1
+  call registerprim 'PROVIDE', 223, 0, -1
+  call registerprim 'REQUIRE', 223, 0, -1
+  return
+
+initprelude: procedure = .void
+  p = ''
+  p = p || ";;; Library code written in Lisp itself, loaded at start-up." || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun endp (x) (null x))" || '0a'x
+  p = p || "(defun complement (f) (lambda (&rest args) (not (apply f args))))" || '0a'x
+  p = p || "(defun constantly (v) (lambda (&rest args) v))" || '0a'x
+  p = p || "(defun revappend (a b) (append (reverse a) b))" || '0a'x
+  p = p || "(defun nreconc (a b) (append (nreverse a) b))" || '0a'x
+  p = p || "(defun copy-alist (al) (mapcar (lambda (p) (if (consp p) (cons (car p) (cdr p)) p)) al))" || '0a'x
+  p = p || "(defun member-if (p l) (do ((x l (cdr x))) ((null x) nil) (when (funcall p (car x)) (return x))))" || '0a'x
+  p = p || "(defun member-if-not (p l) (do ((x l (cdr x))) ((null x) nil) (unless (funcall p (car x)) (return x))))" || '0a'x
+  p = p || "(defun assoc-if (p al) (dolist (e al nil) (when (and (consp e) (funcall p (car e))) (return e))))" || '0a'x
+  p = p || "(defun find-if-not (p s) (find-if (complement p) s))" || '0a'x
+  p = p || "(defun position-if-not (p s) (position-if (complement p) s))" || '0a'x
+  p = p || "(defun count-if-not (p s) (count-if (complement p) s))" || '0a'x
+  p = p || "(defun mapcon (f l) (apply #'nconc (maplist f l)))" || '0a'x
+  p = p || "(defun sublis (al tree)" || '0a'x
+  p = p || "  (cond ((atom tree) (let ((p (assoc tree al))) (if p (cdr p) tree)))" || '0a'x
+  p = p || "        (t (cons (sublis al (car tree)) (sublis al (cdr tree))))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || ";;; ---- extended LOOP ----------------------------------------------------" || '0a'x
+  p = p || "(defvar *lp-bind* nil)" || '0a'x
+  p = p || "(defvar *lp-head* nil)" || '0a'x
+  p = p || "(defvar *lp-body* nil)" || '0a'x
+  p = p || "(defvar *lp-step* nil)" || '0a'x
+  p = p || "(defvar *lp-init* nil)" || '0a'x
+  p = p || "(defvar *lp-final* nil)" || '0a'x
+  p = p || "(defvar *lp-result* nil)" || '0a'x
+  p = p || "(defvar *lp-end* nil)" || '0a'x
+  p = p || "(defvar *lp-lacc* nil)" || '0a'x
+  p = p || "(defvar *lp-sum* nil)" || '0a'x
+  p = p || "(defvar *lp-cnt* nil)" || '0a'x
+  p = p || "(defvar *lp-max* nil)" || '0a'x
+  p = p || "(defvar *lp-min* nil)" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-word (x) (if (and x (symbolp x)) (symbol-name x) """"))" || '0a'x
+  p = p || "(defun %lp-is (x &rest names) (member (%lp-word x) names :test #'string=))" || '0a'x
+  p = p || "(defun %lp-bind (var init) (push (list var init) *lp-bind*))" || '0a'x
+  p = p || "(defun %lp-head (form) (push form *lp-head*))" || '0a'x
+  p = p || "(defun %lp-step (form) (push form *lp-step*))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-vars (pat)" || '0a'x
+  p = p || "  (cond ((null pat) nil)" || '0a'x
+  p = p || "        ((symbolp pat) (list pat))" || '0a'x
+  p = p || "        (t (append (%lp-vars (car pat)) (%lp-vars (cdr pat))))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-destr (pat expr)" || '0a'x
+  p = p || "  (cond ((null pat) nil)" || '0a'x
+  p = p || "        ((symbolp pat) (list (list 'setq pat expr)))" || '0a'x
+  p = p || "        (t (append (%lp-destr (car pat) (list 'car expr))" || '0a'x
+  p = p || "                   (%lp-destr (cdr pat) (list 'cdr expr))))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || ";; assign the pattern PAT from EXPR each iteration" || '0a'x
+  p = p || "(defun %lp-assign (pat expr)" || '0a'x
+  p = p || "  (if (symbolp pat)" || '0a'x
+  p = p || "      (%lp-head (list 'setq pat expr))" || '0a'x
+  p = p || "      (let ((e (gensym)))" || '0a'x
+  p = p || "        (%lp-bind e nil)" || '0a'x
+  p = p || "        (%lp-head (list 'setq e expr))" || '0a'x
+  p = p || "        (dolist (f (%lp-destr pat e)) (%lp-head f)))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-bindvars (pat)" || '0a'x
+  p = p || "  (dolist (v (%lp-vars pat)) (%lp-bind v nil)))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-for (cl)" || '0a'x
+  p = p || "  (let* ((var (cadr cl)) (rest (cddr cl)) (w (car rest)))" || '0a'x
+  p = p || "    (cond" || '0a'x
+  p = p || "      ((%lp-is w ""IN"")" || '0a'x
+  p = p || "       (let ((l (gensym)) (by nil))" || '0a'x
+  p = p || "         (%lp-bind l (cadr rest))" || '0a'x
+  p = p || "         (%lp-bindvars var)" || '0a'x
+  p = p || "         (setq rest (cddr rest))" || '0a'x
+  p = p || "         (when (%lp-is (car rest) ""BY"") (setq by (cadr rest)) (setq rest (cddr rest)))" || '0a'x
+  p = p || "         (%lp-head (list 'when (list 'atom l) *lp-end*))" || '0a'x
+  p = p || "         (%lp-assign var (list 'car l))" || '0a'x
+  p = p || "         (%lp-step (list 'setq l (if by (list 'funcall by l) (list 'cdr l))))" || '0a'x
+  p = p || "         rest))" || '0a'x
+  p = p || "      ((%lp-is w ""ON"")" || '0a'x
+  p = p || "       (let ((l (gensym)) (by nil))" || '0a'x
+  p = p || "         (%lp-bind l (cadr rest))" || '0a'x
+  p = p || "         (%lp-bindvars var)" || '0a'x
+  p = p || "         (setq rest (cddr rest))" || '0a'x
+  p = p || "         (when (%lp-is (car rest) ""BY"") (setq by (cadr rest)) (setq rest (cddr rest)))" || '0a'x
+  p = p || "         (%lp-head (list 'when (list 'atom l) *lp-end*))" || '0a'x
+  p = p || "         (%lp-assign var l)" || '0a'x
+  p = p || "         (%lp-step (list 'setq l (if by (list 'funcall by l) (list 'cdr l))))" || '0a'x
+  p = p || "         rest))" || '0a'x
+  p = p || "      ((%lp-is w ""ACROSS"")" || '0a'x
+  p = p || "       (let ((v (gensym)) (i (gensym)))" || '0a'x
+  p = p || "         (%lp-bind v (cadr rest))" || '0a'x
+  p = p || "         (%lp-bind i 0)" || '0a'x
+  p = p || "         (%lp-bindvars var)" || '0a'x
+  p = p || "         (%lp-head (list 'when (list '>= i (list 'length v)) *lp-end*))" || '0a'x
+  p = p || "         (%lp-assign var (list 'aref v i))" || '0a'x
+  p = p || "         (%lp-step (list 'setq i (list '1+ i)))" || '0a'x
+  p = p || "         (cddr rest)))" || '0a'x
+  p = p || "      ((%lp-is w ""="")" || '0a'x
+  p = p || "       (let ((init (cadr rest)))" || '0a'x
+  p = p || "         (setq rest (cddr rest))" || '0a'x
+  p = p || "         (cond ((%lp-is (car rest) ""THEN"")" || '0a'x
+  p = p || "                (%lp-bind var init)" || '0a'x
+  p = p || "                (%lp-step (list 'setq var (cadr rest)))" || '0a'x
+  p = p || "                (cddr rest))" || '0a'x
+  p = p || "               (t (%lp-bindvars var)" || '0a'x
+  p = p || "                  (%lp-assign var init)" || '0a'x
+  p = p || "                  rest))))" || '0a'x
+  p = p || "      ((%lp-is w ""BEING"")" || '0a'x
+  p = p || "       (let* ((kind (%lp-word (nth 2 rest)))" || '0a'x
+  p = p || "              (tbl (gensym)) (keys (gensym))" || '0a'x
+  p = p || "              (tform (nth 4 rest))" || '0a'x
+  p = p || "              (r (nthcdr 5 rest))" || '0a'x
+  p = p || "              (other nil))" || '0a'x
+  p = p || "         (%lp-bind tbl tform)" || '0a'x
+  p = p || "         (%lp-bind keys (list 'hash-table-keys tbl))" || '0a'x
+  p = p || "         (%lp-bindvars var)" || '0a'x
+  p = p || "         (when (%lp-is (car r) ""USING"")" || '0a'x
+  p = p || "           (setq other (cadr (cadr r)))" || '0a'x
+  p = p || "           (setq r (cddr r))" || '0a'x
+  p = p || "           (%lp-bindvars other))" || '0a'x
+  p = p || "         (%lp-head (list 'when (list 'atom keys) *lp-end*))" || '0a'x
+  p = p || "         (cond ((string= kind ""HASH-KEYS"")" || '0a'x
+  p = p || "                (%lp-head (list 'setq var (list 'car keys)))" || '0a'x
+  p = p || "                (when other (%lp-head (list 'setq other (list 'gethash (list 'car keys) tbl)))))" || '0a'x
+  p = p || "               (t" || '0a'x
+  p = p || "                (%lp-head (list 'setq var (list 'gethash (list 'car keys) tbl)))" || '0a'x
+  p = p || "                (when other (%lp-head (list 'setq other (list 'car keys))))))" || '0a'x
+  p = p || "         (%lp-step (list 'setq keys (list 'cdr keys)))" || '0a'x
+  p = p || "         r))" || '0a'x
+  p = p || "      (t" || '0a'x
+  p = p || "       ;; arithmetic: from/to/below/by ..." || '0a'x
+  p = p || "       (let ((start 0) (limit nil) (limkind nil) (step 1) (down nil))" || '0a'x
+  p = p || "         (do ()" || '0a'x
+  p = p || "             ((not (%lp-is (car rest) ""FROM"" ""DOWNFROM"" ""UPFROM"" ""TO"" ""UPTO"" ""BELOW""" || '0a'x
+  p = p || "                           ""DOWNTO"" ""ABOVE"" ""BY"")))" || '0a'x
+  p = p || "           (let ((k (%lp-word (car rest))) (v (cadr rest)))" || '0a'x
+  p = p || "             (cond ((string= k ""FROM"") (setq start v))" || '0a'x
+  p = p || "                   ((string= k ""UPFROM"") (setq start v))" || '0a'x
+  p = p || "                   ((string= k ""DOWNFROM"") (setq start v) (setq down t))" || '0a'x
+  p = p || "                   ((or (string= k ""TO"") (string= k ""UPTO"")) (setq limit v) (setq limkind 'le))" || '0a'x
+  p = p || "                   ((string= k ""BELOW"") (setq limit v) (setq limkind 'lt))" || '0a'x
+  p = p || "                   ((string= k ""DOWNTO"") (setq limit v) (setq limkind 'ge) (setq down t))" || '0a'x
+  p = p || "                   ((string= k ""ABOVE"") (setq limit v) (setq limkind 'gt) (setq down t))" || '0a'x
+  p = p || "                   ((string= k ""BY"") (setq step v)))" || '0a'x
+  p = p || "             (setq rest (cddr rest))))" || '0a'x
+  p = p || "         (%lp-bind var start)" || '0a'x
+  p = p || "         (when limit" || '0a'x
+  p = p || "           (let ((lim (gensym)))" || '0a'x
+  p = p || "             (%lp-bind lim limit)" || '0a'x
+  p = p || "             (%lp-head (list 'when" || '0a'x
+  p = p || "                             (cond ((eq limkind 'le) (list '> var lim))" || '0a'x
+  p = p || "                                   ((eq limkind 'lt) (list '>= var lim))" || '0a'x
+  p = p || "                                   ((eq limkind 'ge) (list '< var lim))" || '0a'x
+  p = p || "                                   (t (list '<= var lim)))" || '0a'x
+  p = p || "                             *lp-end*))))" || '0a'x
+  p = p || "         (if (numberp step)" || '0a'x
+  p = p || "             (%lp-step (list 'setq var (list (if down '- '+) var step)))" || '0a'x
+  p = p || "             (let ((stp (gensym)))" || '0a'x
+  p = p || "               (%lp-bind stp step)" || '0a'x
+  p = p || "               (%lp-step (list 'setq var (list (if down '- '+) var stp)))))" || '0a'x
+  p = p || "         rest)))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-acc-sym (kind)" || '0a'x
+  p = p || "  (cond ((string= kind ""L"") (or *lp-lacc* (progn (setq *lp-lacc* (gensym)) (%lp-bind *lp-lacc* nil) *lp-lacc*)))" || '0a'x
+  p = p || "        ((string= kind ""S"") (or *lp-sum* (progn (setq *lp-sum* (gensym)) (%lp-bind *lp-sum* 0) *lp-sum*)))" || '0a'x
+  p = p || "        ((string= kind ""C"") (or *lp-cnt* (progn (setq *lp-cnt* (gensym)) (%lp-bind *lp-cnt* 0) *lp-cnt*)))" || '0a'x
+  p = p || "        ((string= kind ""X"") (or *lp-max* (progn (setq *lp-max* (gensym)) (%lp-bind *lp-max* nil) *lp-max*)))" || '0a'x
+  p = p || "        (t (or *lp-min* (progn (setq *lp-min* (gensym)) (%lp-bind *lp-min* nil) *lp-min*)))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-setresult (r) (unless *lp-result* (setq *lp-result* r)))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || ";; parse one body clause; returns (forms . rest)" || '0a'x
+  p = p || "(defun %lp-bodyclause (cl)" || '0a'x
+  p = p || "  (let* ((w (%lp-word (car cl))) (form (cadr cl)) (rest (cddr cl)) (into nil))" || '0a'x
+  p = p || "    (cond" || '0a'x
+  p = p || "      ((member w '(""COLLECT"" ""COLLECTING"" ""APPEND"" ""APPENDING"" ""NCONC"" ""NCONCING""" || '0a'x
+  p = p || "                   ""SUM"" ""SUMMING"" ""COUNT"" ""COUNTING"" ""MAXIMIZE"" ""MAXIMISE"" ""MAXIMIZING""" || '0a'x
+  p = p || "                   ""MINIMIZE"" ""MINIMISE"" ""MINIMIZING"")" || '0a'x
+  p = p || "               :test #'string=)" || '0a'x
+  p = p || "       (when (%lp-is (car rest) ""INTO"")" || '0a'x
+  p = p || "         (setq into (cadr rest))" || '0a'x
+  p = p || "         (setq rest (cddr rest)))" || '0a'x
+  p = p || "       (let* ((kind (cond ((member w '(""COLLECT"" ""COLLECTING"") :test #'string=) ""L"")" || '0a'x
+  p = p || "                          ((member w '(""APPEND"" ""APPENDING"" ""NCONC"" ""NCONCING"") :test #'string=) ""A"")" || '0a'x
+  p = p || "                          ((member w '(""SUM"" ""SUMMING"") :test #'string=) ""S"")" || '0a'x
+  p = p || "                          ((member w '(""COUNT"" ""COUNTING"") :test #'string=) ""C"")" || '0a'x
+  p = p || "                          ((member w '(""MAXIMIZE"" ""MAXIMISE"" ""MAXIMIZING"") :test #'string=) ""X"")" || '0a'x
+  p = p || "                          (t ""N"")))" || '0a'x
+  p = p || "              (acc (if into" || '0a'x
+  p = p || "                       (progn (unless (member into (mapcar #'car *lp-bind*))" || '0a'x
+  p = p || "                                (%lp-bind into (if (member kind '(""S"" ""C"") :test #'string=) 0 nil)))" || '0a'x
+  p = p || "                              into)" || '0a'x
+  p = p || "                       (%lp-acc-sym (if (string= kind ""A"") ""L"" kind))))" || '0a'x
+  p = p || "              (forms" || '0a'x
+  p = p || "               (cond" || '0a'x
+  p = p || "                 ((string= kind ""L"")" || '0a'x
+  p = p || "                  (if into (list (list 'setq acc (list 'nconc acc (list 'list form))))" || '0a'x
+  p = p || "                      (list (list 'push form acc))))" || '0a'x
+  p = p || "                 ((string= kind ""A"")" || '0a'x
+  p = p || "                  (if into (list (list 'setq acc (list 'append acc form)))" || '0a'x
+  p = p || "                      (let ((e (gensym)))" || '0a'x
+  p = p || "                        (list (list 'dolist (list e form) (list 'push e acc))))))" || '0a'x
+  p = p || "                 ((string= kind ""S"") (list (list 'setq acc (list '+ acc form))))" || '0a'x
+  p = p || "                 ((string= kind ""C"") (list (list 'when form (list 'setq acc (list '1+ acc)))))" || '0a'x
+  p = p || "                 ((string= kind ""X"")" || '0a'x
+  p = p || "                  (let ((v (gensym)))" || '0a'x
+  p = p || "                    (list (list 'let (list (list v form))" || '0a'x
+  p = p || "                                (list 'when (list 'or (list 'null acc) (list '> v acc))" || '0a'x
+  p = p || "                                      (list 'setq acc v))))))" || '0a'x
+  p = p || "                 (t" || '0a'x
+  p = p || "                  (let ((v (gensym)))" || '0a'x
+  p = p || "                    (list (list 'let (list (list v form))" || '0a'x
+  p = p || "                                (list 'when (list 'or (list 'null acc) (list '< v acc))" || '0a'x
+  p = p || "                                      (list 'setq acc v)))))))))" || '0a'x
+  p = p || "         (unless into" || '0a'x
+  p = p || "           (%lp-setresult (if (or (string= kind ""L"") (string= kind ""A"")) (list 'nreverse acc) acc)))" || '0a'x
+  p = p || "         (cons forms rest)))" || '0a'x
+  p = p || "      ((member w '(""DO"" ""DOING"") :test #'string=)" || '0a'x
+  p = p || "       (let ((forms nil) (r (cdr cl)))" || '0a'x
+  p = p || "         (do () ((not (consp (car r))))" || '0a'x
+  p = p || "           (push (car r) forms)" || '0a'x
+  p = p || "           (setq r (cdr r)))" || '0a'x
+  p = p || "         (cons (reverse forms) r)))" || '0a'x
+  p = p || "      ((string= w ""RETURN"")" || '0a'x
+  p = p || "       (cons (list (list 'return form)) rest))" || '0a'x
+  p = p || "      ((member w '(""WHEN"" ""IF"" ""UNLESS"") :test #'string=)" || '0a'x
+  p = p || "       (let* ((r (cddr cl)) (then nil) (else nil) (p nil))" || '0a'x
+  p = p || "         (setq p (%lp-bodyclause r))" || '0a'x
+  p = p || "         (setq then (car p))" || '0a'x
+  p = p || "         (setq r (cdr p))" || '0a'x
+  p = p || "         (do () ((not (%lp-is (car r) ""AND"")))" || '0a'x
+  p = p || "           (setq p (%lp-bodyclause (cdr r)))" || '0a'x
+  p = p || "           (setq then (append then (car p)))" || '0a'x
+  p = p || "           (setq r (cdr p)))" || '0a'x
+  p = p || "         (when (%lp-is (car r) ""ELSE"")" || '0a'x
+  p = p || "           (setq p (%lp-bodyclause (cdr r)))" || '0a'x
+  p = p || "           (setq else (car p))" || '0a'x
+  p = p || "           (setq r (cdr p))" || '0a'x
+  p = p || "           (do () ((not (%lp-is (car r) ""AND"")))" || '0a'x
+  p = p || "             (setq p (%lp-bodyclause (cdr r)))" || '0a'x
+  p = p || "             (setq else (append else (car p)))" || '0a'x
+  p = p || "             (setq r (cdr p))))" || '0a'x
+  p = p || "         (when (%lp-is (car r) ""END"") (setq r (cdr r)))" || '0a'x
+  p = p || "         (cons (list (if (string= w ""UNLESS"")" || '0a'x
+  p = p || "                         (list 'if form (cons 'progn else) (cons 'progn then))" || '0a'x
+  p = p || "                         (list 'if form (cons 'progn then) (cons 'progn else))))" || '0a'x
+  p = p || "               r)))" || '0a'x
+  p = p || "      ((string= w ""WHILE"")" || '0a'x
+  p = p || "       (cons (list (list 'unless form *lp-end*)) rest))" || '0a'x
+  p = p || "      ((string= w ""UNTIL"")" || '0a'x
+  p = p || "       (cons (list (list 'when form *lp-end*)) rest))" || '0a'x
+  p = p || "      ((string= w ""ALWAYS"")" || '0a'x
+  p = p || "       (%lp-setresult t)" || '0a'x
+  p = p || "       (cons (list (list 'unless form '(return nil))) rest))" || '0a'x
+  p = p || "      ((string= w ""NEVER"")" || '0a'x
+  p = p || "       (%lp-setresult t)" || '0a'x
+  p = p || "       (cons (list (list 'when form '(return nil))) rest))" || '0a'x
+  p = p || "      ((string= w ""THEREIS"")" || '0a'x
+  p = p || "       (let ((v (gensym)))" || '0a'x
+  p = p || "         (cons (list (list 'let (list (list v form)) (list 'when v (list 'return v)))) rest)))" || '0a'x
+  p = p || "      (t (error ""LOOP: unknown clause ~S"" (car cl))))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defun %lp-expand (clauses)" || '0a'x
+  p = p || "  (setq *lp-bind* nil *lp-head* nil *lp-body* nil *lp-step* nil *lp-init* nil" || '0a'x
+  p = p || "        *lp-final* nil *lp-result* nil *lp-lacc* nil *lp-sum* nil *lp-cnt* nil" || '0a'x
+  p = p || "        *lp-max* nil *lp-min* nil)" || '0a'x
+  p = p || "  (setq *lp-end* (list '%lp-end))" || '0a'x
+  p = p || "  (let ((cl clauses))" || '0a'x
+  p = p || "    (do () ((null cl))" || '0a'x
+  p = p || "      (let ((w (%lp-word (car cl))))" || '0a'x
+  p = p || "        (cond" || '0a'x
+  p = p || "          ((string= w ""NAMED"") (setq cl (cddr cl)))" || '0a'x
+  p = p || "          ((or (string= w ""FOR"") (string= w ""AS"")) (setq cl (%lp-for cl)))" || '0a'x
+  p = p || "          ((string= w ""WITH"")" || '0a'x
+  p = p || "           (let ((var (cadr cl)) (r (cddr cl)) (init nil))" || '0a'x
+  p = p || "             (when (%lp-is (car r) ""="") (setq init (cadr r)) (setq r (cddr r)))" || '0a'x
+  p = p || "             (%lp-bind var init)" || '0a'x
+  p = p || "             (do () ((not (%lp-is (car r) ""AND"")))" || '0a'x
+  p = p || "               (setq var (cadr r))" || '0a'x
+  p = p || "               (setq r (cddr r))" || '0a'x
+  p = p || "               (setq init nil)" || '0a'x
+  p = p || "               (when (%lp-is (car r) ""="") (setq init (cadr r)) (setq r (cddr r)))" || '0a'x
+  p = p || "               (%lp-bind var init))" || '0a'x
+  p = p || "             (setq cl r)))" || '0a'x
+  p = p || "          ((string= w ""REPEAT"")" || '0a'x
+  p = p || "           (let ((n (gensym)))" || '0a'x
+  p = p || "             (%lp-bind n (cadr cl))" || '0a'x
+  p = p || "             (%lp-head (list 'when (list '<= n 0) *lp-end*))" || '0a'x
+  p = p || "             (%lp-head (list 'setq n (list '1- n)))" || '0a'x
+  p = p || "             (setq cl (cddr cl))))" || '0a'x
+  p = p || "          ((string= w ""INITIALLY"")" || '0a'x
+  p = p || "           (let ((r (cdr cl)))" || '0a'x
+  p = p || "             (do () ((not (consp (car r))))" || '0a'x
+  p = p || "               (push (car r) *lp-init*)" || '0a'x
+  p = p || "               (setq r (cdr r)))" || '0a'x
+  p = p || "             (setq cl r)))" || '0a'x
+  p = p || "          ((string= w ""FINALLY"")" || '0a'x
+  p = p || "           (let ((r (cdr cl)))" || '0a'x
+  p = p || "             (if (%lp-is (car r) ""RETURN"")" || '0a'x
+  p = p || "                 (progn (push (list 'return (cadr r)) *lp-final*) (setq r (cddr r)))" || '0a'x
+  p = p || "                 (do () ((not (consp (car r))))" || '0a'x
+  p = p || "                   (push (car r) *lp-final*)" || '0a'x
+  p = p || "                   (setq r (cdr r))))" || '0a'x
+  p = p || "             (setq cl r)))" || '0a'x
+  p = p || "          (t (let ((p (%lp-bodyclause cl)))" || '0a'x
+  p = p || "               (dolist (f (car p)) (push f *lp-body*))" || '0a'x
+  p = p || "               (setq cl (cdr p))))))))" || '0a'x
+  p = p || "  ;; the termination form" || '0a'x
+  p = p || "  (setf (car *lp-end*) 'return)" || '0a'x
+  p = p || "  (setf (cdr *lp-end*) (list (list 'progn (cons 'progn (reverse *lp-final*)) *lp-result*)))" || '0a'x
+  p = p || "  (list 'let* (reverse *lp-bind*)" || '0a'x
+  p = p || "        (cons 'progn (reverse *lp-init*))" || '0a'x
+  p = p || "        (list 'loop (cons 'progn (append (reverse *lp-head*) (reverse *lp-body*) (reverse *lp-step*))))))" || '0a'x
+  p = p || "" || '0a'x
+  p = p || "(defmacro %loop (&rest clauses) (%lp-expand clauses))" || '0a'x
+  p = p || "" || '0a'x
+  junk = runsource(p)
+  return

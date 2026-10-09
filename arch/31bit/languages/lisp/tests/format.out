@@ -1,0 +1,51 @@
+plain text
+str and "str"
+SYM (1 two 3)
+SYM (1 "two" #\3)
+number: 255, hex: FF, octal: 377, binary: 101
+[   42] [00042]
+[left      ] [     right]
+1234567 items
+1,234,567
++5 -5
+3.14159 3.14    3.142
+2.50 10.00
+ok
+a
+b
+tilde: ~
+1, 2, 3
+(A 1)(B 2)
+one
+many
+false
+true
+hello world
+Hello world
+Hello Big World
+NIL
+T NIL
+
+"1-2" 
+"   42|" 
+"1.5" 
+fresh
+already at line start
+princ
+"prin1"
+
+"print" write-string
+write-line
+x
+
+"inside42" 
+"(1 a B)" 
+"(1 \"a\" B)" 
+"3.0" (1.5 A s)
+      3.14|
+  1|1000|
+
+'A 
+(QUOTE A B) 
+#'F 
+"with \"quotes\" and \\ backslash" 

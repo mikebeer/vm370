@@ -1,0 +1,13 @@
+(+ 1 2)
+(defun sq (x)
+  (* x x))
+(sq 12)
+"a string"
+'(a b c)
+(car 5)
+(setq x 10)
+(* x x)
+(format t "hello~%")
+(values 1 2)
+undefined-var
+(list 1.5 #\a)
