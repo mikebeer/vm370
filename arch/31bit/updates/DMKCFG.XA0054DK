@@ -1,3 +1,17 @@
+./ I 00464100 $ 00464110 010                                                    
+         TM    SAVEWRK1,NOCLEAR  CLEARED (NOT NOCLEAR)?        XA0054DK         
+         BO    CFGSHX                                          XA0054DK         
+         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO   XA0054DK         
+         BZ    CFGSHX       NO NAMED SYSTEM RUNS ANY MORE:     XA0054DK         
+CFGSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE        XA0054DK         
+         BZ    CFGSHW       COUNT AND VMSHR WITH THEM          XA0054DK         
+         MVC   VMASSIST,0(R1) (VMAFPNT)                        XA0054DK         
+         LA    R0,2           (VMASIZE)                        XA0054DK         
+         CALL  DMKFRET                                         XA0054DK         
+         B     CFGSHV                                          XA0054DK         
+CFGSHW    XC    VMSHRSYS,VMSHRSYS                              XA0054DK         
+         NI    VMOSTAT,255-VMSHR                               XA0054DK         
+CFGSHX    DS    0H                                             XA0054DK         
 ./ I 00512000 $ 00512110 010                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
          TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST: THE        XA0054DK         

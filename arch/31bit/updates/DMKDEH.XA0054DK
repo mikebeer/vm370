@@ -1,0 +1,12 @@
+./ I 00221000 $ 00221050 050                                                    
+         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO   XA0054DK         
+         BZ    DEHSHX       NO NAMED SYSTEM RUNS ANY MORE:     XA0054DK         
+DEHSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE        XA0054DK         
+         BZ    DEHSHW       COUNT AND VMSHR WITH THEM          XA0054DK         
+         MVC   VMASSIST,0(R1) (VMAFPNT)                        XA0054DK         
+         LA    R0,2           (VMASIZE)                        XA0054DK         
+         CALL  DMKFRET                                         XA0054DK         
+         B     DEHSHV                                          XA0054DK         
+DEHSHW    XC    VMSHRSYS,VMSHRSYS                              XA0054DK         
+         NI    VMOSTAT,255-VMSHR                               XA0054DK         
+DEHSHX    DS    0H                                             XA0054DK         

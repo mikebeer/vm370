@@ -3314,6 +3314,10 @@ VCSCODE = [
 ]
 
 
+LEAVE_CFG = ['         TM    SAVEWRK1,NOCLEAR  CLEARED (NOT NOCLEAR)?', '         BO    CFGSHX', '         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO', '         BZ    CFGSHX       NO NAMED SYSTEM RUNS ANY MORE:', 'CFGSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE', '         BZ    CFGSHW       COUNT AND VMSHR WITH THEM', '         MVC   VMASSIST,0(R1) (VMAFPNT)', '         LA    R0,2           (VMASIZE)', '         CALL  DMKFRET', '         B     CFGSHV', 'CFGSHW    XC    VMSHRSYS,VMSHRSYS', '         NI    VMOSTAT,255-VMSHR', 'CFGSHX    DS    0H']
+LEAVE_DEH = ['         TM    VMOSTAT,VMSHR  I-235: ALL STORAGE IS GONE, SO', '         BZ    DEHSHX       NO NAMED SYSTEM RUNS ANY MORE:', 'DEHSHV    ICM   R1,15,VMASSIST THE VMABLOKS GO, AND THE', '         BZ    DEHSHW       COUNT AND VMSHR WITH THEM', '         MVC   VMASSIST,0(R1) (VMAFPNT)', '         LA    R0,2           (VMASIZE)', '         CALL  DMKFRET', '         B     DEHSHV', 'DEHSHW    XC    VMSHRSYS,VMSHRSYS', '         NI    VMOSTAT,255-VMSHR', 'DEHSHX    DS    0H']
+
+
 def m7decks():
     """M7.1/M7.2: ESA/390 virtual machines.  docs/39-M7-ESA-GUESTS.md.
 
@@ -3631,6 +3635,17 @@ def m7decks():
     decks['DMKDSP'] = d
 
     d = Deck(XA54)
+    # I-235 (M3 increment 2, the part that matters): a user who IPLed the
+    # shared CMS and then IPLs a device, or DEFINEs STORAGE, has released
+    # every page -- frame sharing drops the shared copies with them -- but
+    # VM/370's bookkeeping (VMSHR, VMSHRSYS, the VMABLOKs) found no
+    # SHRTABLE behind the private page tables and stayed set.  DMKDSP
+    # then threw an ESA/390 guest's shadow tables away at every PSW check
+    # ("EC, translate and shared"), and DMKPRV fetched Linux's
+    # instructions through a zero shadow CR1: PROGRAM INTERRUPT LOOP in
+    # the first program check handler (lx150-lx158, CMS first, then Linux).
+    d.insert('00464100', first='00464110', inc=10,
+             limit=next_seq(src('DMKCFG'), '00464100'), lines=LEAVE_CFG)
     d.insert('00512000', first='00512110', inc=10,
              limit=next_seq(src('DMKCFG'), '00512000'), lines=M7EQU[:1] + [
         "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST: THE",
@@ -3644,6 +3659,11 @@ def m7decks():
         "CFGNESA  DS    0H",
     ])
     decks['DMKCFG'] = d
+
+    d = Deck(XA54)
+    d.insert('00221000', first='00221050', inc=50,
+             limit=next_seq(src('DMKDEH'), '00221000'), lines=LEAVE_DEH)
+    decks['DMKDEH'] = d
 
     d = Deck(XA54)
     # Linux's IPL record (head.S) keeps CCWs at X'18'-X'B7', so X'40'-X'4F'
@@ -3848,7 +3868,11 @@ def m7decks():
     ])
     d.insert('00719000', first='00719110', inc=10,
              limit=next_seq(src('DMKCFS'), '00719000'), lines=M7EQU[:1] + [
-        "SETESA   BAL   R9,EXECONF     M7: AN ESA/390 MACHINE",
+        "SETESA   TM    VMPSTAT,VMV370R  M7: AN ESA/390 MACHINE.",
+        "         BZ    SETESA1        SHADOW TABLES LEFT FROM AN",
+        "         EXTRN DMKVATBC",
+        "         CALL  DMKVATBC       EARLIER SYSTEM GO FIRST",
+        "SETESA1  BAL   R9,EXECONF",
         "         OI    VMFSTAT,VMESA390",
         "         NI    VMFSTAT,X'FF'-VMESA390",
     ])
