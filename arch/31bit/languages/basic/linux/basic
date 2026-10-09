@@ -1,0 +1,7 @@
+#!/bin/sh
+# basic -- BASIC in cREXX (github.com/mikebeer/basic) on VM/370+ Linux
+#   basic [-ms|-qb|-fb|-ansi] prog.bas [args]   run a program
+#   basic                                       interactive (RUN LIST NEW LOAD "f" SYSTEM)
+P=/usr/local/share/basic/basic.rxbin
+if [ -n "$1" ]; then exec /usr/local/bin/rxvm "$P" -a "$@"; fi
+exec /usr/local/bin/rxvm "$P"

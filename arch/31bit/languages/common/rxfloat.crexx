@@ -1,0 +1,406 @@
+/* rxfloat.crexx -- VM/370+: the rxfloat plugin's functions written in
+   cREXX itself, so the cREXX languages (BASIC, Prolog, LOGO, Pascal,
+   SNOBOL ...) run where the native plugin is not linked in (CMS, and the
+   Linux build).  Same names and signatures as lib/plugins/float/rxfloat.c.
+   Accuracy is about 1e-14 relative; erf, erfc, tgamma and lgamma are
+   approximations good to about 1e-7. */
+options levelb
+namespace rxfloat expose fabs trunc floor ceil round fmod sqrt cbrt hypot ,
+  exp exp2 expm1 pow10 log log2 log10 log1p pow ,
+  sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh ,
+  erf erfc tgamma lgamma pi euler
+
+pi: procedure = .float
+  return 3.141592653589793
+
+euler: procedure = .float
+  return 2.718281828459045
+
+fabs: procedure = .float
+  arg value = .float
+  if value < 0 then return -value
+  return value
+
+/* the integer part, built from powers of two (cREXX converts only integral
+   floats to .int).  2**52 is computed: the compiler writes float literals
+   with 15 digits, so a literal 4503599627370496.0 is not exact */
+trunc: procedure = .float
+  arg value = .float
+  a = .float
+  r = .float
+  p = .float
+  if value \= value then return value
+  a = value
+  if a < 0 then a = -a
+  if a < 1 then return 0.0
+  p = 1.0
+  do 52
+    p = p * 2
+  end
+  if a >= p then return value
+  r = 0.0
+  do while p >= 1
+    if r + p <= a then r = r + p
+    p = p / 2
+  end
+  if value < 0 then return -r
+  return r
+
+floor: procedure = .float
+  arg value = .float
+  t = .float
+  t = trunc(value)
+  if t > value then t = t - 1
+  return t
+
+ceil: procedure = .float
+  arg value = .float
+  t = .float
+  t = trunc(value)
+  if t < value then t = t + 1
+  return t
+
+round: procedure = .float
+  arg value = .float
+  if value < 0 then return -floor(-value + 0.5)
+  return floor(value + 0.5)
+
+fmod: procedure = .float
+  arg left = .float, right = .float
+  if right = 0 then return 0.0
+  return left - trunc(left / right) * right
+
+sqrt: procedure = .float
+  arg value = .float
+  m = .float
+  k = .float
+  x = .float
+  if value <= 0 then return 0.0
+  m = value
+  k = 1.0
+  do while m > 4
+    m = m / 4
+    k = k * 2
+  end
+  do while m < 0.25
+    m = m * 4
+    k = k / 2
+  end
+  x = 1.0
+  do 8
+    x = (x + m / x) / 2
+  end
+  x = x + (m - x * x) / (2 * x)
+  return x * k
+
+cbrt: procedure = .float
+  arg value = .float
+  a = .float
+  x = .float
+  if value = 0 then return 0.0
+  a = fabs(value)
+  x = exp(log(a) / 3)
+  x = x - (x * x * x - a) / (3 * x * x)
+  if value < 0 then return -x
+  return x
+
+hypot: procedure = .float
+  arg left = .float, right = .float
+  return sqrt(left * left + right * right)
+
+exp: procedure = .float
+  arg value = .float
+  x = .float
+  s = .float
+  t = .float
+  k = 0
+  if value > 709.7 then return 1e308
+  if value < -745 then return 0.0
+  x = value
+  do while fabs(x) > 0.5
+    x = x / 2
+    k = k + 1
+  end
+  s = 1.0
+  t = 1.0
+  do i = 1 to 25
+    t = t * x / i
+    s = s + t
+  end
+  do k
+    s = s * s
+  end
+  return s
+
+exp2: procedure = .float
+  arg value = .float
+  return exp(value * 0.6931471805599453)
+
+pow10: procedure = .float
+  arg value = .float
+  return pow(10.0, value)
+
+expm1: procedure = .float
+  arg value = .float
+  s = .float
+  t = .float
+  if fabs(value) > 0.5 then return exp(value) - 1
+  s = 0.0
+  t = 1.0
+  do i = 1 to 25
+    t = t * value / i
+    s = s + t
+  end
+  return s
+
+/* natural log: m * 2**e with 1 <= m < 2, then the atanh series */
+log: procedure = .float
+  arg value = .float
+  m = .float
+  s = .float
+  s2 = .float
+  t = .float
+  r = .float
+  e = 0
+  if value <= 0 then return -1e308
+  m = value
+  do while m >= 2
+    m = m / 2
+    e = e + 1
+  end
+  do while m < 1
+    m = m * 2
+    e = e - 1
+  end
+  if m > 1.4142135623730951 then do
+    m = m / 2
+    e = e + 1
+  end
+  s = (m - 1) / (m + 1)
+  s2 = s * s
+  t = s
+  r = 0.0
+  do i = 1 to 60 by 2
+    r = r + t / i
+    t = t * s2
+  end
+  return 2 * r + e * 0.6931471805599453
+
+log2: procedure = .float
+  arg value = .float
+  return log(value) / 0.6931471805599453
+
+log10: procedure = .float
+  arg value = .float
+  return log(value) / 2.302585092994046
+
+log1p: procedure = .float
+  arg value = .float
+  s = .float
+  t = .float
+  if fabs(value) > 0.25 then return log(1 + value)
+  s = 0.0
+  t = 1.0
+  do i = 1 to 60
+    t = -t * value
+    s = s - t / i
+  end
+  return s
+
+pow: procedure = .float
+  arg left = .float, right = .float
+  b = .float
+  n = .float
+  r = .float
+  if right = 0 then return 1.0
+  if left = 0 then do
+    if right > 0 then return 0.0
+    return 1e308
+  end
+  if trunc(right) = right & fabs(right) < 2147483648.0 then do
+    b = left
+    n = fabs(right)
+    r = 1.0
+    do while n > 0
+      if fmod(n, 2.0) = 1 then r = r * b
+      b = b * b
+      n = trunc(n / 2)
+    end
+    if right < 0 then return 1 / r
+    return r
+  end
+  if left < 0 then return 0.0
+  return exp(right * log(left))
+
+/* reduce to [-pi, pi] */
+redpi: procedure = .float
+  arg value = .float
+  return value - 6.283185307179586 * round(value / 6.283185307179586)
+
+sin: procedure = .float
+  arg value = .float
+  x = .float
+  x2 = .float
+  t = .float
+  s = .float
+  x = redpi(value)
+  x2 = x * x
+  t = x
+  s = x
+  do i = 2 to 40 by 2
+    t = -t * x2 / (i * (i + 1))
+    s = s + t
+  end
+  return s
+
+cos: procedure = .float
+  arg value = .float
+  x = .float
+  x2 = .float
+  t = .float
+  s = .float
+  x = redpi(value)
+  x2 = x * x
+  t = 1.0
+  s = 1.0
+  do i = 1 to 40 by 2
+    t = -t * x2 / (i * (i + 1))
+    s = s + t
+  end
+  return s
+
+tan: procedure = .float
+  arg value = .float
+  return sin(value) / cos(value)
+
+atan: procedure = .float
+  arg value = .float
+  a = .float
+  t = .float
+  t2 = .float
+  p = .float
+  r = .float
+  base = .float
+  a = fabs(value)
+  base = 0.0
+  if a > 1 then do
+    r = 1.5707963267948966 - atan(1 / a)
+    if value < 0 then return -r
+    return r
+  end
+  if a > 0.41421356237309503 then do
+    base = 0.7853981633974483
+    a = (a - 1) / (a + 1)
+  end
+  t = a
+  t2 = a * a
+  r = 0.0
+  p = a
+  do i = 1 to 81 by 2
+    r = r + p / i
+    p = -p * t2
+  end
+  r = r + base
+  if value < 0 then return -r
+  return r
+
+atan2: procedure = .float
+  arg left = .float, right = .float
+  if right > 0 then return atan(left / right)
+  if right < 0 then do
+    if left >= 0 then return atan(left / right) + 3.141592653589793
+    return atan(left / right) - 3.141592653589793
+  end
+  if left > 0 then return 1.5707963267948966
+  if left < 0 then return -1.5707963267948966
+  return 0.0
+
+asin: procedure = .float
+  arg value = .float
+  return atan2(value, sqrt(1 - value * value))
+
+acos: procedure = .float
+  arg value = .float
+  return 1.5707963267948966 - asin(value)
+
+sinh: procedure = .float
+  arg value = .float
+  e = .float
+  if fabs(value) < 0.5 then return (expm1(value) - expm1(-value)) / 2
+  e = exp(value)
+  return (e - 1 / e) / 2
+
+cosh: procedure = .float
+  arg value = .float
+  e = .float
+  e = exp(value)
+  return (e + 1 / e) / 2
+
+tanh: procedure = .float
+  arg value = .float
+  e = .float
+  if value > 20 then return 1.0
+  if value < -20 then return -1.0
+  e = expm1(2 * value)
+  return e / (e + 2)
+
+asinh: procedure = .float
+  arg value = .float
+  a = .float
+  a = fabs(value)
+  a = log(a + sqrt(a * a + 1))
+  if value < 0 then return -a
+  return a
+
+acosh: procedure = .float
+  arg value = .float
+  if value < 1 then return 0.0
+  return log(value + sqrt(value * value - 1))
+
+atanh: procedure = .float
+  arg value = .float
+  return 0.5 * log((1 + value) / (1 - value))
+
+/* Abramowitz and Stegun 7.1.26, refined to about 1e-7 */
+erf: procedure = .float
+  arg value = .float
+  x = .float
+  t = .float
+  y = .float
+  x = fabs(value)
+  t = 1 / (1 + 0.3275911 * x)
+  y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * exp(-x * x)
+  if value < 0 then return -y
+  return y
+
+erfc: procedure = .float
+  arg value = .float
+  return 1 - erf(value)
+
+/* Lanczos (g = 7, 9 terms) */
+lgamma: procedure = .float
+  arg value = .float
+  x = .float
+  a = .float
+  t = .float
+  if value < 0.5 then return log(3.141592653589793 / fabs(sin(3.141592653589793 * value))) - lgamma(1 - value)
+  x = value - 1
+  a = 0.9999999999998099
+  a = a + 676.5203681218851 / (x + 1)
+  a = a - 1259.1392167224028 / (x + 2)
+  a = a + 771.3234287776531 / (x + 3)
+  a = a - 176.6150291621406 / (x + 4)
+  a = a + 12.507343278686905 / (x + 5)
+  a = a - 0.13857109526572012 / (x + 6)
+  a = a + 0.000009984369578019572 / (x + 7)
+  a = a + 0.00000015056327351493116 / (x + 8)
+  t = x + 7.5
+  return 0.9189385332046727 + (x + 0.5) * log(t) - t + log(a)
+
+tgamma: procedure = .float
+  arg value = .float
+  r = .float
+  if value < 0.5 then return 3.141592653589793 / (sin(3.141592653589793 * value) * tgamma(1 - value))
+  r = exp(lgamma(value))
+  if trunc(value) = value & value < 23 then r = round(r)
+  return r

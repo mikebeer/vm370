@@ -180,6 +180,7 @@ def exec_text(stage):
         L.append("UNITS = UNITS '%s'" % line.strip())
     for u, c in cs:
         L.append("CS.%s = '%s'" % (u, c))
+    L.append("CS.TK = '$TK'                 /* the test unit */")
     L += ["/* CRX82 MACLIB: GCC31's, PDPTOP fixing GCC380's 64-bit code */",
           "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
           "'MACLIB ADD CRX82 VTABLE'",

@@ -54,6 +54,7 @@ int crxsov64(long long a, long long b, long long *r);
 int crxmov64(long long a, long long b, long long *r);
 long long crxs64(long v);
 unsigned long long crxz64(unsigned long v);
+unsigned long crxid32(unsigned long v);
 #define __builtin_add_overflow(a, b, r) crxaov64((a), (b), (long long *) (r))
 #define __builtin_sub_overflow(a, b, r) crxsov64((a), (b), (long long *) (r))
 #define __builtin_mul_overflow(a, b, r) crxmov64((a), (b), (long long *) (r))
@@ -515,7 +516,24 @@ class Xform:
                                   c_ast.Constant('int', '0'))
         return e
 
+    def narrowshift(self, e):
+        """(unsigned char)(a << b): GCC380 turns x & that, tested for
+        non-zero, into a wrong bit test (rxbin007's LZSS decoder) -- so the
+        shift goes through a call it cannot see into"""
+        if isinstance(e, c_ast.Cast) and isinstance(e.expr, c_ast.BinaryOp) and e.expr.op == '<<':
+            try:
+                rt = self.ty.resolve(e.to_type)
+            except Exception:
+                rt = None
+            if rt and rt[0] == 'int' and rt[1] < 32:
+                self.count += 1
+                e.expr = call('crxid32', c_ast.Cast(c_ast.Typename(None, [], None, c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['unsigned', 'long']))), e.expr))
+        return e
+
     def rewrite(self, n, sc):
+        if isinstance(n, c_ast.BinaryOp) and n.op == '&':
+            n.left = self.narrowshift(n.left)
+            n.right = self.narrowshift(n.right)
         if isinstance(n, c_ast.Return) and n.expr is not None and is64(self.ret) and isk(n.expr):
             n.expr = k64(n.expr)
             return n

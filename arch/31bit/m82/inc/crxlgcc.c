@@ -361,3 +361,9 @@ unsigned long long crxz64(unsigned long v)
     x.w = mk(0, v);
     return x.u;
 }
+
+/* an identity GCC380 cannot see through (see xform.py narrowshift) */
+unsigned long crxid32(unsigned long v)
+{
+    return v;
+}

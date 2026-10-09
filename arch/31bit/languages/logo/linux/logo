@@ -1,0 +1,5 @@
+#!/bin/sh
+# logo -- LOGO in cREXX on VM/370+ Linux:  logo prog.logo [out.svg]
+P=/usr/local/share/logo/logo.rxbin
+if [ -n "$1" ]; then exec /usr/local/bin/rxvm "$P" -a "$@"; fi
+exec /usr/local/bin/rxvm "$P"

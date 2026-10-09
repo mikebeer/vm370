@@ -40,7 +40,7 @@ PATCHES = [
      '#elif defined(CREXX_CMS_ELF) || defined(CREXX_CMS_GCC)\n            FILE *probe', 1),
     # say why a module did not load (the loader's own error text)
     ('rxvmmain.c', 'fprintf(stderr, "ERROR reading module file %s\\n", file_name);',
-     '{ const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s\\n", file_name, e ? ": " : "", e ? e : ""); }', 1),
+     '{ extern int crx_fail_line; const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s (%d)\\n", file_name, e ? ": " : "", e ? e : "", crx_fail_line); }', 1),
 ]
 
 UNRESOLVED = set()
@@ -137,6 +137,11 @@ def main():
                 assert text.count(old) == count, (b, old[:40], text.count(old))
                 text = text.replace(old, new)
                 applied[(pf, old)] = True
+        if b in os.environ.get('M82TRACE', '').split(','):
+            # debugging aid: remember the line of the last 'return 0;'
+            text = ('extern int crx_fail_line;\n'
+                    '#define CRXFAIL(v) (crx_fail_line = __LINE__ - 2, (v))\n' +
+                    re.sub(r'\breturn 0;', 'return CRXFAIL(0);', text))
         if names:
             text = rename(text, names)
         out = []
