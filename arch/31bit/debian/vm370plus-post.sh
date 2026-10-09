@@ -11,7 +11,11 @@ cat > /etc/fstab <<F
 # VM/370+: the root is mounted by the initramfs before switch_root
 /dev/dasda1  /      ext2   defaults,errors=remount-ro  0  0
 proc         /proc  proc   defaults                    0  0
+/swapfile    none   swap   sw                          0  0
 F
+# 64 MB is too little for dpkg's xz on some packages: 128 MB of swap
+[ -f /swapfile ] || { dd if=/dev/zero of=/swapfile bs=1M count=128; mkswap /swapfile; }
+chmod 600 /swapfile
 cat > /etc/network/interfaces <<N
 auto lo
 iface lo inet loopback
@@ -40,4 +44,7 @@ echo 'root:vm370plus' | chpasswd
 sed -i 's/^PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
 # no hardware clock, no keyboard, no udev settle wait at boot
 echo 'HWCLOCKACCESS=no' >> /etc/default/rcS 2>/dev/null || true
+# debootstrap's own clean-up, if its second stage did not get that far
+[ -x /sbin/start-stop-daemon.REAL ] && mv /sbin/start-stop-daemon.REAL /sbin/start-stop-daemon
+rm -f /usr/sbin/policy-rc.d
 echo "VM/370+ post-install done"

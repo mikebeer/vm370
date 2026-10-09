@@ -63,7 +63,10 @@ fi
 if [ -x /data/sbin/init ] && [ ! -d /data/debootstrap ] && ! grep -q vmroot=ram /proc/cmdline; then
   echo "root: the system on $(mount | awk '$3=="/data"{print $1}') -- switch_root (vmroot=ram stays here)"
   killall dropbear 2>/dev/null
-  ifconfig ctc0 down 2>/dev/null
+  # the disk system's ifup sets the address itself ("File exists" if
+  # it is still there); the line console wants no colours
+  ip addr flush dev ctc0 2>/dev/null   # (not down: a CTC restart hangs)
+  export TERM=dumb
   umount /dev/pts /tmp /proc /sys 2>/dev/null
   mount --move /dev /data/dev 2>/dev/null || umount /dev 2>/dev/null
   exec switch_root /data /sbin/init
