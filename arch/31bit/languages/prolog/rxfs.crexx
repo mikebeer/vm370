@@ -1,0 +1,8 @@
+/* rxfs.crexx -- VM/370+: listdir for prolog.crexx's )lib where the
+   native rxfs plugin is not linked in: no directory listing (-1) */
+options levelb
+namespace rxfs expose listdir
+
+listdir: procedure = .int
+  arg dir = .string, expose entries = .string[]
+  return -1
