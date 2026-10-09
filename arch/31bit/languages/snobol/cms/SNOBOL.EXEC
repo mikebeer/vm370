@@ -11,5 +11,6 @@ IF ARGS = '' THEN DO
   SAY 'SNOBOL: usage: SNOBOL [-f] fn.sno [args]'
   EXIT 24
 END
-'RXBVM8 SNOBOL -a' ARGS
+QUEUE ARGS                /* CMS would cut each argument to 8 chars */
+'RXBVM8 SNOBOL -a =STACK'
 EXIT RC

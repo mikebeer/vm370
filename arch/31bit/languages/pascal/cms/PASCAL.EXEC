@@ -14,10 +14,15 @@ IF RC <> 0 THEN DO
   SAY 'PASCAL: PASCAL RXBIN not found -- access the disk that has it'
   EXIT 28
 END
-'RXBVM8 PASCAL -a' FN'.pas' FN'.rxas'
+QUEUE FN'.pas' FN'.rxas'    /* CMS would cut each argument to 8 chars */
+'RXBVM8 PASCAL -a =STACK'
 IF RC <> 0 THEN EXIT RC
 'RXAS8' FN
 IF RC <> 0 THEN EXIT RC
 IF ABBREV('COMPILE', TRANSLATE(STRIP(OPT)), 1) & STRIP(OPT) <> '' THEN EXIT 0
-'RXBVM8' FN 'PASRT -a' ARGS
+IF STRIP(ARGS) = '' THEN 'RXBVM8' FN 'PASRT'
+ELSE DO
+  QUEUE ARGS
+  'RXBVM8' FN 'PASRT -a =STACK'
+END
 EXIT RC

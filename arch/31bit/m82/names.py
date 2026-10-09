@@ -20,7 +20,23 @@ short = {}
 for d in defs:
     short.setdefault(d.upper()[:8], []).append(d)
 names = sorted(d for d in defs if len(d) > 8 or len(short[d.upper()[:8]]) > 1)
+# keep the numbers already given (so a unit rebuilt alone still matches the
+# others); a new name gets the next free number
+old = {}
+if os.path.exists(sys.argv[3]):
+    for l in open(sys.argv[3]):
+        p = l.split()
+        if len(p) == 2:
+            old[p[0]] = int(p[1][2:])
+nxt = max(old.values(), default=-1) + 1
+num = {}
+for n in names:
+    if n in old:
+        num[n] = old[n]
+    else:
+        num[n] = nxt
+        nxt += 1
 with open(sys.argv[3], 'w') as f:
-    for i, n in enumerate(names):
-        f.write('%s CX%05d\n' % (n, i))
+    for n in sorted(names, key=lambda n: num[n]):
+        f.write('%s CX%05d\n' % (n, num[n]))
 print('%d externals, %d renamed' % (len(defs), len(names)))

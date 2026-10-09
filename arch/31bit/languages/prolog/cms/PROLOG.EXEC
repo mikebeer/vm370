@@ -13,5 +13,8 @@ IF RC <> 0 THEN DO
   EXIT 28
 END
 IF ARGS = '' THEN 'RXBVM8 PROLOG'
-ELSE 'RXBVM8 PROLOG -a' ARGS
+ELSE DO
+  QUEUE ARGS              /* CMS would cut each argument to 8 chars */
+  'RXBVM8 PROLOG -a =STACK'
+END
 EXIT RC

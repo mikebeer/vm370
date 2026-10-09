@@ -9,5 +9,8 @@ IF RC <> 0 THEN DO
   EXIT 28
 END
 IF ARGS = '' THEN 'RXBVM8 BASIC'
-ELSE 'RXBVM8 BASIC -a' ARGS
+ELSE DO
+  QUEUE ARGS              /* CMS would cut each argument to 8 chars */
+  'RXBVM8 BASIC -a =STACK'
+END
 EXIT RC

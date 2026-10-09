@@ -474,6 +474,39 @@ int cms_main(unsigned char *plist)
         plist += 8;
     }
     argv_[argc] = 0;
+    /* CMS cuts every token to 8 characters: an EXEC passes longer
+       arguments by stacking them (QUEUE) and giving the token =STACK,
+       which is replaced by the words of that stacked line (case kept;
+       "..." or '...' groups a word with blanks) */
+    for (int j = 1; j < argc; j++) {
+        static char sline[256];
+        static char *sargv[MAXARGS + 1];
+        char *q;
+        int n = 0, len;
+        if (strcmp(argv_[j], "=STACK") && strcmp(argv_[j], "=stack")) continue;
+        len = tread(sline, sizeof sline - 1);
+        sline[len] = 0;
+        if (len && sline[len - 1] == '\n') sline[len - 1] = 0;
+        for (int i = 0; i < j; i++) sargv[n++] = argv_[i];
+        q = sline;
+        while (*q && n < MAXARGS) {
+            while (*q == ' ') q++;
+            if (!*q) break;
+            if (*q == '"' || *q == '\'') {
+                char d = *q++;
+                sargv[n++] = q;
+                while (*q && *q != d) q++;
+            } else {
+                sargv[n++] = q;
+                while (*q && *q != ' ') q++;
+            }
+            if (*q) *q++ = 0;
+        }
+        for (int i = j + 1; i < argc && n < MAXARGS; i++) sargv[n++] = argv_[i];
+        sargv[n] = 0;
+        tin_len = tin_pos = 0;
+        exit(main(n, sargv));
+    }
     exit(main(argc, argv_));
 }
 int _gettimeofday(struct timeval *tv, void *tz) { return gettimeofday(tv, tz); }

@@ -12,7 +12,7 @@
    - opendir/readdir/closedir from LISTFILE * * m (EXEC.
    Everything here runs in the native character set (EBCDIC). */
 #define CRXRT 1
-int crx_fail_line;              /* prep.py M82TRACE debugging aid */
+int crxfline, crxflog[16];      /* prep.py M82TRACE debugging aid */
 #include "crxcms.h"
 #include <ctype.h>
 #include <limits.h>

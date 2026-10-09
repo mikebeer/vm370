@@ -40,7 +40,7 @@ PATCHES = [
      '#elif defined(CREXX_CMS_ELF) || defined(CREXX_CMS_GCC)\n            FILE *probe', 1),
     # say why a module did not load (the loader's own error text)
     ('rxvmmain.c', 'fprintf(stderr, "ERROR reading module file %s\\n", file_name);',
-     '{ extern int crx_fail_line; const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s (%d)\\n", file_name, e ? ": " : "", e ? e : "", crx_fail_line); }', 1),
+     '{ extern int crxfline, crxflog[16]; int q; const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s\\n", file_name, e ? ": " : "", e ? e : ""); for (q = crxfline - 16; q < crxfline; q++) if (q >= 0) fprintf(stderr, " %d", crxflog[q & 15]); fprintf(stderr, "\\n"); }', 1),
 ]
 
 UNRESOLVED = set()
@@ -139,9 +139,35 @@ def main():
                 applied[(pf, old)] = True
         if b in os.environ.get('M82TRACE', '').split(','):
             # debugging aid: remember the line of the last 'return 0;'
-            text = ('extern int crx_fail_line;\n'
-                    '#define CRXFAIL(v) (crx_fail_line = __LINE__ - 2, (v))\n' +
-                    re.sub(r'\breturn 0;', 'return CRXFAIL(0);', text))
+            text = ('extern int crxfline, crxflog[16];\n'
+                    '#define CRXFAIL(v) (crxflog[crxfline++ & 15] = __LINE__ - 2, (v))\n' +
+                    re.sub(r'\bgoto error;', '{ CRXFAIL(0); goto error; }',
+                           re.sub(r'\breturn 0;', 'return CRXFAIL(0);', text)))
+        if b == 'rxbin007.c' and 'pool' in os.environ.get('M82TRACE', ''):
+            o = '''static int rxbin007_pool_id_has_type(const rxbin007_pool_read *pool,
+                                     uint32_t id,
+                                     enum const_pool_type type) {
+'''
+            assert text.count(o) == 1
+            text = text.replace(o, o + '''    fprintf(stderr, "PIT id %lu count %lu present %d type %lu want %lu\\n",
+            (unsigned long) id, pool ? (unsigned long) pool->record_count : 0UL,
+            pool && id < pool->record_count ? (int) pool->records[id].present : -1,
+            pool && id < pool->record_count ? (unsigned long) pool->records[id].type : 0UL,
+            (unsigned long) type);
+''')
+        if b == 'rxbin007.c' and 'pool' in os.environ.get('M82TRACE', ''):
+            # debugging aid: show the constant-pool id checks
+            o = '''static int rxbin007_pool_id_has_type(const rxbin007_pool_read *pool,
+                                     uint32_t id,
+                                     enum const_pool_type type) {
+'''
+            assert text.count(o) == 1
+            text = text.replace(o, o + '''    fprintf(stderr, "PIT id %lu count %lu present %d type %lu want %lu\\n",
+            (unsigned long) id, pool ? (unsigned long) pool->record_count : 0UL,
+            pool && id < pool->record_count ? (int) pool->records[id].present : -1,
+            pool && id < pool->record_count ? (unsigned long) pool->records[id].type : 0UL,
+            (unsigned long) type);
+''')
         if names:
             text = rename(text, names)
         out = []
