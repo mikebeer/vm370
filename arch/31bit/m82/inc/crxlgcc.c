@@ -344,3 +344,20 @@ int crxmov64(long long a, long long b, long long *r)
     if (ucmp(q.w, x.w) != 0) return 1;
     return (isneg(z.w) != (s != 0)) && (z.w.hi || z.w.lo);
 }
+
+/* widening of a 32-bit constant expression (sizeof, enum, ...) at run
+   time: GCC380 folds it into a 64-bit constant and moves it with MVC 8
+   from a 4-byte literal, so the value lands in the high half */
+long long crxs64(long v)
+{
+    du x;
+    x.w = mk(v < 0 ? 0xFFFFFFFFUL : 0, (u32)v);
+    return x.s;
+}
+
+unsigned long long crxz64(unsigned long v)
+{
+    du x;
+    x.w = mk(0, v);
+    return x.u;
+}

@@ -52,6 +52,8 @@ long long crxmut64(long long *p, long long b);
 int crxaov64(long long a, long long b, long long *r);
 int crxsov64(long long a, long long b, long long *r);
 int crxmov64(long long a, long long b, long long *r);
+long long crxs64(long v);
+unsigned long long crxz64(unsigned long v);
 #define __builtin_add_overflow(a, b, r) crxaov64((a), (b), (long long *) (r))
 #define __builtin_sub_overflow(a, b, r) crxsov64((a), (b), (long long *) (r))
 #define __builtin_mul_overflow(a, b, r) crxmov64((a), (b), (long long *) (r))
@@ -226,9 +228,96 @@ def konst(e):
     return v
 
 
+ENUMC = set()             # enumeration constants of the unit
+TY = []                   # the unit's typer
+
+
+def cexpr(e):
+    """(is a 32-bit integer constant expression, looks unsigned): GCC380
+    folds a widening of one into a 64-bit constant and moves it with the
+    MVC 8 bug, so it is widened at run time instead"""
+    if isinstance(e, c_ast.Constant):
+        if e.type in ('string', 'float', 'double', 'char'):
+            return (e.type == 'char', False)
+        try:
+            t = const_type(e)
+        except Exception:
+            return (False, False)
+        if not t or len(t) < 3 or t[1] != 32:
+            return (False, False)
+        return (True, bool(t[2]))
+    if isinstance(e, c_ast.ID):
+        return (e.name in ENUMC, False)
+    if isinstance(e, c_ast.UnaryOp):
+        if e.op in ('sizeof', '_Alignof'):
+            return (True, True)
+        if e.op in ('-', '+', '~', '!'):
+            return cexpr(e.expr)
+        return (False, False)
+    if isinstance(e, c_ast.Cast):
+        try:
+            rt = TY[0].resolve(e.to_type) if TY else None
+        except Exception:
+            rt = None
+        if not rt or rt[0] != 'int' or rt[1] != 32:
+            return (False, False)
+        ok, _ = cexpr(e.expr)
+        return (ok, bool(rt[2]))
+    if isinstance(e, c_ast.BinaryOp):
+        if e.op in ('&&', '||', '<', '>', '<=', '>=', '==', '!='):
+            a, _ = cexpr(e.left)
+            b, _ = cexpr(e.right)
+            return (a and b, False)
+        a, ua = cexpr(e.left)
+        b, ub = cexpr(e.right)
+        return (a and b, ua or ub)
+    if isinstance(e, c_ast.TernaryOp):
+        a, _ = cexpr(e.cond)
+        b, ub = cexpr(e.iftrue)
+        c, uc = cexpr(e.iffalse)
+        return (a and b and c, ub or uc)
+    return (False, False)
+
+
+def is64cast(e):
+    if not isinstance(e, c_ast.Cast):
+        return None
+    try:
+        rt = TY[0].resolve(e.to_type) if TY else None
+        if rt and rt[0] == 'int':
+            return bool(rt[2]) if rt[1] == 64 else None
+    except Exception:
+        pass
+    t = e.to_type.type
+    if isinstance(t, c_ast.TypeDecl) and isinstance(t.type, c_ast.IdentifierType):
+        nm = t.type.names
+        if nm.count('long') == 2:
+            return 'unsigned' in nm
+        if any(x in ('uint64_t', 'int64_t', 'rxinteger', 'u64') for x in nm):
+            return nm[0].startswith('u')
+    return None
+
+
+def isk(e):
+    """a constant k64() must replace"""
+    return konst(e) is not None or cexpr(e)[0] or (is64cast(e) is not None and cexpr(e.expr)[0])
+
+
 def k64(e):
     v = konst(e)
-    return kref(v) if v is not None else e
+    if v is not None:
+        return kref(v)
+    u = is64cast(e)
+    if u is not None and cexpr(e.expr)[0]:
+        ok, uns = cexpr(e.expr)
+        r = k64(e.expr)
+        return c_ast.Cast(e.to_type, r) if r is not e.expr else e
+    ok, uns = cexpr(e)
+    if ok:
+        if uns:
+            return call('crxz64', c_ast.Cast(c_ast.Typename(None, [], None, c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['unsigned', 'long']))), e))
+        return call('crxs64', c_ast.Cast(c_ast.Typename(None, [], None, c_ast.TypeDecl(None, [], None, c_ast.IdentifierType(['long']))), e))
+    return e
 
 
 def cast(t, e):
@@ -240,6 +329,9 @@ def cast(t, e):
 class Xform:
     def __init__(self, ty):
         self.ty = ty
+        ENUMC.clear()
+        ENUMC.update(ty.enumconst)
+        TY[:] = [ty]
         self.count = 0
         self.unknown = 0
         self.ret = None
@@ -349,7 +441,8 @@ class Xform:
                     self.ty.tags_in(it.type)
                     if it.init is not None:
                         it.init = self.x(it.init, sc2)
-                        if is64(self.ty.resolve(it.type)) and konst(it.init) is not None:
+                        if is64(self.ty.resolve(it.type)) and isk(it.init) and \
+                                ('static' not in (it.storage or []) or konst(it.init) is not None):
                             it.init = k64(it.init)
                 elif isinstance(it, c_ast.Typedef):
                     self.ty.typedefs[it.name] = it.type
@@ -423,10 +516,10 @@ class Xform:
         return e
 
     def rewrite(self, n, sc):
-        if isinstance(n, c_ast.Return) and n.expr is not None and is64(self.ret) and konst(n.expr) is not None:
+        if isinstance(n, c_ast.Return) and n.expr is not None and is64(self.ret) and isk(n.expr):
             n.expr = k64(n.expr)
             return n
-        if isinstance(n, c_ast.Assignment) and n.op == '=' and konst(n.rvalue) is not None:
+        if isinstance(n, c_ast.Assignment) and n.op == '=' and isk(n.rvalue):
             if is64(self.typeof(n.lvalue, sc)):
                 n.rvalue = k64(n.rvalue)
                 return n
@@ -448,7 +541,7 @@ class Xform:
                 ps = ft.args.params
                 for i, a in enumerate(n.args.exprs):
                     if i < len(ps) and isinstance(ps[i], (c_ast.Decl, c_ast.Typename)) and \
-                            is64(self.ty.resolve(ps[i].type)) and konst(a) is not None:
+                            is64(self.ty.resolve(ps[i].type)) and isk(a):
                         n.args.exprs[i] = k64(a)
         # every 64-bit comparison and 64-bit truth test by call: GCC380
         # folds pairs into range tests (an add it cannot do) and runs out

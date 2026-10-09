@@ -431,7 +431,7 @@ DIR *opendir(const char *name)
     if (name && name[0] && name[0] != '.') mode = (char)toupper((unsigned char)name[0]);
     d->names = malloc(cap);
     if (!d->names) { free(d); errno = ENOMEM; return 0; }
-    sprintf(cmd, "LISTFILE * * %c (EXEC", mode);
+    sprintf(cmd, "LISTFILE * * %c ( EXEC", mode);
     if (system(cmd)) return d;                       /* no files: empty */
     f = fopen("CMS EXEC A1", "r");
     if (!f) return d;

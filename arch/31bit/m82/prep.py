@@ -38,6 +38,9 @@ PATCHES = [
      '#elif defined(CREXX_CMS_ELF) || defined(CREXX_CMS_GCC)\n        FILE *probe', 1),
     ('platform.c', '#elif defined(CREXX_CMS_ELF)\n            FILE *probe',
      '#elif defined(CREXX_CMS_ELF) || defined(CREXX_CMS_GCC)\n            FILE *probe', 1),
+    # say why a module did not load (the loader's own error text)
+    ('rxvmmain.c', 'fprintf(stderr, "ERROR reading module file %s\\n", file_name);',
+     '{ const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s\\n", file_name, e ? ": " : "", e ? e : ""); }', 1),
 ]
 
 UNRESOLVED = set()

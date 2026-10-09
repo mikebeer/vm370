@@ -53,6 +53,8 @@ if mode == 'full':
     t('exec crx82lk', 'CRX82LK: DONE|DMSABN|DMSITP|CP ENTERED', 1800)
     for c in ('rxbvm82 -v', 'rxas82 -v', 'rxc82 -v'):
         t(c, RDY + '|DMSABN|DMSITP', 120)
+    for c in sys.argv[2:]:                     # extra checks after the build
+        t(c, RDY + '|DMSABN|DMSITP', 1800)
 elif mode == 'deck':
     for c in CMDS:
         t(c, RDY + '|DMSABN|DMSITP', 7200)
