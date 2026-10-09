@@ -289,3 +289,58 @@ long crxsw64(long long a)        /* out of range: a value no case uses */
         return (long)x.w.lo;
     return (long)0x80000000UL;
 }
+
+/* 64-bit multiply by call: GCC380 builds a multiply by a constant from
+   shifts and 64-bit adds, which it cannot compile */
+long long crxmul64(long long a, long long b)
+{
+    du x, y, r;
+    x.s = a; y.s = b;
+    r.w = umul32(x.w.lo, y.w.lo);
+    r.w.hi += x.w.hi * y.w.lo + x.w.lo * y.w.hi;
+    return r.s;
+}
+
+long long crxmut64(long long *p, long long b)       /* *p *= b */
+{
+    *p = crxmul64(*p, b);
+    return *p;
+}
+
+/* __builtin_{add,sub,mul}_overflow for 64-bit signed (rxinteger.h):
+   1 if the true result does not fit */
+int crxaov64(long long a, long long b, long long *r)
+{
+    du x, y, z;
+    x.s = a; y.s = b;
+    z.w = add(x.w, y.w);
+    *r = z.s;
+    return isneg(x.w) == isneg(y.w) && isneg(z.w) != isneg(x.w);
+}
+
+int crxsov64(long long a, long long b, long long *r)
+{
+    du x, y, z;
+    x.s = a; y.s = b;
+    z.w = sub(x.w, y.w);
+    *r = z.s;
+    return isneg(x.w) != isneg(y.w) && isneg(z.w) != isneg(x.w);
+}
+
+int crxmov64(long long a, long long b, long long *r)
+{
+    du x, y, z, q;
+    int s = 0;
+    x.s = a; y.s = b;
+    z.s = crxmul64(a, b);
+    *r = z.s;
+    if ((!x.w.hi && !x.w.lo) || (!y.w.hi && !y.w.lo))
+        return 0;
+    /* overflow iff z / b != a, or the INT64_MIN * -1 case */
+    if (isneg(x.w)) { x.w = neg(x.w); s ^= 1; }
+    if (isneg(y.w)) { y.w = neg(y.w); s ^= 1; }
+    if (isneg(z.w)) q.w = udivmod(neg(z.w), y.w, 0);
+    else q.w = udivmod(z.w, y.w, 0);
+    if (ucmp(q.w, x.w) != 0) return 1;
+    return (isneg(z.w) != (s != 0)) && (z.w.hi || z.w.lo);
+}

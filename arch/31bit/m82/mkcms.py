@@ -62,18 +62,35 @@ def programs(stage):
     rt = rt.split()
     used = set(vm) | set(asm) | set(main.values()) | set(rt) | {m[C + '/interpreter/rxvml.c']}
     comp = [m[p] for p in srcs if m[p] not in used]
-    return [('RXBVM82', expand([main['vm']] + vm + rt)),
-            ('RXAS82', expand([main['as']] + asm + vm + rt)),
-            ('RXC82', expand([main['c']] + comp + [m[C + '/interpreter/rxvml.c']] + vm + asm + rt))]
+    # the VM and the assembler go into TXTLIBs, so each program takes only
+    # what it calls (as M8.1's link does): CRX82VM (VM, runtime) and CRX82AS
+    return [('RXBVM82', expand([main['vm']]), ['CRX82VM']),
+            ('RXAS82', expand([main['as']]), ['CRX82AS', 'CRX82VM']),
+            ('RXC82', expand([main['c']] + comp + [m[C + '/interpreter/rxvml.c']]), ['CRX82AS', 'CRX82VM'])], \
+        {'CRX82VM': expand(vm + rt), 'CRX82AS': expand(asm)}
+
+
+def csname(u, used):
+    """the CSECT name of a unit: '$' + 7 (TXTLIB takes no private code,
+    and the unit's name may be a function's)"""
+    c = '$' + u.upper()[:7]
+    k = 0
+    while c in used:
+        k += 1
+        c = '$' + u.upper()[:7 - len(str(k))] + str(k)
+    used.add(c)
+    return c
 
 
 def exec_text(stage):
-    progs = programs(stage)
+    progs, libs = programs(stage)
     allu = []
-    for _, us in progs:
+    for us in [p[1] for p in progs] + list(libs.values()):
         for u in us:
             if u not in allu:
                 allu.append(u)
+    used = set()
+    cs = [(u.upper(), csname(u, used)) for u in allu if not u.upper().startswith('CT')]
     L = ['/* CRX82MK EXEC -- M8.2: current cREXX built natively on VM/370+ */',
          '/* GCC380 (GCC31 EXEC), GCCLIB31 on G, sources and output on A.  */',
          '/* CRX82MK          compile every unit and link                    */',
@@ -90,6 +107,8 @@ def exec_text(stage):
         line += ' ' + u.upper()
     if line:
         L.append("UNITS = UNITS '%s'" % line.strip())
+    for u, c in cs:
+        L.append("CS.%s = '%s'" % (u, c))
     L += ["/* CRX82 MACLIB: GCC31's, PDPTOP fixing GCC380's 64-bit code */",
           "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
           "'MACLIB ADD CRX82 VTABLE'",
@@ -104,12 +123,19 @@ def exec_text(stage):
           "  END",
           'END',
           "IF ONLY <> '' THEN EXIT BAD",
-          'LINKALL:',
-          "'GLOBAL TXTLIB GCCLIB31'"]
-    for name, us in progs:
+          'LINKALL:']
+    for lib, us in libs.items():
+        L.append("SAY 'CRX82MK: TXTLIB %s'" % lib)
+        L.append("'ERASE %s TXTLIB A'" % lib)
+        L.append("'TXTLIB GEN %s %s'" % (lib, us[0].upper()))
+        for i in range(1, len(us), 6):
+            L.append("'TXTLIB ADD %s %s'" % (lib, ' '.join(u.upper() for u in us[i:i + 6])))
+            L.append("IF RC <> 0 THEN BAD = BAD + 1")
+    for name, us, ls in progs:
         L.append("SAY 'CRX82MK: LINKING %s'" % name)
-        L.append("'LOAD %s (NOAUTO NOLIBE CLEAR'" % us[0].upper())
+        L.append("'GLOBAL TXTLIB %s GCCLIB31'" % ' '.join(ls))
         rest = [u.upper() for u in us[1:]]
+        L.append("'LOAD %s (NOAUTO%s CLEAR'" % (us[0].upper(), ' NOLIBE' if rest else ''))
         for i in range(0, len(rest), 5):
             last = i + 5 >= len(rest)
             L.append("'INCLUDE %s (NOAUTO%s'" % (' '.join(rest[i:i + 5]), '' if last else ' NOLIBE'))
@@ -122,7 +148,7 @@ def exec_text(stage):
           '',
           '/* GCC380 -O1 (-O0 if it fails inside, RC 12); CRXLGCC defines */',
           '/* the helpers PDPTOP declares, so it is built with GCC31 MACLIB */',
-          'COMPILE: PROCEDURE EXPOSE SRC',
+          'COMPILE: PROCEDURE EXPOSE SRC CS.',
           '  ARG U',
           "  IF LEFT(U, 2) = 'CT' THEN DO      /* a table: assembler source */",
           "    'GLOBAL MACLIB GCC31 DMSGPI CMSHRC CMSLIB OSMACRO TSOMAC'",
@@ -135,11 +161,24 @@ def exec_text(stage):
           '  END',
           "  L = 'CRX82'",
           "  IF U = 'CRXLGCC' THEN L = 'GCC31'",
-          "  'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82 KEEP'",
+          "  'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82 NOASM KEEP'",
           '  IF RC = 12 THEN DO',
           "    SAY 'CRX82MK:' U 'AGAIN WITH -O0'",
-          "    'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82O0 KEEP'",
+          "    'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82O0 NOASM KEEP'",
           '  END',
+          '  IF RC > 4 THEN RETURN RC',
+          '  /* name the CSECT: TXTLIB takes no private code */',
+          "  'MAKEBUF'",
+          "  QUEUE 'SERIAL OFF'",
+          "  QUEUE 'LOCATE /         CSECT/'",
+          "  QUEUE 'CHANGE /         CSECT/'LEFT(CS.U, 9)'CSECT/'",
+          "  QUEUE 'FILE'",
+          "  'EDIT' U 'ASSEMBLE A'",
+          '  E = RC',
+          "  'DROPBUF'",
+          '  IF E <> 0 THEN RETURN 100 + E',
+          "  'GLOBAL MACLIB' L 'DMSGPI CMSHRC CMSLIB OSMACRO TSOMAC'",
+          "  'ASMAHL' U '(NOTERM'",
           '  R = RC',
           '  IF R > 4 THEN CALL ASMERR U',
           "  'ERASE' U 'ASSEMBLE A'",
@@ -221,8 +260,10 @@ def main():
     with open(os.path.join(out, 'crx82mk.txt'), 'w', encoding='latin-1') as fo:
         for c in mk:
             fo.write(c.ljust(80) + '\n')
-    print('%d files, %d cards; %s' % (len(files), len(deck),
-          ' '.join('%s=%d' % (n, len(u)) for n, u in programs(stage))))
+    progs, libs = programs(stage)
+    print('%d files, %d cards; %s; %s' % (len(files), len(deck),
+          ' '.join('%s=%d' % (p[0], len(p[1])) for p in progs),
+          ' '.join('%s=%d' % (n, len(u)) for n, u in libs.items())))
 
 
 if __name__ == '__main__':

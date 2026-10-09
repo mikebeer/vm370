@@ -45,8 +45,16 @@ long long crxinc64(long long *p, long long d, int post);
 int crxcmp64(long long a, long long b);
 int crxucm64(unsigned long long a, unsigned long long b);
 long crxsw64(long long a);
+long long crxmul64(long long a, long long b);
+long long crxmut64(long long *p, long long b);
+int crxaov64(long long a, long long b, long long *r);
+int crxsov64(long long a, long long b, long long *r);
+int crxmov64(long long a, long long b, long long *r);
+#define __builtin_add_overflow(a, b, r) crxaov64((a), (b), (long long *) (r))
+#define __builtin_sub_overflow(a, b, r) crxsov64((a), (b), (long long *) (r))
+#define __builtin_mul_overflow(a, b, r) crxmov64((a), (b), (long long *) (r))
 '''
-HELPERS = ('crxadd64', 'crxsub64', 'crxadt64', 'crxinc64')
+HELPERS = ('crxadd64', 'crxsub64', 'crxadt64', 'crxinc64', 'crxmul64', 'crxmut64')
 IHELPERS = ('crxcmp64', 'crxucm64', 'crxsw64')
 
 INT = {'char': 8, 'short': 16, 'int': 32, 'long': 32, '_Bool': 8}
@@ -403,6 +411,19 @@ class Xform:
                 self.count += 1
                 n.cond = call('crxsw64', cast(LLT, n.cond))
             return n
+        if isinstance(n, c_ast.BinaryOp) and n.op == '*':
+            # GCC synthesises a multiply by a constant from shifts and adds
+            t = self.typeof(n, sc)
+            if is64(t):
+                self.count += 1
+                r = call('crxmul64', cast(LLT, n.left), cast(LLT, n.right))
+                return cast(ULLT, r) if t[2] else r
+        if isinstance(n, c_ast.Assignment) and n.op == '*=':
+            lt = self.typeof(n.lvalue, sc)
+            if is64(lt):
+                self.count += 1
+                r = call('crxmut64', cast(LLP, c_ast.UnaryOp('&', n.lvalue)), cast(LLT, n.rvalue))
+                return cast(ULLT, r) if lt[2] else r
         if isinstance(n, c_ast.BinaryOp) and n.op in ('+', '-'):
             t = self.typeof(n, sc)
             if t is None:
@@ -501,7 +522,12 @@ def prune(ast, unitfile, roots=None):
         nm = Names()
         nm.visit(n)
         d, dt = defines(n)
-        own = n.coord is not None and os.path.basename(str(n.coord.file)) == unitfile
+        f = str(n.coord.file) if n.coord is not None else ''
+        own = os.path.basename(f) == unitfile
+        # external functions from a .c the unit #includes (rxcp_inline.c)
+        if not own and isinstance(n, c_ast.FuncDef) and 'gcclib31' not in f and \
+                'static' not in (n.decl.storage or []) and 'inline' not in (n.decl.funcspec or []):
+            own = True
         info.append((n, own, d, dt, nm.ids, nm.tags))
     keep = [False] * len(items)
     need_ids, need_tags = {'GCCCRAB'}, set()
