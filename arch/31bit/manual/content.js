@@ -204,7 +204,7 @@ P('`poweroff` (or `halt`) stops Debian; CP then shows a disabled wait. `CP LOGOF
 H2('Several Linux users');
 P('Each Linux user needs his own copy of the Debian disk, his own CTC pair with a CTCI line in `vm370ce.conf` and his own IP address in `userid LXPARM`. The kit’s example: MAINT on 600/601 and 190, address 10.1.1.2; CMSUSER on 602/603 and 191, address 10.1.2.2.');
 SCREEN(['0600.2  CTCI    10.1.1.2 10.1.1.1', '0602.2  CTCI    10.1.2.2 10.1.2.1', '0190    3390    disks/lnx190.cckd', '0191    3390    disks/lnx191.cckd'], 'Two Linux users in vm370ce.conf');
-P('Make `lnx191.cckd` a copy of the Debian disk. The disks are identical: the address comes from the IPL parameters, not from the disk.');
+P('Make `lnx191.cckd` a copy of the Debian disk. The disks are identical: the address comes from the IPL parameters, not from the disk. Give Hercules enough storage for CP\u2019s paging store: `MAINSIZE 256` (the kit\u2019s value) for two Linux users, more for more. With too little, CP fills its DASD paging space (`DMKPGT400I SYSTEM TEMP SPACE FULL`) and the Linux machines fail.');
 NOTE('Real storage is the limit: CP keeps its frames in 16 MB, so two 64 MB Linux machines page constantly and respond slowly until CP uses frames above 16 MB (milestone M4b.3).');
 
 // ---------------------------------------------------------------- chapter 6

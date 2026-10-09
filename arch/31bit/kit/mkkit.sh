@@ -15,7 +15,7 @@ import sys
 s=open(sys.argv[1]).read()
 i=s.find('# A SECOND 3215, added 3 October')
 if i>0: s=s[:i].rstrip()+'\n'
-s=s.replace('MAINSIZE        16','MAINSIZE        64')
+s=s.replace('MAINSIZE        16','MAINSIZE        256')
 s=s.replace('#0500 CTCE 30882 127.0.0.1 30880','0500 CTCE 30882 127.0.0.1 30880')
 s=s.replace('0600.2  CTCI    10.1.1.2 10.1.1.1','# Remove the # on the next line for Linux networking (README):\n#0600.2  CTCI    10.1.1.2 10.1.1.1')
 s=s.replace('PANTITLE        "VM370CE 1.1.2"','PANTITLE        "VM/370+ (VM370CE 1.1.2 ESA/390)"')
