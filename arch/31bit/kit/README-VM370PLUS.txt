@@ -40,6 +40,14 @@ INSTALL
      messages at all) type  ipl 6a1  yourself.
   5. Connect the 3270 emulator to localhost:3270.
 
+DISKS
+  CMSUSER has 191-195 on VM50U0 and, since build 6, four more 52 MB
+  minidisks 196-199 on VM50-8 (cylinders 86-545, which CE leaves free
+  for new minidisks); they come formatted (labels CMS196..CMS199):
+     access 196 h   (197 i, 198 j, 199 k)
+  A CMS minidisk on a 3350 holds at most about 52 MB (65,535 blocks of
+  800 bytes); larger minidisks come with M6.
+
 USE
   logon cmsuser cmsuser noipl
   cp def stor 128m               HIGHSTOR region = 16 MB .. machine size

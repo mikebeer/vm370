@@ -140,6 +140,10 @@ USER CMSUSER CMSUSER 16M 256M G                                         01240000
  MDISK   193 3350 231 115 VM50U0 MR   ALL      WRITE    MULT            01360000
  MDISK   194 3350 346 115 VM50U0 MR   ALL      WRITE    MULT            01370000
  MDISK   195 3350 461 094 VM50U0 MR   ALL      WRITE    MULT            01380000
+ MDISK   196 3350 086 115 VM50-8 MR   ALL      WRITE    MULT                    
+ MDISK   197 3350 201 115 VM50-8 MR   ALL      WRITE    MULT                    
+ MDISK   198 3350 316 115 VM50-8 MR   ALL      WRITE    MULT                    
+ MDISK   199 3350 431 115 VM50-8 MR   ALL      WRITE    MULT                    
                                                                         01390000
 USER CMS67 CMS67 512K 8M G                                              01400000
  OPTION ECMODE                                                                  
