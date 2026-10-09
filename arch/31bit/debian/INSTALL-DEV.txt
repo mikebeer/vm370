@@ -1,0 +1,17 @@
+gcc under Debian on VM/370+ (9 October 2026)
+
+Packages: the 18 wheezy s390 .debs that get-wheezy-dev.cmd (Windows 11),
+get-wheezy-dev.ps1 or get-wheezy-dev.sh download into wheezy-s390-dev.zip:
+gcc 4.6.3 (gcc, cpp, gcc-4.6, cpp-4.6, gcc-4.6-base), g++ 4.6.3 (g++,
+g++-4.6, libstdc++6-4.6-dev), binutils 2.22, make 3.81, libc6-dev and
+libc-dev-bin 2.13, linux-libc-dev 3.2.78, libgmp10, libmpfr4, libmpc2,
+libgomp1.  (libstdc++6 4.7.2 is already in the base system.)
+
+Install, with Debian running (LINUX EXEC, SSH to 10.1.1.2):
+    copy the .debs to /root/dev  (scp / sftp)
+    cd /root/dev && dpkg -i *.deb        about 8 minutes
+    rm -rf /root/dev
+
+Verified: gcc -O2 hello.c and g++ -O2 hello.cc built by make in 53 s; a
+64-bit long long loop gives 500000500000; ELF 32-bit MSB, IBM S/390.
+Disk: 392 MB of 771 MB used afterwards.
