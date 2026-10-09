@@ -1,10 +1,47 @@
-# cREXX on VM/370 CE — where things stand
+# VM/370+ — where things stand
 
-Last updated **5 October 2026, 02:00 UTC**. **Read this first in a new session.**
+Last updated **9 October 2026, 16:10 UTC**. **Read this first in a new session.**
 
 ---
 
-## Current position, 6 October — CP runs AMODE 31, hosts a 31-bit guest and pages; CMS is rebuilt from source, runs in EC mode and IPLs from 290 (M5a, M5b nucleus; SNAP-I249); a 32M machine stores and displays above 16 MB from the console (install point SNAP-I231)
+## Current position, 9 October — kit build 5: Linux (Debian 7.11) for several users, from CMS, side by side with CMS users; the VM/370+ Guide
+
+**Delivered:** `dist/VM370PLUS-kit-20261009-b5-part1..7.zip`, which goes over a fresh CE V1R1.2 with MAINSIZE 256, and
+`arch/31bit/manual/VM370PLUS-Guide.docx`, a 20-page IBM-style guide (`mkguide.sh`).
+To run Linux: log on to MAINT, `CP DEF STOR 64M`, `IPL CMS`, `LINUX`.
+The kit was verified on a fresh CE (kt14).
+
+**Milestones**
+
+| | |
+|---|---|
+| M1–M5a, M5b nucleus | done: CP ESA/390, AMODE 31, 31-bit guests, paging, CMS rebuilt from source |
+| M7.1–M7.7 | done: ESA/390 guests with DAT (DMKVAX shadow tables), the Linux 4.0 31-bit kernel, BusyBox, Debian 7.11 from a 3390 with SSH over CTC |
+| **M7.8** | **done**: LINUX EXEC on MAINT 19D, a parameter file per user, `SET ESA ON` pending until the next device IPL, CMS first and then Linux, Linux and CMS users side by side (`M7.8-MULTIUSER.md`, tests `m7-linux-cms-coexist*`) |
+| Guide | done (b5) |
+| **next: M8.2** | the current cREXX built natively on CMS |
+| M7.9 | lift the 64-CCW CVTCHN limit |
+| M4b.3 | CP using real frames above 16 MB; needed for two Debians at once (I-254) |
+| CP leftovers | I-235 models, I-201 DMKDMP dump, the LPSW fast path for PSWs above 16 MB |
+| gcc under Debian | needs the -dev package set uploaded |
+| M6 | 31-bit CMS proper |
+| M9 | 64-bit |
+
+**Open issues that matter:** I-254 (two Debians, real storage), I-253 (SPOOL TO SYSTEM, cosmetic), I-251 (CPWATCH, worked around), I-235 models, I-201.
+
+**CP changes since kit b4 (XA0054DK):**
+- the DMKCCW 24-bit masks (I/O above 64 MB);
+- PSWCKSUB tests bits 33–39 only in AMODE 24;
+- DMKDSP zeroes CR3/CR7/CR13 for S/370 guests;
+- the DMKCFS pending `SET ESA`;
+- DMKCFG/DMKDEH release the shared system;
+- DMKVAX per-user DATBLK work fields;
+- DMKVCS VCSLOCK.
+
+---
+
+## Earlier position, 6 October (kept)
+CP runs AMODE 31, hosts a 31-bit guest and pages; CMS is rebuilt from source, runs in EC mode and IPLs from 290 (M5a, M5b nucleus; SNAP-I249); a 32M machine stores and displays above 16 MB from the console (install point SNAP-I231)
 
 ```
 /(0009) ipl 190
