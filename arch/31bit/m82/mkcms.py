@@ -87,13 +87,9 @@ def exec_text(stage):
         line += ' ' + u.upper()
     if line:
         L.append("UNITS = UNITS '%s'" % line.strip())
-    L += ["'GLOBAL TXTLIB GCCLIB31'",
-          "'STATE ASMFIX MODULE A'",
-          "IF RC <> 0 THEN DO",
-          "  'EXEC GCC31 ASMFIX C A ( LIB GCC31 PARM CRX82'",
-          "  'LOAD ASMFIX (CLEAR'",
-          "  'GENMOD ASMFIX'",
-          "END",
+    L += ["/* CRX82 MACLIB: GCC31's, PDPTOP fixing GCC380's 64-bit code */",
+          "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
+          "'MACLIB ADD CRX82 VTABLE'",
           "IF ONLY = 'LINK' THEN SIGNAL LINKALL",
           "IF ONLY <> '' THEN UNITS = ONLY",
           'DO I = 1 TO WORDS(UNITS)',
@@ -121,23 +117,18 @@ def exec_text(stage):
           "ELSE SAY 'CRX82MK: BUILD OK'",
           'EXIT BAD',
           '',
-          '/* GCC380 -O1 (-O0 if it fails inside, RC 12), ASMFIX, ASMAHL */',
+          '/* GCC380 -O1 (-O0 if it fails inside, RC 12); CRXLGCC defines */',
+          '/* the helpers PDPTOP declares, so it is built with GCC31 MACLIB */',
           'COMPILE: PROCEDURE EXPOSE SRC',
           '  ARG U',
-          "  'EXEC GCC31' U 'C' SRC '( LIB GCC31 PARM CRX82 NOASM KEEP'",
+          "  L = 'CRX82'",
+          "  IF U = 'CRXLGCC' THEN L = 'GCC31'",
+          "  'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82'",
           '  IF RC = 12 THEN DO',
           "    SAY 'CRX82MK:' U 'AGAIN WITH -O0'",
-          "    'EXEC GCC31' U 'C' SRC '( LIB GCC31 PARM CRX82O0 NOASM KEEP'",
+          "    'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82O0'",
           '  END',
-          '  IF RC <> 0 THEN RETURN RC',
-          "  'ASMFIX' U",
-          '  IF RC <> 0 THEN RETURN RC',
-          "  'GLOBAL MACLIB GCC31 DMSGPI CMSHRC CMSLIB OSMACRO TSOMAC'",
-          "  'ASMAHL' U '(NOTERM'",
-          '  R = RC',
-          "  IF R = 0 THEN 'ERASE' U 'LISTING A'",
-          "  'ERASE' U 'ASSEMBLE A'",
-          '  RETURN R']
+          '  RETURN RC']
     for l in L:
         assert len(l) <= 72, l
     return L
@@ -177,7 +168,12 @@ def main():
     mk = [':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
     mk += [':READ  CRX82    PARM     A1', PARM]
     mk += [':READ  CRX82O0  PARM     A1', PARM.replace('-O1', '-O0')]
-    mk += [':READ  ASMFIX   C        A1'] + cards(os.path.join(HERE, 'inc', 'asmfix.c'), 'C')
+    top = open(os.path.join(HERE, '..', 'gcclib31', 'src', 'pdptop.copy')).read().rstrip('\n').split('\n')
+    top = ['SLDA     OPSYN SLDL           M8.2: GCC380 shifts 64 bits with SLDA'] + top + [
+        '* M8.2: GCC380 calls its 64-bit helpers (CRXLGCC) through =A()',
+        '         EXTRN @@DIVDI3,@@UDIVDI,@@MODDI3,@@UMODDI',
+        '         EXTRN @@MULDI3,@@NEGDI2,@@CMPDI2,@@UCMPDI']
+    mk += [':READ  PDPTOP   COPY     A1'] + top
     with open(os.path.join(out, 'crx82src.txt'), 'w', encoding='latin-1') as fo:
         for c in deck + mk:
             fo.write(c.ljust(80) + '\n')
