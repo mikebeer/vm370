@@ -1,7 +1,6 @@
 /* M8.2 CRXLGCC C -- the 64-bit helpers GCC380 calls but nothing supplies
    (libgcc's __divdi3 & co.).  GCC380 calls them as =A(@@DIVDI3) (names cut to
-   8: __udivdi3 is @@UDIVDI): PDPTOP COPY in the CRX82 MACLIB declares
-   them EXTRN.  (__floatundidf would also be @@FLOATD: GCC380 converts
+   8: __udivdi3 is @@UDIVDI); ASMFIX turns those into =V().  (__floatundidf would also be @@FLOATD: GCC380 converts
    unsigned with __floatdidf.)  Their calling convention
    is GCC380's own for a function of long long (R1 -> the values, R0 -> the
    result), so they are written as ordinary C -- but only with 32-bit
@@ -188,7 +187,8 @@ long long __fixdfdi(double d)
 unsigned long long __fixunsdfdi(double d)
 {
     du r;
-    r.w = d < 0 ? mk(0, 0) : d2u(d);
+    if (d < 0) r.w = mk(0, 0);
+    else r.w = d2u(d);
     return r.u;
 }
 
@@ -222,4 +222,42 @@ long long __ashrdi3(long long a, int n)
     if (n >= 32) x.w = mk(fill, (u32)((long)x.w.hi >> (n - 32)));
     else if (n) x.w = mk((u32)((long)x.w.hi >> n), (x.w.lo >> n) | (x.w.hi << (32 - n)));
     return x.s;
+}
+
+/* GCC380 has no 64-bit add at all (internal compiler error), and folds a
+   subtract of a constant into an add: xform.py turns every 64-bit +, -,
+   +=, -=, ++ and -- into these. */
+long long crxadd64(long long a, long long b)
+{
+    du x, y;
+    x.s = a; y.s = b;
+    x.w = add(x.w, y.w);
+    return x.s;
+}
+
+long long crxsub64(long long a, long long b)
+{
+    du x, y;
+    x.s = a; y.s = b;
+    x.w = sub(x.w, y.w);
+    return x.s;
+}
+
+long long crxadt64(long long *p, long long b)       /* *p += b */
+{
+    du x, y;
+    x.s = *p; y.s = b;
+    x.w = add(x.w, y.w);
+    *p = x.s;
+    return x.s;
+}
+
+long long crxinc64(long long *p, long long d, int post)   /* ++ -- */
+{
+    du x, y, old;
+    x.s = *p; y.s = d;
+    old = x;
+    x.w = add(x.w, y.w);
+    *p = x.s;
+    return post ? old.s : x.s;
 }

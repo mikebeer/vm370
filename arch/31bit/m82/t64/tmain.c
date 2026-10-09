@@ -20,6 +20,9 @@ int main(void)
             p("SHL", (ull)a << n);
             p("SHR", (ull)a >> n);
             p("SAR", (ull)(a >> n));
+            p("SL32", (ull)((unsigned long)a << (n & 31)));
+            p("SR32", (ull)((unsigned long)a >> (n & 31)));
+            p("SA32", (ull)(unsigned long)((long)a >> (n & 31)));
         }
         for (j = 0; j < 10; j++) {
             ll b = V[j];

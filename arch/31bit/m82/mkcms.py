@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """M8.2: the reader deck and the build EXEC for the native cREXX build.
 
-    mkcms.py STAGE OUTDIR  -> OUTDIR/crx82src.txt (READCARD deck: every staged
+    mkcms.py STAGE XFDIR OUTDIR
+                           -> OUTDIR/crx82src.txt (READCARD deck: every staged
                               file and the EXEC), OUTDIR/crx82mk.txt (CRX82MK EXEC + CRX82 PARM)
 
 CRX82MK EXEC compiles every unit with GCC380 (GCC31 EXEC, GCCLIB31's headers
@@ -16,7 +17,6 @@ sys.path.insert(0, os.path.join(HERE, '..', 'crexx'))
 from mkdeck import cards  # noqa: E402
 
 PARM = '-w -O1 -S -DNDEBUG -D__CMS__ -o dd:out -'
-EXTRN = '@@DIVDI3,@@UDIVDI,@@MODDI3,@@UMODDI,@@MULDI3,@@NEGDI2,@@CMPDI2,@@UCMPDI'
 
 
 def units_of(stage):
@@ -76,16 +76,22 @@ def exec_text(stage):
         line += ' ' + u.upper()
     if line:
         L.append("UNITS = UNITS '%s'" % line.strip())
-    L += ["/* CRX82 MACLIB: GCC31's macros, PDPTOP with the 64-bit helpers */",
-          "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
-          "'MACLIB ADD CRX82 VTABLE'",
+    L += ["'GLOBAL TXTLIB GCCLIB31'",
+          "'STATE ASMFIX MODULE A'",
+          "IF RC <> 0 THEN DO",
+          "  'EXEC GCC31 ASMFIX C A ( LIB GCC31 PARM CRX82'",
+          "  'LOAD ASMFIX (CLEAR'",
+          "  'GENMOD ASMFIX'",
+          "END",
           "IF ONLY = 'LINK' THEN SIGNAL LINKALL",
           "IF ONLY <> '' THEN UNITS = ONLY",
           'DO I = 1 TO WORDS(UNITS)',
           '  U = WORD(UNITS, I)',
           "  SAY 'CRX82MK: COMPILING' U '(' I 'OF' WORDS(UNITS) ')'",
-          "  'EXEC GCC31' U 'C' SRC '( LIB CRX82 PARM CRX82'",
-          "  IF RC <> 0 THEN DO; SAY 'CRX82MK: ***' U 'RC' RC; BAD = BAD + 1; END",
+          "  CALL COMPILE U",
+          "  IF RESULT <> 0 THEN DO",
+          "    SAY 'CRX82MK: ***' U 'RC' RESULT; BAD = BAD + 1",
+          "  END",
           'END',
           "IF ONLY <> '' THEN EXIT BAD",
           'LINKALL:',
@@ -102,27 +108,63 @@ def exec_text(stage):
         L.append("IF RC <> 0 THEN BAD = BAD + 1")
     L += ["IF BAD > 0 THEN SAY 'CRX82MK: *****' BAD 'ERRORS *****'",
           "ELSE SAY 'CRX82MK: BUILD OK'",
-          'EXIT BAD']
+          'EXIT BAD',
+          '',
+          '/* GCC380 -O1 (-O0 if it fails inside, RC 12), ASMFIX, ASMAHL */',
+          'COMPILE: PROCEDURE EXPOSE SRC',
+          '  ARG U',
+          "  'EXEC GCC31' U 'C' SRC '( LIB GCC31 PARM CRX82 NOASM KEEP'",
+          '  IF RC = 12 THEN DO',
+          "    SAY 'CRX82MK:' U 'AGAIN WITH -O0'",
+          "    'EXEC GCC31' U 'C' SRC '( LIB GCC31 PARM CRX82O0 NOASM KEEP'",
+          '  END',
+          '  IF RC <> 0 THEN RETURN RC',
+          "  'ASMFIX' U",
+          '  IF RC <> 0 THEN RETURN RC',
+          "  'GLOBAL MACLIB GCC31 DMSGPI CMSHRC CMSLIB OSMACRO TSOMAC'",
+          "  'ASMAHL' U '(NOTERM'",
+          '  R = RC',
+          "  IF R = 0 THEN 'ERASE' U 'LISTING A'",
+          "  'ERASE' U 'ASSEMBLE A'",
+          '  RETURN R']
     for l in L:
         assert len(l) <= 72, l
     return L
 
 
 def main():
-    stage, out = sys.argv[1:3]
+    stage, xfdir, out = sys.argv[1:4]
     deck = ['ID CMSUSER NAME CRX82 SRC']
-    files = sorted(f for f in os.listdir(stage) if f.endswith(('.c', '.h')))
+    files = sorted(f for f in os.listdir(xfdir) if f.endswith('.c'))
     for f in files:
-        fn, ft = f.split('.')
-        deck.append(':READ  %-8s %-8s A1' % (fn.upper(), ft.upper()))
-        deck.extend(cards(os.path.join(stage, f), ft.upper()))
+        fn = f[:-2]
+        cs = cards(os.path.join(xfdir, f), 'C')
+        if len(cs) <= 60000:
+            deck.append(':READ  %-8s C        A1' % fn.upper())
+            deck.extend(cs)
+            continue
+        # a CMS file holds 65,533 records: the unit #includes its pieces,
+        # cut between source lines (a card ending in a backslash goes on)
+        parts, cur = [], []
+        for c in cs:
+            cur.append(c)
+            if len(cur) >= 50000 and not c.endswith('\\'):
+                parts.append(cur)
+                cur = []
+        if cur:
+            parts.append(cur)
+        main = []
+        for k, part in enumerate(parts):
+            pn = '%s%02d' % (fn[:6], k + 1)
+            deck.append(':READ  %-8s H        A1' % pn.upper())
+            deck.extend(part)
+            main.append('#include "%s.h"' % pn.lower())
+        deck.append(':READ  %-8s C        A1' % fn.upper())
+        deck.extend(main)
     mk = [':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
     mk += [':READ  CRX82    PARM     A1', PARM]
-    top = open(os.path.join(HERE, '..', 'gcclib31', 'src', 'pdptop.copy')).read().rstrip('\n').split('\n')
-    top += ['* M8.2: GCC380 calls its 64-bit helpers by =A(), so declare them',
-            '         EXTRN %s' % ','.join(EXTRN.split(',')[:4]),
-            '         EXTRN %s' % ','.join(EXTRN.split(',')[4:])]
-    mk += [':READ  PDPTOP   COPY     A1'] + top
+    mk += [':READ  CRX82O0  PARM     A1', PARM.replace('-O1', '-O0')]
+    mk += [':READ  ASMFIX   C        A1'] + cards(os.path.join(HERE, 'inc', 'asmfix.c'), 'C')
     with open(os.path.join(out, 'crx82src.txt'), 'w', encoding='latin-1') as fo:
         for c in deck + mk:
             fo.write(c.ljust(80) + '\n')
