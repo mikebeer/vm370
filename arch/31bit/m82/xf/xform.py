@@ -577,6 +577,10 @@ def replace_ids(n, names):
                     replace_ids(it, names)
 
 
+TABLES = [0, []]          # counter, (name, assembler lines)
+unit_name = ['']
+
+
 def pack_tables(ast, ty, limit=2000):
     """GCC380 writes one DC per array element and a CMS file holds 65,533
     records: big constant integer tables (lemon's yy_action, yy_lookahead)
@@ -598,8 +602,15 @@ def pack_tables(ast, ty, limit=2000):
             continue
         vals += [0] * (dim - len(vals))
         data = b''.join((v & ((1 << et[1]) - 1)).to_bytes(size, 'big') for v in vals)
-        lit = ''.join('\\x%02x' % b for b in data)
-        uname = 'U' + n.name
+        # the table itself becomes an assembler CSECT of DC X'..' (GCC380
+        # writes one DC per element, or per few bytes of a string)
+        uname = 'CT%05d' % TABLES[0]
+        TABLES[0] += 1
+        asm = ['%-8s CSECT' % uname, '* %s %s[%d] from xform.py' % (unit_name[0], n.name, dim)]
+        for o in range(0, len(data), 26):
+            asm.append("         DC    X'%s'" % data[o:o + 26].hex().upper())
+        asm.append('         END')
+        TABLES[1].append((uname, asm))
         elt = n.type.type
         un = c_ast.Union(None, [
             c_ast.Decl('b', [], [], [], [], c_ast.ArrayDecl(
@@ -607,9 +618,8 @@ def pack_tables(ast, ty, limit=2000):
                 c_ast.Constant('int', str(len(data))), []), None, None),
             c_ast.Decl('a', [], [], [], [], c_ast.ArrayDecl(
                 c_ast.TypeDecl('a', [], None, elt.type), c_ast.Constant('int', str(dim)), []), None, None)])
-        d = c_ast.Decl(uname, n.quals, n.align, n.storage, n.funcspec,
-                       c_ast.TypeDecl(uname, n.type.type.quals, None, un),
-                       c_ast.InitList([c_ast.Constant('string', '"' + lit + '"')]), None)
+        d = c_ast.Decl(uname, n.quals, n.align, ['extern'], n.funcspec,
+                       c_ast.TypeDecl(uname, n.type.type.quals, None, un), None, None)
         d.coord = n.coord
         ast.ext[i] = d
         names[n.name] = (lambda u=uname: c_ast.StructRef(c_ast.ID(u), '.', c_ast.ID('a')))
@@ -885,9 +895,19 @@ def main():
         elif isinstance(n, c_ast.Decl) and n.init is not None and n.type is not None \
                 and not isinstance(n.type, c_ast.FuncDecl):
             pass                     # static initialisers are constant-folded
+    cf = os.path.join(outdir, 'table.counter')
+    TABLES[0] = int(open(cf).read()) if os.path.exists(cf) else 0
+    unit_name[0] = unit
     packed = pack_tables(ast, ty)
+    af = os.path.join(outdir, unit + '.asm')
     if packed:
+        open(cf, 'w').write(str(TABLES[0]))
+        for nm_, lines in TABLES[1]:
+            open(os.path.join(outdir, nm_.lower() + '.assemble'), 'w').write('\n'.join(lines) + '\n')
+        open(af, 'w').write(' '.join(x for x, _ in TABLES[1]) + '\n')
         print('%s: %d tables packed' % (unit, packed))
+    elif os.path.exists(af):
+        os.remove(af)
     text = c_generator.CGenerator().visit(ast)
     maxl = int(os.environ.get('XFMAXLINES', '15000'))
     pf = os.path.join(outdir, unit + '.parts')

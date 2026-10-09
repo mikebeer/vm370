@@ -37,6 +37,9 @@ def expand(us):
     for u in us:
         pf = os.path.join(XF, u.lower() + '.parts') if XF else ''
         out += open(pf).read().split() if pf and os.path.exists(pf) else [u]
+        af = os.path.join(XF, u.lower() + '.asm') if XF else ''
+        if af and os.path.exists(af):
+            out += open(af).read().split()          # its tables, in assembler
     return out
 
 
@@ -121,6 +124,15 @@ def exec_text(stage):
           '/* the helpers PDPTOP declares, so it is built with GCC31 MACLIB */',
           'COMPILE: PROCEDURE EXPOSE SRC',
           '  ARG U',
+          "  IF LEFT(U, 2) = 'CT' THEN DO      /* a table: assembler source */",
+          "    'GLOBAL MACLIB GCC31 DMSGPI CMSHRC CMSLIB OSMACRO TSOMAC'",
+          "    'ASMAHL' U '(NOTERM'",
+          '    R = RC',
+          '    IF R > 4 THEN CALL ASMERR U',
+          "    'ERASE' U 'LISTING A'",
+          '    IF R = 4 THEN R = 0',
+          '    RETURN R',
+          '  END',
           "  L = 'CRX82'",
           "  IF U = 'CRXLGCC' THEN L = 'GCC31'",
           "  'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82 KEEP'",
@@ -164,6 +176,9 @@ def main():
     stage, xfdir, out = sys.argv[1:4]
     XF = xfdir
     deck = ['ID CMSUSER NAME CRX82 SRC']
+    for f in sorted(f for f in os.listdir(xfdir) if f.endswith('.assemble')):
+        deck.append(':READ  %-8s ASSEMBLE A1' % f[:-9].upper())
+        deck.extend(cards(os.path.join(xfdir, f), 'ASSEMBLE'))
     files = sorted(f for f in os.listdir(xfdir) if f.endswith('.c'))
     for f in files:
         fn = f[:-2]
