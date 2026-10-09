@@ -222,11 +222,44 @@ def kref(v):
 
 
 def konst(e):
-    """the value of an integer constant expression node, or None"""
+    """the value of an integer constant expression node (literals only,
+    64-bit two's complement), or None"""
+    M = (1 << 64) - 1
+    def sx(v):
+        v &= M
+        return v - (1 << 64) if v >> 63 else v
     if isinstance(e, c_ast.Cast):
         return konst(e.expr)
-    v = const_value(e) if isinstance(e, (c_ast.Constant, c_ast.UnaryOp)) else None
-    return v
+    if isinstance(e, c_ast.Constant):
+        return const_value(e)
+    if isinstance(e, c_ast.UnaryOp):
+        if e.op in ('sizeof', '_Alignof'):
+            return None
+        v = konst(e.expr)
+        if v is None:
+            return None
+        return {'-': lambda: sx(-v), '+': lambda: v, '~': lambda: sx(~v),
+                '!': lambda: int(not v)}.get(e.op, lambda: None)()
+    if isinstance(e, c_ast.BinaryOp) and e.op in ('+', '-', '*', '/', '%', '&', '|', '^', '<<', '>>'):
+        a, b = konst(e.left), konst(e.right)
+        if a is None or b is None:
+            return None
+        try:
+            if e.op == '+': return sx(a + b)
+            if e.op == '-': return sx(a - b)
+            if e.op == '*': return sx(a * b)
+            if e.op in ('/', '%'):
+                if b == 0: return None
+                ua, ub = a & M, b & M          # unsigned (the ULL cases)
+                return sx(ua // ub if e.op == '/' else ua % ub)
+            if e.op == '&': return sx(a & b)
+            if e.op == '|': return sx(a | b)
+            if e.op == '^': return sx(a ^ b)
+            if e.op == '<<': return sx(a << b) if 0 <= b < 64 else None
+            if e.op == '>>': return sx((a & M) >> b) if 0 <= b < 64 else None
+        except Exception:
+            return None
+    return None
 
 
 ENUMC = set()             # enumeration constants of the unit
@@ -346,6 +379,8 @@ class Xform:
             return self.ty.resolve(self.ty.globals[name])
         if name in self.ty.enumconst:
             return ('int', 32, False)
+        if name in KONST.values():
+            return ('int', 64, False)        # crxkN: static long long
         return None
 
     def typeof(self, e, sc):
@@ -443,7 +478,7 @@ class Xform:
                     if it.init is not None:
                         it.init = self.x(it.init, sc2)
                         if is64(self.ty.resolve(it.type)) and isk(it.init) and \
-                                ('static' not in (it.storage or []) or konst(it.init) is not None):
+                                'static' not in (it.storage or []):   # static data is a DC, not an MVC
                             it.init = k64(it.init)
                 elif isinstance(it, c_ast.Typedef):
                     self.ty.typedefs[it.name] = it.type
@@ -534,9 +569,18 @@ class Xform:
         if isinstance(n, c_ast.BinaryOp) and n.op == '&':
             n.left = self.narrowshift(n.left)
             n.right = self.narrowshift(n.right)
+        if isinstance(n, c_ast.BinaryOp) and n.op in ('&', '|', '^') and is64(self.typeof(n, sc)):
+            # a constant operand would be widened with the MVC 8 bug
+            if isk(n.left):
+                n.left = k64(n.left)
+            if isk(n.right):
+                n.right = k64(n.right)
         if isinstance(n, c_ast.Return) and n.expr is not None and is64(self.ret) and isk(n.expr):
             n.expr = k64(n.expr)
             return n
+        if isinstance(n, c_ast.Assignment) and n.op in ('&=', '|=', '^=') and isk(n.rvalue) and \
+                is64(self.typeof(n.lvalue, sc)):
+            n.rvalue = k64(n.rvalue)
         if isinstance(n, c_ast.Assignment) and n.op == '=' and isk(n.rvalue):
             if is64(self.typeof(n.lvalue, sc)):
                 n.rvalue = k64(n.rvalue)
@@ -745,7 +789,8 @@ def const_value(e):
     if isinstance(e, c_ast.Cast):
         e = e.expr
     if not isinstance(e, c_ast.Constant) or e.type not in ('int', 'unsigned int', 'long int',
-                                                           'unsigned long int', 'char'):
+                                                           'unsigned long int', 'char',
+                                                           'long long int', 'unsigned long long int'):
         return None
     v = e.value.rstrip('uUlL')
     try:
@@ -1105,7 +1150,8 @@ def main():
         ks = []
         for v, nm in sorted(KONST.items(), key=lambda x: x[1]):
             d = c_ast.Decl(nm, [], None, ['static'], [], c_ast.TypeDecl(nm, [], None, c_ast.IdentifierType(['long', 'long'])),
-                           c_ast.Constant('int', '%dLL' % v if v >= 0 else '(%dLL)' % v), None)
+                           c_ast.Constant('int', '%dULL' % v if v > 0x7FFFFFFFFFFFFFFF else '%dLL' % v if v >= 0
+                                          else '(-%dLL - 1)' % (-v - 1)), None)
             ks.append(d)
         first = next((i for i, n in enumerate(ast.ext) if isinstance(n, c_ast.FuncDef)), len(ast.ext))
         ast.ext[first:first] = ks
