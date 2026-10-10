@@ -202,11 +202,14 @@ def main():
 ''')
         # the section sign that prefixes the compiler's internal names
         # (\u00a7this, \u00a7factory): upstream writes it both as the escape
-        # "\xc2\xa7" (raw UTF-8 bytes, which the card reader leaves alone) and
-        # as literal UTF-8 (which it translates) -- on CMS the two would no
-        # longer compare equal.  One Latin-1 byte X'A7' here becomes the
-        # IBM-1047 section sign X'B5' on CMS, as the 1047 scanners have it.
-        text = text.replace('\\xc2\\xa7', '\xa7').replace('\xc2\xa7', '\xa7')
+        # "\xc2\xa7" (raw UTF-8 bytes, which the card reader leaves alone)
+        # and as literal UTF-8 inside strings (which the reader translates),
+        # and counts it as 2 bytes.  Every literal one inside a string becomes
+        # the escape, so all of them are the same two bytes on CMS (EBCDIC
+        # "Bx" -- letters, so the 1047 scanners take them in identifiers).
+        def esc(m):
+            return m.group(0).replace('\xc2\xa7', '" "\\xc2\\xa7" "')
+        text = re.sub(r'"(?:\\.|[^"\\\n])*"', esc, text)
         if names:
             text = rename(text, names)
         out = []
