@@ -4000,6 +4000,24 @@ def m7decks():
         "         B     SETCOMP",
     ])
     decks['DMKCFS'] = d
+
+    d = Deck(XA54)
+    # I-256: a page-in "brings virtual 80 up to date" when the page is
+    # page 0, tested with XPAGNUM -- X'00FFF000', 24 bits.  Every page
+    # at a multiple of 16 MB passed as page 0 and got VMTIMER stored at
+    # its X'50' (memtest: zero words at X'50' in 2-3 pages a round).
+    # The test is 31-bit now, and an ESA/390 guest has no location-80
+    # timer at all, so both page-0 updates skip for it.
+    d.replace('00680000', first='00679100', inc=100,
+              limit=next_seq(src('DMKPTR'), '00680000'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  I-256: AN ESA/390 GUEST HAS",
+        "         BO    TESTLOCK       NO LOCATION-80 TIMER",
+        "         L     R1,=X'7FFFF000'  I-256: 31-BIT PAGE NUMBER"])
+    d.insert('00770000', first='00770100', inc=100,
+             limit=next_seq(src('DMKPTR'), '00770000'), lines=[
+        "         TM    VMFSTAT,VMESA390  I-256: NO LOCATION-80 TIMER",
+        "         BO    ADDROK         FOR AN ESA/390 GUEST"])
+    decks['DMKPTR'] = d
     return decks
 
 XSTSLOT = [   # R2 = slot frame address from the CCPD at SWPTABLE R5

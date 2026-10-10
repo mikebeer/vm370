@@ -1,0 +1,8 @@
+./ R 00680000          $ 00679100 100                                           
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  I-256: AN ESA/390 GUEST HAS   XA0054DK         
+         BO    TESTLOCK       NO LOCATION-80 TIMER             XA0054DK         
+         L     R1,=X'7FFFF000'  I-256: 31-BIT PAGE NUMBER      XA0054DK         
+./ I 00770000 $ 00770100 100                                                    
+         TM    VMFSTAT,VMESA390  I-256: NO LOCATION-80 TIMER   XA0054DK         
+         BO    ADDROK         FOR AN ESA/390 GUEST             XA0054DK         
