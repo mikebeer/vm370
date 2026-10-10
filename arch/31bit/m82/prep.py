@@ -61,6 +61,10 @@ PATCHES = [
 #else
     coeff = abs_value / pow(10.0, (double)exp);
 #endif''', 1),
+    # the section sign is "_#" on CMS (see the note in main())
+    ('rxvml.c', '''           (unsigned char)member_name[0] == 0xc2 &&
+           (unsigned char)member_name[1] == 0xa7;''',
+     '''           member_name[0] == '_' && member_name[1] == '#';''', 1),
     # say why a module did not load (the loader's own error text)
     ('rxvmmain.c', 'fprintf(stderr, "ERROR reading module file %s\\n", file_name);',
      '{ extern int crxfline, crxflog[16]; int q; const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s\\n", file_name, e ? ": " : "", e ? e : ""); for (q = crxfline - 16; q < crxfline; q++) if (q >= 0) fprintf(stderr, " %d", crxflog[q & 15]); fprintf(stderr, "\\n"); }', 1),
@@ -200,15 +204,16 @@ def main():
             pool && id < pool->record_count ? (unsigned long) pool->records[id].type : 0UL,
             (unsigned long) type);
 ''')
-        # the section sign that prefixes the compiler's internal names
-        # (\u00a7this, \u00a7factory): upstream writes it both as the escape
-        # "\xc2\xa7" (raw UTF-8 bytes, which the card reader leaves alone)
-        # and as literal UTF-8 inside strings (which the reader translates),
-        # and counts it as 2 bytes.  Every literal one inside a string becomes
-        # the escape, so all of them are the same two bytes on CMS (EBCDIC
-        # "Bx" -- letters, so the 1047 scanners take them in identifiers).
+        # the section sign that prefixes the compiler's and VM's internal
+        # names (\u00a7this, \u00a7factory, \u00a7match).  Upstream writes it as
+        # the escape "\xc2\xa7" and as literal UTF-8, and counts 2 bytes.  On
+        # CMS neither survives: the reader translates the literal, and GCC380
+        # translates escaped bytes and joins "\xc2\xa7" "factory" before
+        # reading the escape (\xa7fac...).  So both become "_#": two plain
+        # characters that every stage carries unchanged, and that the RXAS
+        # scanner takes in an identifier (it may start with _).
         def esc(m):
-            return m.group(0).replace('\xc2\xa7', '" "\\xc2\\xa7" "')
+            return m.group(0).replace('\xc2\xa7', '_#').replace('\\xc2\\xa7', '_#')
         text = re.sub(r'"(?:\\.|[^"\\\n])*"', esc, text)
         if names:
             text = rename(text, names)
