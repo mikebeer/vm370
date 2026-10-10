@@ -12,14 +12,16 @@ B(['**Chapter 1, Introduction**, says what VM/370plus is and what it is for.',
    '**Chapter 3, Installing VM/370plus**, takes you from a fresh Community Edition to a running VM/370plus system.',
    '**Chapter 4, Operating VM/370plus**, covers start-up, shutdown and the rules that keep the system healthy.',
    '**Chapter 5, Running Linux/390**, describes ESA/390 virtual machines, the Linux kernel, the Debian system and the network connection to the PC.',
-   '**Chapter 6, cREXX on VM/370plus**, describes the REXX compiler and virtual machine built for and on VM/370plus, the languages written in cREXX that run on CMS and on Linux, and Turbo CREXX.',
-   '**Chapter 7, Restrictions and Known Problems**, lists what does not work yet.',
+   '**Chapter 6, Service Machines**, describes CHATBOT, the chatbot service machine, and the service machines that are planned.',
+   '**Chapter 7, cREXX on VM/370plus**, describes the REXX compiler and virtual machine built for and on VM/370plus, the languages written in cREXX that run on CMS and on Linux, and Turbo CREXX.',
+   '**Chapter 8, Restrictions and Known Problems**, lists what does not work yet.',
    '**Appendix A** summarizes the new and changed commands, **Appendix B** lists the files in the installation kit, **Appendix C** gives the ESA/390 deviations of the virtual machine.']);
 H3('Conventions');
 P('Commands are shown in `monospaced type`. In command descriptions, uppercase letters are typed as shown and lowercase words stand for values you supply. Examples of terminal sessions are shown in framed figures; lines you type are not marked separately because the context makes clear which they are.');
 H3('Summary of changes');
 P('This edition is kept up to date as VM/370plus grows; each change is listed here, newest first.');
-B(['**10 October 2026.** Regina REXX and THE under Debian; languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
+B(['**10 October 2026, evening (kit build 6).** `IPL LINUX` and vmzipl: Debian starts from its own disk; the Debian disk is a 3390-9 (7 GB); no 64-CCW limit for Linux disk I/O; mosquitto (MQTT) and Asterisk under Debian; `QUERY SET` shows ESA; the CHATBOT service machine and `CHAT` (new Chapter 6); RXBVM8 has TIME and DATE; the console banner reads VM/370plus; a fix for memory corruption in Linux guests above 16 MB (location 80).',
+   '**10 October 2026.** Regina REXX and THE under Debian; languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
    '**9 October 2026.** First edition, for kit build 5.']);
 P('*PC* means the personal computer on which Hercules runs. *Real* storage and devices are those of the Hercules machine; *virtual* storage and devices are those CP gives a user.');
 
@@ -46,9 +48,10 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['M6', 'a CMS nucleus that is itself 31-bit', 'planned, before M9'],
   ['M7', 'ESA/390 virtual machines, Linux/390, Debian, SSH', 'complete'],
   ['M7.8', 'Linux for several users from a linkable disk (LINUX EXEC); Linux and CMS side by side', 'complete; two Debians at once need M4b.3'],
-  ['M7.9', 'channel programs of any length for ESA/390 guests (no 64-CCW limit)', 'planned'],
+  ['M7.9', 'channel programs of any length for ESA/390 guests (no 64-CCW limit)', 'complete'],
   ['M7.10', 'IPL of Linux from its disk (vmzipl) and `IPL LINUX`', 'complete'],
-  ['M7.11', 'a 3390-9 Debian disk (about 7 GB) as the standard Linux disk', 'in progress'],
+  ['M7.11', 'a 3390-9 Debian disk (about 7 GB) as the standard Linux disk', 'complete'],
+  ['\u2014', 'service machines: CHATBOT (the MCchat persona bot) with CHAT EXEC', 'complete'],
   ['M8', 'cREXX: the 2022 release built natively (M5); the current release cross-built (M8.1)', 'complete'],
   ['M8.2', 'the current cREXX built natively with GCC380', 'compiler, assembler and VM work; the library does not build yet'],
   ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'complete on both'],
@@ -79,6 +82,7 @@ H2('CP commands');
 TABLE(['Command', 'Change'], [
   ['`SET ESA ON|OFF`', 'New (class G). ON makes the next IPL of a device an IPL of an ESA/390 machine; OFF returns to System/370 at once.'],
   ['`IPL cuu`', 'A user who is running a shared named system (CMS) is IPLed with CLEAR, so that no copy of the shared pages stays in the virtual machine.'],
+  ['`QUERY SET`', 'A fifth line shows `ESA ON`, `ESA PENDING` (SET ESA ON before the next IPL of a device) or `ESA OFF`.'],
   ['`IPL LINUX`', 'New. IPLs the Debian disk at virtual address 250 as an ESA/390 machine: `SET ESA ON` and `IPL 250` in one command. Works from a directory IPL statement too.'],
   ['`IPL name`', 'Any other name always IPLs a System/370 machine; a pending `SET ESA ON` waits for the next IPL of a device.'],
   ['`DEFINE STORAGE`', 'Up to 256 MB. Leaves the named system the user was running.'],
@@ -223,10 +227,15 @@ H2('The Linux system');
 H3('Boot sequence');
 P('The kernel’s initramfs (BusyBox) brings the 3390 online, creates a partition and a file system on a new disk, groups the CTC pair as `ctc0` and configures it from the IPL parameters (default 10.1.1.2, peer 10.1.1.1). If the disk holds a system (`/sbin/init`), it hands over to it with `switch_root`; otherwise it stays in storage with the prompt `vm370plus:~#`. The parameter `vmroot=ram` (deck `lxparmram.rdr`) keeps the in-storage system even when Debian is on the disk, which is how you repair the disk.');
 H3('Debian');
-P('The disk holds Debian 7.11 (wheezy) for s390: sysvinit, udev, rsyslog, cron, OpenSSH, apt and dpkg, root on ext2, a 128 MB swap file. Log in as `root` with password `vm370plus`, and change the password.');
-P('Development tools are installed: GNU C and C++ 4.6.3 with make, Python 2.7.3 (`python`) and Python 3.2.3 (`python3`), Regina REXX 3.6 (`regina` or `rexx`, classic REXX as on CMS) and THE 3.3, The Hessling Editor (`the`, an XEDIT-like editor; use it over SSH, since the 3215 console cannot show a full screen). cREXX and the languages of Chapter 6 are in `/usr/local/bin`.');
+P('The disk is a 3390 model 9 (10,017 cylinders, about 7 GB). It holds Debian 7.11 (wheezy) for s390: sysvinit, udev, rsyslog, cron, OpenSSH, apt and dpkg, root on ext2 (6.8 GB, about 6 GB free), a 128 MB swap file. The disk carries its own kernel and IPL records, so `IPL LINUX` starts it. Log in as `root` with password `vm370plus`, and change the password.');
+P('Development tools are installed: GNU C and C++ 4.6.3 with make, Python 2.7.3 (`python`) and Python 3.2.3 (`python3`), Regina REXX 3.6 (`regina` or `rexx`, classic REXX as on CMS) and THE 3.3, The Hessling Editor (`the`, an XEDIT-like editor; use it over SSH, since the 3215 console cannot show a full screen). cREXX and the languages of Chapter 7 are in `/usr/local/bin`.');
+P('Servers are installed too. **mosquitto 1.6.15**, an MQTT broker (`/usr/local/sbin/mosquitto`, configuration `/etc/mosquitto/mosquitto.conf`, port 1883), with the clients `mosquitto_pub` and `mosquitto_sub`; start it with `mosquitto -d -c /etc/mosquitto/mosquitto.conf`. **Asterisk 1.8.13**, the telephone exchange, starts at boot and listens for SIP on UDP port 5060; `asterisk -rx "core show uptime"` talks to it. Both are offered as experiments: they work, at the speed of an emulated mainframe.');
+SCREEN(['root@vm370plus:~# mosquitto -d -c /etc/mosquitto/mosquitto.conf',
+        'root@vm370plus:~# mosquitto_sub -t vm370plus/test -C 1 &',
+        'root@vm370plus:~# mosquitto_pub -t vm370plus/test -m "hello MQTT on VM/370plus"',
+        'hello MQTT on VM/370plus'], 'MQTT on Debian');
 SCREEN(['root@vm370plus:~# cat /etc/debian_version', '7.11',
-        'root@vm370plus:~# df -h /', 'Filesystem      Size  Used Avail Use% Mounted on', '/dev/dasda1     771M  325M  407M  45% /',
+        'root@vm370plus:~# df -h /', 'Filesystem      Size  Used Avail Use% Mounted on', '/dev/dasda1     6.8G  541M  5.9G   9% /',
         'root@vm370plus:~# free', '             total       used       free     shared    buffers     cached',
         'Mem:         60512      21688      38824          0       2220      13792'], 'Debian on VM/370plus');
 H3('The console');
@@ -244,6 +253,58 @@ H2('Linux and CMS side by side');
 P('Linux users and CMS users share the system as any two VM/370 users do. Tested: one user runs Debian and writes and reads files under load, while another user works in CMS (LISTFILE, COPYFILE, TYPE, ERASE), defines 64 MB, starts Linux with `LINUX`, stops it with `poweroff` and goes back to CMS with `IPL CMS`; the Debian system\u2019s files are unchanged throughout.');
 
 // ---------------------------------------------------------------- chapter 6
+H1('Service Machines');
+P('A service machine is a virtual machine that works for other users: it runs disconnected, takes requests and sends answers. VM/370 has always had them (the operator, RSCS); VM/370plus adds new ones. The first is CHATBOT. Others are planned (see the end of this chapter).');
+H2('CHATBOT');
+P('CHATBOT is the persona chatbot of MCchat, written by the project owner in cREXX and run by RXBVM8. It has ten personas, each in English and German, and a knowledge base, all as CMS files; every answer is authored text chosen the way the original bot chooses it. There is no language model and no network.');
+P('Users talk to it through the spool. `CHAT` punches the question to CHATBOT’s reader. CHATBOT reads its reader, runs the bot once for all waiting questions, and punches each answer to the reader of the user who sent the question (the spool file’s origin, so nobody can read another user’s answers). The bot keeps each user’s conversation (persona, language, topic) in `userid CBSESS` on its 191 disk.');
+SCREEN(['chat hello there',
+        'Hello.',
+        'I’m Tchaika.',
+        'So - what brings you here today?',
+        'Ready;',
+        'chat /LIST',
+        'Personas (name/language): amicus/de amicus/en andron/de andron/en ...',
+        'chat /npc elena de',
+        'Oh - du bist es.',
+        'chat wie geht es dir?',
+        'Gut genug, um dich dasselbe zu fragen und es ernst zu meinen. Also - wie geht es dir wirklich?',
+        'chat /WHO',
+        'You are CMSUSER. You are talking to elena (de).'], 'Talking to CHATBOT from CMS');
+P('An answer takes up to half a minute: CHATBOT looks at its reader every 30 seconds (INTERVAL in CHATBOT CONFIG). `CHAT` alone starts a conversation that ends with an empty line.');
+TABLE(['Command', 'Meaning'], [
+  ['`/HELP`', 'the commands'],
+  ['`/LIST`', 'the personas and languages installed'],
+  ['`/NPC name [en|de]`', 'talk to another persona'],
+  ['`/LANG en|de`', 'change the language'],
+  ['`/RESET`', 'start the conversation again'],
+  ['`/WHO`', 'who you are and whom you talk to'],
+  ['`/DEBUG ON|OFF`', 'show how the bot chose its answer'],
+], [2600, 7038], 'CHATBOT commands');
+H2('Running CHATBOT');
+P('The directory entry is in place: 32 MB, `OPTION ECMODE`, `IPL 290`, a 60-cylinder 191 on VM50U1 that holds the bot, its data and the sessions. Start it from the operator console:');
+SCREEN(['autolog chatbot chatbot', 'AUTO LOGON   ***   CHATBOT  USERS = 005'], 'Starting CHATBOT');
+P('Its PROFILE EXEC starts the bot when the machine is disconnected, as after AUTOLOG. An interactive logon (`logon chatbot`) gets CMS instead, for maintenance: `EXEC CHATBOT (LOUD` then runs the bot on the console, `EXEC CHATBOT (ONCE LOUD` answers what is waiting and stops. To stop the service, create `CHATBOT STOP A` on its 191 (the loop ends at its next look) or `FORCE CHATBOT`. To start it with the system, add `AUTOLOG CHATBOT CHATBOT` to the start-up (AUTOLOG1’s PROFILE EXEC).');
+TABLE(['CHATBOT CONFIG key', 'Meaning'], [
+  ['`DEFNPC`, `DEFLANG`', 'persona and language for a new user (tchaika, en)'],
+  ['`WIDTH`', 'line width of the answers (72)'],
+  ['`CRISIS`', 'YES: words from a persona’s crisis list get its care text'],
+  ['`BOTCMD`', 'the command that runs the bot: `RXBVM8 CHATBOT -a CMS`'],
+  ['`MAXBATCH`, `INTERVAL`', 'questions per run of the bot (20), seconds between looks at the reader (30)'],
+  ['`VAR name value`', 'variables the persona scripts may use'],
+], [3000, 6638], 'CHATBOT CONFIG');
+NOTE('The upstream bot (build 1) runs unchanged. Its EXECs were adapted to VM/370 and BREXX (no WAKEUP, no UPPER, EXECIO with variable records, AUTOLOG instead of XAUTOLOG) and one bug was fixed; the list is in `vm370plus/chatbot/VM370PLUS.TXT`.');
+H2('Planned service machines');
+TABLE(['Machine', 'Purpose'], [
+  ['ASKSERV', 'an AI gateway: a Linux guest that relays questions to a language model on the PC or in the cloud; CMS users ask it through the spool, like CHAT'],
+  ['SQLSERV', 'SQLite in a CMS service machine that owns the database disk; requests by spool, later by IUCV or sockets'],
+  ['Telephony', 'a gateway from CMS to Asterisk on Debian: place calls, voicemail notices as messages'],
+  ['MQ, MQTT', 'a queue manager on CMS; the mosquitto broker on Debian'],
+  ['Network pack', 'optional: a firewall guest (BORDER), an HTTP load balancer, and a machine that starts more web guests under load'],
+  ['SMAPI', 'a subset of z/VM’s systems management API'],
+], [2200, 7438], 'Planned service machines');
+
+// ---------------------------------------------------------------- chapter 7
 H1('cREXX on VM/370plus');
 P('cREXX is a REXX implementation built as a compiler (RXC), an assembler (RXAS), a disassembler (RXDAS) and a virtual machine (RXBVM, RXVM). It needs more than 16 MB to compile larger programs, which is where VM/370plus came from.');
 H2('The 2022 release, built on VM/370plus');
@@ -295,7 +356,7 @@ SCREEN(['turbo', '  T U R B O   C R E X X   ---   VM/370plus CMS', '  Current fi
 H1('Restrictions and Known Problems');
 TABLE(['Area', 'Restriction'], [
   ['Real storage', 'CP’s frames are in the low 16 MB; storage above is a paging store. Large guests page heavily.'],
-  ['Linux disk I/O', 'A format-1 channel program is converted to at most 64 format-0 CCWs; Linux limits its disk requests to 128 KB for that reason.'],
+  ['Linux disk I/O', 'The initramfs still limits disk requests to 128 KB (from the time of the 64-CCW limit, now gone); `echo 760 > /sys/block/dasda/queue/max_sectors_kb` allows larger ones.'],
   ['Shared systems', 'The models of a shared named system are not freed when the last user leaves; they stay until CP is IPLed.'],
   ['CP dump', 'DMKDMP cannot write its dump under ESA/390 (I-201); after an abend the registers must be taken from Hercules.'],
   ['CMS', 'The CMS nucleus is 24-bit; programs above 16 MB use HIGHSTOR and SVC 120 (milestone M6 will change this).'],
@@ -304,7 +365,7 @@ TABLE(['Area', 'Restriction'], [
   ['Multiprocessing', 'One CPU only.'],
   ['cREXX, native', 'The natively built current cREXX (M8.2) cannot build its library yet; use RXC8, RXAS8 and RXBVM8 (M8.1).'],
   ['CMS file names', 'Programs cross-compiled for CMS cut a file name longer than eight characters to eight (Smalltalk’s `collections.st` is `COLLECTI ST`).'],
-  ['Linux', 'Linux 4.0 31-bit is the last kernel with 31-bit support; Debian 7 is the last Debian for s390 (31-bit). No IPL of Linux from DASD yet.'],
+  ['Linux', 'Linux 4.0 31-bit is the last kernel with 31-bit support; Debian 7 is the last Debian for s390 (31-bit).'],
 ], [2400, 7238], 'Restrictions');
 
 // ---------------------------------------------------------------- appendices
@@ -315,6 +376,12 @@ SCREEN(['SET ESA ON', 'SET ESA OFF'], 'SET ESA');
 P('Class G. **ON**: the next IPL of a device (not an IPL by name) makes the virtual machine an ESA/390 machine; it stays pending across `IPL CMS`. **OFF**: the machine is a System/370 machine at once and nothing is pending. Any operand other than OFF means ON.');
 H2('IPL');
 P('As in VM/370, with three changes: `IPL LINUX` IPLs the disk at 250 as an ESA/390 machine; any other IPL by name gives a System/370 machine; an IPL of a device by a user who runs a shared named system is done with CLEAR.');
+H2('QUERY SET');
+P('As in VM/370, with a fifth line: `ESA ON` (an ESA/390 machine), `ESA PENDING` (`SET ESA ON` given, takes effect at the next IPL of a device) or `ESA OFF`.');
+SCREEN(['cp query set', 'MSG ON , WNG ON , EMSG TEXT, ACNT ON , RUN OFF', 'LINEDIT ON , TIMER ON  , ISAM OFF, ECMODE ON', 'ASSIST OFF           , PAGEX OFF, AUTOPOLL OFF', 'IMSG ON , SMSG OFF, AFFINITY NONE   , NOTRANS OFF', 'STBYPASS OFF , ESA PENDING'], 'QUERY SET after SET ESA ON');
+H2('CHAT EXEC');
+SCREEN(['CHAT [question] [(WAIT n BOT name LOUD]'], 'CHAT EXEC');
+P('On MAINT 19D. Sends the question to the CHATBOT service machine and types the answer; without a question it asks repeatedly until an empty line. **WAIT** is the time to wait for the answer (default 60 seconds), **BOT** another service machine, **LOUD** shows the steps. Keep your reader empty of other files while you use it. Chapter 6.');
 H2('LINUX EXEC');
 SCREEN(['LINUX [DISK|READER]'], 'LINUX EXEC');
 P('On MAINT 19D. **DISK** (the default) issues `CP IPL LINUX`. **READER** punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `DEFAULT LXPARM`) to the user’s reader, holding the other reader files, and IPLs the reader as an ESA/390 machine. Needs 64 MB and, for Debian, the devices listed in Chapter 5 under “What a Linux user needs”.');
@@ -324,16 +391,17 @@ TABLE(['Path', 'Contents'], [
   ['`vm370ce.conf`', 'ESA/390 configuration, MAINSIZE 64, the CTC and 3390 lines for Linux'],
   ['`disks/shadows/*_1.shadow`', 'the VM/370plus system: CP nucleus, CMS, directory, user disks'],
   ['`disks/vm50-4.cckd`', 'VM50-4 with the paging area record corrected'],
-  ['`disks/lnx190.cckd`', 'the Debian disk (after joining parts 5–7)'],
+  ['`disks/lnx190.cckd`', 'the Debian disk, a 3390-9 (after joining parts 5–7)'],
   ['`README-VM370PLUS.txt`', 'the short form of this manual'],
   ['`vm370plus/linux/`', 'linux48.rdr, lxparm.rdr, lxparmram.rdr, kernel configuration, patches, initramfs sources, the Debian post-install script'],
   ['`vm370plus/m5f/`', 'the CMS runtime for cross-compiled 31-bit C programs'],
   ['`vm370plus/*.EXEC`, `*.C`', 'GCC31 EXEC, CRXMAKE EXEC, examples'],
+  ['`vm370plus/chatbot/`', 'the CHATBOT service machine: source, data deck, the VM/370 changes (already installed on the system)'],
 ], [3200, 6438], 'Kit contents');
 
 H1('ESA/390 Deviations of the Virtual Machine');
 P('The ESA/390 virtual machine is complete enough for Linux. Where it deviates from the architecture, the deviation is recorded in the project’s register (documents 39 and 40). The ones a user may notice:');
-B(['A format-1 channel program is converted to format 0, at most 64 CCWs per start.',
+B(['A format-1 channel program is converted to format 0 in place while it runs (any length; at most 32 TIC targets).',
    'No SCLP and no z/VM interfaces (DIAGNOSE codes of z/VM); Linux must be told `conmode=3215 condev=0x0009`.',
    'One processor; SIGP is answered for that processor only.',
    'Selector channels of an ESA/390 guest behave as block multiplexer channels.',
