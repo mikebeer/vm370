@@ -44,15 +44,16 @@ PATCHES = [
      '''    double coeff;
 #ifdef CREXX_CMS_GCC
     {
-        double p10 = pow(10.0, (double)exp);
-        if (!(p10 > 0.0) || exp > 60 || exp < -60) {
+        long e32 = (long)exp;         /* GCC380: no 64-bit divide by 2 */
+        double p10 = pow(10.0, (double)e32);
+        if (!(p10 > 0.0) || e32 > 60 || e32 < -60) {
             unsigned long w[2];
             memcpy(w, &abs_value, 8);
             fprintf(stderr, "CRX: float %08lX%08lX exp %ld pow %g\\n",
-                    w[0], w[1], (long)exp, p10);
-            p10 = pow(10.0, (double)(exp / 2));
+                    w[0], w[1], e32, p10);
+            p10 = pow(10.0, (double)(e32 / 2));
             coeff = p10 > 0.0 ? abs_value / p10 : abs_value;
-            p10 = pow(10.0, (double)(exp - exp / 2));
+            p10 = pow(10.0, (double)(e32 - e32 / 2));
             if (p10 > 0.0) coeff /= p10;
         }
         else coeff = abs_value / p10;
