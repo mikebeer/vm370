@@ -4,6 +4,10 @@ Last updated **10 October 2026, 07:20 UTC**. **Read this first in a new session.
 
 ---
 
+## Current position, 10 October evening -- kit build 6
+
+**Delivered:** `dist/VM370PLUS-kit-20261010-b6-part1..12.zip` (parts under 30 MB; the Debian disk, a 3390-9, in parts 6-12 with JOINDEB.CMD / joindeb.sh) and the Guide (Chapter 6, Service Machines). Verified on a fresh CE (kt15): QUERY SET, AUTOLOG CHATBOT + CHAT from CMSUSER, `cp ipl linux` to the Debian login on the 3390-9, poweroff, shutdown.
+
 ## Current position, 9 October — kit build 5: Linux (Debian 7.11) for several users, from CMS, side by side with CMS users; the VM/370plus Guide
 
 **Delivered:** `dist/VM370PLUS-kit-20261009-b5-part1..7.zip`, which goes over a fresh CE V1R1.2 with MAINSIZE 256, and

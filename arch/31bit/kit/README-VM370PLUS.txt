@@ -1,5 +1,17 @@
-VM/370plus  --  overlay kit, 9 October 2026 (build 5)
-=========================================
+VM/370plus  --  overlay kit, 10 October 2026 (build 6)
+=======================================================
+
+NEW IN BUILD 6
+  - Debian starts from its own disk:  cp ipl linux  (or LINUX EXEC).
+  - The Debian disk is a 3390-9 (7 GB, about 6 GB free).
+  - mosquitto (MQTT broker) and Asterisk 1.8 (SIP) under Debian.
+  - Linux disk I/O: no 64-CCW limit any more; a memory corruption of
+    Linux guests (pages at 16 MB multiples) is fixed.
+  - CHATBOT, a service machine (the MCchat persona bot in cREXX), and
+    CHAT EXEC for every user (MAINT 19D).  See CHATBOT below.
+  - QUERY SET shows ESA ON / PENDING / OFF.
+  - RXBVM8 (cREXX on CMS) has TIME() and DATE().
+  - The console banner reads VM/370plus.
 
 VM/370 Community Edition V1 R1.2, with CP converted to ESA/390 (AMODE 31)
 and an EC-mode CMS on MAINT 290 that can use storage above 16 MB.
@@ -14,11 +26,13 @@ WHAT YOU NEED
 
 INSTALL
   1. Unzip VM370CE_V1_R1_2.zip into a new directory.
-  2. Unzip kit parts 1-3 OVER it (part 1: config, shadows, tools;
-     part 2: disks/vm50-4.cckd; part 3: the CMSUSER volume's shadow;
-     part 4: Linux, vm370plus/linux/ and the VM50-2 shadow (MAINT's
-     19D with LINUX EXEC); parts 5-7: the Debian disk, see
-     LINUX/390 below),
+  2. Unzip ALL kit parts (1-12) OVER it, replacing files:
+     part 1: config, system shadows, tools, README; part 2:
+     disks/vm50-4.cckd; part 3: the CMSUSER volume's shadow; part 4:
+     Linux files (vm370plus/linux/, the Guide) and the VM50-2 shadow
+     (MAINT's 19D); part 5: the VM50-3 shadow; parts 6-12: the Debian
+     disk in pieces -- then join it: JOINDEB.CMD (Windows) or
+     sh joindeb.sh (Linux/WSL), see INSTALL THE DEBIAN DISK.
      so the files below replace or add:
         vm370ce.conf                 ARCHMODE ESA/390, CPUMODEL 3090,
                                      ECPSVM NO (CE's own S/370 settings
@@ -104,15 +118,15 @@ LINUX/390 ON VM/370plus  (milestone M7, 9 October 2026)
                       no_removal_warning conmode=3215 condev=0x0009
       lxparmram.rdr   the same + vmroot=ram: stay in the BusyBox system
                       even if Debian is on the disk (repairs)
-  and disks/lnx190.cckd -- the Debian disk, volume LNX190, a 3390-1
-  (parts 5-7 of the kit, see INSTALL THE DEBIAN DISK).
+  and disks/lnx190.cckd -- the Debian disk, a 3390-9 (build 6; it was a
+  3390-1 before), parts 6-12 of the kit, see INSTALL THE DEBIAN DISK.
 
   INSTALL THE DEBIAN DISK
-    The disk is 82 MB, shipped split in three pieces.  Unzip parts 5, 6
-    and 7 into the CE directory, then in that directory (cmd.exe):
-        copy /b disks\lnx190.cckd.001+disks\lnx190.cckd.002+disks\lnx190.cckd.003 disks\lnx190.cckd
-        del disks\lnx190.cckd.00?
-    (Linux/WSL:  cat disks/lnx190.cckd.00? > disks/lnx190.cckd )
+    The disk is about 180 MB compressed, shipped in seven pieces (parts
+    6-12).  After unzipping them into the CE directory, run there
+        JOINDEB.CMD            (Windows cmd.exe)
+        sh joindeb.sh          (Linux/WSL; also checks lnx190.sha256)
+    which joins disks/lnx190.cckd.001-007 into disks/lnx190.cckd.
     vm370ce.conf in this kit already has the line
         0190    3390    disks/lnx190.cckd
     KEEP A COPY of lnx190.cckd: it is your Linux system disk, and
@@ -121,14 +135,17 @@ LINUX/390 ON VM/370plus  (milestone M7, 9 October 2026)
   THE FULL MANUAL is vm370plus/linux/VM370PLUS-Guide.docx (Word): what
   VM/370plus is, the differences to CE, installation, Linux, cREXX.
 
-  START LINUX FROM CMS (build 5): the kernel, the LINUX EXEC and the
-  parameter files are on MAINT's 19D (your U disk).  With 64 MB and the
-  devices attached (step 3 below):
+  START LINUX FROM ITS DISK (build 6): the Debian disk carries its own
+  kernel and IPL records.  With 64 MB and the devices attached (step 3
+  below, without the reader decks):
         cp def stor 64m
-        ipl cms
-        linux
-  The EXEC punches the kernel into your own reader and IPLs it as an
-  ESA/390 machine.  Your IP address comes from  userid LXPARM  on 19D
+        cp ipl linux                  = SET ESA ON + IPL 250
+  From CMS, LINUX EXEC (MAINT 19D, your U disk) does the same:
+        linux                         IPL LINUX
+        linux reader                  the old way: kernel through the reader
+  The kernel parameters (IP address) are on the disk; after changing
+  them, run  vmzipl  in Debian (the Guide, Chapter 5).  With  linux
+  reader  your IP address comes from  userid LXPARM  on 19D.  Your IP address comes from  userid LXPARM  on 19D
   (MAINT 10.1.1.2, CMSUSER 10.1.2.2), else DEFAULT LXPARM.
   Two Debian systems at once are too slow until CP uses real storage
   above 16 MB (M4b.3); Debian next to CMS users works.
@@ -200,6 +217,17 @@ LINUX/390 ON VM/370plus  (milestone M7, 9 October 2026)
      16 MB, the PSW alignment of psw_idle, and an endless loop in the
      31-bit I/O-interrupt return path (entry.S).
    - Works with Hercules 3.13 and 4.x.
+
+CHATBOT  (service machine, build 6)
+  The operator starts it:      autolog chatbot chatbot
+  Any CMS user asks it:        chat hello there
+                               chat /LIST       (personas)
+                               chat /npc elena de
+                               chat             (a conversation; empty line ends)
+  An answer takes up to 30 s (CHATBOT looks at its reader every 30 s).
+  Keep your own reader empty while you chat.  To start CHATBOT with the
+  system, add  CP AUTOLOG CHATBOT CHATBOT  to AUTOLOG1's PROFILE EXEC.
+  Details: the Guide, Chapter 6; sources in vm370plus/chatbot/.
 
 RULES THAT MATTER
   - Always end with  /shutdown  at the Hercules console, then  exit.

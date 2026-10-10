@@ -34,21 +34,33 @@ mkdir -p $K/vm370plus/linux; cp -r $R/arch/31bit/linux390/decks/{linux48.rdr,lxp
 cp $R/arch/31bit/debian/vm370plus-post.sh $K/vm370plus/linux/
 cp -r $R/arch/31bit/linux390/cms $K/vm370plus/linux/   # LINUX EXEC and LXPARM files (also on MAINT 19D)
 test -n "$GUIDE" && cp "$GUIDE" $K/vm370plus/linux/VM370PLUS-Guide.docx
+mkdir -p $K/vm370plus/chatbot; cp -r $R/arch/31bit/chatbot/{upstream-b1,cbpatch.py,mkcbdeck.sh,VM370PLUS.TXT} $K/vm370plus/chatbot/
+cp $R/arch/31bit/linux390/debian/vmzipl $K/vm370plus/linux/
 mkdir -p $D; cd $W
-zip -qr $D/VM370PLUS-kit-$STAMP-part1.zip VM370CE.V1.R1.2 -x "VM370CE.V1.R1.2/disks/vm50-4.cckd" "VM370CE.V1.R1.2/disks/shadows/vm50u0_1.shadow" "VM370CE.V1.R1.2/vm370plus/linux/*" "VM370CE.V1.R1.2/disks/shadows/vm50-2_1.shadow"
+zip -qr $D/VM370PLUS-kit-$STAMP-part1.zip VM370CE.V1.R1.2 -x "VM370CE.V1.R1.2/disks/vm50-4.cckd" "VM370CE.V1.R1.2/disks/shadows/vm50u0_1.shadow" "VM370CE.V1.R1.2/vm370plus/linux/*" "VM370CE.V1.R1.2/disks/shadows/vm50-2_1.shadow" "VM370CE.V1.R1.2/disks/shadows/vm50-3_1.shadow"
+zip -q  $D/VM370PLUS-kit-$STAMP-part5.zip VM370CE.V1.R1.2/disks/shadows/vm50-3_1.shadow
 zip -qr $D/VM370PLUS-kit-$STAMP-part4.zip VM370CE.V1.R1.2/vm370plus/linux VM370CE.V1.R1.2/disks/shadows/vm50-2_1.shadow
 zip -q  $D/VM370PLUS-kit-$STAMP-part2.zip VM370CE.V1.R1.2/disks/vm50-4.cckd
 zip -q  $D/VM370PLUS-kit-$STAMP-part3.zip VM370CE.V1.R1.2/disks/shadows/vm50u0_1.shadow
-# parts 5-7: the Debian disk (LNX190), compacted, split in three pieces
-# that copy /b joins (README: INSTALL THE DEBIAN DISK)
+# parts 6 and on: the Debian disk (LNX190, a 3390-9 since b6), compacted,
+# in pieces under 28 MB, with JOINDEB.CMD / joindeb.sh to join them
 if [ -n "$DEBDISK" ]; then
   mkdir -p $W/deb/VM370CE.V1.R1.2/disks; cp $DEBDISK $W/deb/lnx190.cckd
   cckdcomp $W/deb/lnx190.cckd >/dev/null
-  n=$(stat -c %s $W/deb/lnx190.cckd); p=$(( (n+2)/3 ))
-  split -b $p -d -a 3 --numeric-suffixes=1 $W/deb/lnx190.cckd $W/deb/VM370CE.V1.R1.2/disks/lnx190.cckd.
+  split -b 28000000 -d -a 3 --numeric-suffixes=1 $W/deb/lnx190.cckd $W/deb/VM370CE.V1.R1.2/disks/lnx190.cckd.
   sha256sum $W/deb/lnx190.cckd | sed 's#  .*#  lnx190.cckd#' > $W/deb/VM370CE.V1.R1.2/disks/lnx190.sha256
-  (cd $W/deb; zip -q $D/VM370PLUS-kit-$STAMP-part5.zip VM370CE.V1.R1.2/disks/lnx190.cckd.001 VM370CE.V1.R1.2/disks/lnx190.sha256
-   zip -q $D/VM370PLUS-kit-$STAMP-part6.zip VM370CE.V1.R1.2/disks/lnx190.cckd.002
-   zip -q $D/VM370PLUS-kit-$STAMP-part7.zip VM370CE.V1.R1.2/disks/lnx190.cckd.003)
+  P=$(cd $W/deb/VM370CE.V1.R1.2/disks; ls lnx190.cckd.0??)
+  (echo '@echo off'; echo 'rem JOINDEB.CMD -- join the Debian disk pieces (VM/370plus kit)'
+   echo "copy /b $(for f in $P; do printf 'disks\\%s+' $f; done | sed 's/+$//') disks\\lnx190.cckd"
+   echo 'if errorlevel 1 exit /b 1'; echo 'del disks\lnx190.cckd.0??'; echo 'echo Debian disk joined: disks\lnx190.cckd') |
+     sed 's/$/\r/' > $W/deb/VM370CE.V1.R1.2/JOINDEB.CMD
+  printf '#!/bin/sh\n# joindeb.sh -- join the Debian disk pieces (VM/370plus kit)\ncd "$(dirname "$0")"\ncat disks/lnx190.cckd.0?? > disks/lnx190.cckd && rm disks/lnx190.cckd.0?? && (cd disks; sha256sum -c lnx190.sha256)\n' > $W/deb/VM370CE.V1.R1.2/joindeb.sh
+  chmod +x $W/deb/VM370CE.V1.R1.2/joindeb.sh
+  n=6; first=1
+  for f in $P; do
+    extra=""; [ $first = 1 ] && extra="VM370CE.V1.R1.2/disks/lnx190.sha256 VM370CE.V1.R1.2/JOINDEB.CMD VM370CE.V1.R1.2/joindeb.sh"
+    (cd $W/deb; zip -q $D/VM370PLUS-kit-$STAMP-part$n.zip VM370CE.V1.R1.2/disks/$f $extra)
+    first=0; n=$((n+1))
+  done
 fi
 rm -rf $W; ls -la $D
