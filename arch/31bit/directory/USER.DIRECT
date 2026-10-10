@@ -144,6 +144,18 @@ USER CMSUSER CMSUSER 16M 256M G                                         01240000
  MDISK   197 3350 201 115 VM50-8 MR   ALL      WRITE    MULT                    
  MDISK   198 3350 316 115 VM50-8 MR   ALL      WRITE    MULT                    
  MDISK   199 3350 431 115 VM50-8 MR   ALL      WRITE    MULT                    
+*                                                                               
+USER CHATBOT CHATBOT 32M 64M G                                                  
+ OPTION ECMODE                                                                  
+ IPL CMS                                                                        
+ CONSOLE 009 3215                                                               
+ SPOOL 00E 1403 A                                                               
+ SPOOL 00C 2540 READ *                                                          
+ SPOOL 00D 2540 PUNCH A                                                         
+ LINK MAINT 190 190 RR                                                          
+ LINK MAINT 19D 19D RR                                                          
+ LINK MAINT 19E 19E RR                                                          
+ MDISK   191 3350 001 060 VM50U1 MR   ALL      WRITE    MULT                    
                                                                         01390000
 USER CMS67 CMS67 512K 8M G                                              01400000
  OPTION ECMODE                                                                  

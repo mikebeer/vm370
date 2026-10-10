@@ -11,7 +11,8 @@ B=${CREXX_BIN:-/home/claude/crexx-host/bin}
 W=$(mktemp -d); cp "$HERE/upstream-b1/src/chatbot.crexx" "$W/"
 (cd "$W" && "$B"/rxc -i "$B" chatbot >/dev/null 2>chatbot.err && "$B"/rxas chatbot \
    && "$B"/rxlink -o chatbotx chatbot "$B"/library.rxbin)
-python3 - "$W/chatbotx.rxbin" "$HERE/upstream-b1/deck/CHATBOT.DECK" "$OUT" <<'PY'
+python3 "$HERE/cbpatch.py" "$HERE/upstream-b1/deck/CHATBOT.DECK" "$W/CHATBOT.DECK"
+python3 - "$W/chatbotx.rxbin" "$W/CHATBOT.DECK" "$OUT" <<'PY'
 import sys
 rx, deck, out = sys.argv[1:]
 L = ['ID CHATBOT NAME CHATBOT']
