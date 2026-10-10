@@ -41,6 +41,17 @@ extern int errno;
 
 int cms202(void *plist);
 void cms_exit(int rc) __attribute__((noreturn));
+int cms_onstack(void *top, int (*fn)(int, char **), int argc, char **argv);
+int main(int, char **);
+/* main runs on a stack of cms_stack_mb MB from the heap (above 16 MB):
+   the 64 KB start-up stack is far too small for cREXX's recursion. */
+unsigned int cms_stack_mb = 8;
+static int cms_run_main(int argc, char **argv)
+{
+    char *s = malloc(cms_stack_mb << 20);
+    if (!s) return main(argc, argv);
+    return cms_onstack(s + (cms_stack_mb << 20), main, argc, argv);
+}
 int main(int argc, char **argv);
 
 typedef unsigned int u32;
@@ -506,9 +517,9 @@ int cms_main(unsigned char *plist)
         for (int i = j + 1; i < argc && n < MAXARGS; i++) sargv[n++] = argv_[i];
         sargv[n] = 0;
         tin_len = tin_pos = 0;
-        exit(main(n, sargv));
+        exit(cms_run_main(n, sargv));
     }
-    exit(main(argc, argv_));
+    exit(cms_run_main(argc, argv_));
 }
 int _gettimeofday(struct timeval *tv, void *tz) { return gettimeofday(tv, tz); }
 
@@ -526,7 +537,7 @@ struct dirent { unsigned int d_ino; unsigned char d_type; char d_name[20]; };
 struct m8_dir { char *names; int count, pos; struct dirent ent; };
 struct m8_dir *opendir(const char *name)
 {
-    unsigned char pl[8 * 7];
+    static unsigned char pl[8 * 7];  /* below 16 MB: the stack is not */
     char mode = 'A';
     if (name && name[0] && name[0] != '.') mode = name[0];
     if (mode >= 'a' && mode <= 'z') mode -= 32;

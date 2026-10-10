@@ -60,6 +60,26 @@ cms_exit:
 .Lxsp: .long cms_exit_sp
 .Lxback: .long .Lback
 
+# int cms_onstack(void *top, int (*fn)(int, char **), int argc, char **argv):
+# run fn(argc, argv) on the stack that ends at top (cms_run_main gives it
+# one of several MB from the heap; the 64 KB BSS stack is only for start-up)
+ .text
+ .balign 8
+ .globl cms_onstack
+cms_onstack:
+ stm %r6,%r15,24(%r15)
+ lr %r10,%r15              # old stack, callee-saved across fn
+ lr %r15,%r2
+ ahi %r15,-96
+ xc 0(4,%r15),0(%r15)      # no back chain
+ lr %r1,%r3
+ lr %r2,%r4
+ lr %r3,%r5
+ basr %r14,%r1
+ lr %r15,%r10
+ lm %r6,%r15,24(%r15)
+ br %r14
+
 # int cms202(void *plist): SVC 202 in AMODE 24.  The plist and anything
 # it points to must be below 16 MB (static data is: the image is low).
  .text
@@ -70,8 +90,9 @@ cms202:
  lr %r10,%r15
  basr %r12,0
 .Lc:
- ahi %r15,-256
- la %r13,96(%r15)          # a CMS save area
+ ahi %r15,-160
+ l %r13,.Lcsa-.Lc(%r12)    # a CMS save area below 16 MB (the C stack
+                           # may be above: cms_onstack)
  lr %r1,%r2
  l %r11,.Lc24-.Lc(%r12)
  bsm 0,%r11                # AMODE 24
@@ -89,6 +110,7 @@ cms202:
  lm %r6,%r15,24(%r10)
  br %r14
  .balign 4
+.Lcsa: .long cms_sa
 .Lc24: .long .Lc_in24
 .Lc31: .long .Lc_in31
 .Lchi: .long 0x80000000
@@ -100,4 +122,6 @@ cms_saved: .skip 8
 cms_exit_sp: .skip 4
  .balign 8
 cms_stack: .skip 65536
+ .balign 8
+cms_sa: .skip 96
  .section .note.GNU-stack,"",@progbits

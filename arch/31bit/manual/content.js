@@ -19,7 +19,7 @@ H3('Conventions');
 P('Commands are shown in `monospaced type`. In command descriptions, uppercase letters are typed as shown and lowercase words stand for values you supply. Examples of terminal sessions are shown in framed figures; lines you type are not marked separately because the context makes clear which they are.');
 H3('Summary of changes');
 P('This edition is kept up to date as VM/370+ grows; each change is listed here, newest first.');
-B(['**10 October 2026.** Languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
+B(['**10 October 2026.** Regina REXX and THE under Debian; languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
    '**9 October 2026.** First edition, for kit build 5.']);
 P('*PC* means the personal computer on which Hercules runs. *Real* storage and devices are those of the Hercules machine; *virtual* storage and devices are those CP gives a user.');
 
@@ -50,8 +50,8 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['M7.10', 'IPL of Linux from its disk (zipl) and a CP name LINUX', 'next'],
   ['M8', 'cREXX: the 2022 release built natively (M5); the current release cross-built (M8.1)', 'complete'],
   ['M8.2', 'the current cREXX built natively with GCC380', 'compiler, assembler and VM work; the library does not build yet'],
-  ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'in the Linux bundle; CMS deck being tested'],
-  ['\u2014', 'GNU C 4.6, Python 2.7 and 3.2 under Debian', 'complete'],
+  ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'Linux complete; CMS: all but Smalltalk'],
+  ['\u2014', 'GNU C 4.6, Python 2.7 and 3.2, Regina REXX and THE under Debian', 'complete'],
   ['M9', 'z/Architecture (64-bit)', 'planned, after all of the above'],
 ], [1400, 6038, 2200], 'VM/370+ milestones');
 
@@ -199,7 +199,7 @@ H3('Boot sequence');
 P('The kernel’s initramfs (BusyBox) brings the 3390 online, creates a partition and a file system on a new disk, groups the CTC pair as `ctc0` and configures it from the IPL parameters (default 10.1.1.2, peer 10.1.1.1). If the disk holds a system (`/sbin/init`), it hands over to it with `switch_root`; otherwise it stays in storage with the prompt `vm370plus:~#`. The parameter `vmroot=ram` (deck `lxparmram.rdr`) keeps the in-storage system even when Debian is on the disk, which is how you repair the disk.');
 H3('Debian');
 P('The disk holds Debian 7.11 (wheezy) for s390: sysvinit, udev, rsyslog, cron, OpenSSH, apt and dpkg, root on ext2, a 128 MB swap file. Log in as `root` with password `vm370plus`, and change the password.');
-P('Development tools are installed: GNU C and C++ 4.6.3 with make, Python 2.7.3 (`python`) and Python 3.2.3 (`python3`). cREXX and the languages of Chapter 6 are in `/usr/local/bin`.');
+P('Development tools are installed: GNU C and C++ 4.6.3 with make, Python 2.7.3 (`python`) and Python 3.2.3 (`python3`), Regina REXX 3.6 (`regina` or `rexx`, classic REXX as on CMS) and THE 3.3, The Hessling Editor (`the`, an XEDIT-like editor; use it over SSH, since the 3215 console cannot show a full screen). cREXX and the languages of Chapter 6 are in `/usr/local/bin`.');
 SCREEN(['root@vm370plus:~# cat /etc/debian_version', '7.11',
         'root@vm370plus:~# df -h /', 'Filesystem      Size  Used Avail Use% Mounted on', '/dev/dasda1     771M  325M  407M  45% /',
         'root@vm370plus:~# free', '             total       used       free     shared    buffers     cached',
