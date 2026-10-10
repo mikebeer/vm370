@@ -3481,6 +3481,35 @@ def m7decks():
         "         BR    R12",
         "PRVB2    DS    0H",
     ])
+    # I-258: an S/370 program written for BC mode sets the system mask with
+    # SSM =X'FF' (MECAFF's EE, FSVIEW, FSLIST; the REXX full-screen
+    # package).  Under the EC CMS (IPL 290) that byte lands in an EC PSW,
+    # where bits 0 and 2-4 must be zero and bit 5 is DAT: specification
+    # exception.  For an EC-mode System/370 machine (not ESA/390), a mask
+    # with any of bits 0, 2-4 set is taken as a BC mask: channel masks 0-6
+    # become the EC I/O mask (bit 6), bit 7 stays the external mask.  A
+    # valid EC mask is not changed.
+    d.insert('00841000', first='00841010', inc=10,
+             limit=next_seq(src('DMKPRV'), '00841000'), lines=[
+        "         TM    VMPSTAT,VMV370R  I-258: EC-CAPABLE MACHINE",
+        "         BZ    SETMASK1       IN EC MODE, NOT ESA/390,",
+        "         TM    VMPSW+1,X'08'  WITH A BC-STYLE MASK?",
+        "         BZ    SETMASK1",
+        "         TM    VMFSTAT,VMESA390",
+        "         BO    SETMASK1",
+        "         LA    R1,X'B8'       BITS 0, 2-4: INVALID IN EC",
+        "         NR    R1,R4",
+        "         BZ    SETMASK1",
+        "         LA    R1,X'01'       KEEP THE EXTERNAL MASK",
+        "         NR    R1,R4",
+        "         SLL   R4,24          THE BC CHANNEL MASKS 0-6",
+        "         SRL   R4,25",
+        "         LTR   R4,R4",
+        "         BZ    *+8",
+        "         LA    R1,X'02'(,R1)  ANY: THE EC I/O MASK",
+        "         LR    R4,R1",
+        "SETMASK1 DS    0H",
+    ])
     # LCTL of CR0 clears bits 13-15 (VA12971: unassigned on S/370). On
     # ESA/390 bit 13 is AFP-register control, and Linux loads it on;
     # cleared, VXREF built a shadow CR0 without it and every BFP
@@ -7486,6 +7515,32 @@ ECMODS = {
         ('00249000', '00250000', [
             "         MVC   SVCOPSW(4),=X'000C0000' EC VIRTUAL OLD PSW",
             "         MVC   X'88'(4),=X'000200CA' ILC 2, SVC 202 (EC)"]),
+        # I-257: a program that loads its own S/370 BC PSWs (the REXX
+        # full-screen package waits for the 3270 with a BC wait PSW and
+        # resumes with LPSW X'38') issues its next SVC in BC mode: the old
+        # PSW is BC, the code is in it and X'8A' still holds the previous
+        # SVC's code (201 from CMSRET).  Make such a PSW an EC PSW and put
+        # code and ILC where the EC code reads them; the caller is resumed
+        # in EC mode, which its 24-bit code does not notice.
+        ('00258000', '00259000', [
+            "         USING *,R13",
+            "         TM    SVCOPSW+1,X'08' EC SVC OLD PSW? (I-257)",
+            "         BO    SVCECOK",
+            "         MVC   X'8A'(2),SVCOPSW+2 BC: CODE TO THE EC PLACE",
+            "         MVI   X'89',X'02'    ILC 1",
+            "         TM    SVCOPSW+4,X'80' ILC 2 (SVC UNDER EX)?",
+            "         BZ    *+8",
+            "         MVI   X'89',X'04'    ILC 2",
+            "         MVC   SVCOPSW+2(1),SVCOPSW+4 CC, PROGRAM MASK",
+            "         NI    SVCOPSW+2,X'3F'",
+            "         MVI   SVCOPSW+3,0",
+            "         MVI   SVCOPSW+4,0    EC: AMODE 24, BITS 32-39 ZERO",
+            "         TM    SVCOPSW,X'FE'  ANY BC CHANNEL MASK (0-6)?",
+            "         BZ    *+8",
+            "         OI    SVCOPSW,X'02'  EC: ONE I/O MASK, BIT 6",
+            "         NI    SVCOPSW,X'03'  EC BITS 0-5 ZERO (NO PER, DAT)",
+            "         OI    SVCOPSW+1,X'08' EC MODE",
+            "SVCECOK  DS    0H"]),
         ('00268000', ["         CLI   X'8B',201      IS IT SVC 201? (EC CODE)"]),
         # startup PSWs (ITSPSW/RET) must be EC: byte0 03=I/O+EXT, byte1 0C=EC+MCK
         ('00328000', ["         CLI   X'8B',202      IS THIS SVC 202? (EC CODE)"]),

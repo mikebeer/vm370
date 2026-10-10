@@ -15,12 +15,13 @@ B(['**Chapter 1, Introduction**, says what VM/370plus is and what it is for.',
    '**Chapter 6, Service Machines**, describes CHATBOT, the chatbot service machine, and the service machines that are planned.',
    '**Chapter 7, cREXX on VM/370plus**, describes the REXX compiler and virtual machine built for and on VM/370plus, the languages written in cREXX that run on CMS and on Linux, and Turbo CREXX.',
    '**Chapter 8, Restrictions and Known Problems**, lists what does not work yet.',
-   '**Appendix A** summarizes the new and changed commands, **Appendix B** lists the files in the installation kit, **Appendix C** gives the ESA/390 deviations of the virtual machine.']);
+   '**Appendix A** summarizes the new and changed commands, **Appendix B** lists the files in the installation kit, **Appendix C** gives the ESA/390 deviations of the virtual machine, **Appendix D** lists all CP and CMS commands.']);
 H3('Conventions');
 P('Commands are shown in `monospaced type`. In command descriptions, uppercase letters are typed as shown and lowercase words stand for values you supply. Examples of terminal sessions are shown in framed figures; lines you type are not marked separately because the context makes clear which they are.');
 H3('Summary of changes');
 P('This edition is kept up to date as VM/370plus grows; each change is listed here, newest first.');
-B(['**10 October 2026, evening (kit build 6).** `IPL LINUX` and vmzipl: Debian starts from its own disk; the Debian disk is a 3390-9 (7 GB); no 64-CCW limit for Linux disk I/O; mosquitto (MQTT) and Asterisk under Debian; `QUERY SET` shows ESA; the CHATBOT service machine and `CHAT` (new Chapter 6); RXBVM8 has TIME and DATE; the console banner reads VM/370plus; a fix for memory corruption in Linux guests above 16 MB (location 80).',
+B(['**10 October 2026, night.** `SET MACHINE` and `QUERY MACHINE`; FULIST (FL); EE, FSVIEW and the REXX full-screen package under the EC-mode CMS; Appendix D, the CP and CMS command tables.',
+   '**10 October 2026, evening (kit build 6).** `IPL LINUX` and vmzipl: Debian starts from its own disk; the Debian disk is a 3390-9 (7 GB); no 64-CCW limit for Linux disk I/O; mosquitto (MQTT) and Asterisk under Debian; `QUERY SET` shows ESA; the CHATBOT service machine and `CHAT` (new Chapter 6); RXBVM8 has TIME and DATE; the console banner reads VM/370plus; a fix for memory corruption in Linux guests above 16 MB (location 80).',
    '**10 October 2026.** Regina REXX and THE under Debian; languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
    '**9 October 2026.** First edition, for kit build 5.']);
 P('*PC* means the personal computer on which Hercules runs. *Real* storage and devices are those of the Hercules machine; *virtual* storage and devices are those CP gives a user.');
@@ -81,6 +82,7 @@ B(['**Storage.** A virtual machine may have up to 256 MB. The directory’s maxi
 H2('CP commands');
 TABLE(['Command', 'Change'], [
   ['`SET ESA ON|OFF`', 'New (class G). ON makes the next IPL of a device an IPL of an ESA/390 machine; OFF returns to System/370 at once.'],
+  ['`SET MACHINE 370|XA|ESA`, `QUERY MACHINE`', 'New (class G), the z/VM names. SET MACHINE ESA (or XA) is SET ESA ON, SET MACHINE 370 is SET ESA OFF.'],
   ['`IPL cuu`', 'A user who is running a shared named system (CMS) is IPLed with CLEAR, so that no copy of the shared pages stays in the virtual machine.'],
   ['`QUERY SET`', 'A fifth line shows `ESA ON`, `ESA PENDING` (SET ESA ON before the next IPL of a device) or `ESA OFF`.'],
   ['`IPL LINUX`', 'New. IPLs the Debian disk at virtual address 250 as an ESA/390 machine: `SET ESA ON` and `IPL 250` in one command. Works from a directory IPL statement too.'],
@@ -93,6 +95,8 @@ H2('CMS');
 B(['The ordinary CMS (`IPL CMS`, `IPL 190`) is unchanged: a System/370 BC-mode CMS with 16 MB of addressable storage.',
    'An EC-mode CMS is on MAINT’s 290 disk (`IPL 290`). With it, the HIGHSTOR nucleus extension (loaded by the system profile) manages storage from 16 MB to the end of the virtual machine; SVC 120 (GETMAIN/FREEMAIN RU) gives programs storage above the line.',
    'GCC380, the AMODE 31 build of the Community Edition’s GCC, runs above 16 MB; GCCLIB31 is a C library for programs that run in 31-bit mode with their heap above 16 MB.',
+   'New commands on MAINT 19D: `FULIST` (`FL`), a full-screen file list in the manner of FILELIST; `WAKEUP`; `CHAT`; `LINUX`. Appendix A; Appendix D lists all CP and CMS commands.',
+   'Programs written for System/370 BC mode (MECAFF’s EE and FSVIEW, the REXX full-screen package) run under the EC-mode CMS too: CMS turns an SVC from BC mode into an EC call, and CP takes a BC-style system mask (`SSM =X\'FF\'`) in an EC-mode System/370 machine as the BC mask it is.',
    'CPWATCH is not autologged: it is an S/370 monitor that loops under this CP. The two lines in AUTOLOG1’s PROFILE EXEC are commented out.']);
 
 // ---------------------------------------------------------------- chapter 3
@@ -374,6 +378,10 @@ H1('Command Summary');
 H2('SET ESA');
 SCREEN(['SET ESA ON', 'SET ESA OFF'], 'SET ESA');
 P('Class G. **ON**: the next IPL of a device (not an IPL by name) makes the virtual machine an ESA/390 machine; it stays pending across `IPL CMS`. **OFF**: the machine is a System/370 machine at once and nothing is pending. Any operand other than OFF means ON.');
+H2('SET MACHINE, QUERY MACHINE');
+SCREEN(['SET MACHINE 370|XA|ESA', 'QUERY MACHINE'], 'SET MACHINE');
+P('Class G; the names z/VM uses. `SET MACHINE ESA` and `SET MACHINE XA` are `SET ESA ON`, `SET MACHINE 370` is `SET ESA OFF`. `QUERY MACHINE` answers `MACHINE 370`, `MACHINE ESA`, or `MACHINE 370, ESA PENDING` while an ESA/390 IPL is pending. `SET MACHINE Z` comes with milestone M9.');
+SCREEN(['cp query machine', 'MACHINE 370', 'cp set machine esa', 'cp q mach', 'MACHINE 370, ESA PENDING'], 'QUERY MACHINE');
 H2('IPL');
 P('As in VM/370, with three changes: `IPL LINUX` IPLs the disk at 250 as an ESA/390 machine; any other IPL by name gives a System/370 machine; an IPL of a device by a user who runs a shared named system is done with CLEAR.');
 H2('QUERY SET');
@@ -386,6 +394,16 @@ H2('WAKEUP');
 SCREEN(['WAKEUP [+hhmmss|+mmss|+ss] [(RDR QUIET]'], 'WAKEUP');
 P('On MAINT 19D (new; VM/370 had none). Waits until the interval has passed (return code 2) or, with **RDR**, until a file arrives in the virtual reader (return code 3); 24 means an invalid operand. A file already in the reader does not end the wait, so look at the reader first (`QUERY READER`). WAKEUP sets `CP SET TIMER REAL` so that the interval timer runs while the machine waits. Service machines use it instead of polling.');
 SCREEN(['wakeup +000005', 'Ready(00002);', 'wakeup +000500 (rdr', 'PUN FILE 0002 FROM CMSUSER  COPY 01 NOHOLD', 'Ready(00003);'], 'WAKEUP');
+H2('FULIST');
+SCREEN(['FULIST [fn [ft [fm]]]', 'FL [fn [ft [fm]]]'], 'FULIST');
+P('On MAINT 19D; a full-screen file list in the manner of IBM’s FILELIST, written in REXX with the REXX full-screen package; it runs under `IPL CMS` and under the EC-mode CMS on 290. The default is `* * A`. Each line is an input field: type a command over the start of a line and press Enter. `/` in the command stands for the file (`fn ft fm`), `/n`, `/t`, `/m` for its parts; without a `/` the file is appended. Abbreviations: **E** or **X** edit (EE), **B** browse (FSVIEW), **D** discard (ERASE), **=** repeats the last command. The status column shows `*` or `*rc` for each command run.');
+TABLE(['Key', 'Action'], [
+  ['PF1', 'HELP FULIST'], ['PF2', 'refresh the list'], ['PF3, PF15', 'quit'],
+  ['PF4, PF5, PF6', 'sort by type, date (newest first), size'], ['PF7, PF8', 'page back, forward'],
+  ['PF9', 'FULIST of all files with the name at the cursor'], ['PF10', 'sort by name'],
+  ['PF11', 'edit the file at the cursor'], ['PF12', 'cursor to the command line and back'],
+], [2400, 7238], 'FULIST keys');
+P('On the command line (`====>`): QUIT, TOP, BOTTOM, REFRESH, SORT NAME|TYPE|DATE|SIZE, FULIST pattern, or any CMS or CP command.');
 H2('LINUX EXEC');
 SCREEN(['LINUX [DISK|READER]'], 'LINUX EXEC');
 P('On MAINT 19D. **DISK** (the default) issues `CP IPL LINUX`. **READER** punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `DEFAULT LXPARM`) to the user’s reader, holding the other reader files, and IPLs the reader as an ESA/390 machine. Needs 64 MB and, for Debian, the devices listed in Chapter 5 under “What a Linux user needs”.');
@@ -410,4 +428,24 @@ B(['A format-1 channel program is converted to format 0 in place while it runs (
    'One processor; SIGP is answered for that processor only.',
    'Selector channels of an ESA/390 guest behave as block multiplexer channels.',
    'Linux’s machine-check handling is not exercised: CP presents no machine checks to the guest.']);
+
+H1('CP and CMS Command Tables');
+P('These tables are generated from the system itself (`tools/cmdtables.py`, document 50 in the repository): the CP commands from CP’s command table in DMKCFC, in the order CP searches it; the QUERY and SET operands from its operand lists; the CMS commands from the nucleus function table and from the MODULE and EXEC files on the system disks. **Abbrev** is the shortest form CP accepts, **Class** the privilege class (any: no class needed). **+** marks a VM/370plus addition or change.');
+const md = require('fs').readFileSync(__dirname + '/../../../docs/50-COMMANDS.md', 'utf8').split('\n');
+let i = 0;
+while (i < md.length) {
+  const l = md[i];
+  if (l.startsWith('## ') && !l.startsWith('## Not yet')) { H2(l.slice(3)); i++; continue; }
+  if (l.startsWith('### ')) { H3(l.slice(4)); i++; continue; }
+  if (l.startsWith('| ') && md[i + 1] && md[i + 1].startsWith('|---')) {
+    const cells = x => x.slice(1, -1).split(' | ').map(c => c.trim());
+    const head = cells(l.trim()); const rows = []; i += 2;
+    while (i < md.length && md[i].startsWith('| ')) { rows.push(cells(md[i].trim())); i++; }
+    const w = head.length === 5 ? [1500, 1100, 1000, 1500, 4538] : head.length === 3 ? [1700, 1700, 6238] : [1900, 7738];
+    TABLE(head, rows, w);
+    continue;
+  }
+  if (l.startsWith('Also: ') || (/^[A-Z$].*\.$/.test(l) && l.includes(', '))) P(l);
+  i++;
+}
 };

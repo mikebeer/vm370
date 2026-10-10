@@ -1,6 +1,25 @@
 ./ R 00249000 00250000 $ 00249100 100                                           
          MVC   SVCOPSW(4),=X'000C0000' EC VIRTUAL OLD PSW      XA0051DK         
          MVC   X'88'(4),=X'000200CA' ILC 2, SVC 202 (EC)       XA0051DK         
+./ R 00258000 00259000 $ 00258100 100                                           
+         USING *,R13                                           XA0051DK         
+         TM    SVCOPSW+1,X'08' EC SVC OLD PSW? (I-257)         XA0051DK         
+         BO    SVCECOK                                         XA0051DK         
+         MVC   X'8A'(2),SVCOPSW+2 BC: CODE TO THE EC PLACE     XA0051DK         
+         MVI   X'89',X'02'    ILC 1                            XA0051DK         
+         TM    SVCOPSW+4,X'80' ILC 2 (SVC UNDER EX)?           XA0051DK         
+         BZ    *+8                                             XA0051DK         
+         MVI   X'89',X'04'    ILC 2                            XA0051DK         
+         MVC   SVCOPSW+2(1),SVCOPSW+4 CC, PROGRAM MASK         XA0051DK         
+         NI    SVCOPSW+2,X'3F'                                 XA0051DK         
+         MVI   SVCOPSW+3,0                                     XA0051DK         
+         MVI   SVCOPSW+4,0    EC: AMODE 24, BITS 32-39 ZERO    XA0051DK         
+         TM    SVCOPSW,X'FE'  ANY BC CHANNEL MASK (0-6)?       XA0051DK         
+         BZ    *+8                                             XA0051DK         
+         OI    SVCOPSW,X'02'  EC: ONE I/O MASK, BIT 6          XA0051DK         
+         NI    SVCOPSW,X'03'  EC BITS 0-5 ZERO (NO PER, DAT)   XA0051DK         
+         OI    SVCOPSW+1,X'08' EC MODE                         XA0051DK         
+SVCECOK  DS    0H                                              XA0051DK         
 ./ R 00268000          $ 00268100 100                                           
          CLI   X'8B',201      IS IT SVC 201? (EC CODE)         XA0051DK         
 ./ R 00328000          $ 00328100 100                                           

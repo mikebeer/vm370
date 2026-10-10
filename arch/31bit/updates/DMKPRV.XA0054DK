@@ -48,6 +48,25 @@ PRVHI    DS    0H                                              XA0054DK
 PRVVCS   L     R12,=V(DMKVCSEX)                                XA0054DK         
          BR    R12                                             XA0054DK         
 PRVB2    DS    0H                                              XA0054DK         
+./ I 00841000 $ 00841010 010                                                    
+         TM    VMPSTAT,VMV370R  I-258: EC-CAPABLE MACHINE      XA0054DK         
+         BZ    SETMASK1       IN EC MODE, NOT ESA/390,         XA0054DK         
+         TM    VMPSW+1,X'08'  WITH A BC-STYLE MASK?            XA0054DK         
+         BZ    SETMASK1                                        XA0054DK         
+         TM    VMFSTAT,VMESA390                                XA0054DK         
+         BO    SETMASK1                                        XA0054DK         
+         LA    R1,X'B8'       BITS 0, 2-4: INVALID IN EC       XA0054DK         
+         NR    R1,R4                                           XA0054DK         
+         BZ    SETMASK1                                        XA0054DK         
+         LA    R1,X'01'       KEEP THE EXTERNAL MASK           XA0054DK         
+         NR    R1,R4                                           XA0054DK         
+         SLL   R4,24          THE BC CHANNEL MASKS 0-6         XA0054DK         
+         SRL   R4,25                                           XA0054DK         
+         LTR   R4,R4                                           XA0054DK         
+         BZ    *+8                                             XA0054DK         
+         LA    R1,X'02'(,R1)  ANY: THE EC I/O MASK             XA0054DK         
+         LR    R4,R1                                           XA0054DK         
+SETMASK1 DS    0H                                              XA0054DK         
 ./ R 01086200 01086300 $ 01086200 100                                           
          BNZ   PRVCR0X        NO, BYPASS CREG0 RESET           XA0054DK         
          TM    VMFSTAT,VMESA390  M7: ON ESA/390 BIT 13 IS      XA0054DK         
