@@ -1,5 +1,9 @@
 /* LINUX EXEC -- VM/370plus: IPL Linux/390 in this virtual machine.   */
 /*                                                                 */
+/* LINUX           IPL the Debian disk at 250 (CP IPL LINUX: the   */
+/*                 disk carries its own kernel, written by vmzipl) */
+/* LINUX READER    the kernel from MAINT's 19D, through the reader */
+/*                                                                 */
 /* LINUX48 KERNEL1/KERNEL2 (one kernel; a CMS file holds at most  */
 /* 65533 records) and the IPL parameters (userid LXPARM, else      */
 /* DEFAULT LXPARM) are on MAINT's 19D (the U disk).  The EXEC      */
@@ -9,6 +13,16 @@
 /* your own 3390 at 250 and your own CTC pair at 620 and 630.      */
 /* Afterwards:  CP CHANGE RDR ALL NOHOLD  gives your files back;   */
 /* your punch stays spooled to your own reader (CP SPOOL PUNCH).   */
+arg opt .
+if abbrev('READER', opt, 1) = 0 then do
+  if opt <> '' & abbrev('DISK', opt, 1) = 0 then do
+    say 'LINUX: options are DISK (the default) or READER'
+    exit 24
+  end
+  say 'LINUX: IPL LINUX (the Debian disk at 250, ESA/390)'
+  'CP IPL LINUX'
+  exit rc
+end
 u = userid()
 parm = u
 'STATE' u 'LXPARM *'

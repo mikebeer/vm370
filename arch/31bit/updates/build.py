@@ -3716,6 +3716,25 @@ def m7decks():
     decks['DMKDSP'] = d
 
     d = Deck(XA54)
+    # M7.10: IPL LINUX is the Debian disk at virtual 250 as an ESA/390
+    # machine -- SET ESA ON (pending, made real at 00464100) and IPL 250,
+    # with the device path's own options (CLEAR, PARM ...) after it.
+    d.insert('00365000', first='00365010', inc=10,
+             limit=next_seq(src('DMKCFG'), '00365000'), lines=[
+        "*  M7.10: IPL LINUX = SET ESA ON + IPL 250 (THE DEBIAN DISK)",
+        "*  DMKCFG IS PAGEABLE: IT MUST STAY IN ONE PAGE, SO THIS IS",
+        "*  SHORT AND HAS NO LITERALS",
+        "         LA    R15,5",
+        "         CR    R0,R15",
+        "         BNE   CFGNLNX",
+        "         CLC   0(5,R1),CFGLNXN",
+        "         BNE   CFGNLNX",
+        "         OI    VMLCLRSV,X'40'  ESA ON, PENDING (IPLSETR2)",
+        "         OI    VMFSTAT,VMESA390  AND NOW (LOGON)",
+        "         LA    R1,X'250'      THE DEBIAN DISK",
+        "         B     CFGLNXS        IPL IT AS A DEVICE",
+        "CFGLNXN  DC    C'LINUX'",
+        "CFGNLNX  DS    0H"])
     # I-235 (M3 increment 2, the part that matters): a user who IPLed the
     # shared CMS and then IPLs a device, or DEFINEs STORAGE, has released
     # every page -- frame sharing drops the shared copies with them -- but
@@ -3729,6 +3748,9 @@ def m7decks():
     # with them the copies of the shared CMS frames, which the guest
     # would then write into (lxm4/lxm6: CMS, then LINUX EXEC).  A user
     # in a named system IPLs a device CLEAR.
+    d.replace('00373000', first='00372100', inc=100,
+              limit=next_seq(src('DMKCFG'), '00373000'), lines=[
+        "CFGLNXS  ST    R1,SAVEWRK2    SAVE VIRTUAL ADDRESS FOR LATER"])
     d.insert('00456000', first='00456100', inc=100,
              limit=next_seq(src('DMKCFG'), '00456000'), lines=M7EQU[:1] + [
         "         TM    VMOSTAT,VMSHR  I-235: IN A NAMED SYSTEM, THE",

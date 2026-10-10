@@ -21,7 +21,7 @@ The kit was verified on a fresh CE (kt14).
 | Guide | done (b5) |
 | **now: M8.2** | the current cREXX built natively on CMS: RXC82 and RXAS82 work on CMS; RXBVM82 being fixed (`41-M8.2-NATIVE-CREXX.md`) |
 | Debian session | Python 2.7/3.2, cREXX for Linux, Prolog and LOGO under Debian (gcc 4.6.3 already installed) |
-| **M7.10 (now)** | `IPL LINUX`: zipl on the Debian disk and a CP name LINUX. Done: `linux390/debian/vmzipl` (kernel blocks, format-0 loader, IPL1/IPL2 on track 0); DMKCCW keeps DEDDTBL while DMKVMI runs the IPL; DMKCFG puts DMKVMI at X'FFF000' for an ESA/390 IPL. Blocked by **I-255**: CP mistranslates the TIC from DMKVMI's DISKCCW to the user's CCW for every dedicated-DASD IPL |
+| **M7.10 (done 10 Oct)** | `IPL LINUX`: the Debian disk at virtual 250 IPLs as an ESA/390 machine (`CP IPL LINUX` = SET ESA ON + IPL 250; also from a directory IPL statement). `linux390/debian/vmzipl` writes the kernel and the CDL IPL records (IPL1/IPL2 with their keys, I-255); DMKCCW keeps DEDDTBL while DMKVMI runs the IPL; DMKCFG puts DMKVMI at X'FFF000'. LINUX EXEC: `LINUX` IPLs the disk, `LINUX READER` the old reader route. Verified zp18: boot from disk in ~7 min, Asterisk starts at boot. Note: DMKCFG is pageable and now 4090 of 4096 bytes -- any further change there must move code out first |
 | M7.9 | lift the 64-CCW CVTCHN limit |
 | M4b.3 | CP using real frames above 16 MB; needed for two Debians at once (I-254) |
 | CP leftovers | I-235 models, I-201 DMKDMP dump, the LPSW fast path for PSWs above 16 MB |

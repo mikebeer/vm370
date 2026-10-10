@@ -1,3 +1,20 @@
+./ I 00365000 $ 00365010 010                                                    
+*  M7.10: IPL LINUX = SET ESA ON + IPL 250 (THE DEBIAN DISK)   XA0054DK         
+*  DMKCFG IS PAGEABLE: IT MUST STAY IN ONE PAGE, SO THIS IS    XA0054DK         
+*  SHORT AND HAS NO LITERALS                                   XA0054DK         
+         LA    R15,5                                           XA0054DK         
+         CR    R0,R15                                          XA0054DK         
+         BNE   CFGNLNX                                         XA0054DK         
+         CLC   0(5,R1),CFGLNXN                                 XA0054DK         
+         BNE   CFGNLNX                                         XA0054DK         
+         OI    VMLCLRSV,X'40'  ESA ON, PENDING (IPLSETR2)      XA0054DK         
+         OI    VMFSTAT,VMESA390  AND NOW (LOGON)               XA0054DK         
+         LA    R1,X'250'      THE DEBIAN DISK                  XA0054DK         
+         B     CFGLNXS        IPL IT AS A DEVICE               XA0054DK         
+CFGLNXN  DC    C'LINUX'                                        XA0054DK         
+CFGNLNX  DS    0H                                              XA0054DK         
+./ R 00373000          $ 00372100 100                                           
+CFGLNXS  ST    R1,SAVEWRK2    SAVE VIRTUAL ADDRESS FOR LATER   XA0054DK         
 ./ I 00456000 $ 00456100 100                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
          TM    VMOSTAT,VMSHR  I-235: IN A NAMED SYSTEM, THE    XA0054DK         
