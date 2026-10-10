@@ -22,6 +22,16 @@ CFGSHX    DS    0H                                             XA0054DK
          BZ    CFGESAX        DEVICE IPLS AN ESA/390 MACHINE   XA0054DK         
          OI    VMFSTAT,VMESA390                                XA0054DK         
 CFGESAX  DS    0H                                              XA0054DK         
+./ I 00472000 $ 00472100 100                                                    
+*  M7.10: AN ESA/390 IPL OF A DISK MAY LOAD A WHOLE KERNEL     XA0054DK         
+*  BY ITS IPL CHANNEL PROGRAM (VMZIPL): DMKVMI GOES TO THE     XA0054DK         
+*  LAST PAGE BELOW 16 MB, OUT OF ITS WAY, WHEN THERE IS ONE    XA0054DK         
+         TM    VMFSTAT,VMESA390                                XA0054DK         
+         BZ    CFGVMI1                                         XA0054DK         
+         CLC   VMSIZE,=X'01000000'                             XA0054DK         
+         BL    CFGVMI1                                         XA0054DK         
+         L     R1,=X'00FFF000'                                 XA0054DK         
+CFGVMI1  DS    0H                                              XA0054DK         
 ./ I 00512000 $ 00512110 010                                                    
          TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST: THE        XA0054DK         
          BZ    CFGNESA        IPL DEVICE'S SUBSYSTEM ID        XA0054DK         

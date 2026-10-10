@@ -1,0 +1,152 @@
+#!/usr/bin/python3
+# vmzipl -- VM/370+ M7.10: make this Debian disk IPLable (CP IPL 250
+# after SET ESA ON), as zipl does, for the 31-bit Linux 4.0 kernel.
+#
+#   vmzipl [-k /boot/linux48.image] [-p "kernel parameters"] [-d /dev/dasda]
+#
+# The kernel image is laid out for a reader IPL: bytes 0..64K are the
+# reader IPL code, the kernel proper starts at 0x10000 (startup) and its
+# parameter line is at 0x10480.  vmzipl writes
+#   /boot/vmipl.bin  image[0x10000:] with the parameter line patched in
+#                    (default: this system's /proc/cmdline);
+#   /boot/vmipl.ccw  a format-0 channel program that reads vmipl.bin's
+#                    blocks to 0x10000 onward (SEEK, SEARCH ID EQUAL, TIC,
+#                    then READ DATA for each 4K record of a track);
+#   IPL1 (cyl 0 head 0 record 1): PSW 00080000 80010000 (ESA/390, 31-bit,
+#                    startup) + READ DATA of IPL2 + TIC to it;
+#   IPL2 (record 2, 144 bytes): reads vmipl.ccw into storage and TICs to it.
+# All data addresses are below 16 MB (format-0 CCWs).  Run it again after
+# changing the kernel or the parameters.
+import os, sys, struct, fcntl, getopt
+
+FIBMAP = 1
+HEADS, RECS, BLK = 15, 12, 4096          # 3390, 4 KB blocks
+LOAD = 0x10000                           # kernel load address
+LIST = 0x4000                            # channel program in storage (to 0xFFFF)
+IPL2AT = 0x3000                          # IPL2 record (CP's IPL simulator is
+                                         # at X'FFF000' in an ESA/390 IPL)
+SEEK, SRCH, TIC, RD = 0x07, 0x31, 0x08, 0x06
+CC, SLI = 0x40, 0x20
+
+def ccw(op, addr, flags, count):
+    return struct.pack('>BBBBBBH', op, (addr >> 16) & 0xFF, (addr >> 8) & 0xFF,
+                       addr & 0xFF, flags, 0, count)
+
+def blocks_of(path):
+    """device-relative 4K block numbers of a file's blocks"""
+    part = os.path.basename(os.path.realpath(dev)) + '1'
+    start = int(open('/sys/block/%s/%s/start' % (os.path.basename(dev), part)).read())
+    assert start % 8 == 0
+    fd = os.open(path, os.O_RDONLY)
+    n = (os.fstat(fd).st_size + BLK - 1) // BLK
+    out = []
+    for i in range(n):
+        b = struct.unpack('I', fcntl.ioctl(fd, FIBMAP, struct.pack('I', i)))[0]
+        if b == 0:
+            sys.exit('vmzipl: %s has a hole at block %d' % (path, i))
+        out.append(start // 8 + b)
+    os.close(fd)
+    return out
+
+def chs(b):
+    return b // (HEADS * RECS), (b // RECS) % HEADS, b % RECS + 1
+
+def runs(blks):
+    """group consecutive records of one track: [(c, h, r, count, index)]"""
+    out = []
+    for i, b in enumerate(blks):
+        c, h, r = chs(b)
+        if out and out[-1][0] == c and out[-1][1] == h and \
+           out[-1][2] + out[-1][3] == r and out[-1][4] + out[-1][3] == i:
+            out[-1][3] += 1
+        else:
+            out.append([c, h, r, 1, i])
+    return out
+
+def program(blks, dest, base, last_flags):
+    """CCWs (at storage address base) reading blks to dest, dest+4K, ...;
+    their seek/search arguments follow the CCWs"""
+    rs = runs(blks)
+    nccw = sum(3 + r[3] for r in rs)
+    args = base + 8 * nccw
+    code, data = b'', b''
+    for k, (c, h, r, n, i) in enumerate(rs):
+        sa = args + len(data); data += struct.pack('>HHH', 0, c, h)
+        fa = args + len(data); data += struct.pack('>HHB', c, h, r) + b'\0'
+        here = base + len(code)
+        code += ccw(SEEK, sa, CC, 6)
+        code += ccw(SRCH, fa, CC, 5)
+        code += ccw(TIC, here + 8, 0, 0)
+        for j in range(n):
+            lastone = k == len(rs) - 1 and j == n - 1
+            code += ccw(RD, dest + (i + j) * BLK, last_flags if lastone else CC, BLK)
+    return code + data
+
+opts, _ = getopt.getopt(sys.argv[1:], 'k:p:d:')
+o = dict(opts)
+image = o.get('-k', '/boot/linux48.image')
+dev = o.get('-d', '/dev/dasda')
+parm = o.get('-p')
+if parm is None:
+    parm = open('/proc/cmdline').read().strip()
+parm = parm.encode('ascii')
+if len(parm) > 895:
+    sys.exit('vmzipl: parameter line longer than 895 characters')
+devtype = open('/sys/block/%s/device/devtype' % os.path.basename(dev)).read().strip()
+if not devtype.startswith('3390'):
+    sys.exit('vmzipl: %s is a %s, not a 3390' % (dev, devtype))
+
+img = open(image, 'rb').read()
+if img[0x10008:0x1000E] != b'S390EP':
+    sys.exit('vmzipl: %s is not an s390 kernel image' % image)
+body = bytearray(img[LOAD:])
+cl = 0x10480 - LOAD
+body[cl:cl + 896] = parm + b'\0' * (896 - len(parm))
+body += b'\0' * (-len(body) % BLK)
+if LOAD + len(body) > 0xFF0000:
+    sys.exit('vmzipl: kernel too large (%d bytes)' % len(body))
+with open('/boot/vmipl.bin', 'wb') as f:
+    f.write(body); f.flush(); os.fsync(f.fileno())
+kb = blocks_of('/boot/vmipl.bin')
+
+prog = program(kb, LOAD, LIST, 0)
+prog += b'\0' * (-len(prog) % BLK)
+if LIST + len(prog) > LOAD:
+    sys.exit('vmzipl: channel program too long')
+with open('/boot/vmipl.ccw', 'wb') as f:
+    f.write(prog); f.flush(); os.fsync(f.fileno())
+lb = blocks_of('/boot/vmipl.ccw')
+
+# IPL2: read the channel program into storage, then TIC to it; the
+# seek and search arguments follow the CCWs inside IPL2
+def ipl2_with_tic():
+    rsl = runs(lb)
+    n = sum(3 + r[3] for r in rsl) + 1
+    args = IPL2AT + 8 * n
+    code, data = b'', b''
+    for k, (c, h, r, cnt, i) in enumerate(rsl):
+        sa = args + len(data); data += struct.pack('>HHH', 0, c, h)
+        fa = args + len(data); data += struct.pack('>HHB', c, h, r) + b'\0'
+        here = IPL2AT + len(code)
+        code += ccw(SEEK, sa, CC, 6) + ccw(SRCH, fa, CC, 5) + ccw(TIC, here + 8, 0, 0)
+        for j in range(cnt):
+            code += ccw(RD, LIST + (i + j) * BLK, CC, BLK)
+    code += ccw(TIC, LIST, 0, 0)
+    return code + data
+ipl2 = ipl2_with_tic()
+if len(ipl2) > 144:
+    sys.exit('vmzipl: IPL2 needs %d bytes (vmipl.ccw too scattered)' % len(ipl2))
+ipl2 += b'\0' * (144 - len(ipl2))
+ipl1 = struct.pack('>II', 0x00080000, 0x80000000 | LOAD) + \
+       ccw(RD, IPL2AT, CC | SLI, 144) + ccw(TIC, IPL2AT, 0, 0)
+
+# CDL: block 0 is IPL1 (24 bytes), block 1 IPL2 (144); VOL1 (block 2) stays
+fd = os.open(dev, os.O_RDWR | os.O_SYNC)
+os.lseek(fd, 0, 0)
+os.write(fd, ipl1 + b'\0' * (BLK - 24) + ipl2 + b'\0' * (BLK - 144))
+os.fsync(fd)
+os.close(fd)
+print('vmzipl: %s: kernel %d blocks in %d runs, channel program %d CCWs in %d blocks'
+      % (dev, len(kb), len(runs(kb)), len(prog) // 8, len(lb)))
+print('vmzipl: parameters: %s' % parm.decode())
+print('vmzipl: IPL with  CP SET ESA ON  and  CP IPL <address of this disk>')

@@ -26,6 +26,7 @@ retracted and corrected).
 | **I-02** | `DMKCPI` source encoding | `MZ390E error 138, invalid ascii source line 365` — the U+E000 private-use encoding the CE README describes. Applies only to some members; `DMKVAT` and `CORE` are clean. **Does not exist on the native build:** CE's disks hold native EBCDIC, so the private-use encoding is an artifact of the exported UTF-8 text tree and `DMKCPI` — which carries one such character — assembles clean on Assembler XF. It matters only to tools reading the text tree. | fix known |
 | **I-03** | `DMKDSP` duplicate `USING` ranges *(z390 only)* | `MNOTE 4, 'Duplicate USING ranges found for - 2 and 0 using highest'`. z390 escalates what HLASM tolerates. Confirmed by execution 27 Sep: `DMKDSP` has 44 `USING` statements and assembles clean on CE's Assembler XF. | **z390 only** |
 | **I-05** | 59 macro names never cross-checked against z390 directives | `TRACE` was found because it failed. Any CP macro name colliding with a z390 directive behaves identically but may not fail — producing a false clean assembly. The cross-check is mechanical and has not been run. Mitigation for R-13. **Value downgraded 27 Sep**: with all four z390 failure classes shown to be dialect artifacts ([16-NATIVE-BASELINE.md](16-NATIVE-BASELINE.md)), z390 is a convenience syntax checker rather than an authority, so a false clean result from it no longer misleads anything that matters. Worth doing if z390 is used again in anger. | open |
+| **I-255** | IPL of a dedicated DASD: the first user CCW is mistranslated | M7.10, 10 Oct (runs zp3-zp8). `CP IPL` of an ATTACHed 3390 fails with `IPL UNIT ERROR, CSW=00000010 00200000` (channel program check), for an ESA/390 and a System/370 machine alike, so every IPL of a dedicated disk is affected (an IPL of a minidisk, CMS's 190, is not). DMKVMI chains its own DISKCCW (SEEK, SEARCH ID, TIC, READ R1 skip) by TIC to the user's CCW at X'08'; the CCW trace shows CP's real chain correct up to that TIC and then, at the TIC's target in the next RCWTASK, `60000000 0B023000` instead of the translated `06 aaaaaa 20 00 0090` (the TIC's own second word is `06000000`). First step done: for an ESA/390 guest DMKCCW used OTHRTBL even inside DMKVMI, which cannot follow a SEARCH-TIC loop (the real chain ended in a zero CCW); it now keeps DEDDTBL until the guest's channel subsystem is in use (VMLCLRSV X'80'), and the 24-byte IPL read works. DMKCFG puts DMKVMI at X'FFF000' for an ESA/390 IPL of a machine of 16 MB or more (it was at X'20000', inside the kernel). Next: the DEDD translation of a TIC into a new RCWTASK -- likely another I-126-class AMODE 31 slip. `linux390/debian/vmzipl` is ready for it. | **open** |
 
 ## Environment — documented, not ours to fix
 
@@ -345,7 +346,7 @@ retracted and corrected).
 | **fixed** — did not by itself stop the GCC380 overlay (w223) | 1 |
 | **fixed** — w215: COPYFILE of 60 files to D | 1 |
 | **fixed** — w238 (GCC370), w240 (GCC380) | 1 |
-| **open** | 1 |
+| **open** | 2 |
 | **open** — cosmetic | 1 |
 | **open** — needs M4b.3 (real frames above 16 MB); kit MAINSIZE 256 | 1 |
 | **worked around** 7 Oct 00:03 (w254): AUTOLOG1's PROFILE EXEC (AUTOLOG1 191) has `*P AUTOLOG CPWATCH CPWATCH` and `*P SET PRIOR CPWATCH 5` — the first letter only, so restoring is one character each. Porting CPWATCH (CPWSYS/CPWDSP ASSEMBLE on its 191) stays open | 1 |

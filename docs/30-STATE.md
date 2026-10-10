@@ -21,7 +21,7 @@ The kit was verified on a fresh CE (kt14).
 | Guide | done (b5) |
 | **now: M8.2** | the current cREXX built natively on CMS: RXC82 and RXAS82 work on CMS; RXBVM82 being fixed (`41-M8.2-NATIVE-CREXX.md`) |
 | Debian session | Python 2.7/3.2, cREXX for Linux, Prolog and LOGO under Debian (gcc 4.6.3 already installed) |
-| M7.10 | `IPL LINUX`: zipl on the Debian disk and a CP name LINUX |
+| **M7.10 (now)** | `IPL LINUX`: zipl on the Debian disk and a CP name LINUX. Done: `linux390/debian/vmzipl` (kernel blocks, format-0 loader, IPL1/IPL2 on track 0); DMKCCW keeps DEDDTBL while DMKVMI runs the IPL; DMKCFG puts DMKVMI at X'FFF000' for an ESA/390 IPL. Blocked by **I-255**: CP mistranslates the TIC from DMKVMI's DISKCCW to the user's CCW for every dedicated-DASD IPL |
 | M7.9 | lift the 64-CCW CVTCHN limit |
 | M4b.3 | CP using real frames above 16 MB; needed for two Debians at once (I-254) |
 | CP leftovers | I-235 models, I-201 DMKDMP dump, the LPSW fast path for PSWs above 16 MB |
@@ -30,6 +30,7 @@ The kit was verified on a fresh CE (kt14).
 | M6 | 31-bit CMS proper, including larger minidisks (4K blocks, past the 65,535-block limit of the 800-byte format) |
 | **Before M9 (owner, 10 Oct)** | C++ on CMS (subset via the cross route; full after M9), SQL (SQLite on CMS; MariaDB/PostgreSQL on Debian), CMS sockets + httpd, xBase/Harbour, MQ -- then a **distributable snapshot (kit)** |
 | M9 | 64-bit |
+| After M9 | MP (CP on several CPUs, then virtual MP for guests); GNU APL (Debian, needs a newer C++); full C++ |
 
 **Backlog (agreed, not scheduled before M9 unless said):**
 - Languages in cREXX, for CMS (via RXBVM8, later RXBVM82) and Linux, built by `arch/31bit/languages/mklangs.sh` with a cREXX `rxfloat` (`languages/common`): BASIC (mikebeer/basic, 13/13 tests), SNOBOL4 (mikebeer/snobol, 10/10), Pascal (mikebeer/pascal, 11/11), Lisp (mikebeer/lisp, 12/12), Prolog, LOGO -- all pass on the PC, and run on CMS through RXBVM8 (run lg2; `mkcmsdeck.py`). Smalltalk (mikebeer/smalltalk, 10/10) and PL/M (mikebeer/PLM) added 10 Oct; each language builds in its own directory; on Debian (golden6 disk) all run. Others: FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
@@ -37,6 +38,9 @@ The kit was verified on a fresh CE (kt14).
 - Turbo CREXX (the project owner's turbocrexx-cli, a Turbo-Pascal-style menu around cREXX): on Debian in the bundle (`turbocrexx`, with a small s390 `crexx` driver, `languages/turbo/crexx`; verified on Debian 10 Oct); on CMS as `TURBO EXEC` (EDIT + RXC8/RXAS8/RXBVM8), in the LANGS deck (run lg3).
 - THE (The Hessling Editor) 3.3 and Regina REXX 3.6: **installed on Debian** 10 Oct from the wheezy packages (the owner downloaded them with `linux390/pc/get-wheezy-the.bat`; golden7 disk). THE on CMS after the 3270 panel library.
 - xBase: mikebeer/xbase (cREXX, when it has commits) on both; Harbour on Debian first, CMS later.
+- MQTT (mikebeer/mqtt): on CMS and Debian, alongside MQ.
+- APL: `apl.rexx` (cREXX) to be ignored until the owner says it is complete; APL\360 as a VM guest is a possible historic route.
+- Name: the project is **VM/370plus** (was VM/370+) -- docs, guide, kit, EXECs and CP's logon banner.
 - Message queueing (mikebeer/mq): on Linux a statically linked client with a RabbitMQ broker; on CMS a VM-native queue machine over VMCF/IUCV, a RabbitMQ client after CMS sockets.
 - C++ on CMS: OK from the owner (10 Oct): a subset through the cross route before M9, full C++ after M9.
 - Docker: not on 31-bit (Docker and containerd are Go programs, and Go has no 31-bit s390 port; Docker needs a 64-bit kernel with cgroups and overlayfs). After M9, under a 64-bit Linux (s390x) guest with a current Debian, where Docker's s390x builds run. Before that, LXC containers under Debian 7 (LXC is C; the Linux 4.0 kernel has namespaces and cgroups) as a first step.

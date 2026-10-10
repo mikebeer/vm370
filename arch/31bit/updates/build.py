@@ -3481,6 +3481,8 @@ def m7decks():
              limit=next_seq(src('DMKCCW'), '00327000'), lines=M7EQU[:1] + [
         "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST (3390,",
         "         BZ    CCWDUMD        LINUX): BY TYPE, AS BELOW",
+        "         TM    VMLCLRSV,X'80'  M7.10: NOT WHILE DMKVMI",
+        "         BZ    CCWDUMD        RUNS THE IPL (SEARCH LOOPS)",
         "         LA    R1,OTHRTBL",
         "CCWDUMD  DS    0H",
     ])
@@ -3488,6 +3490,8 @@ def m7decks():
              limit=next_seq(src('DMKCCW'), '00398000'), lines=[
         "         TM    VMFSTAT,VMESA390  M7: AN ESA/390 GUEST'S",
         "         BZ    ADDEVTBL       DEDICATED DASD: ITS CCWS PASS",
+        "         TM    VMLCLRSV,X'80'  M7.10: ONLY ONCE ITS CSS",
+        "         BZ    ADDEVTBL       IS IN USE (NOT IN DMKVMI)",
         "         LA    R1,OTHRTBL     BY TYPE (ECKD, LINUX)",
     ])
     # A user IDAL's address is the 24-bit CCW address, but CP runs AMODE
@@ -3722,6 +3726,17 @@ def m7decks():
         "         BZ    CFGESAX        DEVICE IPLS AN ESA/390 MACHINE",
         "         OI    VMFSTAT,VMESA390",
         "CFGESAX  DS    0H"])
+    d.insert('00472000', first='00472100', inc=100,
+             limit=next_seq(src('DMKCFG'), '00472000'), lines=[
+        "*  M7.10: AN ESA/390 IPL OF A DISK MAY LOAD A WHOLE KERNEL",
+        "*  BY ITS IPL CHANNEL PROGRAM (VMZIPL): DMKVMI GOES TO THE",
+        "*  LAST PAGE BELOW 16 MB, OUT OF ITS WAY, WHEN THERE IS ONE",
+        "         TM    VMFSTAT,VMESA390",
+        "         BZ    CFGVMI1",
+        "         CLC   VMSIZE,=X'01000000'",
+        "         BL    CFGVMI1",
+        "         L     R1,=X'00FFF000'",
+        "CFGVMI1  DS    0H"])
     d.insert('00512000', first='00512110', inc=10,
              limit=next_seq(src('DMKCFG'), '00512000'), lines=[
         "         TM    VMFSTAT,VMESA390  M7: ESA/390 GUEST: THE",
