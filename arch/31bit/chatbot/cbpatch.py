@@ -35,6 +35,15 @@ P = [
      "    'CP SLEEP 2 SEC'                  /* VM/370plus: no WAKEUP */"),
     # VM/370 CP has no TERMINAL CONMODE
     ("'CP TERM CONMODE 3270'", "/* (no CP TERM CONMODE on VM/370) */"),
+    # BREXX's EXECIO writes each line at its own length: a fixed record
+    # format (F 80, F 8) fails with FSWRITE rc 15 on any shorter line
+    ("'EXECIO' queued() 'DISKW CHAT REQ A 1 F 80 (FINIS'",
+     "'EXECIO' queued() 'DISKW CHAT REQ A (FINIS'"),
+    ("'EXECIO' nq 'DISKW CHATBOT CBQUEUE A 1 F 8 (FINIS'",
+     "'EXECIO' nq 'DISKW CHATBOT CBQUEUE A (FINIS'"),
+    # the caller's RC is not set by an internal routine; BREXX's EXIT
+    # wants a number: ASK's RETURN value is in RESULT
+    ("  call ask line\n  exit rc", "  call ask line\n  exit result"),
 ]
 
 src, out = sys.argv[1:]
