@@ -271,7 +271,7 @@ SCREEN(['chat hello there',
         'Gut genug, um dich dasselbe zu fragen und es ernst zu meinen. Also - wie geht es dir wirklich?',
         'chat /WHO',
         'You are CMSUSER. You are talking to elena (de).'], 'Talking to CHATBOT from CMS');
-P('An answer takes up to half a minute: CHATBOT looks at its reader every 30 seconds (INTERVAL in CHATBOT CONFIG). `CHAT` alone starts a conversation that ends with an empty line.');
+P('An answer takes a second or two: CHATBOT waits with `WAKEUP (RDR`, which returns as soon as a file arrives in its reader, and looks for a stop request every 30 seconds (INTERVAL in CHATBOT CONFIG). `CHAT` alone starts a conversation that ends with an empty line.');
 TABLE(['Command', 'Meaning'], [
   ['`/HELP`', 'the commands'],
   ['`/LIST`', 'the personas and languages installed'],
@@ -382,6 +382,10 @@ SCREEN(['cp query set', 'MSG ON , WNG ON , EMSG TEXT, ACNT ON , RUN OFF', 'LINED
 H2('CHAT EXEC');
 SCREEN(['CHAT [question] [(WAIT n BOT name LOUD]'], 'CHAT EXEC');
 P('On MAINT 19D. Sends the question to the CHATBOT service machine and types the answer; without a question it asks repeatedly until an empty line. **WAIT** is the time to wait for the answer (default 60 seconds), **BOT** another service machine, **LOUD** shows the steps. Keep your reader empty of other files while you use it. Chapter 6.');
+H2('WAKEUP');
+SCREEN(['WAKEUP [+hhmmss|+mmss|+ss] [(RDR QUIET]'], 'WAKEUP');
+P('On MAINT 19D (new; VM/370 had none). Waits until the interval has passed (return code 2) or, with **RDR**, until a file arrives in the virtual reader (return code 3); 24 means an invalid operand. A file already in the reader does not end the wait, so look at the reader first (`QUERY READER`). WAKEUP sets `CP SET TIMER REAL` so that the interval timer runs while the machine waits. Service machines use it instead of polling.');
+SCREEN(['wakeup +000005', 'Ready(00002);', 'wakeup +000500 (rdr', 'PUN FILE 0002 FROM CMSUSER  COPY 01 NOHOLD', 'Ready(00003);'], 'WAKEUP');
 H2('LINUX EXEC');
 SCREEN(['LINUX [DISK|READER]'], 'LINUX EXEC');
 P('On MAINT 19D. **DISK** (the default) issues `CP IPL LINUX`. **READER** punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `DEFAULT LXPARM`) to the user’s reader, holding the other reader files, and IPLs the reader as an ESA/390 machine. Needs 64 MB and, for Debian, the devices listed in Chapter 5 under “What a Linux user needs”.');

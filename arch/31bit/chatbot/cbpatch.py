@@ -11,8 +11,9 @@ P = [
     ("  k = 0\n  do i = 1 to n", "  k = 0\n  fseen = 0\n  do i = 1 to n"),
     ("    if upper(word(c, 1)) = 'FROM' & k = 0 then do\n      k = 1\n",
      "    if translate(word(c, 1)) = 'FROM' & k = 0 & \\fseen then do\n      fseen = 1\n"),
-    # no WAKEUP on VM/370: CP SLEEP instead of a busy wait (and WAKEUP is
-    # tried once only, not on every round)
+    # WAKEUP: VM/370plus has one since 10 Oct (MAINT 19D, rc 2 time, 3
+    # reader file); if it is missing, CP SLEEP instead of a busy wait,
+    # and WAKEUP is tried once only, not on every round
     ("  'WAKEUP +' || right(interval, 6, '0') || ' (RDR QUIET'\n"
      "  if rc = 1 | rc = 28 | rc < 0 then do   /* no WAKEUP command here       */\n"
      "    if \\nowake then say 'CHATBOT: WAKEUP not available, polling (busy)'\n"
@@ -28,14 +29,6 @@ P = [
      "    nowake = 1\n"
      "    'CP SLEEP' interval 'SEC'\n"
      "  end"),
-    ("    'WAKEUP +000002 (RDR QUIET'\n"
-     "    if rc = 1 | rc = 28 | rc < 0 then do   /* no WAKEUP: short busy wait */\n"
-     "      t1 = time('S')\n"
-     "      do while elapsed(t1) < 2\n"
-     "        nop\n"
-     "      end\n"
-     "    end",
-     "    'CP SLEEP 2 SEC'                  /* VM/370plus: no WAKEUP */"),
     # VM/370 CP has no TERMINAL CONMODE
     ("'CP TERM CONMODE 3270'", "/* (no CP TERM CONMODE on VM/370) */"),
     # BREXX's EXECIO writes each line at its own length: a fixed record

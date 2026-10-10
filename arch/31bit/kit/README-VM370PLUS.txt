@@ -224,7 +224,7 @@ CHATBOT  (service machine, build 6)
                                chat /LIST       (personas)
                                chat /npc elena de
                                chat             (a conversation; empty line ends)
-  An answer takes up to 30 s (CHATBOT looks at its reader every 30 s).
+  An answer takes a second or two (CHATBOT waits with WAKEUP (RDR).
   Keep your own reader empty while you chat.  To start CHATBOT with the
   system, add  CP AUTOLOG CHATBOT CHATBOT  to AUTOLOG1's PROFILE EXEC.
   Details: the Guide, Chapter 6; sources in vm370plus/chatbot/.

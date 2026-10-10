@@ -1,0 +1,177 @@
+*        WAKEUP -- VM/370plus: wait for a reader file or for a time
+*
+*        WAKEUP [+hhmmss|+mmss|+ss] [(RDR QUIET]
+*
+*        Waits until a file arrives in the virtual reader (option RDR:
+*        CP presents a device end on the reader when a file is spooled
+*        to it, DMKCSU SETPEND) or until the interval has passed.
+*        Return codes, as the CHATBOT and CHAT EXECs expect them:
+*          2   the interval has passed
+*          3   a reader file arrived
+*         24   invalid operand
+*        It uses CMS's OS simulation: STIMER REAL with an exit (SVC 47,
+*        the interval timer at X'50', run in real time by CP SET TIMER
+*        REAL) and WAIT on one ECB (SVC 1); a HNDINT ASAP routine on
+*        the reader and the STIMER exit post the ECB.  QUIET is
+*        accepted (WAKEUP types nothing anyway).
+*        Without an interval, WAKEUP (RDR waits for a reader file only.
+*        Note: a file already in the reader does not wake WAKEUP; look
+*        at the reader first (QUERY READER), as the EXECs do.
+*
+WAKEUP   CSECT
+         STM   R14,R12,12(R13)
+         BALR  R12,0
+         USING *,R12
+         ST    R13,SAVE+4
+         LA    R13,SAVE
+         MVI   RCODE,0
+         MVI   FLAGS,0
+         XC    WECB,WECB
+         XC    INTVL,INTVL
+         LR    R2,R1              R2 -> TOKENIZED PLIST
+PARSE    LA    R2,8(,R2)          NEXT TOKEN (SKIP THE COMMAND NAME)
+         CLI   0(R2),X'FF'        END?
+         BE    PARSED
+         CLI   0(R2),C'('         OPTIONS FOLLOW
+         BNE   NOTOPEN
+         OI    FLAGS,FOPT
+         B     PARSE
+NOTOPEN  TM    FLAGS,FOPT         IN THE OPTIONS?
+         BZ    TIMEARG
+         CLC   0(8,R2),=CL8'RDR'
+         BNE   NOTRDR
+         OI    FLAGS,FRDR
+         B     PARSE
+NOTRDR   CLC   0(8,R2),=CL8'QUIET'
+         BE    PARSE
+         CLC   0(8,R2),=CL8')'
+         BE    PARSE
+         B     BADOPND
+TIMEARG  CLI   0(R2),C'+'         +hhmmss, +mmss, +ss
+         BNE   BADOPND
+         TM    FLAGS,FTIME        ONLY ONE INTERVAL
+         BO    BADOPND
+         OI    FLAGS,FTIME
+         LA    R3,1(,R2)          FIRST DIGIT
+         LA    R4,7               AT MOST 7 CHARACTERS AFTER +
+         SR    R5,R5              DIGIT COUNT
+DIGLOOP  CLI   0(R3),C' '
+         BE    DIGEND
+         CLI   0(R3),C'0'
+         BL    BADOPND
+         CLI   0(R3),C'9'
+         BH    BADOPND
+         LA    R5,1(,R5)
+         LA    R3,1(,R3)
+         BCT   R4,DIGLOOP
+DIGEND   LTR   R5,R5
+         BZ    BADOPND
+         MVC   DIGITS,=C'000000'  RIGHT-JUSTIFY IN 6 DIGITS
+         LA    R6,6
+         SR    R6,R5
+         BM    BADOPND            MORE THAN 6 DIGITS
+         LA    R7,DIGITS(R6)
+         BCTR  R5,0
+         EX    R5,MVDIG
+         PACK  DWORK,DIGITS(2)    HOURS
+         CVB   R8,DWORK
+         MH    R8,=H'60'
+         PACK  DWORK,DIGITS+2(2)  MINUTES
+         CVB   R9,DWORK
+         AR    R8,R9
+         MH    R8,=H'60'
+         PACK  DWORK,DIGITS+4(2)  SECONDS
+         CVB   R9,DWORK
+         AR    R8,R9
+         LTR   R8,R8
+         BNZ   *+8
+         LA    R8,1               AT LEAST A SECOND
+         MH    R8,=H'100'         HUNDREDTHS
+         ST    R8,INTVL
+         B     PARSE
+MVDIG    MVC   0(*-*,R7),1(R2)
+*
+PARSED   TM    FLAGS,FTIME+FRDR   SOMETHING TO WAIT FOR?
+         BZ    BADOPND
+         TM    FLAGS,FRDR
+         BZ    NORDR
+         HNDINT SET,(WKRD,RDRINT,00C,ASAP)
+NORDR    TM    FLAGS,FTIME
+         BZ    NOTIMER
+         LA    R1,CPTREAL         CP SET TIMER REAL: THE TIMER RUNS
+         SVC   202                WHILE THE MACHINE WAITS
+         DC    AL4(*+4)
+         L     R0,=A(TEXIT)
+         ICM   R0,8,=X'13'        REAL, BINARY HUNDREDTHS
+         LA    R1,INTVL
+         SVC   47                 STIMER REAL,TEXIT,BINTVL=INTVL
+NOTIMER  LA    R1,WECB
+         LA    R0,1
+         SVC   1                  WAIT ECB=WECB
+         TM    FLAGS,FTIME
+         BZ    NOTTCAN
+         LA    R1,1
+         SVC   46                 TTIMER CANCEL
+NOTTCAN  TM    FLAGS,FRDR
+         BZ    DONE
+         HNDINT CLR,(WKRD)
+DONE     SR    R15,R15
+         IC    R15,RCODE
+         B     EXIT
+BADOPND  LA    R15,24
+EXIT     L     R13,SAVE+4
+         L     R14,12(,R13)
+         LM    R0,R12,20(R13)
+         BR    R14
+*
+*        THE READER INTERRUPT (DMSITI: BALR R14,R15; ONLY R14 KEPT;
+*        R15 = 0 ON RETURN: NO FURTHER INTERRUPT EXPECTED)
+RDRINT   DS    0H
+         USING RDRINT,R15
+         CLI   RCODE,0
+         BNE   RDRINT1
+         MVI   RCODE,3
+RDRINT1  OI    WECB,X'40'         POST
+         DROP  R15
+         SR    R15,R15
+         BR    R14
+*
+*        THE STIMER EXIT (DMSITE: BALR R14,R15)
+TEXIT    DS    0H
+         USING TEXIT,R15
+         CLI   RCODE,0
+         BNE   TEXIT1
+         MVI   RCODE,2
+TEXIT1   OI    WECB,X'40'         POST
+         BR    R14
+         DROP  R15
+*
+         LTORG
+SAVE     DS    18F
+DWORK    DS    D
+WECB     DS    F
+INTVL    DS    F
+RCODE    DS    X
+FLAGS    DS    X
+FOPT     EQU   X'80'
+FRDR     EQU   X'40'
+FTIME    EQU   X'20'
+DIGITS   DS    CL6
+CPTREAL  DC    CL8'CP',CL8'SET',CL8'TIMER',CL8'REAL',8X'FF'
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R3       EQU   3
+R4       EQU   4
+R5       EQU   5
+R6       EQU   6
+R7       EQU   7
+R8       EQU   8
+R9       EQU   9
+R10      EQU   10
+R11      EQU   11
+R12      EQU   12
+R13      EQU   13
+R14      EQU   14
+R15      EQU   15
+         END   WAKEUP
