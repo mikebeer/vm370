@@ -1,8 +1,8 @@
 CHATBOT build 1 on VM/370plus -- what was changed, for upstream
 ================================================================
 Tested 10 Oct 2026: AUTOLOG CHATBOT, CHAT from CMSUSER, 6 questions
-including /LIST, /NPC elena de, /WHO -- all answered (about 30 s each,
-the INTERVAL).  The bot itself ran unchanged, compiled with the M8.1
+including /LIST, /NPC elena de, /WHO -- all answered (1-2 s each with
+WAKEUP (RDR).  The bot itself ran unchanged, compiled with the M8.1
 cREXX (the one RXBVM8 runs).  cbpatch.py applies these to the deck:
 
 1. CHATBOT EXEC stampfrom: the FROM card set k = 1, so cd.1 was never
@@ -15,8 +15,11 @@ cREXX (the one RXBVM8 runs).  cbpatch.py applies these to the deck:
    line.  CHAT REQ and CHATBOT CBQUEUE are written variable.
 4. CHAT EXEC: "exit rc" after "call ask": RC is not set by an internal
    routine, BREXX's EXIT needs a number -> "exit result".
-5. No WAKEUP on VM/370: CP SLEEP n SEC instead of the busy wait (both
-   EXECs), and WAKEUP is tried once only.
+5. VM/370 had no WAKEUP; VM/370plus now has one (MAINT 19D, 10 Oct:
+   +hhmmss and (RDR, rc 2 = time, 3 = reader file), so the EXECs use
+   it unchanged and an answer takes 1-2 s.  CHATBOT EXEC falls back to
+   CP SLEEP n SEC (not a busy wait) where WAKEUP is missing, and tries
+   WAKEUP once only.
 6. No CP TERMINAL CONMODE on VM/370: removed from PROFILE EXEC.
 7. PROFILE EXEC starts the bot only when disconnected (AUTOLOG); an
    interactive logon gets CMS, for maintenance.
