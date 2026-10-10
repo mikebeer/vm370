@@ -30,7 +30,7 @@ The kit was verified on a fresh CE (kt14).
 | M6 | 31-bit CMS proper, including larger minidisks (4K blocks, past the 65,535-block limit of the 800-byte format) |
 | **Before M9 (owner, 10 Oct)** | C++ on CMS (subset via the cross route; full after M9), SQL (SQLite on CMS; MariaDB/PostgreSQL on Debian), CMS sockets + httpd, xBase/Harbour, MQ -- then a **distributable snapshot (kit)** |
 | M9 | 64-bit |
-| After M9 | MP (CP on several CPUs, then virtual MP for guests); GNU APL (Debian, needs a newer C++); full C++ |
+| After M9 | MP (CP on several CPUs, then virtual MP for guests); GNU APL (Debian, needs a newer C++); full C++; CFSERV (a coupling service machine, owner OK 10 Oct) |
 
 **Backlog (agreed, not scheduled before M9 unless said):**
 - Languages in cREXX, for CMS (via RXBVM8, later RXBVM82) and Linux, built by `arch/31bit/languages/mklangs.sh` with a cREXX `rxfloat` (`languages/common`): BASIC (mikebeer/basic, 13/13 tests), SNOBOL4 (mikebeer/snobol, 10/10), Pascal (mikebeer/pascal, 11/11), Lisp (mikebeer/lisp, 12/12), Prolog, LOGO -- all pass on the PC, and run on CMS through RXBVM8 (run lg2; `mkcmsdeck.py`). Smalltalk (mikebeer/smalltalk, 10/10) and PL/M (mikebeer/PLM) added 10 Oct; each language builds in its own directory; on Debian (golden6 disk) all run. Others: FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
@@ -39,15 +39,16 @@ The kit was verified on a fresh CE (kt14).
 - THE (The Hessling Editor) 3.3 and Regina REXX 3.6: **installed on Debian** 10 Oct from the wheezy packages (the owner downloaded them with `linux390/pc/get-wheezy-the.bat`; golden7 disk). THE on CMS after the 3270 panel library.
 - xBase: mikebeer/xbase (cREXX, when it has commits) on both; Harbour on Debian first, CMS later.
 - MQTT (mikebeer/mqtt): on CMS and Debian, alongside MQ.
-- Telephony: Asterisk 1.8 on Debian as an experiment (before M9; `linux390/pc/get-wheezy.bat` fetches it); FreeSWITCH and audio/video conferencing after M9. Not on CMS (threads, sockets, real-time timers).
+- Telephony: Asterisk 1.8 on Debian as an experiment -- **installed and running 10 Oct (golden8: Asterisk 1.8.13.1, SIP on UDP 5060)** (before M9; `linux390/pc/get-wheezy.bat` fetches it); FreeSWITCH and audio/video conferencing after M9. Not on CMS (threads, sockets, real-time timers).
 - AI gateway service machine (before M9): a Linux guest relaying to an LLM on the PC or a cloud API; Linux guests over HTTP, CMS users through spool (an ASK EXEC to the gateway's reader; answers by CP MSG or reader file, Linux side via vmur/DIAG 14 and vmcp/DIAG 8). A local LLM only after M9 (s390x), and slow under emulation.
 - The owner's chatbot system as a guest (Linux or CMS service machine, depending on its stack -- asked 10 Oct).
-- IoT: mosquitto (MQTT broker, Debian) before M9 with mikebeer/mqtt; Node-RED after M9 (Node.js has no 31-bit s390 port).
+- IoT: mosquitto (MQTT broker, Debian) -- **1.6.15 static installed 10 Oct (golden8; pub/sub on 1883 verified)** -- before M9 with mikebeer/mqtt; Node-RED after M9 (Node.js has no 31-bit s390 port).
 - APL in C (mikebeer/apl v0.4): **before M9; under way** -- PC 34/34, Debian (31-bit static, `languages/apl/mkapl.sh`) 34/34; CMS APL MODULE cross-built (M5f, with new setjmp/longjmp in the runtime), CMS run pending -- Debian natively (gcc 4.6) or cross-built, CMS through the M8.1 cross route (GCC 13 -m31, newlib, cmsrt) like cREXX; the APL glyphs need a transliteration or an APL code page on the 3270/3215 (UTF-8 over SSH on Debian is fine).
 - APL: `apl.rexx` (cREXX) to be ignored until the owner says it is complete; APL\360 as a VM guest is a possible historic route.
 - Name: the project is **VM/370plus** (was VM/370plus) -- docs, guide, kit, EXECs and CP's logon banner.
 - Message queueing (mikebeer/mq): on Linux a statically linked client with a RabbitMQ broker; on CMS a VM-native queue machine over VMCF/IUCV, a RabbitMQ client after CMS sockets.
 - C++ on CMS: OK from the owner (10 Oct): a subset through the cross route before M9, full C++ after M9.
+- CFSERV (after M9): no real Coupling Facility (CFCC is IBM microcode; Hercules has no coupling links or CF instructions, and only z/OS XES uses one). Instead a service machine offering CF-like lock, list (shared queues, for MQ) and cache structures: CMS users by VMCF/IUCV-style messages or SMSG, Linux guests over TCP, other Hercules systems over CTCE or TCP.
 - Docker: not on 31-bit (Docker and containerd are Go programs, and Go has no 31-bit s390 port; Docker needs a 64-bit kernel with cgroups and overlayfs). After M9, under a 64-bit Linux (s390x) guest with a current Debian, where Docker's s390x builds run. Before that, LXC containers under Debian 7 (LXC is C; the Linux 4.0 kernel has namespaces and cgroups) as a first step.
 - SMAPI (the z/VM Systems Management API): a VSMSERVE-style service virtual machine in REXX/cREXX that answers a subset of the SMAPI calls (Image_Query, Image_Activate/Deactivate, Image_Create/Delete through the directory, Image_Disk_Create/Delete, Virtual_Network queries) using class A/B CP commands and the directory program; locally over VMCF/IUCV, and over TCP (port 44444, the SMAPI wire format) after CMS sockets; an smcli-style client for Debian. Lets OpenStack-era tools (Feilong/zVM Cloud Connector) and scripts manage VM/370plus guests.
 - Java: OpenJDK 7 under Debian (soon, a package download like Python); a fuller Java on CMS after M9.
