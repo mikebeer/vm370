@@ -39,7 +39,11 @@ The kit was verified on a fresh CE (kt14).
 - THE (The Hessling Editor) 3.3 and Regina REXX 3.6: **installed on Debian** 10 Oct from the wheezy packages (the owner downloaded them with `linux390/pc/get-wheezy-the.bat`; golden7 disk). THE on CMS after the 3270 panel library.
 - xBase: mikebeer/xbase (cREXX, when it has commits) on both; Harbour on Debian first, CMS later.
 - MQTT (mikebeer/mqtt): on CMS and Debian, alongside MQ.
-- APL in C (mikebeer/apl, empty at 10 Oct): **before M9** -- Debian natively (gcc 4.6) or cross-built, CMS through the M8.1 cross route (GCC 13 -m31, newlib, cmsrt) like cREXX; the APL glyphs need a transliteration or an APL code page on the 3270/3215 (UTF-8 over SSH on Debian is fine).
+- Telephony: Asterisk 1.8 on Debian as an experiment (before M9; `linux390/pc/get-wheezy.bat` fetches it); FreeSWITCH and audio/video conferencing after M9. Not on CMS (threads, sockets, real-time timers).
+- AI gateway service machine (before M9): a Linux guest relaying to an LLM on the PC or a cloud API; Linux guests over HTTP, CMS users through spool (an ASK EXEC to the gateway's reader; answers by CP MSG or reader file, Linux side via vmur/DIAG 14 and vmcp/DIAG 8). A local LLM only after M9 (s390x), and slow under emulation.
+- The owner's chatbot system as a guest (Linux or CMS service machine, depending on its stack -- asked 10 Oct).
+- IoT: mosquitto (MQTT broker, Debian) before M9 with mikebeer/mqtt; Node-RED after M9 (Node.js has no 31-bit s390 port).
+- APL in C (mikebeer/apl v0.4): **before M9; under way** -- PC 34/34, Debian (31-bit static, `languages/apl/mkapl.sh`) 34/34; CMS APL MODULE cross-built (M5f, with new setjmp/longjmp in the runtime), CMS run pending -- Debian natively (gcc 4.6) or cross-built, CMS through the M8.1 cross route (GCC 13 -m31, newlib, cmsrt) like cREXX; the APL glyphs need a transliteration or an APL code page on the 3270/3215 (UTF-8 over SSH on Debian is fine).
 - APL: `apl.rexx` (cREXX) to be ignored until the owner says it is complete; APL\360 as a VM guest is a possible historic route.
 - Name: the project is **VM/370plus** (was VM/370plus) -- docs, guide, kit, EXECs and CP's logon banner.
 - Message queueing (mikebeer/mq): on Linux a statically linked client with a RabbitMQ broker; on CMS a VM-native queue machine over VMCF/IUCV, a RabbitMQ client after CMS sockets.
