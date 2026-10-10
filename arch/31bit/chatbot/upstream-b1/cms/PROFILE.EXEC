@@ -1,0 +1,10 @@
+/* PROFILE EXEC for the CHATBOT service machine (runs at AUTOLOG)        */
+/* Build 1.                                                              */
+'CP SET RUN ON'                    /* keep running with the console gone */
+'CP TERM CONMODE 3270'
+'ACCESS 191 A'                     /* the 191 holds EXECs, data, session */
+'CP SPOOL PUNCH CLASS A'
+'CP SPOOL PRINTER CLASS A'
+'SET EMSG ON'
+/* take the reader as it is; ignore anything that arrives while logging in */
+'EXEC CHATBOT'

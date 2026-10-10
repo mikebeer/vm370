@@ -1,0 +1,49 @@
+* Demo conversation, produced by the PC spool simulation (tests/spoolsim.py).
+* Each block: what MIKE punched to CHATBOT, then what CHATBOT punched back.
+
+MIKE> hello
+Oh - hello. Good to see you.
+
+I'm Tchaika.
+
+So - what brings you here today?
+
+MIKE> /LIST
+Personas (name/language): amicus/de amicus/en andron/de andron/en
+elena/de elena/en galene/de galene/en hord/de hord/en mcjoy/de mcjoy/en
+musix/de musix/en opux/de opux/en spark/de spark/en tchaika/de
+tchaika/en
+
+MIKE> who are you
+Sea gull, not laughing gull, technically - so don't expect me to laugh
+at my own jokes.
+
+MIKE> what about her family
+Right - Family, friends and boundaries are Musix's - Waterford, the
+island of gardens and festivals.
+
+MIKE> tell me a joke
+Why don't gulls fly over the bay? Because then they'd be bagels. ...I
+have exactly one, and now you've had it.
+
+MIKE> /NPC musix en
+There you are, right on cue.
+
+MIKE> what is the daily bonus
+(That is a screen feature of the app - there is nothing to say about it
+over the reader.)
+
+MIKE> /NPC tchaika de
+Oh - schoen, dich zu sehen.
+
+Ich bin Tchaika.
+
+Was fuehrt dich heute her?
+
+MIKE> hallo, wer bist du
+Da bist du wieder.
+
+MIKE> /HELP
+Ask me anything in plain words. Commands: /LIST (who can I talk to),
+/NPC name [en|de] (change persona), /LANG en|de, /RESET (start over),
+/WHO, /DEBUG ON|OFF, /HELP.

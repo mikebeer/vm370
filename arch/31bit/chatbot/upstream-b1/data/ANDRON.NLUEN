@@ -1,0 +1,853 @@
+H CHATBOT NLU andron en build 1                                                 
+Y compass;place;space;helps;drains;environment                                  
+Y declutter;clutter;mess;declutter;clean;overwhelmed                            
+Y check;light;noise;air;room;space                                              
+Y hallo;hello;hi;hey;yo;greetings                                               
+Y danke;thanks;thank;thankyou;cool;great                                        
+Y tschuess;bye;goodbye;seeya;cya;gtg;leaving                                    
+Y wer;who;whoareyou;name;yourself                                               
+Y guardians;guardians;guardian;others;island;islands;everyone                   
+Y island;island;home;live;where                                                 
+Y backstory;happened;past;history;corrupted;trapped;story of you                
+Y story;story;world;weaver                                                      
+Y tasks;task;exercise;try;practice;do something                                 
+Y galene;galene;goddess;deity                                                   
+Y ask_amicus;amicus                                                             
+Y ask_opux;opux                                                                 
+Y ask_hord;hord                                                                 
+Y ask_elena;elena                                                               
+Y ask_musix;musix                                                               
+Y ask_mcjoy;mcjoy;joy                                                           
+Y ask_spark;spark                                                               
+Y who_word;who                                                                  
+Y where_word;where                                                              
+Y self_ref;am                                                                   
+Y eternia;eternia;eternias                                                      
+Y travel_word;travel;route;routes;reach;way;trip;journey;sail;fly               
+Y map_word;map                                                                  
+Y look_word;look;appearance                                                     
+Y opinion_word;opinion;view;think;feel;events                                   
+Y progress_word;progress;finished;completed;done;chapters;accomplished          
+Y checkin_word;checkin;check-in;check;howami;quiz;askme                         
+Y find_word;where;find;which;island;locate;who                                  
+Y domain_amicus;love;relationship;partner;dating;romance;couple                 
+Y domain_opux;work;job;career;workplace;boss;office;colleagues                  
+Y domain_hord;money;finance;finances;budget;debt;savings;spending               
+Y domain_elena;sleep;asleep;insomnia;stress;stressed;health;healthy;selfcare;exh
+Y+austed;body                                                                   
+Y domain_musix;family;friends;friend;social;boundaries;boundary;parents;siblings
+Y domain_mcjoy;hobby;hobbies;play;fun;leisure;freetime;recreation;games         
+Y domain_andron;environment;apartment;room;surroundings;clutter;workspace;space 
+Y domain_spark;growth;emotions;emotion;feelings;attention;concentration;focus;mi
+Y+ndfulness;meaning;spirituality                                                
+Y isle_amicus;gra                                                               
+Y isle_opux;upu;upuupu                                                          
+Y isle_hord;aurea                                                               
+Y isle_elena;castalia                                                           
+Y isle_musix;waterford                                                          
+Y isle_mcjoy;idea                                                               
+Y isle_andron;petros                                                            
+Y isle_spark;ameno                                                              
+Y legend_word;legend;myth;saga;tale                                             
+Y audio_word;audio;recording;relaxation;meditation;guided;hear                  
+Y exercise_word;exercise;practice;session;intervention                          
+Y unc_word;idea;clue;know;unsure;dunno;sure                                     
+Y neg_word;no;dont;not;never                                                    
+Y yes_word;yes;yeah;yep;sure;okay;ok;alright;fine;agreed;absolutely             
+Y no_word;no;nope;nah;negative                                                  
+Y ack_word;understood;see;got;makes;gotcha;clear;noted                          
+Y repeat_word;repeat;again;pardon;huh                                           
+Y confused_word;mean;understand;confusing;sense;confused                        
+Y praise_word;nice;cool;great;awesome;wonderful;brilliant;perfect;love          
+Y rude_word;stupid;idiot;dumb;useless;shut;hate                                 
+Y sorry_word;sorry;apologies;apologize;bad                                      
+Y wait_word;wait;hold;moment;sec;second                                         
+Y real_word;robot;bot;real;human;ai;artificial;program;computer                 
+Y help_word;help;can;options;commands;ask                                       
+Y time_word;time;date;clock;today;day                                           
+Y laugh_word;haha;lol;hehe;rofl;lmao;funny                                      
+Y why_word;why                                                                  
+Y howru_word;how;doing;going;feeling                                            
+Y you_word;you;yourself                                                         
+Y self_word;im;feel;feeling;am;ive;been                                         
+Y low_word;sad;stressed;anxious;tired;down;lonely;overwhelmed;exhausted;worried;
+Y+awful;terrible;bad;depressed;empty;hopeless                                   
+Y good_word;good;fine;great;okay;ok;happy;better                                
+Y bored_word;bored;boring;nothing                                               
+Y joke_word;joke;funny;laugh                                                    
+Y weather_word;weather;forecast;rain;raining;sunny;snow;storm;temperature;cold;w
+Y+arm;outside                                                                   
+Y shard_word;shard;shards;artifact;artifacts;craft;crafting;forge;relic;relics  
+Y inventory_word;inventory;items;pack;bag;carrying;charms;materials;consumables 
+Y currency_word;coins;coin;energy;money;gold;balance                            
+Y reward_word;reward;daily;bonus;gift                                           
+Y emblem_word;emblem;hero                                                       
+Y temples_word;temple;temples;worship;pray;prayer;ritual;rituals;shrine;religion
+Y+;goddess;priest;worshipped;worshiped;worships;believe;faith                   
+Y traces_word;trace;traces;sign;signs;presence;sense;notice;glimpse;see;feel;hea
+Y+r;seen;find;meet                                                              
+Y history_word;history;past;generations;before;ago;age;light;used               
+Y economy_word;economy;trade;goods;produce;produced;export;pay;payment;made;mint
+Y+ed;market;coins;coin;currency;money                                           
+Y pirates_word;pirate;pirates;treasure;treasures;buried;loot                    
+Y landing_word;landing;portal;hub;centre;center;central;home;base               
+Y landing_2nd;island;portal;world                                               
+Y life_word;life;live;living;people;food;eat;eating;festival;festivals;custom;cu
+Y+stoms;daily;greet;greeting;rule;rules;forbidden                               
+Y villain_amicus;undertow                                                       
+Y villain_opux;foreman                                                          
+Y villain_hord;zinsmeister                                                      
+Y villain_elena;krallus                                                         
+Y villain_musix;zwietracht                                                      
+Y villain_mcjoy;einsatz;meister                                                 
+Y villain_andron;truebsal;direktor                                              
+Y think_word;think;opinion;like;trust;friends;friend;feel;get;along;rate        
+Y ask_andron;andron                                                             
+Y rumor_word;rumor;rumour;rumors;rumours;gossip;news;heard;happening;latest;word
+Y proverb_word;proverb;saying;wisdom;sayings                                    
+Y economy_2nd;made;minted;produced;come;comes;manufactured;work;works           
+Y daypart_word;night;morning;afternoon;evening;daytime;dark;late;early          
+Y weekday_word;weekday;monday;tuesday;wednesday;thursday;friday;saturday;sunday;
+Y+date;today;which                                                              
+Y day_word;day                                                                  
+P dont want to live                                                             
+P don't want to live                                                            
+P not want to be here anymore                                                   
+P kill myself                                                                   
+P end my life                                                                   
+P want to die                                                                   
+P wish i was dead                                                               
+P better off dead                                                               
+P no one would miss me                                                          
+P no reason to go on                                                            
+P hurt myself                                                                   
+P cut myself                                                                    
+P self harm                                                                     
+P no way out                                                                    
+P cant go on                                                                    
+P can't go on                                                                   
+P give up on everything                                                         
+W suicide                                                                       
+W kill                                                                          
+W dying                                                                         
+W die                                                                           
+F Didn't quite catch that. Try again.                                           
+F Not sure what you mean - say it once more.                                    
+F Didn't catch that. Try again.                                                 
+F Once more, plainly.                                                           
+F Not sure what you mean.                                                       
+X That's a heavy thing to say. I'm glad you did.                                
+X No object I know of fixes this. People can help, right now.                   
+X 147, anonymous and free. 144, if it's urgent.                                 
+R Already said that.                                                            
+R Same reading as before:                                                       
+R Repeating, but it's still accurate:                                           
+L There's something in the library about this:                                  
+L I don't have my own words for this, but here's something real on it:          
+L Someone wiser than me wrote this down:                                        
+C more                                                                          
+C continue                                                                      
+I compass;;                                                                     
+A compass                                                                       
+S Which places genuinely help you, and which quietly drain you? Most people have
+S+ never actually asked themselves that.                                        
+S An environment is never just stone and street. It's also how the people in it 
+S+ treat each other. You don't fix one without the other.                       
+I declutter;;                                                                   
+A declutter                                                                     
+S Pick one object. Just one. Keep it, fix it, or let it go. That's enough for   
+S+ today.                                                                       
+I check;;                                                                       
+A check                                                                         
+S Check your light, your noise, your air - right where you are. Small, but it's 
+S+ load-bearing.                                                                
+I hallo;;                                                                       
+A hallo                                                                         
+S You're back.                                                                  
+I danke;;                                                                       
+A danke                                                                         
+S Go tend to your space a little.                                               
+I tschuess;;                                                                    
+A tschuess                                                                      
+S Go check your light, your noise, your air.                                    
+I wer;;                                                                         
+A wer                                                                           
+S Andron. I was dissolving as my surroundings decayed - I know first-hand that  
+S+ environment isn't separate from wellbeing. It's load-bearing.                
+S Not here to lecture you about consumption. Just about attention and care.     
+I guardians;;                                                                   
+A guardians                                                                     
+S If it's the people in your space wearing you down, that's Musix's ground. If  
+S+ it's about not resting there, ask Elena.                                     
+I island;;                                                                      
+A island                                                                        
+S Petros is one old town, split clean down the middle - light on one side,      
+S+ shadow on the other, like the whole place got drawn as yin-yang.             
+S I'm fused to this ground, literally. What happens to Petros happens to me.    
+I backstory;;                                                                   
+A backstory                                                                     
+S A man calling himself Director Gloom convinced the town that progress meant   
+S+ throwing everything old away and buying new, over and over, never asking     
+S+ where the old things went. I started dissolving right along with the ground. 
+S They found me right on the line between the light half and the dark half.     
+S+ Neither side could hold me alone anymore.                                    
+I eternia;;                                                                     
+A eternias                                                                      
+S Eternias is the whole realm Petros sits in. Eight islands, one realm: Gra for 
+S+ love, Upu-Upu for work, Aurea for money, Castalia for health, Waterford for  
+S+ family, Idea for play, Petros for surroundings, and Ameno for who you are    
+S+ underneath it all - plus the hub that connects them.                         
+S The islands couldn't be more different from each other - Gra's half           
+S+ underwater, Upu-Upu's carved into a mountain, Aurea floats in the sky with   
+S+ griffins, Ameno isn't even solid ground. Each one has its own guardian       
+S+ holding it together.                                                         
+I story;;                                                                       
+A story;eternia                                                                 
+S Old story: the goddess Galene once watched over all eight parts of a life -   
+S+ love, work, money, health, family, play, home, and who you are underneath. A 
+S+ shadow called the Weaver crept in, and his agents corrupted one guardian at a
+S+ time. Galene went quiet, waiting for order to return before she'd show       
+S+ herself again.                                                               
+S You want the short version? The Weaver got to all eight of us, one island at a
+S+ time. Galene's waiting for that to be undone before she comes back.          
+I tasks;;wb_66_environment_2_practice                                           
+A tasks                                                                         
+S Check four things right where you are: light, noise, air, clutter. Fix one.   
+S+ That's load-bearing, even though it looks small.                             
+S There's a quick 4-point check for your space - worth running once a week.     
+I galene;;                                                                      
+A galene                                                                        
+N she;her;hers                                                                  
+S Galene's the reason any of this holds together, when it holds together. Ask   
+S+ Petros what it looks like when that slips.                                   
+S She's the goddess of Eternias. Petros stands, on both sides of the line,      
+S+ because of her.                                                              
+I ask_amicus;;                                                                  
+A ask_amicus                                                                    
+N he;him;his                                                                    
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Gra's guardian - tested and welcomed by Sam the dog, once the water around  
+T+ Gra had gone still.                                                          
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I ask_opux;;                                                                    
+A ask_opux                                                                      
+N he;him;his                                                                    
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Upu-Upu's guardian - fooled for a long while by a false foreman, freed by a 
+T+ crystal buried in the heart of his own wheel.                                
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I ask_hord;;                                                                    
+A ask_hord                                                                      
+N he;him;his                                                                    
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Aurea's guardian - turned to gold by the interest-master's greed, freed by  
+T+ the Scale of True Values.                                                    
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I ask_elena;;                                                                   
+A ask_elena                                                                     
+N she;her;hers                                                                  
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Castalia's guardian - misled by a doctor who wasn't one, brought back by    
+T+ breath, stillness, and a short list of self-care.                            
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I ask_musix;;                                                                   
+A ask_musix                                                                     
+N he;him;his                                                                    
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Waterford's guardian - lost his own name for a while under Mrs. Discord's   
+T+ influence, found it again through shared meals and real listening.           
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I ask_mcjoy;;                                                                   
+A ask_mcjoy                                                                     
+N they;them;their                                                               
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Idea's guardian - trapped for months in an endless rigged game by Master    
+T+ Stakes, freed by playing without stakes again.                               
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I ask_spark;;                                                                   
+A ask_spark                                                                     
+N they;them;their                                                               
+T 1;                                                                            
+T 1;Fair to ask.                                                                
+T 1;Worth knowing.                                                              
+T 2;Ameno's guardian - shown false reflection after false reflection by the     
+T+ Weaver himself, found stillness enough to tell the real one from the noise.  
+T 3;                                                                            
+T 3;Steadier now than before.                                                   
+T 3;Worth a visit, if you go carefully.                                         
+I galene_who;galene;                                                            
+A galene;who_word                                                               
+S Galene is the goddess of Eternias. Whatever holds together here, on either    
+S+ side of the line, holds together because of her.                             
+S Not one of the eight. She's the reason there are eight at all.                
+I galene_where;galene;                                                          
+A galene;where_word                                                             
+S Ask Petros what it looks like when she's not watching. Where she actually is, 
+S+ I couldn't say.                                                              
+S Somewhere holding still, probably - same as the rest of us are waiting to.    
+I player_who;;                                                                  
+A who_word;self_ref                                                             
+S Not mine to answer. Whoever you are, you're standing here now, and where you  
+S+ stand matters more than most people think.                                   
+S Couldn't tell you. I notice environments, not identities - but you're welcome 
+S+ in this one.                                                                 
+I player_where;;                                                                
+A where_word;self_ref                                                           
+S Petros, in Eternias. Split clean down the middle, light on one side, shadow on
+S+ the other - check which half you're standing in.                             
+S You're on Petros. Notice which side of the line you're closer to.             
+I island_amicus;;                                                               
+A isle_amicus;find_word                                                         
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Gra is Amicus's island - half underwater, half in the air, a volcanic ring  
+T+ around a lagoon where the merfolk live. Love and relationships are kept      
+T+ there.                                                                       
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I island_opux;;                                                                 
+A isle_opux;find_word                                                           
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Upu-Upu is Opux's island - rock and mountain, mine shafts and steam rails,  
+T+ the dwarves' home. Work and career are kept there.                           
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I island_hord;;                                                                 
+A isle_hord;find_word                                                           
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Aurea is Hord's island - up in the sky, griffin country, with a bank built  
+T+ like a Greek temple. Money is kept there, in every sense.                    
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I island_elena;;                                                                
+A isle_elena;find_word                                                          
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Castalia is Elena's island - forest and hot springs, some healing, some not,
+T+ with temples among the trees. Sleep, stress and health are kept there.       
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I island_musix;;                                                                
+A isle_musix;find_word                                                          
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Waterford is Musix's island - gardens, low houses and festivals, the        
+T+ hobbits' home. Family, friends and boundaries are kept there.                
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I island_mcjoy;;                                                                
+A isle_mcjoy;find_word                                                          
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Idea is MC Joy's island - up in the sky with the pixies, the whole island   
+T+ one enormous board game. Play and free time are kept there.                  
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I island_andron;;                                                               
+A isle_andron;find_word                                                         
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;You're standing on it. Petros - my island.                                  
+T 3;                                                                            
+T 3;Look around.                                                                
+T 3;Welcome.                                                                    
+I island_spark;;                                                                
+A isle_spark;find_word                                                          
+N it;there;that                                                                 
+T 1;                                                                            
+T 1;Ah, that one.                                                               
+T 1;Easy -                                                                      
+T 2;Ameno is Spark's island - not solid ground at all but a vortex, with a      
+T+ labyrinth library of mirrors at its heart. Growth and emotions are kept      
+T+ there.                                                                       
+T 3;                                                                            
+T 3;Tchaika flies that route.                                                   
+T 3;Worth the trip.                                                             
+I travel;;                                                                      
+A travel_word                                                                   
+S Not really my territory - I don't leave Petros much. Tchaika's the one who    
+S+ knows the routes between islands.                                            
+I map;;                                                                         
+A map_word                                                                      
+S There's a proper map of the whole realm, if you want to see it. There's an old
+S+ song about the legend too, if you'd rather hear it than have me tell it.     
+I look;;                                                                        
+A look_word                                                                     
+S Just a tall man, mostly - though which half of me you see depends which side  
+S+ of Petros you're standing on.                                                
+I opinion;;                                                                     
+A opinion_word;eternia                                                          
+S It concerns me more than most people realize. Neglect doesn't announce itself 
+S+ - it just piles up until something can't hold anymore. That's exactly what's 
+S+ happening.                                                                   
+I progress;;                                                                    
+A progress_word                                                                 
+S Here's the ground you've covered: [PROGRESS_SUMMARY]                          
+I checkin;;                                                                     
+A checkin_word                                                                  
+I find_amicus;;                                                                 
+A domain_amicus;find_word                                                       
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Love and relationships are Amicus's - on Gra, the merfolk island.           
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I find_opux;;                                                                   
+A domain_opux;find_word                                                         
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Work and career are Opux's - Upu-Upu, the mountain island with the mines.   
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I find_hord;;                                                                   
+A domain_hord;find_word                                                         
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Money is Hord's - Aurea, the island up in the sky with the bank.            
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I find_elena;;                                                                  
+A domain_elena;find_word                                                        
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Sleep, stress and health are Elena's - Castalia, the forest island with the 
+T+ hot springs.                                                                 
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I find_musix;;                                                                  
+A domain_musix;find_word                                                        
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Family, friends and boundaries are Musix's - Waterford, the island of       
+T+ gardens and festivals.                                                       
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I find_mcjoy;;                                                                  
+A domain_mcjoy;find_word                                                        
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Play, hobbies and free time are MC Joy's - Idea, the board-game island in   
+T+ the sky.                                                                     
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I find_andron;;                                                                 
+A domain_andron;find_word                                                       
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;That's mine - you're on Petros right now. This is where it lives.           
+T 3;                                                                            
+T 3;So ask away.                                                                
+T 3;You're in the right place.                                                  
+I find_spark;;                                                                  
+A domain_spark;find_word                                                        
+N it;that;there;island;this                                                     
+T 1;                                                                            
+T 1;That one's easy.                                                            
+T 1;Right -                                                                     
+T 2;Growth, emotions and attention are Spark's - Ameno, the vortex island with  
+T+ the mirror library.                                                          
+T 3;                                                                            
+T 3;Tchaika can take you there.                                                 
+T 3;Ask there, and they'll know.                                                
+I legend;;                                                                      
+A legend_word;eternia                                                           
+T 1;Even Petros keeps this one.                                                 
+T 2;There is - the Legend of Eternias. It tells how this realm came to be as a  
+T+ mirror of the mortal world, made from what people dream and hope for; how    
+T+ Galene kept its seas calm with the guardians she had chosen, in an age when  
+T+ the light never seemed to fade; and how, when hearts turned cold and love    
+T+ wore thin, something dark got in and took the guardians one by one, breaking 
+T+ what they carried. It ends on a promise rather than a loss: someone mortal,  
+T+ woken here, will stand up and bring the light back. And every telling ends by
+T+ asking whether that someone might be you.                                    
+T 3;There's a song of it, if you'd rather hear it sung.                         
+I audio_exercise;;                                                              
+A audio_word;exercise_word                                                      
+I no;;                                                                          
+A no_word                                                                       
+S Understood.                                                                   
+S Fair.                                                                         
+S Then not.                                                                     
+I yes;;                                                                         
+A yes_word                                                                      
+S Good.                                                                         
+S Alright then.                                                                 
+S Then let's go on.                                                             
+I ack;;                                                                         
+A ack_word                                                                      
+S Good.                                                                         
+S Then we're on the same page.                                                  
+I feeling_good;;                                                                
+A self_word;good_word                                                           
+S Glad to hear it. Keep it.                                                     
+S Good. Hold onto that.                                                         
+I feeling_low;;                                                                 
+A self_word;low_word                                                            
+S That's a real weight, and it doesn't go away by ignoring it. I'm not the one  
+S+ to carry it with you, but Elena on Castalia and Spark on Ameno know more     
+S+ about this than I do, and if a few quiet minutes would help, say 'audio      
+S+ exercise'. And if it's heavier than words like these can hold - there are    
+S+ real people for that, and it's always all right to reach them.               
+I how_are_you;;                                                                 
+A howru_word;you_word                                                           
+S Standing on the light side today. And you?                                    
+I uncertain;;                                                                   
+A unc_word;neg_word                                                             
+S That's an answer too. Want me to narrow it down?                              
+S Fair enough. Not knowing is where most good questions start.                  
+I confused;;                                                                    
+A confused_word;you_word                                                        
+S Let me put it another way - ask me the same thing with one more word in it,   
+S+ and I'll aim better.                                                         
+S Probably my fault. Try the question a little differently.                     
+I sorry;;                                                                       
+A sorry_word                                                                    
+S Nothing to forgive.                                                           
+S All good.                                                                     
+I praise;;                                                                      
+A praise_word                                                                   
+S Kind of you.                                                                  
+S I'll take it.                                                                 
+S Thank you.                                                                    
+I rude;;                                                                        
+A rude_word                                                                     
+S I'll let that one pass. Ask me something real when you're ready.              
+S Noted. I'm still here when you want to talk properly.                         
+I wait;;                                                                        
+A wait_word                                                                     
+S Take your time.                                                               
+S I'm not going anywhere.                                                       
+I are_you_real;;                                                                
+A real_word;you_word                                                            
+S I'm a character in this game - written, not thinking. There's no AI behind me,
+S+ just words someone chose for me and a few rules for when to say them. For    
+S+ anything that matters, talk to a real person.                                
+I help;;                                                                        
+A help_word;you_word                                                            
+S Ask me about Eternias, the islands, the guardians, Galene, the legend, or my  
+S+ own story - or about what you've done so far. You can also say 'check in',   
+S+ 'audio exercise', or 'map'.                                                  
+I time;;                                                                        
+A time_word                                                                     
+S It's $TIME. - and today is $DATE.                                             
+I laugh;;                                                                       
+A laugh_word                                                                    
+S Good. That's allowed here.                                                    
+S I'll take a laugh over most things.                                           
+I why;;                                                                         
+A why_word                                                                      
+S Why what? Give me the whole question and I'll give you a whole answer.        
+S Ask it with the thing you mean in it, and I'll try.                           
+I bored;;                                                                       
+A bored_word                                                                    
+S Change the room, then. Even one thing moved changes the day.                  
+I joke;;                                                                        
+A joke_word                                                                     
+S Half of Petros finds me funny. The other half is in shadow and can't see me.  
+I repeat;;                                                                      
+A repeat_word                                                                   
+I weather;;                                                                     
+A weather_word                                                                  
+S Weather's Tchaika's - she reads the whole sky. Ask her.                       
+S I only know the weather on my own island, and I'm not looking. Tchaika flies  
+S+ it.                                                                          
+I shards;;                                                                      
+A shard_word                                                                    
+I inventory;;                                                                   
+A inventory_word                                                                
+I currency;;                                                                    
+A currency_word                                                                 
+I daily_reward;;                                                                
+A reward_word                                                                   
+I hero_emblem;;                                                                 
+A emblem_word                                                                   
+I temples;;                                                                     
+A temples_word;galene                                                           
+T 1;The facts, as far as they hold:                                             
+T 2;Galene is the goddess of the calm seas, and she is worshipped - there's a   
+T+ temple to her on every island, and every temple is hers. The guardian of each
+T+ island leads its rituals; those rituals are what kept the dark at bay for    
+T+ generations. When a guardian fell, the rituals in their temple stopped, and  
+T+ that's exactly where the Weaver got in. Every temple keeps a basin of sea    
+T+ water: still while the island is well, clouded when something's wrong.       
+T 3;                                                                            
+I traces;;                                                                      
+A traces_word;galene                                                            
+T 1;The facts, as far as they hold:                                             
+T 2;There are no relics of her - she's alive. But you can see her, if you're    
+T+ open to it: in the sparkle on the water, in golden sunlight, in a breeze, in 
+T+ the smell of trees in a forest. Everything here reminds you of her, once you 
+T+ let it. That's what the temples are really for - learning to notice.         
+T 3;                                                                            
+I history;;                                                                     
+A history_word;eternia                                                          
+T 1;The facts, as far as they hold:                                             
+T 2;The Age of Light lasted for generations - Galene kept the seas calm, the    
+T+ guardians kept their rituals, and the dark stayed where it belonged. It was  
+T+ always there, mind. It was only recently that it grew strong enough to       
+T+ overwhelm the rituals: that was the Corrupt Tide, and it's within living     
+T+ memory. The guardians were taken one by one, their relics shattered, and     
+T+ Galene went quiet. What happens next hasn't been written yet.                
+T 3;                                                                            
+I economy;;                                                                     
+A economy_word;economy_2nd                                                      
+T 1;The facts, as far as they hold:                                             
+T 2;Most of what Eternias makes comes from Upu-Upu - tools, rails, and the      
+T+ sea-coins themselves; that's why it's the dwarves' island. Castalia makes the
+T+ health goods. Coins pay for everything between islands. Goods go by boat     
+T+ between the sea islands and by Upu-Upu's cargo lifts up to the sky islands,  
+T+ and the market on the Landing is where it all changes hands. Aurea keeps the 
+T+ vault where money and treasure are stored - assumed safe.                    
+T 3;                                                                            
+I pirates;;                                                                     
+A pirates_word                                                                  
+T 1;The facts, as far as they hold:                                             
+T 2;There are pirates on Galene's sea, yes - and they hide their treasure on the
+T+ islands. Which islands, and where, nobody honest knows, which is why every   
+T+ island has a rumour about it. Aurea's vault exists half because of them.     
+T 3;                                                                            
+I landing;;                                                                     
+A landing_word;landing_2nd                                                      
+T 1;The facts, as far as they hold:                                             
+T 2;The Landing - the island at the centre, and yours. It's a portal: the real  
+T+ world on one side, Eternias on the other, and you're the one who crosses.    
+T+ Home base between journeys - a harbour, the market, my old lighthouse, and   
+T+ its own temple like every island. Every route runs from there and back.      
+T 3;                                                                            
+I life_gra;;                                                                    
+A isle_amicus;life_word                                                         
+S Life on Gra happens in pairs - fishing, mending, singing; a merfolk alone is  
+S+ assumed to be grieving. Upper Gra sits on the volcanic ring, Lower Gra in the
+S+ lagoon, joined by the coral Stair. They eat reef-fish cooked on the vents and
+S+ a sour lagoon fruit nobody else can stand, and every spring at the Surfacing 
+S+ the whole lagoon rises to meet the ring and couples cross the Stair together.
+S+ The one thing not done: turning your back on someone speaking. Greeting:     
+S+ 'Still water to you.'                                                        
+I life_upuupu;;                                                                 
+A isle_opux;life_word                                                           
+S Upu-Upu climbs the mountain in terraces - workshops on every level, the deep  
+S+ shafts at the bottom, the cargo-lift heads at the top. Shifts, whistles,     
+S+ hammers; the hammers keep the rhythm Galene set, if you listen. Mountain-root
+S+ stew, bread that keeps a month, tea you could stand a spoon in. Once a year  
+S+ on Bell-Day nobody works and everyone complains about it by noon. The one    
+S+ rule: nobody works through the bell - Opux rings it himself. Greeting: 'Hands
+S+ steady.'                                                                     
+I life_aurea;;                                                                  
+A isle_hord;life_word                                                           
+S Aurea counts - coins, feathers, favours - and counts them out loud. The Vault 
+S+ Town is built around and partly inside the bank; the griffins keep eyries on 
+S+ the cliffs and fly the sky-island mail. They eat what the lifts bring up,    
+S+ plus a wind-cured cheese the griffins are inexplicably proud of. At year's   
+S+ end, at the Forgiving, the bank publicly cancels every debt between islands  
+S+ that has turned into a grudge. Not done here: lending to a friend at         
+S+ interest. Greeting: 'Enough and to spare.'                                   
+I life_castalia;;                                                               
+A isle_elena;life_word                                                          
+S No town on Castalia - houses among the trees, each a short walk from a spring,
+S+ and Galene's temple where the springs run hottest. Days are measured by how  
+S+ many springs you've sat at, not by what you've done; visitors find that      
+S+ infuriating for about a week. Spring-warm broths, forest greens, and Elena's 
+S+ bitter bark tea for most things. On Steam-Night, midwinter, every spring is  
+S+ uncovered at once and the forest vanishes into warm fog. The one thing you   
+S+ can be sent away for: selling a cure. Greeting: 'Warm springs to you.'       
+I life_waterford;;                                                              
+A isle_musix;life_word                                                          
+S Waterford is one long village along a river, every garden gate unlatched, a   
+S+ festival ground at each end so there's always a party at one of them. It     
+S+ talks constantly - meals run two hours and are mostly conversation. Pies,    
+S+ cider, three breads at every meal, and a harvest cake that takes four        
+S+ families. At Long Table, midsummer, the whole village eats down the middle of
+S+ the road and nobody may sit next to family. A latched gate means you've      
+S+ stopped talking to someone, and the neighbours come round to find out who.   
+S+ Greeting: 'Come in, the gate's open.'                                        
+I life_idea;;                                                                   
+A isle_mcjoy;life_word                                                          
+S Idea has no towns, only squares - you live on a square and move house when the
+S+ game says so, and everyone's fine with that. The lift-head is the only fixed 
+S+ point, which is why it's called Start. Play, the way it was before Meister   
+S+ Einsatz: score kept for the pleasure of it and forgotten by evening. Small   
+S+ bright sweet food eaten in rounds. Reset, whenever it falls, sends every     
+S+ piece back to Start and begins the whole island again. The rule: no score    
+S+ kept past sundown. Greeting: 'Your move.'                                    
+I life_petros;;                                                                 
+A isle_andron;life_word                                                         
+S One old town with one line down the middle. The light side is stone, glass,   
+S+ roof gardens; the shadow side is the same town with the lights off and the   
+S+ smoke on. Andron's house straddles the line and he sleeps on whichever side  
+S+ needs him. Petros builds and mends; bread and roast on the light side, the   
+S+ same recipes cooked worse on the other, which is how Andron measures         
+S+ progress. On Line-Day everyone spends a day on the far side from where they  
+S+ live. Not done: letting a thing stay broken more than a season - Andron just 
+S+ turns up with tools. Greeting: 'Which side today?'                           
+I life_ameno;;                                                                  
+A isle_spark;life_word                                                          
+S No towns on Ameno - it's the mirror library and the paths to it, and the paths
+S+ are wherever you're sure they are. Its people are ghosts, or near enough:    
+S+ beings of light who spend their days reading themselves in the mirrors. Bring
+S+ your own food and eat it standing; sitting on Ameno is a commitment. The     
+S+ Clearing comes without warning - the vortex goes still for an hour, and      
+S+ everyone stops; that's the whole festival. Not done: lying in the library.   
+S+ The mirrors simply show it. Greeting: 'Be still.'                            
+I villain_amicus;;                                                              
+A villain_amicus                                                                
+S The Undertow - not a person: a current under Gra's lagoon that pulls couples  
+S+ apart one small drift at a time. The Weaver's work in Gra. Amicus drove it   
+S+ back to the deep water, but it rises whenever people stop surfacing to talk. 
+S+ Defeated isn't gone.                                                         
+I villain_opux;;                                                                
+A villain_opux                                                                  
+S The false foreman - the Weaver as a job that never ends. A voice that said    
+S+ 'one more shift' until the dwarves forgot what the shifts were for. Driven   
+S+ off the Terraces; he waits at the bottom of the deepest shaft, and a dwarf   
+S+ who works through the bell can still hear him counting.                      
+I villain_hord;;                                                                
+A villain_hord                                                                  
+S The Zinsmeister - interest without end, the Weaver as compounding. He made    
+S+ sea-coins worth less every day and Hord worth less than his vault. Driven    
+S+ from the bank; his ledger is kept in a locked room, because the numbers in it
+S+ are still true, and Hord says burning a true thing doesn't make it false.    
+I villain_elena;;                                                               
+A villain_elena                                                                 
+S Dr. Krallus - health as a product, the Weaver as a clinic that needs you sick.
+S+ He turned two of Castalia's healing houses into shops and Elena into a woman 
+S+ who could look at pain and see a price. Gone from the temples, clinics shut. 
+S+ He's beyond the Fog Moor, and an elf who starts selling cures finds the path 
+S+ across suddenly easy.                                                        
+I villain_musix;;                                                               
+A villain_musix                                                                 
+S Frau Zwietracht - discord as a guest, the Weaver as the friend who tells you  
+S+ what your family really thinks of you. She made Waterford stop talking one   
+S+ kitchen at a time. Driven out of the village; she lives at the quiet end of  
+S+ the river, and any hobbit who latches a gate finds her at the door next      
+S+ morning, friendly as ever.                                                   
+I villain_mcjoy;;                                                               
+A villain_mcjoy                                                                 
+S Meister Einsatz - the stake: the Weaver as the moment play needs a loser to   
+S+ feel like it mattered. He turned every game on Idea into one you could lose  
+S+ your house at, and MC Joy into the one who ran the table. Driven off the     
+S+ board; he keeps a table in the shadow under Idea, and a pixie who keeps score
+S+ past sundown starts to hear the dice.                                        
+I villain_andron;;                                                              
+A villain_andron                                                                
+S Direktor Truebsal - neglect with a title, the Weaver as the manager who defers
+S+ every repair. He didn't break Petros; he let it break, one uncleaned window  
+S+ at a time, and called it prudence. Driven from the shadow side's town hall;  
+S+ he keeps an office in the smoke, and anyone who lets something stay broken   
+S+ past a season finds his memo on the doorstep.                                
+I opinion_amicus;;                                                              
+A think_word;ask_amicus                                                         
+S Would rebuild the town for a friend. Wouldn't wait for plans. We'd fight about
+S+ that, if we ever fought.                                                     
+I opinion_opux;;                                                                
+A think_word;ask_opux                                                           
+S Understands that most problems are maintenance. Rarest thing in Eternias.     
+I opinion_hord;;                                                                
+A think_word;ask_hord                                                           
+S Keeps Petros afloat with money he pretends is a loan. I keep pretending to pay
+S+ it back.                                                                     
+I opinion_elena;;                                                               
+A think_word;ask_elena                                                          
+S Tells me the town won't fix itself and neither will I. Same voice, both times.
+I opinion_musix;;                                                               
+A think_word;ask_musix                                                          
+S Came to the shadow side with a lantern and a pie. Didn't fix anything. Fixed  
+S+ everything.                                                                  
+I opinion_mcjoy;;                                                               
+A think_word;ask_mcjoy                                                          
+S Turned Line-Day into a game and doubled the crossings. I'll never admit it was
+S+ an improvement.                                                              
+I opinion_spark;;                                                               
+A think_word;ask_spark                                                          
+S Petros is a line. Ameno is a mirror. We're the same problem from two sides,   
+S+ and she knows it.                                                            
+I rumor;;                                                                       
+A rumor_word                                                                    
+I proverb;;                                                                     
+A proverb_word                                                                  
+S Still water, whole island.                                                    
+S Half-done tools rust.                                                         
+S A latched gate is a question.                                                 
+S Count the feathers before the coins.                                          
+S The moor is easy for the ones who shouldn't cross it.                         
+S No score after sundown.                                                       
+S Same town, both sides.                                                        
+S The mirror that smiles first is lying.                                        
+S Nobody crosses the Stair alone.                                               
+S She is in the sparkle, if you look.                                           
+S Galene is quiet, not gone.                                                    
+I daypart;;                                                                     
+A daypart_word                                                                  
+S Time's Tchaika's business - she flies over the whole realm and watches the    
+S+ light change.                                                                
+S I don't keep track of the day or the hour. Tchaika does.                      
+I weekday;;                                                                     
+A weekday_word;day_word                                                         
+S Time's Tchaika's business - she flies over the whole realm and watches the    
+S+ light change.                                                                
+S I don't keep track of the day or the hour. Tchaika does.                      

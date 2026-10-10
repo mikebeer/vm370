@@ -1,0 +1,205 @@
+/* CHATBOT EXEC - spool front end of the CHATBOT service machine.        */
+/*                                                                       */
+/*   reads questions from the virtual reader (RDR),                      */
+/*   hands them to the cREXX bot (CHATBOT RXBIN) in one batch,           */
+/*   punches the answers (PUN) back to whoever sent the question.        */
+/*                                                                       */
+/* Usage:  CHATBOT (options)                                             */
+/*   options:  LOUD            tell what happens (default: quiet)        */
+/*             ONCE            drain the reader once, then end           */
+/*             INTERVAL n      seconds between reader checks (default 30)*/
+/*             STOP            ask a running CHATBOT to end (from outside)*/
+/* Settings in CHATBOT CONFIG (optional, KEY value, '*' = comment):      */
+/*   BOTCMD  command that runs the bot      (RXVM CHATBOT CMS)           */
+/*   INTERVAL, MAXBATCH (requests per bot run, default 20)               */
+/*                                                                       */
+/* Request deck (written by CHAT EXEC, NOHEADER):                        */
+/*   FROM userid                                                         */
+/*   question text, one or more cards                                    */
+/* The sender is taken from the spool file's ORIGINID; the FROM card is  */
+/* only used when QUERY READER cannot be read.                           */
+/*                                                                       */
+/* Build 1.  Needs ECMODE on in the CHATBOT directory entry.             */
+
+parse upper arg line
+opt = ''
+p = pos('(', line)
+if p > 0 then opt = substr(line, p + 1)
+
+loud = (wordpos('LOUD', opt) > 0)
+once = (wordpos('ONCE', opt) > 0)
+interval = 30
+i = wordpos('INTERVAL', opt)
+if i > 0 then interval = word(opt, i + 1)
+
+/* ---- settings ---------------------------------------------------- */
+botcmd = 'RXVM CHATBOT CMS'
+maxbatch = 20
+'MAKEBUF'
+'EXECIO * DISKR CHATBOT CONFIG A (FINIS'
+do while queued() > 0
+  parse pull cl
+  cl = strip(cl)
+  if cl = '' | left(cl, 1) = '*' then iterate
+  parse upper var cl ck cv
+  cv = strip(cv)
+  select
+    when ck = 'BOTCMD' then do
+      parse var cl . botcmd          /* keep the case */
+      botcmd = strip(botcmd)
+    end
+    when ck = 'INTERVAL' & datatype(cv, 'W') then do
+      if wordpos('INTERVAL', opt) = 0 then interval = cv
+    end
+    when ck = 'MAXBATCH' & datatype(cv, 'W') then maxbatch = cv
+    otherwise nop
+  end
+end
+'DROPBUF'
+
+if loud then say 'CHATBOT: started, bot =' botcmd', interval' interval's'
+
+/* ---- main loop --------------------------------------------------- */
+nowake = 0
+do forever
+  n = drain()                          /* reader -> Qnnnn CBREQ files  */
+  if n > 0 then do
+    call runbatch
+  end
+  if once then leave
+  if stopreq() then leave
+  call nap
+end
+if loud then say 'CHATBOT: ended'
+exit 0
+
+/* ---- take everything out of the reader --------------------------- */
+/* returns the number of requests now waiting in CBQUEUE                */
+drain: procedure expose loud maxbatch qn. nq
+  nq = 0
+  do while nq < maxbatch
+    parse value nextfile() with org sid
+    if org = '' then leave             /* reader empty                 */
+    nq = nq + 1
+    fn = 'Q' || right(nq, 4, '0')
+    'ERASE' fn 'CBREQ A'
+    'READCARD' fn 'CBREQ A (NOHEADER'
+    if rc <> 0 then do
+      /* unreadable file: purge it so it cannot block the reader forever */
+      say 'CHATBOT: READCARD rc' rc', purging spool file' sid 'from' org
+      'CP PURGE READER' sid
+      nq = nq - 1
+      iterate
+    end
+    qn.nq = fn org
+    call stampfrom fn, org
+  end
+  if nq = 0 then return 0
+  'ERASE CHATBOT CBQUEUE A'
+  do i = 1 to nq
+    parse var qn.i fn .
+    queue fn
+  end
+  'EXECIO' nq 'DISKW CHATBOT CBQUEUE A 1 F 8 (FINIS'
+  return nq
+
+/* "ORIGINID spoolid" of the file READCARD will deliver next, '' if none */
+nextfile: procedure
+  'MAKEBUF'
+  'EXECIO * CP (STRING QUERY READER ALL'
+  res = ''
+  do while queued() > 0
+    parse pull row
+    w1 = word(row, 1)
+    if w1 = '' | w1 = 'ORIGINID' | w1 = 'NO' then iterate
+    if res = '' then res = w1 word(row, 2)
+  end
+  'DROPBUF'
+  return res
+
+/* make the first card say who the sender is (ORIGINID beats FROM)   */
+stampfrom: procedure
+  parse arg fn, org
+  'MAKEBUF'
+  'EXECIO * DISKR' fn 'CBREQ A (FINIS'
+  n = queued()
+  k = 0
+  do i = 1 to n
+    parse pull card
+    c = strip(card)
+    if c = '' then iterate
+    if upper(word(c, 1)) = 'FROM' & k = 0 then do
+      k = 1
+      iterate
+    end
+    k = k + 1
+    cd.k = c
+  end
+  'DROPBUF'
+  'ERASE' fn 'CBREQ A'
+  queue 'FROM' org
+  do i = 1 to k
+    queue cd.i
+  end
+  'EXECIO' (k + 1) 'DISKW' fn 'CBREQ A (FINIS'
+  return
+
+/* ---- run the bot once over the queued requests and punch replies - */
+runbatch:
+  botcmd
+  brc = rc
+  if brc <> 0 then say 'CHATBOT: bot ended with rc' brc
+  do i = 1 to nq
+    parse var qn.i fn org
+    call sendreply fn, org
+    'ERASE' fn 'CBREQ A'
+    'ERASE' fn 'CBRPL A'
+  end
+  'ERASE CHATBOT CBQUEUE A'
+  if loud then say 'CHATBOT:' nq 'request(s) answered'
+  nq = 0
+  return
+
+/* punch  fn CBRPL  to the sender's reader                            */
+sendreply: procedure expose loud
+  parse arg fn, org
+  'STATE' fn 'CBRPL A'
+  if rc <> 0 then do
+    queue 'Sorry - I had no answer for you. Please ask again.'
+    'EXECIO 1 DISKW' fn 'CBRPL A (FINIS'
+  end
+  'CP SPOOL PUNCH TO' org 'CLASS A'
+  'PUNCH' fn 'CBRPL A (NOHEADER'
+  'CP CLOSE PUNCH NAME CHATBOT REPLY'
+  'CP SPOOL PUNCH OFF'
+  if loud then say 'CHATBOT: reply to' org
+  return
+
+/* ---- wait for the next reader file ------------------------------- */
+nap:
+  'WAKEUP +' || right(interval, 6, '0') || ' (RDR QUIET'
+  if rc = 1 | rc = 28 | rc < 0 then do   /* no WAKEUP command here       */
+    if \nowake then say 'CHATBOT: WAKEUP not available, polling (busy)'
+    nowake = 1
+    t1 = time('S')
+    do while elapsed(t1) < interval
+      nop
+    end
+  end
+  return
+
+/* a file  CHATBOT STOP A  on the A-disk ends the loop              */
+stopreq: procedure
+  'STATE CHATBOT STOP A'
+  if rc = 0 then do
+    'ERASE CHATBOT STOP A'
+    return 1
+  end
+  return 0
+
+/* seconds since t0 (seconds-of-day), across midnight */
+elapsed: procedure
+  parse arg t0
+  d = time('S') - t0
+  if d < 0 then d = d + 86400
+  return d

@@ -22,7 +22,8 @@ The kit was verified on a fresh CE (kt14).
 | **now: M8.2** | the current cREXX built natively on CMS: RXC82 and RXAS82 work on CMS; RXBVM82 being fixed (`41-M8.2-NATIVE-CREXX.md`) |
 | Debian session | Python 2.7/3.2, cREXX for Linux, Prolog and LOGO under Debian (gcc 4.6.3 already installed) |
 | **M7.10 (done 10 Oct)** | `IPL LINUX`: the Debian disk at virtual 250 IPLs as an ESA/390 machine (`CP IPL LINUX` = SET ESA ON + IPL 250; also from a directory IPL statement). `linux390/debian/vmzipl` writes the kernel and the CDL IPL records (IPL1/IPL2 with their keys, I-255); DMKCCW keeps DEDDTBL while DMKVMI runs the IPL; DMKCFG puts DMKVMI at X'FFF000'. LINUX EXEC: `LINUX` IPLs the disk, `LINUX READER` the old reader route. Verified zp18: boot from disk in ~7 min, Asterisk starts at boot. Note: DMKCFG is pageable and now 4090 of 4096 bytes -- any further change there must move code out first |
-| M7.9 | lift the 64-CCW CVTCHN limit |
+| **M7.9 (done 10 Oct)** | CVTCHN converts format-1 chains of any length: what is done is kept as segments (first, last CCW), one per TIC target (up to 32), not as 64 single CCWs. Verified zp20: Debian with max_sectors_kb 760 (writes averaging 56 blocks a request), 21 MB and 40 MB files read back identical, no DASD errors. The initramfs still sets 128 KB; raise it with the next kernel/initramfs |
+| **M7.11 (done 10 Oct)** | the Debian disk is a 3390-9 (real 192, `disks/lnx192.cckd`, 7 GB, 6.8 GB root with 5.9 GB free): fdasd + mkfs.ext2 + a copy of golden8 + `vmzipl -r` (zp19, 31 min); IPL LINUX from it verified (zp20). Golden9 = `lnx192.golden9.cckd` |
 | M4b.3 | CP using real frames above 16 MB; needed for two Debians at once (I-254) |
 | CP leftovers | I-235 models, I-201 DMKDMP dump, the LPSW fast path for PSWs above 16 MB |
 | gcc under Debian | done: gcc 4.6.3, g++, make |

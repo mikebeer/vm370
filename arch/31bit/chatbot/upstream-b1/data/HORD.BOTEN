@@ -1,0 +1,8 @@
+B !...#[a slow, heavy pause]#So. You've come.#Still counting what matters, are  
+B+ you.#...you again.                                                           
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You finished [MY_CHAPTER_DONE]. Worth more   
+B+ than it looks - did it change what you spend?                                
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] is sitting half-done.
+B+ Unfinished things cost more than finished ones, in my experience.            
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

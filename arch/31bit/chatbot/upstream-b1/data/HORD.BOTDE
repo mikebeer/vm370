@@ -1,0 +1,8 @@
+B !...#[eine langsame, schwere Pause]#So. Du bist gekommen.#Zaehlst wohl immer  
+B+ noch, was zaehlt.#...du schon wieder.                                        
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] abgeschlossen. Mehr
+B+ wert, als es aussieht - hat es veraendert, wofuer du Geld ausgibst?          
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] liegt halb fertig    
+B+ herum. Unfertiges kostet mehr als Fertiges, meiner Erfahrung nach.           
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

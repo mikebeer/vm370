@@ -1,0 +1,121 @@
+/* CHAT EXEC - ask the CHATBOT machine a question over the spool.        */
+/*                                                                       */
+/* Usage:  CHAT question text                  one question, one answer  */
+/*         CHAT                                 talk until an empty line */
+/*         CHAT (options)                                                */
+/*   options:  WAIT n    seconds to wait for the answer (default 60)     */
+/*             BOT name  machine to ask (default CHATBOT)                */
+/*             LOUD      say what is going on (default: quiet)           */
+/* Commands the bot understands start with a slash:  /HELP  /LIST        */
+/*   /NPC name [en|de]   /LANG en|de   /RESET   /WHO                     */
+/*                                                                       */
+/* Build 1.  The answer is the next file in YOUR reader (a file named   */
+/* CHATBOT REPLY).  Keep your reader empty of other files while asking:  */
+/* CHAT reads the first file it finds there.                             */
+
+parse arg line
+opt = ''
+p = pos('(', line)
+if p > 0 then do
+  opt = translate(substr(line, p + 1))
+  line = left(line, p - 1)
+end
+wait = 60
+bot = 'CHATBOT'
+i = wordpos('WAIT', opt)
+if i > 0 then wait = word(opt, i + 1)
+i = wordpos('BOT', opt)
+if i > 0 then bot = word(opt, i + 1)
+loud = (wordpos('LOUD', opt) > 0)
+line = strip(line)
+
+if line <> '' then do
+  call ask line
+  exit rc
+end
+
+say 'Talking to' bot'. An empty line ends. /HELP lists the commands.'
+do forever
+  say 'You:'
+  parse pull line
+  line = strip(line)
+  if line = '' then leave
+  call ask line
+end
+exit 0
+
+/* ---- send one question, wait for and show the answer ------------- */
+ask: procedure expose bot wait loud
+  parse arg q
+  'ERASE CHAT REQ A'
+  queue 'FROM' userid()
+  queue left(q, 78)                    /* one card = 78 columns        */
+  if length(q) > 78 then do            /* longer questions: more cards */
+    do k = 79 to length(q) by 78
+      queue substr(q, k, 78)
+    end
+  end
+  'EXECIO' queued() 'DISKW CHAT REQ A 1 F 80 (FINIS'
+  if rc <> 0 then do
+    say 'CHAT: cannot write CHAT REQ A, rc' rc
+    return 8
+  end
+  'CP SPOOL PUNCH TO' bot 'CLASS A'
+  'PUNCH CHAT REQ A (NOHEADER'
+  prc = rc
+  'CP CLOSE PUNCH NAME CHAT REQUEST'
+  'CP SPOOL PUNCH OFF'
+  'ERASE CHAT REQ A'
+  if prc <> 0 then do
+    say 'CHAT: PUNCH failed, rc' prc
+    return 8
+  end
+  if loud then say 'CHAT: sent, waiting up to' wait's'
+
+  /* wait for the answer to arrive in our reader */
+  got = 0
+  t0 = time('S')
+  do while elapsed(t0) < wait
+    'MAKEBUF'
+    'EXECIO * CP (STRING QUERY READER ALL'
+    do while queued() > 0
+      parse pull row
+      if word(row, 1) = bot then got = 1
+    end
+    'DROPBUF'
+    if got then leave
+    'WAKEUP +000002 (RDR QUIET'
+    if rc = 1 | rc = 28 | rc < 0 then do   /* no WAKEUP: short busy wait */
+      t1 = time('S')
+      do while elapsed(t1) < 2
+        nop
+      end
+    end
+  end
+  if \got then do
+    say 'CHAT:' bot 'did not answer within' wait 'seconds.'
+    return 4
+  end
+
+  'ERASE CHAT ANSWER A'
+  'READCARD CHAT ANSWER A (NOHEADER'
+  if rc <> 0 then do
+    say 'CHAT: READCARD failed, rc' rc
+    return 8
+  end
+  'EXECIO * DISKR CHAT ANSWER A (FINIS'
+  say ''
+  do while queued() > 0
+    parse pull ans
+    say strip(ans, 'T')
+  end
+  say ''
+  'ERASE CHAT ANSWER A'
+  return 0
+
+/* seconds since t0 (seconds-of-day), across midnight */
+elapsed: procedure
+  parse arg t0
+  d = time('S') - t0
+  if d < 0 then d = d + 86400
+  return d

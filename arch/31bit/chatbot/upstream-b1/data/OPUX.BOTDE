@@ -1,0 +1,8 @@
+B !...#[eine rostige Pause]#Na. Da ist ja jemand.#...du bist wieder da.#Hm.     
+B+ Vielleicht kommst du gerade recht.                                           
+B IFNOTEMPTY MY_CHAPTER_DONE THEN ![MY_CHAPTER_DONE]. Abgeschlossen. Ist etwas  
+B+ davon haengen geblieben, oder nur durchgelaufen?                             
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] - angefangen, nicht  
+B+ fertig. Kommt vor. Mach es fertig; halbe Werkzeuge rosten.                   
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

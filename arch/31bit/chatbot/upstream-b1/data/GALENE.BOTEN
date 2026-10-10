@@ -1,0 +1,7 @@
+B !...#I'm here.#You came.#...you again.#Still here.                            
+B IFNOTEMPTY MY_CHAPTER_DONE THEN ![MY_CHAPTER_DONE] is behind you now. I       
+B+ noticed.                                                                     
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] isn't finished.      
+B+ That's all right. Finish it when it's time.                                  
+B IFNOTEMPTY HERO_READY THEN !All eight artifacts are forged. The emblem is     
+B+ waiting. Say 'emblem' when you're ready.                                     

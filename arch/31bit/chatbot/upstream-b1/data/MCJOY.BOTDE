@@ -1,0 +1,8 @@
+B !Heyyy!#Ooh, Besuch!#Kommst du zum Spielen?#Ooh, Runde zwei!#Schon wieder da? 
+B+ Liebe es.                                                                    
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] gemacht! Also -    
+B+ hast du wirklich mehr gespielt, oder nur darueber gelesen?                   
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED], halb gespielt. Kein 
+B+ Punktestand, keine Eile. Nimm es wieder auf, wann immer du willst.           
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

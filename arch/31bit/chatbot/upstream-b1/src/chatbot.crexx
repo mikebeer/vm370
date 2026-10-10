@@ -1,0 +1,1634 @@
+options levelb
+import rxfnsb
+
+/* ------------------------------------------------------------------------
+   CHATBOT - the MCchat persona bot (autoloads/bot.gd, Godot 4.6) in cREXX.
+
+   Batch processor for the CHATBOT service machine.  The CHATBOT EXEC drains
+   the virtual reader (RDR) into request files and calls this program once;
+   for each request it writes a reply file that the EXEC punches (PUN) back to
+   the sender.  No AI model anywhere: every reply is authored text, picked
+   deterministically from the persona data, exactly as in the Godot original.
+
+   Ported from bot.gd:  normalise/tokens/edit_distance/fuzzy_equal, synonym
+   scoring, crisis check, pronoun carryover, entities, continuation, say_template,
+   variant picking without immediate repeat, [VAR] and $VAR. interpolation, the
+   .bot script interpreter (labels, !say, BUTTON, ?B, ?, = # < > =? =* branches,
+   IF/IFEMPTY/IFNOTEMPTY, SET/LET/:=/++/--, GOTO, EXIT, CLEAR), and the
+   KnowledgeBase.gd search that answers what no intent claims.
+   Not ported: everything that is Godot UI (bubbles, TTS/STT, images, audio,
+   weather map, to-do, shards, questionnaires) and EXEC (HTTPS backend).
+
+   Arguments:  CMS | <path prefix>   where the data files are  [LOUD]
+   Session state is kept per sender in <USERID> CBSESS.
+   ------------------------------------------------------------------------ */
+
+main: procedure = .int expose rt rd nr yN yW ny iNm iEn iGo iR iE ni ses vn vv nv lk lv nl bl nb bc bt nbtn ob no gcN gcV ngc cfk cfv ncf svk svv nsv fl nfl pfx loud rn rs rrep tk ntk sp sb nsb kbf kx nkx curp
+  arg cmd = .string[]
+
+  /* ---- global tables (see the procedures that own them) ---- */
+  rt = .string[]; rd = .string[]; nr = 0              /* NLU records: tag, data   */
+  yN = .string[]; yW = .string[]; ny = 0              /* synonym groups           */
+  iNm = .string[]; iEn = .string[]; iGo = .string[]   /* intents: name,entity,go  */
+  iR = .int[]; iE = .int[]; ni = 0                    /* first/last record index  */
+  ses = .string[]                                     /* session scalars, below   */
+  vn = .string[]; vv = .string[]; nv = 0              /* script variables         */
+  lk = .string[]; lv = .string[]; nl = 0              /* last variant per line    */
+  bl = .string[]; nb = 0                              /* .bot script lines        */
+  bc = .string[]; bt = .string[]; nbtn = 0            /* pending buttons          */
+  ob = .string[]; no = 0                              /* reply lines              */
+  gcN = .string[]; gcV = .int[]; ngc = 0              /* per-message group cache  */
+  cfk = .string[]; cfv = .string[]; ncf = 0           /* CHATBOT CONFIG           */
+  svk = .string[]; svv = .string[]; nsv = 0           /* system variables (VAR)   */
+  fl = .string[]; nfl = 0                             /* last file read           */
+  tk = .string[]; ntk = 0                             /* tokens of this message   */
+  sp = .string[]                                      /* split() result           */
+  sb = .string[]; nsb = 0                             /* session file lines       */
+  kbf = .string[]; kx = .string[]; nkx = 0            /* knowledge base hit       */
+  rn = ""; rs = 0; rrep = 0
+  curp = ""
+  pfx = ""; loud = 0
+
+  /* session scalars (ses[]): 1 npc  2 lang  3 last_topic  4 last_intent
+     5 pc  6 waiting_for ("", button, input)  7 last_answer  8 debug (0/1)
+     9 last reply (for "say that again")  10 user id  11 started (0/1)  12 turns */
+  do i = 1 to 12
+    ses[i] = ""
+  end
+
+  pfx = "CMS"
+  if cmd[0] >= 1 then pfx = cmd[1]
+  if cmd[0] >= 2 then do
+    if upper(cmd[2]) = "LOUD" then loud = 1
+  end
+
+  call loadcfg
+  seed = cfget("SEED", "")
+  if seed <> "" then call random 1, 2, seed
+
+  /* ---- the work list: one request file name (fn) per line ---- */
+  n = rd_file(fid("CHATBOT", "CBQUEUE"))
+  if n < 0 then do
+    say "CHATBOT: no reqs file"
+    return 4
+  end
+  reqs = .string[]
+  do i = 1 to n
+    reqs[i] = strip(fl[i])
+  end
+  done = 0
+  do q = 1 to n
+    if reqs[q] <> "" then do
+      call dorequest reqs[q]
+      done = done + 1
+    end
+  end
+  if loud = 1 then say "CHATBOT: " || done || " request(s) processed"
+  return 0
+
+/* ======================================================================
+   I/O ADAPTER - the only place that knows how a file is named and read.
+   On CMS a file id is "FN FT A"; on the PC it is <prefix>FN.FT .
+   Adapt these three procedures if RXVM's CMS port names files differently.
+   ====================================================================== */
+
+fid: procedure = .string expose pfx
+  arg fn = .string, ft = .string
+  if pfx = "CMS" then return upper(fn) || " " || upper(ft) || " A"
+  return pfx || upper(fn) || "." || upper(ft)
+
+/* read a whole file into fl[1..nfl]; trailing blanks (card padding) removed.
+   returns the record count, or -1 if the file does not exist */
+rd_file: procedure = .int expose fl nfl
+  arg file = .string
+  fl = .string[]
+  nfl = 0
+  c = _execio("*", "DISKR", file, fl)
+  if c < 0 then return -1
+  nfl = c
+  do i = 1 to nfl
+    fl[i] = strip(fl[i], "T")
+  end
+  return nfl
+
+/* write ob[1..no] to a file, replacing it */
+wr_ob: procedure = .int expose ob no
+  arg file = .string
+  if no = 0 then do
+    t = .string[]
+    t[1] = ""
+    return _execio(1, "DISKW", file, t)
+  end
+  return _execio(no, "DISKW", file, ob)
+
+/* ======================================================================
+   small string helpers
+   ====================================================================== */
+
+/* split s at sep into sp[1..n]; returns n.  An empty s gives one empty field. */
+split: procedure = .int expose sp
+  arg s = .string, sep = .string
+  sp = .string[]
+  n = 0
+  rest = s
+  p = pos(sep, rest)
+  do while p > 0
+    n = n + 1
+    sp[n] = left(rest, p - 1)
+    rest = substr(rest, p + length(sep))
+    p = pos(sep, rest)
+  end
+  n = n + 1
+  sp[n] = rest
+  return n
+
+/* "Wrap text to width, appending to the reply as one block" */
+emit: procedure = .int expose ob no
+  arg text = .string, width = .int
+  t = strip(text)
+  if t = "" then return 0
+  if no > 0 then do
+    no = no + 1
+    ob[no] = ""
+  end
+  line = ""
+  w = words(t)
+  do i = 1 to w
+    x = word(t, i)
+    do while length(x) > width
+      if line <> "" then do
+        no = no + 1
+        ob[no] = line
+        line = ""
+      end
+      no = no + 1
+      ob[no] = left(x, width)
+      x = substr(x, width + 1)
+    end
+    if line = "" then line = x
+    else if length(line) + 1 + length(x) <= width then line = line || " " || x
+    else do
+      no = no + 1
+      ob[no] = line
+      line = x
+    end
+  end
+  if line <> "" then do
+    no = no + 1
+    ob[no] = line
+  end
+  return 0
+
+isident: procedure = .int
+  arg s = .string
+  if s = "" then return 0
+  if verify(lower(s), "abcdefghijklmnopqrstuvwxyz0123456789_") > 0 then return 0
+  if verify(left(s, 1), "0123456789") = 0 then return 0
+  return 1
+
+/* ======================================================================
+   configuration:  CHATBOT CONFIG  (KEY value;  VAR NAME value;  * comment)
+   ====================================================================== */
+
+loadcfg: procedure = .int expose cfk cfv ncf svk svv nsv fl nfl pfx
+  n = rd_file(fid("CHATBOT", "CONFIG"))
+  ncf = 0
+  nsv = 0
+  if n < 0 then return 0
+  do i = 1 to n
+    l = strip(fl[i])
+    if l <> "" & left(l, 1) <> "*" then do
+      k = upper(word(l, 1))
+      v = strip(subword(l, 2))
+      if k = "VAR" then do
+        nsv = nsv + 1
+        svk[nsv] = upper(word(v, 1))
+        svv[nsv] = strip(subword(v, 2))
+      end
+      else do
+        ncf = ncf + 1
+        cfk[ncf] = k
+        cfv[ncf] = v
+      end
+    end
+  end
+  return 0
+
+cfget: procedure = .string expose cfk cfv ncf
+  arg key = .string, dflt = .string
+  do i = 1 to ncf
+    if cfk[i] = upper(key) then return cfv[i]
+  end
+  return dflt
+
+/* ======================================================================
+   persona data  (<NPC> NLU<LG>, written by tools/mkdata.py)
+   record = tag in col 1, '+' in col 2 if it continues the previous record
+   Y syn group   P/W crisis phrase/word   F fallback   X crisis reply
+   R repeat prefix   L library intro   C continue word
+   I name;entity;go   A groups   N pronouns   S say   T slot;text
+   ====================================================================== */
+
+loadnlu: procedure = .int expose rt rd nr yN yW ny iNm iEn iGo iR iE ni fl nfl pfx sp curp
+  arg npc = .string, lang = .string
+  if curp == npc || "/" || lang then return 1
+  curp = ""
+  n = rd_file(fid(npc, "NLU" || lang))
+  if n < 0 then return 0
+  rt = .string[]
+  rd = .string[]
+  nr = 0
+  yN = .string[]
+  yW = .string[]
+  ny = 0
+  iNm = .string[]
+  iEn = .string[]
+  iGo = .string[]
+  iR = .int[]
+  iE = .int[]
+  ni = 0
+  do i = 1 to n
+    l = fl[i]
+    if l <> "" then do
+      tag = left(l, 1)
+      data = ""
+      if length(l) >= 3 then data = substr(l, 3)
+      if substr(l, 2, 1) == "+" & nr > 0 then rd[nr] = rd[nr] || data
+      else do
+        nr = nr + 1
+        rt[nr] = tag
+        rd[nr] = data
+      end
+    end
+  end
+  do i = 1 to nr
+    tag = rt[i]
+    if tag == "Y" then do
+      c = split(rd[i], ";")
+      ny = ny + 1
+      yN[ny] = sp[1]
+      yW[ny] = substr(rd[i], length(sp[1]) + 2)
+    end
+    else if tag == "I" then do
+      c = split(rd[i], ";")
+      ni = ni + 1
+      iNm[ni] = sp[1]
+      iEn[ni] = sp[2]
+      iGo[ni] = sp[3]
+      iR[ni] = i
+      iE[ni] = i
+    end
+    else if ni > 0 & (tag == "A" | tag == "N" | tag == "S" | tag == "T") then iE[ni] = i
+  end
+  curp = npc || "/" || lang
+  return 1
+
+/* first record of the given tag inside intent k ("" if none) */
+irec: procedure = .string expose rt rd iR iE
+  arg k = .int, tag = .string
+  out = ""
+  do i = iR[k] + 1 to iE[k]
+    if rt[i] == tag then do
+      if out = "" then out = rd[i]
+      else out = out || ";" || rd[i]
+    end
+  end
+  return out
+
+findintent: procedure = .int expose iNm ni
+  arg name = .string
+  do k = 1 to ni
+    if iNm[k] == name then return k
+  end
+  return 0
+
+/* ======================================================================
+   understanding (bot.gd: normalise, tokens, edit_distance, fuzzy_equal,
+   _match_strength, is_crisis, _pronoun_carryover_target, understand)
+   ====================================================================== */
+
+norm: procedure = .string
+  arg text = .string
+  t = lower(text)
+  t = changestr("'", t, "")
+  t = changestr("`", t, "")
+  t = translate(t, " ", "-")
+  p = verify(t, "abcdefghijklmnopqrstuvwxyz0123456789_ ", "N")
+  do while p > 0
+    t = overlay(" ", t, p)
+    p = verify(t, "abcdefghijklmnopqrstuvwxyz0123456789_ ", "N", p + 1)
+  end
+  return space(t, 1)
+
+tokenize: procedure = .int expose tk ntk
+  arg text = .string
+  t = norm(text)
+  tk = .string[]
+  ntk = 0
+  w = words(t)
+  do i = 1 to w
+    x = word(t, i)
+    if length(x) > 1 then do
+      ntk = ntk + 1
+      tk[ntk] = x
+    end
+  end
+  return ntk
+
+/* Damerau (optimal string alignment) distance, as bot.gd's edit_distance */
+edist: procedure = .int
+  arg a = .string, b = .string
+  if a == b then return 0
+  la = length(a)
+  lb = length(b)
+  if la = 0 then return lb
+  if lb = 0 then return la
+  w = lb + 1
+  d = .int[]
+  do k = 1 to (la + 1) * w
+    d[k] = 0
+  end
+  do i = 0 to la
+    d[i * w + 1] = i
+  end
+  do j = 0 to lb
+    d[j + 1] = j
+  end
+  do i = 1 to la
+    ai = substr(a, i, 1)
+    do j = 1 to lb
+      bj = substr(b, j, 1)
+      cost = 1
+      if ai == bj then cost = 0
+      best = d[(i - 1) * w + j + 1] + 1
+      x = d[i * w + (j - 1) + 1] + 1
+      if x < best then best = x
+      x = d[(i - 1) * w + (j - 1) + 1] + cost
+      if x < best then best = x
+      if i > 1 & j > 1 then do
+        if ai == substr(b, j - 1, 1) & substr(a, i - 1, 1) == bj then do
+          x = d[(i - 2) * w + (j - 2) + 1] + 1
+          if x < best then best = x
+        end
+      end
+      d[i * w + j + 1] = best
+    end
+  end
+  return d[la * w + lb + 1]
+
+/* typo tolerance that scales with word length; a prefix match also counts */
+fuzzy: procedure = .int
+  arg tok = .string, target = .string
+  if tok == target then return 1
+  lt = length(tok)
+  lg = length(target)
+  if lt < 4 | lg < 4 then return 0
+  if lt <= lg then do
+    if left(target, lt) == tok & lt >= lg - 3 then return 1
+  end
+  if lg <= lt then do
+    if left(tok, lg) == target then return 1
+  end
+  allowed = 1
+  if lt >= 8 | lg >= 8 then allowed = 2
+  diff = lt - lg
+  if diff < 0 then diff = 0 - diff
+  if diff > allowed then return 0
+  if edist(tok, target) <= allowed then return 1
+  return 0
+
+/* length of the longest synonym of `group` that matches a token, or 0 */
+mstrength: procedure = .int expose gcN gcV ngc yN yW ny tk ntk sp
+  arg group = .string
+  do i = 1 to ngc
+    if gcN[i] == group then return gcV[i]
+  end
+  wl = group
+  do i = 1 to ny
+    if yN[i] == group then do
+      wl = yW[i]
+      leave
+    end
+  end
+  nw = split(wl, ";")
+  words = .string[]
+  do w = 1 to nw
+    words[w] = sp[w]
+  end
+  best = 0
+  do t = 1 to ntk
+    do w = 1 to nw
+      if length(words[w]) > best then do
+        if fuzzy(tk[t], words[w]) = 1 then best = length(words[w])
+      end
+    end
+  end
+  ngc = ngc + 1
+  gcN[ngc] = group
+  gcV[ngc] = best
+  return best
+
+iscrisis: procedure = .int expose rt rd nr tk ntk
+  arg text = .string
+  flat = norm(text)
+  do i = 1 to nr
+    if rt[i] == "P" then do
+      ph = norm(rd[i])
+      if ph <> "" then do
+        if pos(ph, flat) > 0 then return 1
+      end
+    end
+  end
+  do i = 1 to nr
+    if rt[i] == "W" then do
+      wd = norm(rd[i])
+      do t = 1 to ntk
+        if fuzzy(tk[t], wd) = 1 then return 1
+      end
+    end
+  end
+  return 0
+
+iscontinue: procedure = .int expose rt rd nr tk ntk
+  do i = 1 to nr
+    if rt[i] == "C" then do
+      wd = norm(rd[i])
+      do t = 1 to ntk
+        if fuzzy(tk[t], wd) = 1 then return 1
+      end
+    end
+  end
+  return 0
+
+/* The entity a pronoun in this message reaches back to, or "" */
+carryover: procedure = .string expose rt rd iNm iEn iR iE ni ses gcN gcV ngc yN yW ny tk ntk sp
+  lt = ses[3]
+  if lt = "" then return ""
+  k = findintent(lt)
+  if k = 0 then return ""
+  pr = irec(k, "N")
+  if pr = "" then return ""
+  if mstrength(lt) > 0 then return ""
+  np = split(pr, ";")
+  pl = .string[]
+  do p = 1 to np
+    pl[p] = norm(sp[p])
+  end
+  do t = 1 to ntk
+    do p = 1 to np
+      if fuzzy(tk[t], pl[p]) = 1 then return lt
+    end
+  end
+  return ""
+
+/* returns "crisis" | "intent" | "nomatch"; sets rn (intent), rs (score), rrep */
+understand: procedure = .string expose rt rd nr iNm iEn iGo iR iE ni ses gcN gcV ngc yN yW ny tk ntk sp rn rs rrep
+  arg text = .string
+  rn = ""
+  rs = 0
+  rrep = 0
+  call tokenize text
+  if iscrisis(text) = 1 then do
+    ses[4] = ""
+    return "crisis"
+  end
+  ngc = 0
+  gcN = .string[]
+  gcV = .int[]
+  target = carryover()
+  best = ""
+  bscore = 0
+  do k = 1 to ni
+    if left(iNm[k], 1) <> "_" then do
+      score = 0
+      ag = irec(k, "A")
+      if ag <> "" then do
+        ng = split(ag, ";")
+        gl = .string[]
+        do g = 1 to ng
+          gl[g] = sp[g]
+        end
+        do g = 1 to ng
+          score = score + mstrength(gl[g])
+        end
+      end
+      ent = iEn[k]
+      if ent = "" then ent = iNm[k]
+      if target <> "" & ent == target then score = score + 50
+      if score > bscore then do
+        bscore = score
+        best = iNm[k]
+      end
+    end
+  end
+  if best = "" & ses[4] <> "" then do
+    if findintent(ses[4]) > 0 then do
+      if iscontinue() = 1 then do
+        best = ses[4]
+        bscore = 1
+      end
+    end
+  end
+  if best <> "" then do
+    k = findintent(best)
+    ent = iEn[k]
+    if ent = "" then ent = best
+    if best == ses[4] then rrep = 1
+    ke = findintent(ent)
+    if ke = 0 then ke = k
+    if irec(ke, "N") <> "" then ses[3] = ent
+    else ses[3] = ""
+    ses[4] = best
+    rn = best
+    rs = bscore
+    return "intent"
+  end
+  ses[4] = ""
+  return "nomatch"
+
+/* ======================================================================
+   replies: variant picking, say_template, variables, interpolation
+   ====================================================================== */
+
+/* s = options joined by '|'; each option may itself hold '#'-separated
+   variants.  Picks one, avoiding the one used last time for this line. */
+pickstr: procedure = .string expose lk lv nl sp
+  arg s = .string
+  np = split(s, "|")
+  parts = .string[]
+  do p = 1 to np
+    parts[p] = sp[p]
+  end
+  opts = .string[]
+  n = 0
+  do p = 1 to np
+    nh = split(parts[p], "#")
+    do h = 1 to nh
+      x = strip(sp[h])
+      if x <> "" then do
+        n = n + 1
+        opts[n] = x
+      end
+    end
+  end
+  if n = 0 then return ""
+  if n = 1 then return opts[1]
+  key = left(opts[1], 60)
+  slot = 0
+  do j = 1 to nl
+    if lk[j] == key then do
+      slot = j
+      leave
+    end
+  end
+  prev = 0
+  if slot > 0 then prev = lv[slot] + 0
+  r = random(1, n)
+  if r = prev then do
+    r = r + 1
+    if r > n then r = 1
+  end
+  if slot = 0 then do
+    if nl >= 150 then nl = 0
+    nl = nl + 1
+    slot = nl
+    lk[slot] = key
+  end
+  lv[slot] = r || ""
+  return opts[r]
+
+/* bot.gd render_template(): one random option per slot, joined by blanks */
+tplrender: procedure = .string expose rt rd iR iE sp
+  arg k = .int
+  ts = .int[]
+  tx = .string[]
+  n = 0
+  mx = 0
+  do i = iR[k] + 1 to iE[k]
+    if rt[i] == "T" then do
+      p = pos(";", rd[i])
+      if p > 0 then do
+        n = n + 1
+        ts[n] = left(rd[i], p - 1) + 0
+        tx[n] = substr(rd[i], p + 1)
+        if ts[n] > mx then mx = ts[n]
+      end
+    end
+  end
+  out = ""
+  do s = 1 to mx
+    c = 0
+    do i = 1 to n
+      if ts[i] = s then c = c + 1
+    end
+    if c > 0 then do
+      r = random(1, c)
+      c = 0
+      do i = 1 to n
+        if ts[i] = s then do
+          c = c + 1
+          if c = r then do
+            x = strip(tx[i])
+            if x <> "" then do
+              if out = "" then out = x
+              else out = out || " " || x
+            end
+          end
+        end
+      end
+    end
+  end
+  return out
+
+/* the reply text of intent k: one of its "say" lines, else a rendered template */
+intentline: procedure = .string expose rt rd iR iE lk lv nl sp
+  arg k = .int
+  joined = ""
+  do i = iR[k] + 1 to iE[k]
+    if rt[i] == "S" then do
+      if joined = "" then joined = rd[i]
+      else joined = joined || "|" || rd[i]
+    end
+  end
+  if joined <> "" then return pickstr(joined)
+  return tplrender(k)
+
+/* all records with this tag as one '|'-joined option string */
+taglist: procedure = .string expose rt rd nr
+  arg tag = .string
+  out = ""
+  do i = 1 to nr
+    if rt[i] == tag then do
+      if out = "" then out = rd[i]
+      else out = out || "|" || rd[i]
+    end
+  end
+  return out
+
+getvar: procedure = .string expose vn vv nv svk svv nsv ses
+  arg name = .string
+  u = upper(name)
+  if u = "TIME" then return time()
+  if u = "DATE" | u = "ISODATE" then do
+    d = date("S")
+    s = left(d, 4) || "-" || substr(d, 5, 2) || "-" || substr(d, 7, 2)
+    if u = "ISODATE" then s = s || "T" || time()
+    return s
+  end
+  if u = "USERID" then return ses[10]
+  if u = "NPC" then return ses[1]
+  if u = "BOTNAME" then return upper(left(ses[1], 1)) || lower(substr(ses[1], 2))
+  if u = "LANG" then return ses[2]
+  do i = 1 to nsv
+    if svk[i] == u then return svv[i]
+  end
+  do i = 1 to nv
+    if vn[i] == u then return vv[i]
+  end
+  return ""
+
+setvar: procedure = .int expose vn vv nv
+  arg name = .string, value = .string
+  u = upper(name)
+  do i = 1 to nv
+    if vn[i] == u then do
+      vv[i] = value
+      return 0
+    end
+  end
+  nv = nv + 1
+  vn[nv] = u
+  vv[nv] = value
+  return 0
+
+/* "[var]" and "$VAR." both reach the same variable */
+interp: procedure = .string expose vn vv nv svk svv nsv ses
+  arg text = .string
+  idc = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+  out = ""
+  rest = text
+  do forever
+    p = pos("$", rest)
+    if p = 0 then leave
+    tail = substr(rest, p + 1)
+    r = verify(tail, idc, "N")
+    if r > 1 then do
+      if substr(tail, r, 1) == "." then do
+        nm = left(tail, r - 1)
+        if isident(nm) = 1 then do
+          out = out || left(rest, p - 1) || getvar(nm)
+          rest = substr(tail, r + 1)
+          iterate
+        end
+      end
+    end
+    out = out || left(rest, p)
+    rest = tail
+  end
+  text2 = out || rest
+  out = ""
+  rest = text2
+  do forever
+    p = pos("[", rest)
+    if p = 0 then leave
+    q = pos("]", rest, p + 1)
+    if q = 0 then leave
+    nm = substr(rest, p + 1, q - p - 1)
+    if isident(nm) = 1 then do
+      out = out || left(rest, p - 1) || getvar(nm)
+      rest = substr(rest, q + 1)
+    end
+    else do
+      out = out || left(rest, p)
+      rest = substr(rest, p + 1)
+    end
+  end
+  return out || rest
+
+/* ======================================================================
+   the .bot script interpreter  (<NPC> BOT<LG>, 'B' records = script lines)
+   ses[5] is the next line to run; ses[6] says what the script waits for.
+   ====================================================================== */
+
+loadbot: procedure = .int expose bl nb fl nfl pfx
+  arg npc = .string, lang = .string
+  bl = .string[]
+  nb = 0
+  n = rd_file(fid(npc, "BOT" || lang))
+  if n < 0 then return 0
+  do i = 1 to n
+    l = fl[i]
+    if l <> "" then do
+      data = ""
+      if length(l) >= 3 then data = substr(l, 3)
+      if substr(l, 2, 1) == "+" & nb > 0 then bl[nb] = bl[nb] || data
+      else do
+        nb = nb + 1
+        bl[nb] = strip(data)
+      end
+    end
+  end
+  return nb
+
+isbranch: procedure = .int
+  arg l = .string
+  c = left(l, 1)
+  if c == "=" | c == "#" | c == "<" | c == ">" then return 1
+  return 0
+
+/* line index of the END that closes the DO block opened on line k */
+blockend: procedure = .int expose bl nb
+  arg k = .int
+  depth = 0
+  do i = k to nb
+    l = bl[i]
+    if upper(l) == "END" then do
+      depth = depth - 1
+      if depth = 0 then return i
+    end
+    else if isbranch(l) = 1 then do
+      c = pos(",", l)
+      if c > 0 then do
+        if upper(strip(substr(l, c + 1))) == "DO" then depth = depth + 1
+      end
+    end
+  end
+  return nb
+
+cmpval: procedure = .int
+  arg subj = .string, cmp = .string, val = .string, thr = .int
+  if cmp == "eq" then do
+    if upper(subj) == upper(val) then return 1
+    return 0
+  end
+  if cmp == "ne" then do
+    if upper(subj) <> upper(val) then return 1
+    return 0
+  end
+  if cmp == "wildcard" then do
+    if val <> "" & pos(upper(val), upper(subj)) > 0 then return 1
+    return 0
+  end
+  if cmp == "fuzzy" then do
+    if edist(norm(subj), norm(val)) <= thr then return 1
+    return 0
+  end
+  if datatype(strip(subj), "N") = 1 & datatype(strip(val), "N") = 1 then do
+    a = strip(subj) + 0
+    b = strip(val) + 0
+    if cmp == "lt" & a < b then return 1
+    if cmp == "gt" & a > b then return 1
+  end
+  return 0
+
+numstr: procedure = .string
+  arg x = .float
+  if x = trunc(x) then return trunc(x) || ""
+  return x || ""
+
+/* right-hand side of LET / ":=" : a literal, a reference, random(a,b) or one "x OP y" */
+evalexpr: procedure = .string expose vn vv nv svk svv nsv ses
+  arg expr = .string
+  s = strip(interp(expr))
+  if left(s, 1) == "{" & right(s, 1) == "}" then s = strip(substr(s, 2, length(s) - 2))
+  if length(s) >= 2 & left(s, 1) == '"' & right(s, 1) == '"' then return substr(s, 2, length(s) - 2)
+  if lower(left(s, 7)) == "random(" & right(s, 1) == ")" then do
+    inner = substr(s, 8, length(s) - 8)
+    c = pos(",", inner)
+    if c > 0 then do
+      lo = strip(left(inner, c - 1)) + 0
+      hi = strip(substr(inner, c + 1)) + 0
+      if lo > hi then do
+        t = lo
+        lo = hi
+        hi = t
+      end
+      return random(lo, hi) || ""
+    end
+  end
+  ops = "*/+-"
+  do o = 1 to 4
+    op = substr(ops, o, 1)
+    p = pos(" " || op || " ", s)
+    if p > 0 then do
+      a = strip(left(s, p - 1))
+      b = strip(substr(s, p + 3))
+      if datatype(a, "N") = 1 & datatype(b, "N") = 1 then do
+        x = a + 0
+        y = b + 0
+        r = 0
+        if op == "*" then r = x * y
+        if op == "/" then do
+          if y <> 0 then r = x / y
+        end
+        if op == "+" then r = x + y
+        if op == "-" then r = x - y
+        return numstr(r)
+      end
+    end
+  end
+  return s
+
+/* one statement (a whole line, or the action of a branch/IF).
+   returns 0 normally, 1 for EXIT */
+execstmt: procedure = .int expose vn vv nv svk svv nsv ses bl nb lk lv nl sp ob no
+  arg st = .string
+  s = strip(st)
+  u = upper(s)
+  if u == "NIL" then return 0
+  if left(u, 4) == "NIL " then return execstmt(strip(substr(s, 5)))
+  if left(s, 1) == "!" then do
+    x = interp(pickstr(substr(s, 2)))
+    call emit x, wid()
+    ses[9] = x
+    return 0
+  end
+  if left(u, 5) == "GOTO " then do
+    lab = strip(substr(s, 6))
+    do i = 1 to nb
+      if bl[i] == lab || ":" then do
+        ses[5] = i
+        return 0
+      end
+    end
+    return 1
+  end
+  if left(u, 3) == "GO " then return 0
+  if left(u, 5) == "EXEC " then do
+    call setvar "RC", "-1"
+    call setvar "RESULT", ""
+    return 0
+  end
+  if left(u, 4) == "SET " then do
+    call setvar strip(substr(s, 5)), "1"
+    return 0
+  end
+  if u == "EXIT" then return 1
+  if u == "CLEAR" then do
+    nv = 0
+    return 0
+  end
+  if (right(s, 2) == "++" | right(s, 2) == "--") & pos(" ", s) = 0 then do
+    nm = left(s, length(s) - 2)
+    if left(nm, 1) == "$" then nm = substr(nm, 2)
+    if right(nm, 1) == "." then nm = left(nm, length(nm) - 1)
+    cur = getvar(nm)
+    n = 0
+    if datatype(cur, "N") = 1 then n = cur + 0
+    if right(s, 2) == "++" then n = n + 1
+    else n = n - 1
+    call setvar nm, numstr(n)
+    return 0
+  end
+  if left(u, 4) == "LET " then do
+    rest = strip(substr(s, 5))
+    e = pos("=", rest)
+    if e > 0 then do
+      nm = strip(left(rest, e - 1))
+      if left(nm, 1) == "$" then nm = substr(nm, 2)
+      if right(nm, 1) == "." then nm = left(nm, length(nm) - 1)
+      call setvar nm, evalexpr(substr(rest, e + 1))
+    end
+    return 0
+  end
+  w = pos(":=", s)
+  if w > 0 then do
+    nm = strip(left(s, w - 1))
+    if pos(" ", nm) = 0 then do
+      if left(nm, 1) == "$" then nm = substr(nm, 2)
+      if right(nm, 1) == "." then nm = left(nm, length(nm) - 1)
+      call setvar nm, evalexpr(substr(s, w + 2))
+    end
+  end
+  return 0
+
+wid: procedure = .int expose cfk cfv ncf
+  w = cfget("WIDTH", "72") + 0
+  if w < 20 | w > 78 then w = 72
+  return w
+
+/* run the script from ses[5] until it ends, exits or waits.  returns 1 if it
+   exited or ran off the end, 0 if it is waiting for the user. */
+runscript: procedure = .int expose vn vv nv svk svv nsv ses bl nb lk lv nl sp ob no bc bt nbtn cfk cfv ncf
+  guard = 0
+  ses[6] = ""
+  do while (ses[5] + 0) <= nb
+    guard = guard + 1
+    if guard > 2000 then return 1
+    pc = ses[5] + 0
+    l = bl[pc]
+    ses[5] = pc + 1
+    u = upper(l)
+    if l == "" | right(l, 1) == ":" & pos(" ", l) = 0 then iterate
+    if u == "?" then do
+      ses[6] = "input"
+      return 0
+    end
+    if u == "?B" then do
+      ses[6] = "button"
+      return 0
+    end
+    if left(u, 7) == "BUTTON " then do
+      call setbuttons interp(substr(l, 8))
+      iterate
+    end
+    if u == "CLEAR" then do
+      nv = 0
+      iterate
+    end
+    if left(u, 5) == "IMAGE" then iterate
+    if u == "END" then do
+      do while (ses[5] + 0) <= nb
+        b = bl[ses[5] + 0]
+        if isbranch(b) = 0 then leave
+        c = pos(",", b)
+        if c > 0 & upper(strip(substr(b, c + 1))) == "DO" then ses[5] = blockend(ses[5] + 0) + 1
+        else ses[5] = (ses[5] + 0) + 1
+      end
+      iterate
+    end
+    if left(u, 3) == "IF " then do
+      t = pos(" THEN ", u)
+      if t > 0 then do
+        cond = strip(substr(l, 4, t - 4))
+        do while left(cond, 1) == "("
+          cond = substr(cond, 2)
+        end
+        do while right(cond, 1) == ")"
+          cond = left(cond, length(cond) - 1)
+        end
+        ok = 0
+        e = pos("=", cond)
+        if e > 0 then do
+          nm = strip(left(cond, e - 1))
+          val = strip(substr(cond, e + 1))
+          if left(nm, 1) == "$" then nm = substr(nm, 2)
+          if right(nm, 1) == "." then nm = left(nm, length(nm) - 1)
+          if getvar(nm) == interp(val) then ok = 1
+        end
+        else do
+          nm = strip(cond)
+          if left(nm, 1) == "$" then nm = substr(nm, 2)
+          if right(nm, 1) == "." then nm = left(nm, length(nm) - 1)
+          v = getvar(nm)
+          if v <> "" & v <> "0" then ok = 1
+        end
+        if ok = 1 then do
+          if execstmt(substr(l, t + 6)) = 1 then return 1
+        end
+      end
+      iterate
+    end
+    if left(u, 8) == "IFEMPTY " | left(u, 11) == "IFNOTEMPTY " then do
+      want = 1
+      pl = 9
+      if left(u, 11) == "IFNOTEMPTY " then do
+        want = 0
+        pl = 12
+      end
+      t = pos(" THEN ", u)
+      if t > 0 then do
+        nm = strip(substr(l, pl, t - pl))
+        if left(nm, 1) == "$" then nm = substr(nm, 2)
+        if right(nm, 1) == "." then nm = left(nm, length(nm) - 1)
+        isempty = 0
+        if strip(getvar(nm)) = "" then isempty = 1
+        if isempty = want then do
+          if execstmt(substr(l, t + 6)) = 1 then return 1
+        end
+      end
+      iterate
+    end
+    if isbranch(l) = 1 then do
+      cmp = "eq"
+      body = substr(l, 2)
+      if left(l, 2) == "=?" then do
+        cmp = "fuzzy"
+        body = substr(l, 3)
+      end
+      else if left(l, 2) == "=*" then do
+        cmp = "wildcard"
+        body = substr(l, 3)
+      end
+      else if left(l, 1) == "#" then cmp = "ne"
+      else if left(l, 1) == "<" then cmp = "lt"
+      else if left(l, 1) == ">" then cmp = "gt"
+      thr = 3
+      if cmp == "fuzzy" then do
+        pp = lastpos("(", body)
+        if pp > 0 then do
+          dg = strip(changestr(")", substr(body, pp + 1), ""))
+          if datatype(dg, "W") = 1 then thr = dg + 0
+          body = left(body, pp - 1)
+        end
+      end
+      c = pos(",", body)
+      if c > 0 then do
+        val = interp(strip(left(body, c - 1)))
+        act = strip(substr(body, c + 1))
+        hit = cmpval(ses[7], cmp, val, thr)
+        if upper(act) == "DO" then do
+          if hit = 0 then ses[5] = blockend(pc) + 1
+        end
+        else if hit = 1 then do
+          if execstmt(act) = 1 then return 1
+        end
+      end
+      iterate
+    end
+    if execstmt(l) = 1 then return 1
+  end
+  return 1
+
+/* BUTTON Label_one:CODE,Label_two:CODE2  ->  numbered choices in the reply */
+setbuttons: procedure = .int expose bc bt nbtn ob no cfk cfv ncf sp
+  arg spec = .string
+  bc = .string[]
+  bt = .string[]
+  nbtn = 0
+  n = split(spec, ",")
+  items = .string[]
+  do i = 1 to n
+    items[i] = strip(sp[i])
+  end
+  shown = ""
+  do i = 1 to n
+    it = items[i]
+    if it <> "" then do
+      lab = it
+      code = it
+      c = pos(":", it)
+      if c > 0 then do
+        lab = left(it, c - 1)
+        code = substr(it, c + 1)
+      end
+      lab = strip(translate(lab, " ", "_"))
+      nbtn = nbtn + 1
+      bt[nbtn] = lab
+      bc[nbtn] = upper(strip(code))
+      shown = shown || "  [" || nbtn || "] " || lab
+    end
+  end
+  if nbtn > 0 then call emit strip(shown), wid()
+  return nbtn
+
+/* ======================================================================
+   knowledge base  (CHATKB DATA, KnowledgeBase.gd search())
+   E id;scope;kind;lang  M title  U subtopic  Q source  D audio  X step
+   Whole-word overlap of the query words with title+subtopic+text; a query
+   needs a score >= 3; filler words are ignored; entries in the persona's
+   language win if the persona's scope has any.
+   ====================================================================== */
+
+isstop: procedure = .int
+  arg w = .string, lang = .string
+  en = " want wants wanted would could should does doing have having this that with about your you the and for how what can get from into onto between there here just only were was been when then than "
+  de = " will willst moechte moechtest wollen kann kannst habe hast haben diese dieser dieses ueber dein deine und der die das fuer wie was dann dort hier nur waren wurde wenn "
+  if lang == "de" then do
+    if pos(" " || w || " ", de) > 0 then return 1
+    return 0
+  end
+  if pos(" " || w || " ", en) > 0 then return 1
+  return 0
+
+/* returns the ordinal of the best entry, or 0 */
+kbfind: procedure = .int expose fl nfl pfx tk ntk sp
+  arg text = .string, npc = .string, lang = .string
+  n = rd_file(fid("CHATKB", "DATA"))
+  if n < 0 then return 0
+  /* queries: the whole message first, then each token on its own */
+  qw = .string[]
+  qs = .int[]
+  qc = .int[]
+  nq = 0
+  nw = 0
+  do qi = 0 to ntk
+    raw = ""
+    if qi = 0 then raw = norm(text)
+    else raw = tk[qi]
+    if raw <> "" then do
+      nq = nq + 1
+      qs[nq] = nw + 1
+      qc[nq] = 0
+      m = words(raw)
+      do i = 1 to m
+        x = word(raw, i)
+        if length(x) > 2 & isstop(x, lang) = 0 then do
+          nw = nw + 1
+          qw[nw] = x
+          qc[nq] = qc[nq] + 1
+        end
+      end
+      if qc[nq] = 0 then do
+        nw = nw + 1
+        qw[nw] = raw
+        qc[nq] = 1
+      end
+    end
+  end
+  if nq = 0 then return 0
+  bs = .int[]
+  os = .int[]
+  ba = .int[]
+  oa = .int[]
+  do j = 1 to nq
+    bs[j] = 0
+    os[j] = 0
+    ba[j] = 0
+    oa[j] = 0
+  end
+  haveSame = 0
+  ord = 0
+  escope = ""
+  ekind = ""
+  elang = ""
+  etxt = ""
+  active = 0
+  do i = 1 to n + 1
+    l = ""
+    if i <= n then l = fl[i]
+    tag = left(l, 1)
+    if i > n | tag == "E" then do
+      if active = 1 & (escope == npc | escope == "general") then do
+        if elang == lang then haveSame = 1
+        hay = ""
+        do j = 1 to nq
+          sc = 0
+          do w = qs[j] to qs[j] + qc[j] - 1
+            if pos(qw[w], etxt) > 0 then do
+              if hay = "" then hay = " " || norm(etxt) || " "
+              if pos(" " || qw[w] || " ", hay) > 0 then sc = sc + length(qw[w])
+            end
+          end
+          if sc >= 3 then do
+            if elang == lang & sc > bs[j] then do
+              bs[j] = sc
+              os[j] = ord
+            end
+            if sc > ba[j] then do
+              ba[j] = sc
+              oa[j] = ord
+            end
+          end
+        end
+      end
+      if i <= n then do
+        ord = ord + 1
+        active = 1
+        c = split(substr(l, 3), ";")
+        escope = sp[2]
+        ekind = sp[3]
+        elang = sp[4]
+        etxt = ""
+      end
+    end
+    else if tag == "M" | tag == "U" | tag == "X" then do
+      d = ""
+      if length(l) >= 3 then d = substr(l, 3)
+      if substr(l, 2, 1) == "+" then etxt = etxt || lower(d)
+      else etxt = etxt || " " || lower(d)
+    end
+  end
+  do j = 1 to nq
+    if haveSame = 1 & os[j] > 0 then return os[j]
+    if haveSame = 0 & oa[j] > 0 then return oa[j]
+  end
+  return 0
+
+/* load entry number `want` into kbf (1 title, 2 source, 3 kind, 4 audio) and kx[] */
+kbload: procedure = .int expose fl nfl pfx kbf kx nkx sp
+  arg want = .int
+  n = rd_file(fid("CHATKB", "DATA"))
+  kbf = .string[]
+  kx = .string[]
+  nkx = 0
+  do i = 1 to 4
+    kbf[i] = ""
+  end
+  if n < 0 then return 0
+  ord = 0
+  cur = ""
+  do i = 1 to n
+    l = fl[i]
+    tag = left(l, 1)
+    d = ""
+    if length(l) >= 3 then d = substr(l, 3)
+    cont = 0
+    if substr(l, 2, 1) == "+" then cont = 1
+    if tag == "E" then do
+      ord = ord + 1
+      if ord > want then leave
+      if ord = want then do
+        c = split(d, ";")
+        kbf[3] = sp[3]
+      end
+    end
+    else if ord = want then do
+      if tag == "M" then do
+        cur = "M"
+        if cont = 0 then kbf[1] = d
+        else kbf[1] = kbf[1] || d
+      end
+      else if tag == "Q" then do
+        cur = "Q"
+        if cont = 0 then kbf[2] = d
+        else kbf[2] = kbf[2] || d
+      end
+      else if tag == "D" then do
+        cur = "D"
+        if cont = 0 then kbf[4] = d
+        else kbf[4] = kbf[4] || d
+      end
+      else if tag == "X" then do
+        if cont = 0 then do
+          nkx = nkx + 1
+          kx[nkx] = strip(d)
+        end
+        else kx[nkx] = kx[nkx] || d
+      end
+    end
+  end
+  return nkx
+
+kbshow: procedure = .int expose rt rd nr lk lv nl sp ob no kbf kx nkx cfk cfv ncf
+  intro = pickstr(taglist("L"))
+  if kbf[3] == "prompt" & nkx > 0 then do
+    do i = 1 to nkx
+      p = kx[i]
+      if i = 1 & intro <> "" then p = intro || " " || p
+      call emit p, wid()
+    end
+    return 1
+  end
+  if kbf[3] == "audio" then do
+    if intro <> "" then call emit intro, wid()
+    call emit "[Audio: " || kbf[1] || "]", wid()
+    return 1
+  end
+  t = kbf[1]
+  if kbf[2] <> "" then t = t || " (" || kbf[2] || ")"
+  call emit strip(intro || " " || t), wid()
+  return 1
+
+/* ======================================================================
+   session per sender  (<USERID> CBSESS)
+   N npc  G lang  T last_topic  I last_intent  P pc  W waiting  A last answer
+   D debug  R last reply  S started  U turns  V name;value  L idx;key  K code;label
+   ====================================================================== */
+
+addrec: procedure = .int expose sb nsb
+  arg tag = .string, data = .string
+  d = data
+  first = 1
+  do while length(d) > 76
+    nsb = nsb + 1
+    if first = 1 then sb[nsb] = tag || " " || left(d, 76)
+    else sb[nsb] = tag || "+" || left(d, 76)
+    d = substr(d, 77)
+    first = 0
+  end
+  nsb = nsb + 1
+  if first = 1 then sb[nsb] = tag || " " || d
+  else sb[nsb] = tag || "+" || d
+  return 0
+
+/* returns 1 if the sender had a session */
+loadses: procedure = .int expose ses vn vv nv lk lv nl bc bt nbtn fl nfl pfx cfk cfv ncf sp
+  arg user = .string
+  do i = 1 to 12
+    ses[i] = ""
+  end
+  nv = 0
+  nl = 0
+  nbtn = 0
+  ses[1] = lower(cfget("DEFNPC", "tchaika"))
+  ses[2] = lower(cfget("DEFLANG", "en"))
+  ses[5] = "1"
+  ses[8] = "0"
+  ses[10] = user
+  ses[11] = "0"
+  ses[12] = "0"
+  n = rd_file(fid(user, "CBSESS"))
+  if n <= 0 then return 0
+  mt = .string[]
+  md = .string[]
+  m = 0
+  do i = 1 to n
+    l = fl[i]
+    if l <> "" then do
+      d = ""
+      if length(l) >= 3 then d = substr(l, 3)
+      if substr(l, 2, 1) == "+" & m > 0 then md[m] = md[m] || d
+      else do
+        m = m + 1
+        mt[m] = left(l, 1)
+        md[m] = d
+      end
+    end
+  end
+  do i = 1 to m
+    t = mt[i]
+    d = md[i]
+    if t == "N" then ses[1] = d
+    else if t == "G" then ses[2] = d
+    else if t == "T" then ses[3] = d
+    else if t == "I" then ses[4] = d
+    else if t == "P" then ses[5] = d
+    else if t == "W" then ses[6] = d
+    else if t == "A" then ses[7] = d
+    else if t == "D" then ses[8] = d
+    else if t == "R" then ses[9] = d
+    else if t == "S" then ses[11] = d
+    else if t == "U" then ses[12] = d
+    else if t == "V" then do
+      c = pos(";", d)
+      if c > 0 then do
+        nv = nv + 1
+        vn[nv] = left(d, c - 1)
+        vv[nv] = substr(d, c + 1)
+      end
+    end
+    else if t == "L" then do
+      c = pos(";", d)
+      if c > 0 then do
+        nl = nl + 1
+        lv[nl] = left(d, c - 1)
+        lk[nl] = substr(d, c + 1)
+      end
+    end
+    else if t == "K" then do
+      c = pos(";", d)
+      if c > 0 then do
+        nbtn = nbtn + 1
+        bc[nbtn] = left(d, c - 1)
+        bt[nbtn] = substr(d, c + 1)
+      end
+    end
+  end
+  return 1
+
+saveses: procedure = .int expose ses vn vv nv lk lv nl bc bt nbtn sb nsb pfx
+  arg user = .string
+  sb = .string[]
+  nsb = 0
+  call addrec "N", ses[1]
+  call addrec "G", ses[2]
+  call addrec "T", ses[3]
+  call addrec "I", ses[4]
+  call addrec "P", ses[5]
+  call addrec "W", ses[6]
+  call addrec "A", ses[7]
+  call addrec "D", ses[8]
+  call addrec "R", ses[9]
+  call addrec "S", ses[11]
+  call addrec "U", ses[12]
+  do i = 1 to nv
+    call addrec "V", vn[i] || ";" || vv[i]
+  end
+  do i = 1 to nl
+    call addrec "L", lv[i] || ";" || lk[i]
+  end
+  do i = 1 to nbtn
+    call addrec "K", bc[i] || ";" || bt[i]
+  end
+  return _execio(nsb, "DISKW", fid(user, "CBSESS"), sb)
+
+/* ======================================================================
+   one request
+   ====================================================================== */
+
+/* "/..." commands.  returns 1 = answered, 2 = conversation (re)started, go on */
+meta: procedure = .int expose ses vn vv nv nl fl nfl pfx ob no cfk cfv ncf sp rt rd nr yN yW ny iNm iEn iGo iR iE ni
+  arg t = .string
+  c = upper(word(t, 1))
+  a1 = lower(word(t, 2))
+  a2 = lower(word(t, 3))
+  w = wid()
+  if c == "/HELP" | c == "/?" then do
+    call emit "Ask me anything in plain words. Commands: /LIST (who can I talk to), /NPC name [en|de] (change persona), /LANG en|de, /RESET (start over), /WHO, /DEBUG ON|OFF, /HELP.", w
+    return 1
+  end
+  if c == "/LIST" then do
+    n = rd_file(fid("CHATDATA", "LIST"))
+    s = ""
+    do i = 1 to n
+      if left(fl[i], 1) <> "*" & strip(fl[i]) <> "" then s = s || " " || lower(word(fl[i], 1)) || "/" || lower(word(fl[i], 2))
+    end
+    if s = "" then s = " (none installed)"
+    call emit "Personas (name/language):" || s, w
+    return 1
+  end
+  if c == "/WHO" then do
+    call emit "You are " || ses[10] || ". You are talking to " || ses[1] || " (" || ses[2] || ").", w
+    return 1
+  end
+  if c == "/DEBUG" then do
+    if a1 == "on" then ses[8] = "1"
+    else ses[8] = "0"
+    call emit "Debug " || word("off on", ses[8] + 1) || ".", w
+    return 1
+  end
+  if c == "/RESET" then do
+    nv = 0
+    nl = 0
+    ses[3] = ""
+    ses[4] = ""
+    ses[5] = "1"
+    ses[6] = ""
+    ses[11] = "0"
+    return 2
+  end
+  if c == "/NPC" | c == "/LANG" then do
+    npc = ses[1]
+    lang = ses[2]
+    if c == "/NPC" then do
+      if a1 <> "" then npc = a1
+      if a2 <> "" then lang = a2
+    end
+    else if a1 <> "" then lang = a1
+    if rd_file(fid(npc, "NLU" || lang)) < 0 then do
+      call emit "I do not know " || npc || "/" || lang || ". Try /LIST.", w
+      return 1
+    end
+    ses[1] = npc
+    ses[2] = lang
+    nv = 0
+    nl = 0
+    ses[3] = ""
+    ses[4] = ""
+    ses[5] = "1"
+    ses[6] = ""
+    ses[11] = "0"
+    return 2
+  end
+  call emit "Unknown command " || c || ". /HELP lists them.", w
+  return 1
+
+/* resume a script that is waiting for a button or for typed text */
+resume: procedure = .int expose ses vn vv nv svk svv nsv bl nb bc bt nbtn lk lv nl sp ob no cfk cfv ncf fl nfl pfx
+  arg text = .string
+  ans = strip(text)
+  if ses[6] == "button" then do
+    code = upper(ans)
+    if datatype(ans, "W") = 1 then do
+      k = ans + 0
+      if k >= 1 & k <= nbtn then code = bc[k]
+    end
+    else do
+      do k = 1 to nbtn
+        if upper(bt[k]) == upper(ans) then code = bc[k]
+      end
+    end
+    ses[7] = code
+  end
+  else ses[7] = ans
+  call setvar "INPUT", ans
+  nbtn = 0
+  ses[6] = ""
+  return runscript()
+
+process: procedure = .int expose rt rd nr yN yW ny iNm iEn iGo iR iE ni ses vn vv nv lk lv nl bl nb bc bt nbtn ob no gcN gcV ngc cfk cfv ncf svk svv nsv fl nfl pfx rn rs rrep tk ntk sp sb nsb kbf kx nkx loud curp
+  arg text = .string, returning = .int
+  t = strip(text)
+  w = wid()
+  if left(t, 1) == "/" then do
+    r = meta(t)
+    if r = 1 then return 0
+    t = ""
+  end
+  if loadnlu(ses[1], ses[2]) = 0 then do
+    call emit "Persona " || ses[1] || "/" || ses[2] || " is not installed here. Try /LIST.", w
+    return 4
+  end
+  ses[12] = (ses[12] + 0) + 1
+  greeted = 0
+  if ses[11] <> "1" then do
+    ses[11] = "1"
+    greeted = 1
+    call setvar "FIRSTTIME", word("0 1", returning + 1)
+    call loadbot ses[1], ses[2]
+    ses[5] = "1"
+    if runscript() = 0 then return 0
+    if t = "" then return 0
+  end
+  if t = "" then do
+    if greeted = 0 then call emit "...", w
+    return 0
+  end
+  /* crisis detection comes first, whatever the script is doing */
+  call tokenize t
+  if iscrisis(t) = 1 then do
+    ses[4] = ""
+    if upper(cfget("CRISIS", "YES")) == "YES" then do
+      n = split(taglist("X"), "|")
+      lines = .string[]
+      do i = 1 to n
+        lines[i] = sp[i]
+      end
+      do i = 1 to n
+        call emit interp(lines[i]), w
+      end
+    end
+    else call emit interp(pickstr(taglist("F"))), w
+    if ses[8] == "1" then call emit "[dbg kind=crisis intent= score=0 rep=0 kb=0]", 78
+    return 0
+  end
+  if ses[6] <> "" then do
+    call loadbot ses[1], ses[2]
+    call resume t
+    return 0
+  end
+  kind = understand(t)
+  hit = 0
+  if kind == "intent" then do
+    k = findintent(rn)
+    if rn == "repeat" & ses[9] <> "" then call emit ses[9], w
+    else if rn == "hallo" & greeted = 1 then nop
+    else do
+      line = interp(intentline(k))
+      if line = "" then line = "(That is a screen feature of the app - there is nothing to say about it over the reader.)"
+      call emit line, w
+      ses[9] = line
+    end
+  end
+  else do
+    hit = kbfind(t, ses[1], ses[2])
+    if hit > 0 then do
+      call kbload hit
+      call kbshow
+    end
+    else do
+      line = interp(pickstr(taglist("F")))
+      call emit line, w
+      ses[9] = line
+    end
+  end
+  if ses[8] == "1" then call emit "[dbg kind=" || kind || " intent=" || rn || " score=" || rs || " rep=" || rrep || " kb=" || hit || "]", 78
+  return 0
+
+dorequest: procedure = .int expose rt rd nr yN yW ny iNm iEn iGo iR iE ni ses vn vv nv lk lv nl bl nb bc bt nbtn ob no gcN gcV ngc cfk cfv ncf svk svv nsv fl nfl pfx rn rs rrep tk ntk sp sb nsb kbf kx nkx loud curp
+  arg fn = .string
+  n = rd_file(fid(fn, "CBREQ"))
+  user = ""
+  text = ""
+  seen = 0
+  do i = 1 to n
+    l = strip(fl[i])
+    if l <> "" & upper(left(l, 6)) <> ":READ " then do
+      if seen = 0 & upper(word(l, 1)) == "FROM" then user = word(l, 2)
+      else text = text || " " || l
+      seen = 1
+    end
+  end
+  user = upper(user)
+  if user = "" | verify(user, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") > 0 | length(user) > 8 then user = "ANON"
+  text = strip(text)
+  ob = .string[]
+  no = 0
+  returning = loadses(user)
+  rc2 = process(text, returning)
+  if no = 0 then call emit "...", 72
+  call saveses user
+  call wr_ob fid(fn, "CBRPL")
+  if loud = 1 then say "CHATBOT: " || fn || " " || user || " " || ses[1] || "/" || ses[2] || " " || rn
+  return 0

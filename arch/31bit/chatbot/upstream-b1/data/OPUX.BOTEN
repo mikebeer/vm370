@@ -1,0 +1,8 @@
+B !...#[a rusty pause]#Well. Someone's here.#...you're back.#Hm. Good timing,   
+B+ maybe.                                                                       
+B IFNOTEMPTY MY_CHAPTER_DONE THEN ![MY_CHAPTER_DONE]. Finished. Did any of it   
+B+ stick, or just pass through?                                                 
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] - started, not       
+B+ finished. Happens. Finish it; half-done tools rust.                          
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

@@ -1,0 +1,8 @@
+B !Ah - hello there.#Welcome, welcome.#Good, you've come.#Ah, good -            
+B+ company.#There you are, right on cue.                                        
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You finished [MY_CHAPTER_DONE] - I heard it, 
+B+ in a way. Has anyone noticed you listening differently?                      
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] is a tune you started
+B+ and haven't finished. Those are the ones worth returning to.                 
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

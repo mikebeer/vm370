@@ -1,0 +1,7 @@
+B !...#Ich bin da.#Du bist gekommen.#...du schon wieder.#Immer noch hier.       
+B IFNOTEMPTY MY_CHAPTER_DONE THEN ![MY_CHAPTER_DONE] liegt jetzt hinter dir. Ich
+B+ hab's bemerkt.                                                               
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] ist nicht fertig. Das
+B+ ist in Ordnung. Beende es, wenn die Zeit reif ist.                           
+B IFNOTEMPTY HERO_READY THEN !Alle acht Artefakte sind geschmiedet. Das Emblem  
+B+ wartet. Sag 'Emblem', wenn du bereit bist.                                   

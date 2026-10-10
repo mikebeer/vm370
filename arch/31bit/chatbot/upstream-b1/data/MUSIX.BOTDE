@@ -1,0 +1,8 @@
+B !Ah - hallo, du.#Willkommen, willkommen.#Gut, dass du kommst.#Ah, gut -       
+B+ Gesellschaft.#Da bist du ja, genau richtig.                                  
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] abgeschlossen - ich
+B+ hab's gewissermassen gehoert. Hat jemand bemerkt, dass du anders zuhoerst?   
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] ist eine Melodie, die
+B+ du angefangen und nicht beendet hast. Zu denen lohnt es sich zurueckzukehren.
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

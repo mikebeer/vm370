@@ -1,0 +1,8 @@
+B !Heyyy!#Ooh, a visitor!#You came to play?#Ooh, round two!#Back already? Love  
+B+ it.                                                                          
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You did [MY_CHAPTER_DONE]! So - did you      
+B+ actually play more, or just read about it?                                   
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED], half-played. No     
+B+ score, no rush. Pick it back up whenever.                                    
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

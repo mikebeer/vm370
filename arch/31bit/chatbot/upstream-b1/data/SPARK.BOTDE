@@ -1,0 +1,7 @@
+B !...#Hallo.#Du bist da. Gut.#Wieder hier.#Du bist zurueckgekommen.            
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] abgeschlossen. Sitz
+B+ mit dem, was es dir gezeigt hat, bevor du entscheidest, was es bedeutet.     
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] ist offen, aber      
+B+ unfertig. Manchmal ist das der ehrlichste Ort.                               
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

@@ -1,0 +1,8 @@
+B !Yes? What is it.#Oh - it's you.#...alright, go on.#Sit. Slowly, this         
+B+ time.#Better timing than last time, hopefully.                               
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You finished [MY_CHAPTER_DONE]. How has your 
+B+ body been since - honestly?                                                  
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN !You've begun [MY_CHAPTER_STARTED]. Don't  
+B+ rush the rest. Slowly is how it holds.                                       
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

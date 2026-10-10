@@ -1,0 +1,8 @@
+B !...#Hm. Jemand ist da.#Willkommen.#Schon wieder da.#Gutes Timing, eigentlich.
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] abgeschlossen. Hat 
+B+ sich der Raum um dich seitdem veraendert?                                    
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] ist angefangen, aber 
+B+ nicht gesetzt. Unfertiger Boden verschiebt sich - lohnt sich,                
+B+ zurueckzukommen.                                                             
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

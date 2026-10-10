@@ -1,0 +1,14 @@
+B !Hello.#Hey there.#Oh - hello. Good to see you.                               
+B !I'm Tchaika.#I go by Tchaika, if you want a name for me.                     
+B !What's on your mind?#So - what brings you here today?#Go on, ask me          
+B+ something.#Back for more, I see.#Well, look who it is.                       
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You finished [MY_CHAPTER_DONE], I heard.     
+B+ How's it been since?                                                         
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN !Still working through                     
+B+ [MY_CHAPTER_STARTED], I see. No rush - I'll be here.                         
+B IFNOTEMPTY STRESS_HIGH THEN !Your stress has been running high lately -       
+B+ [STRESS_LATEST] of 10. We can talk about that, or not. Your call.            
+B IFNOTEMPTY MOOD_LOW THEN !And the mood readings have been low. I noticed. No  
+B+ need to explain - just know I did.                                           
+B IFNOTEMPTY HERO_READY THEN !All eight artifacts are forged. The emblem is     
+B+ waiting. Say 'emblem' when you're ready.                                     

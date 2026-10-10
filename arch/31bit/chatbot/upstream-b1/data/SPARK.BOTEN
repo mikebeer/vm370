@@ -1,0 +1,7 @@
+B !...#Hello.#You're here. Good.#Here again.#You came back.                     
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You finished [MY_CHAPTER_DONE]. Sit with what
+B+ it showed you, before you decide what it meant.                              
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] is open but          
+B+ unfinished. Sometimes that's the most honest place to be.                    
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

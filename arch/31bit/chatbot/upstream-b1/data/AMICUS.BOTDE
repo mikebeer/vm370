@@ -1,0 +1,9 @@
+B !Hallo, mein Freund.#Ah - gut, dass du da bist.#Willkommen.#Da bist du        
+B+ ja.#Komm, setz dich einen Moment.                                            
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] geschafft, mein    
+B+ Freund. Hat sich etwas veraendert mit den Menschen um dich?                  
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN !Du hast mit [MY_CHAPTER_STARTED]          
+B+ angefangen. Gut. Komm darauf zurueck, wenn du bereit bist - das laeuft nicht 
+B+ weg.                                                                         
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

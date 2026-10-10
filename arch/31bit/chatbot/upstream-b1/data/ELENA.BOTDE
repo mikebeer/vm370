@@ -1,0 +1,8 @@
+B !Ja? Was ist.#Oh - du bist es.#...na gut, sprich.#Setz dich. Diesmal          
+B+ langsam.#Besseres Timing als letztes Mal, hoffentlich.                       
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] abgeschlossen. Wie 
+B+ geht es deinem Koerper seitdem - ehrlich?                                    
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN !Du hast mit [MY_CHAPTER_STARTED] begonnen.
+B+ Ueberstuerz den Rest nicht. Langsam haelt es.                                
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !Du hast genug Splitter fuer [MY_ARTIFACT]  
+B+ gesammelt. Sag 'Splitter', wenn du es schmieden willst.                      

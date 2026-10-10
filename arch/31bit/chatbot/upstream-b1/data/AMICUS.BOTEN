@@ -1,0 +1,8 @@
+B !Hello, friend.#Ah - good, you're here.#Welcome.#There you are.#Come, sit a   
+B+ while.                                                                       
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You got through [MY_CHAPTER_DONE], friend.   
+B+ Has anything shifted with the people around you?                             
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN !You've started on [MY_CHAPTER_STARTED].   
+B+ Good. Come back to it when you're ready - it keeps.                          
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

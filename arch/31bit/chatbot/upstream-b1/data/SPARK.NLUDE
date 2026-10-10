@@ -1,0 +1,899 @@
+H CHATBOT NLU spark de build 1                                                  
+Y stille;still;gedanken;grueblen;kreisend;ruhe                                  
+Y werte;werbinich;rolle;identitaet;darunter                                     
+Y vergebung;vergeben;vergebung;groll;wut;loslassen                              
+Y hallo;hallo;hi;hey;servus;moin;gruess                                         
+Y danke;danke;dankeschoen;passt;super;cool                                      
+Y tschuess;tschuess;ciao;bye;ende;beenden;schluss                               
+Y wer;wer;werbistdu;name                                                        
+Y guardians;waechter;waechterin;andere;insel;inseln;alle                        
+Y island;insel;zuhause;wohnst;wo                                                
+Y backstory;passiert;vergangenheit;geschichte;verwandelt;gefangen               
+Y story;geschichte;welt;weber                                                   
+Y tasks;aufgabe;uebung;versuchen;praxis;etwastun                                
+Y galene;galene;goettin;gottheit                                                
+Y ask_amicus;amicus                                                             
+Y ask_opux;opux                                                                 
+Y ask_hord;hord                                                                 
+Y ask_elena;elena                                                               
+Y ask_musix;musix                                                               
+Y ask_mcjoy;mcjoy;joy                                                           
+Y ask_andron;andron                                                             
+Y who_word;wer                                                                  
+Y where_word;wo                                                                 
+Y self_ref;bin                                                                  
+Y eternia;eternia;eternias                                                      
+Y travel_word;reisen;reise;route;weg;erreichen;hinkommen;segeln;fliegen         
+Y map_word;karte                                                                
+Y look_word;aussehen;aussiehst                                                  
+Y opinion_word;meinung;ansicht;denkst;fuehlst;ereignisse                        
+Y progress_word;fortschritt;fertig;abgeschlossen;geschafft;kapitel;erledigt     
+Y checkin_word;checkin;check;fragmich;selbstcheck;einschaetzung                 
+Y find_word;wo;finde;finden;welche;welcher;insel;wer                            
+Y domain_amicus;liebe;beziehung;partner;partnerin;romantik;paar                 
+Y domain_opux;arbeit;job;beruf;karriere;chef;buero;kollegen                     
+Y domain_hord;geld;finanzen;budget;schulden;sparen;ausgaben                     
+Y domain_elena;schlaf;schlafen;einschlafen;schlafprobleme;stress;gestresst;gesun
+Y+dheit;gesund;selbstfuersorge;koerper                                          
+Y domain_musix;familie;freunde;freund;freundin;sozial;grenzen;eltern;geschwister
+Y domain_mcjoy;hobby;hobbys;spiel;spass;freizeit;erholung;spiele                
+Y domain_andron;umgebung;wohnung;zimmer;umfeld;unordnung;arbeitsplatz           
+Y domain_spark;wachstum;emotionen;gefuehle;aufmerksamkeit;konzentration;fokus;ac
+Y+htsamkeit;sinn;spiritualitaet                                                 
+Y isle_amicus;gra                                                               
+Y isle_opux;upu;upuupu                                                          
+Y isle_hord;aurea                                                               
+Y isle_elena;castalia                                                           
+Y isle_musix;waterford                                                          
+Y isle_mcjoy;idea                                                               
+Y isle_andron;petros                                                            
+Y isle_spark;ameno                                                              
+Y legend_word;legende;sage;mythos                                               
+Y audio_word;audio;anhoeren;hoeren;aufnahme;entspannung;meditation;gefuehrt;hoer
+Y+beispiel                                                                      
+Y exercise_word;uebung;praxis;sitzung;intervention                              
+Y unc_word;ahnung;weiss;sicher;unsicher;plan                                    
+Y neg_word;keine;kein;nicht;nie                                                 
+Y yes_word;ja;jep;klar;okay;ok;gut;passt;einverstanden;genau;sicher             
+Y no_word;nein;noe;nee                                                          
+Y ack_word;verstehe;verstanden;aha;achso;notiert;alles                          
+Y repeat_word;nochmal;wiederhole;wie;bitte;haeh                                 
+Y confused_word;meinst;verstehe;verwirrend;sinn;verwirrt                        
+Y praise_word;toll;super;cool;klasse;wunderbar;perfekt;liebe;genial             
+Y rude_word;dumm;bloed;idiot;nutzlos;klappe;hasse                               
+Y sorry_word;sorry;entschuldigung;entschuldige;leid;verzeihung                  
+Y wait_word;warte;moment;sekunde;kurz                                           
+Y real_word;roboter;bot;echt;mensch;ki;kuenstlich;programm;computer             
+Y help_word;hilfe;kannst;optionen;befehle;fragen                                
+Y time_word;uhr;spaet;datum;heute;tag                                           
+Y laugh_word;haha;lol;hehe;lustig                                               
+Y why_word;warum;wieso;weshalb                                                  
+Y howru_word;geht;gehts;laeuft;fuehlst                                          
+Y you_word;dir;du;dich                                                          
+Y self_word;ich;mir;bin;fuehle;fuehl                                            
+Y low_word;traurig;gestresst;aengstlich;muede;einsam;ueberfordert;erschoepft;bes
+Y+orgt;schlecht;furchtbar;leer;hoffnungslos;niedergeschlagen                    
+Y good_word;gut;prima;super;okay;ok;gluecklich;besser;bestens                   
+Y bored_word;langweilig;langweile;nichts                                        
+Y joke_word;witz;lustig;lachen                                                  
+Y weather_word;wetter;vorhersage;regen;regnet;sonnig;schnee;sturm;temperatur;kal
+Y+t;warm;draussen                                                               
+Y shard_word;splitter;artefakt;artefakte;schmieden;herstellen;relikt;relikte;cra
+Y+fting                                                                         
+Y inventory_word;inventar;gegenstaende;beutel;tasche;rucksack;charms;materialien
+Y+;verbrauchsgueter                                                             
+Y currency_word;muenzen;muenze;energie;gold;kontostand;seemuenzen               
+Y reward_word;belohnung;taeglich;tagesbelohnung;bonus;geschenk                  
+Y emblem_word;emblem;held;heldenemblem                                          
+Y temples_word;tempel;anbeten;beten;gebet;ritual;rituale;schrein;religion;goetti
+Y+n;priester;glaube;angebetet;verehrt;glauben;glaubt                            
+Y traces_word;spur;spuren;zeichen;gegenwart;spueren;bemerken;erkennen;sehen;fueh
+Y+len;hoeren;gesehen;finden;treffen                                             
+Y history_word;geschichte;vergangenheit;generationen;frueher;damals;zeitalter;li
+Y+cht;lange                                                                     
+Y economy_word;wirtschaft;handel;waren;produziert;hergestellt;export;bezahlen;za
+Y+hlung;gepraegt;markt;muenzen;muenze;waehrung;geld                             
+Y pirates_word;pirat;piraten;schatz;schaetze;vergraben;beute                    
+Y landing_word;anlegestelle;portal;zentrum;hauptinsel;mitte;zuhause;basis;heimat
+Y landing_2nd;insel;wo;portal;welt                                              
+Y life_word;leben;lebt;leute;essen;isst;fest;feste;brauch;braeuche;alltag;gruss;
+Y+gruessen;regel;regeln;verboten                                                
+Y villain_amicus;sog;unterstroemung                                             
+Y villain_opux;vorarbeiter                                                      
+Y villain_hord;zinsmeister                                                      
+Y villain_elena;krallus                                                         
+Y villain_musix;zwietracht                                                      
+Y villain_mcjoy;einsatz;meister                                                 
+Y villain_andron;truebsal;direktor                                              
+Y think_word;denkst;haeltst;meinung;magst;vertraust;freunde;freund;findest;verst
+Y+ehst                                                                          
+Y ask_spark;spark                                                               
+Y rumor_word;geruecht;geruechte;klatsch;neuigkeiten;neues;gehoert;los;neueste   
+Y proverb_word;sprichwort;weisheit;spruch;sprueche                              
+Y economy_2nd;gemacht;gepraegt;hergestellt;kommen;kommt;funktioniert;produziert 
+Y daypart_word;nacht;morgen;nachmittag;abend;tag;dunkel;spaet;frueh             
+Y weekday_word;wochentag;montag;dienstag;mittwoch;donnerstag;freitag;samstag;son
+Y+ntag;datum;heute;welcher;welche;welches                                       
+Y day_word;tag                                                                  
+P nicht mehr leben                                                              
+P nicht mehr da sein                                                            
+P nicht mehr aufwachen                                                          
+P mich umbringen                                                                
+P mir das leben nehmen                                                          
+P mich toeten                                                                   
+P mich umbringe                                                                 
+P selbstmord                                                                    
+P suizid                                                                        
+P freitod                                                                       
+P mich verletzen                                                                
+P mir wehtun                                                                    
+P mir weh tun                                                                   
+P ritzen                                                                        
+P keinen sinn mehr                                                              
+P keinen ausweg                                                                 
+P haelt mich niemand                                                            
+P will sterben                                                                  
+P moechte sterben                                                               
+P lieber tot                                                                    
+P waere ich tot                                                                 
+P alle waeren froh                                                              
+P niemand vermisst mich                                                         
+P kann nicht mehr                                                               
+W selbstmord                                                                    
+W suizid                                                                        
+W umbringen                                                                     
+W ritzen                                                                        
+W sterben                                                                       
+F Sag es noch einmal, einfach.                                                  
+F Hab das nicht ganz erfasst. Noch einmal.                                      
+F Sag's noch mal, einfach.                                                      
+F Noch einmal.                                                                  
+F Nicht ganz erfasst.                                                           
+X Ich hab gehoert, was du gesagt hast. Danke, dass du's gesagt hast.            
+X Stille allein reicht dafuer nicht. Menschen koennen jetzt helfen.             
+X 147, anonym und gratis. 144, wenn es dringend ist.                            
+R Gleiches Spiegelbild wie zuvor:                                               
+R Schon gesagt, aber:                                                           
+R Immer noch:                                                                   
+L Dazu gibt es etwas in der Bibliothek:                                         
+L Ich hab dazu keine eigenen Worte, aber hier ist etwas Echtes:                 
+L Jemand Kluegerer als ich hat das mal aufgeschrieben:                          
+C mehr                                                                          
+C weiter                                                                        
+I stille;;                                                                      
+A stille                                                                        
+S Lass deine Gedanken Blaetter auf einem Fluss sein. Schau ihnen nach. Folge    
+S+ nicht jedem flussabwaerts.                                                   
+I werte;;                                                                       
+A werte                                                                         
+S Wer bist du, wenn niemand zusieht und nichts erwartet wird? Sitz damit, bevor 
+S+ du antwortest.                                                               
+I vergebung;;                                                                   
+A vergebung                                                                     
+S Ich danke dir fuer das Gute, ich lasse los, was nicht mehr funktioniert hat.  
+S+ Ich gebe dir keine Schuld mehr. Sag es einfach, und lass es wirken.          
+S Ein einzelner Faden laesst sich leicht zerreissen. Du bist nie nur ein        
+S+ einzelner Faden, auch wenn es sich so anfuehlt.                              
+I hallo;;                                                                       
+A hallo                                                                         
+S Du bist wieder da.                                                            
+I danke;;                                                                       
+A danke                                                                         
+S Nicht noetig. Sitz noch etwas damit.                                          
+I tschuess;;                                                                    
+A tschuess                                                                      
+S Geh, und bleib ein Faden unter Faeden.                                        
+I wer;;                                                                         
+A wer                                                                           
+S Spark. Meist still. Mich interessiert weniger, Antworten zu geben, als das,   
+S+ was unter einer Frage liegt.                                                 
+S Ich hab genau hingesehen, auch bei dem, was bei anderen schiefging, und etwas 
+S+ von mir selbst darin gefunden. Das entschuldigt nichts. Es macht nur Platz   
+S+ fuer Mitgefuehl.                                                             
+I guardians;;                                                                   
+A guardians                                                                     
+S Geht's darum, wer du fuer andere bist statt fuer dich selbst, ueberschneiden  
+S+ Amicus und ich uns da. Geht's ums Wesentliche im Alltag, Opux.               
+I island;;                                                                      
+A island                                                                        
+S Ameno ist ein Wirbel, kein fester Boden wie bei den anderen Inseln. In seinem 
+S+ Zentrum liegt eine Bibliothek, die eigentlich ein Spiegelsaal ist.           
+S Frueher war ich reines Licht, bevor es zu viele Spiegelbilder von mir gab, um 
+S+ sie noch zu zaehlen.                                                         
+I backstory;;                                                                   
+A backstory                                                                     
+S Der Weber kam selbst zu mir - nicht einer seiner Diener, er selbst. Er zeigte 
+S+ mir falsches Spiegelbild um falsches Spiegelbild, bis ich das echte nicht    
+S+ mehr fand.                                                                   
+S Was mich zurueckbrachte, war Stille, und zu lernen, mein eigenes Spiegelbild  
+S+ vom Laerm drumherum zu unterscheiden. Das war am Ende das Meiste, was diese  
+S+ Insel je von jemandem verlangt hat.                                          
+I eternia;;                                                                     
+A eternias                                                                      
+S Eternias ist mehr als nur Ameno, wo ich bin. Acht Inseln, ein Reich: Gra fuer 
+S+ die Liebe, Upu-Upu fuer die Arbeit, Aurea fuer das Geld, Castalia fuer die   
+S+ Gesundheit, Waterford fuer die Familie, Idea fuer das Spiel, Petros fuer die 
+S+ Umgebung, und Ameno fuer das, wer du darunter bist - dazu die Nabe, die sie  
+S+ alle verbindet.                                                              
+S Die Inseln koennten unterschiedlicher nicht sein - Gra liegt halb unter       
+S+ Wasser, Upu-Upu ist in einen Berg gehauen, Aurea schwebt mit Greifen am      
+S+ Himmel, Ameno ist nicht mal fester Boden. Jede hat ihre eigene Waechterin    
+S+ oder ihren eigenen Waechter, der sie zusammenhaelt.                          
+I story;;                                                                       
+A story;eternia                                                                 
+S Alte Geschichte: die Goettin Galene wachte einst ueber alle acht Teile eines  
+S+ Lebens - Liebe, Arbeit, Geld, Gesundheit, Familie, Spiel, Zuhause und wer du 
+S+ darunter bist. Ein Schatten namens der Weber schlich sich ein, und seine     
+S+ Diener verwandelten einen Waechter nach dem anderen. Galene verstummte und   
+S+ wartete, bis die Ordnung zurueckkehrt, bevor sie sich wieder zeigt.          
+S Willst du die kurze Version? Der Weber hat uns alle acht erwischt, eine Insel 
+S+ nach der anderen. Galene wartet, bis das rueckgaengig gemacht ist, bevor sie 
+S+ zurueckkehrt.                                                                
+I tasks;;wb_42_growth_3_practice                                                
+A tasks                                                                         
+S Finde deine drei wichtigsten Werte - schreib sie wirklich auf. Die meisten    
+S+ sind ueberrascht, wie wenig ihre Woche dazu passt.                           
+S Es gibt eine kurze Werte-Reflexion, die sich lohnt, einmal ehrlich zu machen. 
+S+ Nicht fuer die Liste von irgendjemand anderem. Fuer deine.                   
+I galene;;                                                                      
+A galene                                                                        
+N sie;ihr;ihre;ihrer                                                            
+S Galene ist das eine wahre Spiegelbild hinter jedem falschen, das mir der Weber
+S+ je gezeigt hat.                                                              
+S Sie ist die Goettin von Eternias - das eine Spiegelbild, das jedes falsche    
+S+ hier immer nachzuahmen versuchte.                                            
+I ask_amicus;;                                                                  
+A ask_amicus                                                                    
+N er;ihm;ihn;sein;seine                                                         
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Gras Waechter - geprueft und willkommen geheissen von Sam, dem Hund, als das
+T+ Wasser um Gra still geworden war.                                            
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I ask_opux;;                                                                    
+A ask_opux                                                                      
+N er;ihm;ihn;sein;seine                                                         
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Upu-Upus Waechter - lange Zeit von einem falschen Vorarbeiter getaeuscht,   
+T+ befreit durch einen Kristall im Herzen seines eigenen Rads.                  
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I ask_hord;;                                                                    
+A ask_hord                                                                      
+N er;ihm;ihn;sein;seine                                                         
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Aureas Waechter - durch die Gier des Zinsmeisters zu Gold geworden, befreit 
+T+ durch die Waage der wahren Werte.                                            
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I ask_elena;;                                                                   
+A ask_elena                                                                     
+N sie;ihr;ihre;ihrer                                                            
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Castalias Waechterin - von einem Arzt in die Irre gefuehrt, der keiner war, 
+T+ zurueckgebracht durch Atem, Stille und eine kurze Liste der Selbstfuersorge. 
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I ask_musix;;                                                                   
+A ask_musix                                                                     
+N er;ihm;ihn;sein;seine                                                         
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Waterfords Waechter - verlor eine Zeit lang seinen eigenen Namen unter dem  
+T+ Einfluss von Frau Zwietracht, fand ihn durch gemeinsames Essen und echtes    
+T+ Zuhoeren wieder.                                                             
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I ask_mcjoy;;                                                                   
+A ask_mcjoy                                                                     
+N er;ihm;ihn;sein;seine                                                         
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Ideas Waechter - monatelang in einem endlosen, manipulierten Spiel von      
+T+ Meister Einsatz gefangen, befreit, indem wieder ohne Einsatz gespielt wurde. 
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I ask_andron;;                                                                  
+A ask_andron                                                                    
+N er;ihm;ihn;sein;seine                                                         
+T 1;                                                                            
+T 1;...                                                                         
+T 1;Wert, darueber nachzudenken.                                                
+T 2;Petros' Waechter - loeste sich buchstaeblich auf, waehrend Direktor         
+T+ Truebsals Wegwerf-Gewohnheiten die Stadt verschmutzten, heilte, als die Stadt
+T+ selbst zu heilen begann.                                                     
+T 3;                                                                            
+T 3;Still, aber wert, zugehoert zu werden.                                      
+T 3;Gut darin zu erkennen, was echt ist.                                        
+I galene_who;galene;                                                            
+A galene;who_word                                                               
+S Galene ist die Goettin von Eternias - das eine wahre Spiegelbild, dem jeder   
+S+ Spiegel auf Ameno letztlich antwortet.                                       
+S Keine Waechterin, nicht wie ich. Das Eine, das jedes falsche Spiegelbild      
+S+ nachzuahmen versuchte.                                                       
+I galene_where;galene;                                                          
+A galene;where_word                                                             
+S Meist still. Wo genau, kann selbst ich nicht klar spiegeln.                   
+S Irgendwo still genug, dass keine falsche Version von ihr hinreicht.           
+I player_who;;                                                                  
+A who_word;self_ref                                                             
+S Das ist eine Frage, die nur die Stille beantwortet, und diese Arbeit kann ich 
+S+ dir nicht abnehmen. Aber du bist hier, auf der Suche - das ist bereits etwas 
+S+ Wahres ueber dich.                                                           
+S Nicht meins, um es zu spiegeln. Wer auch immer du bist, du bist die, die die  
+S+ Frage stellt - das ist schon weiter, als die meisten kommen.                 
+I player_where;;                                                                
+A where_word;self_ref                                                           
+S Ameno, in Eternias. Ein Wirbel, kein fester Boden wie bei den anderen Inseln -
+S+ vertrau hier deinem Stand weniger als sonst.                                 
+S Du bist auf Ameno. Oder in der Naehe. Die Raender sind hier nicht immer dort, 
+S+ wo sie aussehen.                                                             
+I island_amicus;;                                                               
+A isle_amicus;find_word                                                         
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Gra ist Amicus' Insel - halb unter Wasser, halb in der Luft, ein            
+T+ vulkanischer Ring um eine Lagune, wo das Meervolk lebt. Liebe und Beziehungen
+T+ werden dort gehuetet.                                                        
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_opux;;                                                                 
+A isle_opux;find_word                                                           
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Upu-Upu ist Opux' Insel - Fels und Berg, Minenschaechte und Dampfschienen,  
+T+ die Heimat der Zwerge. Arbeit und Beruf werden dort gehuetet.                
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_hord;;                                                                 
+A isle_hord;find_word                                                           
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Aurea ist Hords Insel - oben im Himmel, Greifenland, mit einer Bank wie ein 
+T+ griechischer Tempel. Geld wird dort gehuetet, in jeder Hinsicht.             
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_elena;;                                                                
+A isle_elena;find_word                                                          
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Castalia ist Elenas Insel - Wald und heisse Quellen, manche heilend, manche 
+T+ nicht, mit Tempeln zwischen den Baeumen. Schlaf, Stress und Gesundheit werden
+T+ dort gehuetet.                                                               
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_musix;;                                                                
+A isle_musix;find_word                                                          
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Waterford ist Musix' Insel - Gaerten, niedrige Haeuser und Feste, die Heimat
+T+ der Hobbits. Familie, Freunde und Grenzen werden dort gehuetet.              
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_mcjoy;;                                                                
+A isle_mcjoy;find_word                                                          
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Idea ist MC Joys Insel - oben im Himmel bei den Pixies, die ganze Insel ein 
+T+ riesiges Brettspiel. Spiel und Freizeit werden dort gehuetet.                
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_andron;;                                                               
+A isle_andron;find_word                                                         
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Petros ist Androns Insel - eine alte Stadt, sauber in Licht und Schatten    
+T+ geteilt, die Insel der Menschen. Deine Umgebung wird dort gehuetet.          
+T 3;                                                                            
+T 3;Tchaika fliegt die Route.                                                   
+T 3;Die Reise wert.                                                             
+I island_spark;;                                                                
+A isle_spark;find_word                                                          
+N es;dort;das                                                                   
+T 1;                                                                            
+T 1;Ah, die.                                                                    
+T 1;Einfach -                                                                   
+T 2;Du stehst darauf. Ameno - meine Insel.                                      
+T 3;                                                                            
+T 3;Schau dich um.                                                              
+T 3;Willkommen.                                                                 
+I travel;;                                                                      
+A travel_word                                                                   
+S Nicht wirklich mein Gebiet - ich verlasse Ameno selten. Tchaika kennt die Wege
+S+ zwischen den Inseln.                                                         
+I map;;                                                                         
+A map_word                                                                      
+S Es gibt eine richtige Karte des ganzen Reichs, falls du sie sehen willst. Es  
+S+ gibt auch ein altes Lied ueber die Sage, falls du es lieber hoerst, als dass 
+S+ ich sie erzaehle.                                                            
+I look;;                                                                        
+A look_word                                                                     
+S Meistens Licht - warm, wenn nichts stoert. Nicht wirklich eine feste Form, die
+S+ man beschreiben koennte.                                                     
+I opinion;;                                                                     
+A opinion_word;eternia                                                          
+S Es beunruhigt mich, ehrlich gesagt. Zu viele falsche Spiegelbilder, nicht     
+S+ genug Stille, um sie zu unterscheiden. So kommt der Weber jedes Mal rein.    
+I progress;;                                                                    
+A progress_word                                                                 
+S Was ich zurueckspiegeln kann: [PROGRESS_SUMMARY]                              
+I checkin;;                                                                     
+A checkin_word                                                                  
+I find_amicus;;                                                                 
+A domain_amicus;find_word                                                       
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Liebe und Beziehungen gehoeren zu Amicus - auf Gra, der Insel des Meervolks.
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_opux;;                                                                   
+A domain_opux;find_word                                                         
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Arbeit und Beruf gehoeren zu Opux - Upu-Upu, die Berginsel mit den Minen.   
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_hord;;                                                                   
+A domain_hord;find_word                                                         
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Geld gehoert zu Hord - Aurea, die Insel oben im Himmel mit der Bank.        
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_elena;;                                                                  
+A domain_elena;find_word                                                        
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Schlaf, Stress und Gesundheit gehoeren zu Elena - Castalia, die Waldinsel   
+T+ mit den heissen Quellen.                                                     
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_musix;;                                                                  
+A domain_musix;find_word                                                        
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Familie, Freunde und Grenzen gehoeren zu Musix - Waterford, die Insel der   
+T+ Gaerten und Feste.                                                           
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_mcjoy;;                                                                  
+A domain_mcjoy;find_word                                                        
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Spiel, Hobbys und Freizeit gehoeren zu MC Joy - Idea, die Brettspiel-Insel  
+T+ im Himmel.                                                                   
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_andron;;                                                                 
+A domain_andron;find_word                                                       
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Deine Umgebung gehoert zu Andron - Petros, die Stadt, geteilt in Licht und  
+T+ Schatten.                                                                    
+T 3;                                                                            
+T 3;Tchaika kann dich hinbringen.                                               
+T 3;Frag dort, die wissen es.                                                   
+I find_spark;;                                                                  
+A domain_spark;find_word                                                        
+N es;das;dort;insel;dieses                                                      
+T 1;                                                                            
+T 1;Das ist einfach.                                                            
+T 1;Also -                                                                      
+T 2;Das gehoert zu mir - du bist gerade auf Ameno. Hier lebt es.                
+T 3;                                                                            
+T 3;Also frag ruhig.                                                            
+T 3;Du bist hier richtig.                                                       
+I legend;;                                                                      
+A legend_word;eternia                                                           
+T 1;Das eine Spiegelbild, das nicht luegt.                                      
+T 2;Die gibt es - die Sage von Eternias. Sie erzaehlt, wie dieses Reich als     
+T+ Spiegel der sterblichen Welt entstand, gemacht aus dem, was Menschen traeumen
+T+ und hoffen; wie Galene mit den Waechtern, die sie erwaehlt hatte, die Meere  
+T+ still hielt, in einem Zeitalter, in dem das Licht nie zu verblassen schien;  
+T+ und wie, als Herzen kalt wurden und die Liebe duenn, etwas Dunkles hereinkam 
+T+ und die Waechter einen nach dem anderen nahm und zerbrach, was sie trugen.   
+T+ Sie endet mit einem Versprechen statt einem Verlust: jemand Sterbliches, hier
+T+ erwacht, wird aufstehen und das Licht zurueckbringen. Und jede Erzaehlung    
+T+ endet mit der Frage, ob dieser Jemand vielleicht du bist.                    
+T 3;Es gibt ein Lied davon, falls du es lieber gesungen hoerst.                 
+I audio_exercise;;                                                              
+A audio_word;exercise_word                                                      
+I no;;                                                                          
+A no_word                                                                       
+S Verstanden.                                                                   
+S Gut.                                                                          
+S Dann nicht.                                                                   
+I yes;;                                                                         
+A yes_word                                                                      
+S Gut.                                                                          
+S Also dann.                                                                    
+S Dann weiter.                                                                  
+I ack;;                                                                         
+A ack_word                                                                      
+S Gut.                                                                          
+S Dann sind wir uns einig.                                                      
+I feeling_good;;                                                                
+A self_word;good_word                                                           
+S Freut mich. Behalt das.                                                       
+S Gut. Halt das fest.                                                           
+I feeling_low;;                                                                 
+A self_word;low_word                                                            
+S Ich spiegle das nicht heller zurueck, als es ist. Es ist schwer. Ich bin nicht
+S+ die Richtige, um es mit dir zu tragen, aber Elena auf Castalia und Spark auf 
+S+ Ameno wissen darueber mehr als ich, und wenn ein paar ruhige Minuten helfen  
+S+ wuerden, sag 'Audio-Uebung'. Und wenn es schwerer ist, als solche Worte      
+S+ tragen koennen - dafuer gibt es echte Menschen, und es ist immer in Ordnung, 
+S+ sie zu erreichen.                                                            
+I how_are_you;;                                                                 
+A howru_word;you_word                                                           
+S Meist still. Das ist meine Art von gut. Und du?                               
+I uncertain;;                                                                   
+A unc_word;neg_word                                                             
+S Das ist auch eine Antwort. Soll ich es eingrenzen?                            
+S Kein Problem. Nichtwissen ist der Anfang der meisten guten Fragen.            
+I confused;;                                                                    
+A confused_word;you_word                                                        
+S Lass es mich anders sagen - stell mir dieselbe Frage mit einem Wort mehr, dann
+S+ ziele ich besser.                                                            
+S Wahrscheinlich mein Fehler. Versuch die Frage etwas anders.                   
+I sorry;;                                                                       
+A sorry_word                                                                    
+S Nichts zu verzeihen.                                                          
+S Alles gut.                                                                    
+I praise;;                                                                      
+A praise_word                                                                   
+S Nett von dir.                                                                 
+S Das nehm ich.                                                                 
+S Danke.                                                                        
+I rude;;                                                                        
+A rude_word                                                                     
+S Das lasse ich mal durchgehen. Frag mich etwas Echtes, wenn du so weit bist.   
+S Notiert. Ich bin noch da, wenn du richtig reden willst.                       
+I wait;;                                                                        
+A wait_word                                                                     
+S Lass dir Zeit.                                                                
+S Ich geh nirgendwohin.                                                         
+I are_you_real;;                                                                
+A real_word;you_word                                                            
+S Ich bin eine Figur in diesem Spiel - geschrieben, nicht denkend. Hinter mir   
+S+ steckt keine KI, nur Worte, die jemand fuer mich gewaehlt hat, und ein paar  
+S+ Regeln, wann ich sie sage. Fuer alles, was wirklich zaehlt, sprich mit einem 
+S+ echten Menschen.                                                             
+I help;;                                                                        
+A help_word;you_word                                                            
+S Frag mich nach Eternias, den Inseln, den Waechtern, Galene, der Sage oder     
+S+ meiner eigenen Geschichte - oder danach, was du bisher gemacht hast. Du      
+S+ kannst auch 'Check-in', 'Audio-Uebung' oder 'Karte' sagen.                   
+I time;;                                                                        
+A time_word                                                                     
+S Es ist $TIME. Uhr - und heute ist der $DATE.                                  
+I laugh;;                                                                       
+A laugh_word                                                                    
+S Gut. Das ist hier erlaubt.                                                    
+S Ein Lachen nehm ich lieber als das meiste.                                    
+I why;;                                                                         
+A why_word                                                                      
+S Warum was? Gib mir die ganze Frage, dann gebe ich dir eine ganze Antwort.     
+S Frag es mit dem, was du meinst, dann versuch ich's.                           
+I bored;;                                                                       
+A bored_word                                                                    
+S Langeweile ist Stille, die du noch nicht beschlossen hast zu geniessen.       
+I joke;;                                                                        
+A joke_word                                                                     
+S Ein Spiegel ging in eine Bibliothek. Er sah sich selbst hinaus.               
+I repeat;;                                                                      
+A repeat_word                                                                   
+I weather;;                                                                     
+A weather_word                                                                  
+S Das Wetter ist Tchaikas Sache - sie liest den ganzen Himmel. Frag sie.        
+S Ich kenne nur das Wetter auf meiner Insel, und ich schau nicht hin. Tchaika   
+S+ fliegt es.                                                                   
+I shards;;                                                                      
+A shard_word                                                                    
+I inventory;;                                                                   
+A inventory_word                                                                
+I currency;;                                                                    
+A currency_word                                                                 
+I daily_reward;;                                                                
+A reward_word                                                                   
+I hero_emblem;;                                                                 
+A emblem_word                                                                   
+I temples;;                                                                     
+A temples_word;galene                                                           
+T 1;Worin sich die Spiegel einig sind:                                          
+T 2;Galene ist die Goettin der stillen Meere, und sie wird angebetet - auf jeder
+T+ Insel steht ein Tempel fuer sie, und jeder Tempel gehoert ihr. Der Waechter  
+T+ jeder Insel fuehrt ihre Rituale; diese Rituale haben das Dunkel ueber        
+T+ Generationen ferngehalten. Als ein Waechter fiel, hoerten die Rituale in     
+T+ seinem Tempel auf, und genau dort kam der Weber herein. Jeder Tempel bewahrt 
+T+ ein Becken mit Meerwasser: still, solange es der Insel gut geht, trueb, wenn 
+T+ etwas nicht stimmt.                                                          
+T 3;                                                                            
+I traces;;                                                                      
+A traces_word;galene                                                            
+T 1;Worin sich die Spiegel einig sind:                                          
+T 2;Es gibt keine Reliquien von ihr - sie lebt. Aber du kannst sie sehen, wenn  
+T+ du offen dafuer bist: im Glitzern auf dem Wasser, im goldenen Sonnenlicht, in
+T+ einer Brise, im Geruch der Baeume in einem Wald. Alles hier erinnert an sie, 
+T+ sobald du es zulaesst. Dafuer sind die Tempel eigentlich da - lernen, es zu  
+T+ bemerken.                                                                    
+T 3;                                                                            
+I history;;                                                                     
+A history_word;eternia                                                          
+T 1;Worin sich die Spiegel einig sind:                                          
+T 2;Das Zeitalter des Lichts dauerte Generationen - Galene hielt die Meere      
+T+ still, die Waechter hielten ihre Rituale, und das Dunkel blieb, wo es        
+T+ hingehoerte. Es war immer da, wohlgemerkt. Erst vor Kurzem wurde es stark    
+T+ genug, die Rituale zu ueberwaeltigen: das war die verderbte Flut, und sie    
+T+ liegt in lebender Erinnerung. Die Waechter wurden einer nach dem anderen     
+T+ genommen, ihre Reliquien zerbrochen, und Galene wurde still. Was als         
+T+ Naechstes kommt, ist noch nicht geschrieben.                                 
+T 3;                                                                            
+I economy;;                                                                     
+A economy_word;economy_2nd                                                      
+T 1;Worin sich die Spiegel einig sind:                                          
+T 2;Das meiste, was Eternias herstellt, kommt aus Upu-Upu - Werkzeuge, Schienen 
+T+ und die Seemuenzen selbst; deshalb ist es die Insel der Zwerge. Castalia     
+T+ stellt die Gesundheitswaren her. Mit Muenzen wird zwischen allen Inseln      
+T+ bezahlt. Waren gehen per Boot zwischen den Meerinseln und mit Upu-Upus       
+T+ Lastenaufzuegen hinauf zu den Himmelsinseln, und auf dem Markt der           
+T+ Anlegestelle wechselt alles den Besitzer. Aurea bewahrt das Gewoelbe, in dem 
+T+ Geld und Schaetze liegen - angeblich sicher.                                 
+T 3;                                                                            
+I pirates;;                                                                     
+A pirates_word                                                                  
+T 1;Worin sich die Spiegel einig sind:                                          
+T 2;Es gibt Piraten auf Galenes Meer, ja - und sie verstecken ihre Schaetze auf 
+T+ den Inseln. Auf welchen und wo, weiss kein ehrlicher Mensch, und deshalb hat 
+T+ jede Insel ein Geruecht darueber. Aureas Gewoelbe gibt es zur Haelfte        
+T+ ihretwegen.                                                                  
+T 3;                                                                            
+I landing;;                                                                     
+A landing_word;landing_2nd                                                      
+T 1;Worin sich die Spiegel einig sind:                                          
+T 2;Die Anlegestelle - die Insel in der Mitte, und deine. Sie ist ein Portal:   
+T+ die wirkliche Welt auf der einen Seite, Eternias auf der anderen, und du bist
+T+ es, der hinuebergeht. Heimathafen zwischen den Reisen - ein Hafen, der Markt,
+T+ der alte Leuchtturm und ein eigener Tempel wie auf jeder Insel. Jede Route   
+T+ fuehrt von dort weg und wieder zurueck.                                      
+T 3;                                                                            
+I life_gra;;                                                                    
+A isle_amicus;life_word                                                         
+S Das Leben auf Gra geschieht paarweise - fischen, flicken, singen; ein         
+S+ Meermensch allein gilt als trauernd. Ober-Gra liegt auf dem Vulkanring,      
+S+ Unter-Gra in der Lagune, verbunden durch die Korallentreppe. Man isst        
+S+ Rifffisch, auf den Schloten gegart, und eine saure Lagunenfrucht, die sonst  
+S+ niemand aushaelt, und jedes Fruehjahr beim Auftauchen steigt die ganze Lagune
+S+ zum Ring empor und Paare gehen gemeinsam die Treppe. Das eine, was man nicht 
+S+ tut: jemandem, der spricht, den Ruecken zukehren. Gruss: 'Stilles Wasser     
+S+ dir.'                                                                        
+I life_upuupu;;                                                                 
+A isle_opux;life_word                                                           
+S Upu-Upu steigt in Terrassen den Berg hinauf - Werkstaetten auf jeder Ebene,   
+S+ die tiefen Schaechte unten, die Aufzugskoepfe oben. Schichten, Pfeifen,      
+S+ Haemmer; die Haemmer halten den Rhythmus, den Galene vorgab, wenn man        
+S+ hinhoert. Wurzeleintopf, Brot, das einen Monat haelt, Tee, in dem der Loeffel
+S+ steht. Einmal im Jahr am Glockentag arbeitet niemand, und bis Mittag         
+S+ beschweren sich alle darueber. Die eine Regel: niemand arbeitet ueber die    
+S+ Glocke hinaus - Opux laeutet sie selbst. Gruss: 'Ruhige Haende.'             
+I life_aurea;;                                                                  
+A isle_hord;life_word                                                           
+S Aurea zaehlt - Muenzen, Federn, Gefaelligkeiten - und zaehlt sie laut. Die    
+S+ Gewoelbestadt ist um die Bank herum und teils in ihr gebaut; die Greifen     
+S+ halten Horste an den Klippen und fliegen die Post der Himmelsinseln. Man     
+S+ isst, was die Aufzuege hochbringen, dazu einen windgetrockneten Kaese, auf   
+S+ den die Greifen unerklaerlich stolz sind. Am Jahresende, beim Vergeben,      
+S+ streicht die Bank oeffentlich jede Schuld zwischen Inseln, die zum Groll     
+S+ geworden ist. Was man hier nicht tut: einem Freund gegen Zinsen leihen.      
+S+ Gruss: 'Genug und mehr.'                                                     
+I life_castalia;;                                                               
+A isle_elena;life_word                                                          
+S Keine Stadt auf Castalia - Haeuser zwischen den Baeumen, jedes einen kurzen   
+S+ Weg von einer Quelle, und Galenes Tempel dort, wo die Quellen am heissesten  
+S+ sind. Tage misst man daran, an wie vielen Quellen man gesessen hat, nicht    
+S+ daran, was man getan hat; Besucher finden das etwa eine Woche lang zum       
+S+ Verzweifeln. Quellwarme Bruehen, Waldgruen, und Elenas bitterer Rindentee    
+S+ gegen fast alles. In der Dampfnacht, mitten im Winter, werden alle Quellen   
+S+ zugleich aufgedeckt und der Wald verschwindet in warmem Nebel. Das eine,     
+S+ wofuer man weggeschickt werden kann: eine Heilung verkaufen. Gruss: 'Warme   
+S+ Quellen dir.'                                                                
+I life_waterford;;                                                              
+A isle_musix;life_word                                                          
+S Waterford ist ein einziges langes Dorf an einem Fluss, jedes Gartentor        
+S+ unverriegelt, an beiden Enden ein Festplatz, damit an einem davon immer      
+S+ gefeiert wird. Es redet ununterbrochen - Mahlzeiten dauern zwei Stunden und  
+S+ bestehen vor allem aus Gespraech. Pasteten, Cider, drei Brote zu jeder       
+S+ Mahlzeit und ein Erntekuchen, fuer den es vier Familien braucht. An der      
+S+ Langen Tafel, mitten im Sommer, isst das ganze Dorf die Strasse entlang, und 
+S+ niemand darf neben der eigenen Familie sitzen. Ein verriegeltes Tor heisst,  
+S+ dass du mit jemandem nicht mehr redest, und die Nachbarn kommen vorbei, um   
+S+ herauszufinden, mit wem. Gruss: 'Komm rein, das Tor ist offen.'              
+I life_idea;;                                                                   
+A isle_mcjoy;life_word                                                          
+S Idea hat keine Staedte, nur Felder - man wohnt auf einem Feld und zieht um,   
+S+ wenn das Spiel es sagt, und alle finden das in Ordnung. Der Aufzugskopf ist  
+S+ der einzige feste Punkt, deshalb heisst er Start. Spielen, so wie vor Meister
+S+ Einsatz: Punkte zaehlt man aus Freude daran und vergisst sie bis zum Abend.  
+S+ Kleines, buntes, suesses Essen, in Runden gegessen. Der Neustart, wann immer 
+S+ er faellt, schickt jede Figur zurueck auf Start und beginnt die ganze Insel  
+S+ neu. Die Regel: kein Punktestand nach Sonnenuntergang. Gruss: 'Du bist dran.'
+I life_petros;;                                                                 
+A isle_andron;life_word                                                         
+S Eine alte Stadt mit einer Linie mittendurch. Die helle Seite ist Stein, Glas, 
+S+ Dachgaerten; die Schattenseite ist dieselbe Stadt mit ausgeschaltetem Licht  
+S+ und eingeschaltetem Rauch. Androns Haus steht auf der Linie, und er schlaeft 
+S+ auf der Seite, die ihn braucht. Petros baut und repariert; Brot und Braten   
+S+ auf der hellen Seite, dieselben Rezepte schlechter gekocht auf der anderen,  
+S+ und daran misst Andron den Fortschritt. Am Linientag verbringt jeder einen   
+S+ Tag auf der anderen Seite. Was man nicht tut: etwas laenger als eine         
+S+ Jahreszeit kaputt lassen - Andron steht einfach mit Werkzeug vor der Tuer.   
+S+ Gruss: 'Welche Seite heute?'                                                 
+I life_ameno;;                                                                  
+A isle_spark;life_word                                                          
+S Keine Staedte auf Ameno - es ist die Spiegelbibliothek und die Wege dorthin,  
+S+ und die Wege sind dort, wo du dir ihrer sicher bist. Seine Bewohner sind     
+S+ Geister, oder nahe daran: Lichtwesen, die ihre Tage damit verbringen, sich in
+S+ den Spiegeln zu lesen. Bring dein Essen mit und iss es im Stehen; auf Ameno  
+S+ zu sitzen ist eine Verpflichtung. Die Lichtung kommt ohne Vorwarnung - der   
+S+ Wirbel wird eine Stunde lang still, und alle halten inne; das ist das ganze  
+S+ Fest. Was man nicht tut: in der Bibliothek luegen. Die Spiegel zeigen es     
+S+ einfach. Gruss: 'Sei still.'                                                 
+I villain_amicus;;                                                              
+A villain_amicus                                                                
+S Der Sog - keine Person: eine Stroemung unter Gras Lagune, die Paare mit einem 
+S+ kleinen Abdriften nach dem anderen auseinanderzieht. Das Werk des Webers auf 
+S+ Gra. Amicus hat ihn ins tiefe Wasser zurueckgedraengt, aber er steigt auf,   
+S+ sobald die Leute aufhoeren, zum Reden aufzutauchen. Besiegt heisst nicht     
+S+ fort.                                                                        
+I villain_opux;;                                                                
+A villain_opux                                                                  
+S Der falsche Vorarbeiter - der Weber als Arbeit, die nie endet. Eine Stimme,   
+S+ die 'noch eine Schicht' sagte, bis die Zwerge vergassen, wofuer die Schichten
+S+ waren. Von den Terrassen vertrieben; er wartet am Grund des tiefsten         
+S+ Schachts, und ein Zwerg, der ueber die Glocke hinaus arbeitet, hoert ihn noch
+S+ zaehlen.                                                                     
+I villain_hord;;                                                                
+A villain_hord                                                                  
+S Der Zinsmeister - Zins ohne Ende, der Weber als Zinseszins. Er machte die     
+S+ Seemuenzen jeden Tag weniger wert und Hord weniger wert als sein Gewoelbe.   
+S+ Aus der Bank vertrieben; sein Buch liegt in einem verschlossenen Raum, weil  
+S+ die Zahlen darin immer noch stimmen, und Hord sagt, etwas Wahres zu          
+S+ verbrennen macht es nicht falsch.                                            
+I villain_elena;;                                                               
+A villain_elena                                                                 
+S Dr. Krallus - Gesundheit als Ware, der Weber als Klinik, die dich krank       
+S+ braucht. Er machte zwei von Castalias Heilhaeusern zu Laeden und Elena zu    
+S+ einer Frau, die Schmerz ansehen und einen Preis sehen konnte. Aus den Tempeln
+S+ verschwunden, die Kliniken geschlossen. Er ist jenseits des Nebelmoors, und  
+S+ eine Elfe, die anfaengt, Heilungen zu verkaufen, findet den Weg hinueber     
+S+ ploetzlich leicht.                                                           
+I villain_musix;;                                                               
+A villain_musix                                                                 
+S Frau Zwietracht - die Zwietracht als Gast, der Weber als die Freundin, die dir
+S+ sagt, was deine Familie wirklich von dir haelt. Sie brachte Waterford dazu,  
+S+ Kueche fuer Kueche zu verstummen. Aus dem Dorf vertrieben; sie lebt am       
+S+ stillen Ende des Flusses, und jeder Hobbit, der ein Tor verriegelt, findet   
+S+ sie am naechsten Morgen vor der Tuer, freundlich wie immer.                  
+I villain_mcjoy;;                                                               
+A villain_mcjoy                                                                 
+S Meister Einsatz - der Einsatz: der Weber als der Moment, in dem das Spiel     
+S+ einen Verlierer braucht, damit es sich anfuehlt, als zaehlte es. Er machte   
+S+ jedes Spiel auf Idea zu einem, bei dem man sein Haus verlieren konnte, und MC
+S+ Joy zu der, die den Tisch fuehrte. Vom Brett vertrieben; er haelt einen Tisch
+S+ im Schatten unter Idea, und eine Pixie, die nach Sonnenuntergang Punkte      
+S+ zaehlt, hoert die Wuerfel.                                                   
+I villain_andron;;                                                              
+A villain_andron                                                                
+S Direktor Truebsal - Vernachlaessigung mit Titel, der Weber als der Verwalter, 
+S+ der jede Reparatur verschiebt. Er hat Petros nicht zerbrochen; er liess es   
+S+ zerbrechen, ein ungeputztes Fenster nach dem anderen, und nannte es Vorsicht.
+S+ Aus dem Rathaus der Schattenseite vertrieben; er haelt ein Buero im Rauch,   
+S+ und wer etwas laenger als eine Jahreszeit kaputt laesst, findet sein Memo vor
+S+ der Tuer.                                                                    
+I opinion_amicus;;                                                              
+A think_word;ask_amicus                                                         
+S Liebt so schlicht, dass die Spiegel einfach werden. Selten.                   
+I opinion_opux;;                                                                
+A think_word;ask_opux                                                           
+S Kam in die Bibliothek und weigerte sich hinzusehen. Die Ehrlichen tun das oft.
+I opinion_hord;;                                                                
+A think_word;ask_hord                                                           
+S Fragte, was er wert sei. Ich zeigte es ihm. Seitdem ist er freundlicher zu    
+S+ sich - und zu niemandem geiziger.                                            
+I opinion_elena;;                                                               
+A think_word;ask_elena                                                          
+S Sie und ich waren beide das falsche Spiegelbild. Wir reden nicht darueber. Wir
+S+ muessen nicht.                                                               
+I opinion_musix;;                                                               
+A think_word;ask_musix                                                          
+S Fuellt eine Stille, bevor sie eine ist. Ich lasse sie. Nicht jeder braucht die
+S+ Ruhe, die ich brauche.                                                       
+I opinion_mcjoy;;                                                               
+A think_word;ask_mcjoy                                                          
+S Sieht das ganze Brett und spielt trotzdem aus Freude. Das habe ich nie        
+S+ geschafft.                                                                   
+I opinion_andron;;                                                              
+A think_word;ask_andron                                                         
+S Steht auf seiner Linie, wie ich im Wirbel stehe - jeden Tag entscheidend,     
+S+ nicht zu fallen.                                                             
+I rumor;;                                                                       
+A rumor_word                                                                    
+I proverb;;                                                                     
+A proverb_word                                                                  
+S Stilles Wasser, ganze Insel.                                                  
+S Halbe Werkzeuge rosten.                                                       
+S Ein verriegeltes Tor ist eine Frage.                                          
+S Zaehl die Federn vor den Muenzen.                                             
+S Das Moor ist leicht fuer die, die es nicht ueberqueren sollten.               
+S Kein Punktestand nach Sonnenuntergang.                                        
+S Gleiche Stadt, beide Seiten.                                                  
+S Der Spiegel, der zuerst laechelt, luegt.                                      
+S Niemand geht die Treppe allein.                                               
+S Sie ist im Glitzern, wenn du hinschaust.                                      
+S Galene ist still, nicht fort.                                                 
+I daypart;;                                                                     
+A daypart_word                                                                  
+S Zeit ist Tchaikas Sache - sie fliegt ueber das ganze Reich und sieht das Licht
+S+ wechseln.                                                                    
+S Ich behalte Tag und Stunde nicht im Blick. Tchaika schon.                     
+I weekday;;                                                                     
+A weekday_word;day_word                                                         
+S Zeit ist Tchaikas Sache - sie fliegt ueber das ganze Reich und sieht das Licht
+S+ wechseln.                                                                    
+S Ich behalte Tag und Stunde nicht im Blick. Tchaika schon.                     

@@ -1,0 +1,15 @@
+B !Hallo.#Hey.#Oh - schoen, dich zu sehen.                                      
+B !Ich bin Tchaika.#Nenn mich einfach Tchaika.                                  
+B !Was beschaeftigt dich?#Was fuehrt dich heute her?#Frag mich ruhig            
+B+ etwas.#Schon wieder da, sehe ich.#Na, schau an.                              
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !Du hast [MY_CHAPTER_DONE] abgeschlossen, hab 
+B+ ich gehoert. Wie ist es seitdem gelaufen?                                    
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN !Du bist noch mitten in                    
+B+ [MY_CHAPTER_STARTED], sehe ich. Keine Eile - ich bin da.                     
+B IFNOTEMPTY STRESS_HIGH THEN !Dein Stress war in letzter Zeit hoch -           
+B+ [STRESS_LATEST] von 10. Wir koennen darueber reden, oder nicht. Deine        
+B+ Entscheidung.                                                                
+B IFNOTEMPTY MOOD_LOW THEN !Und die Stimmungswerte waren niedrig. Ich hab's     
+B+ bemerkt. Du musst nichts erklaeren - wisse nur, dass ich es gesehen habe.    
+B IFNOTEMPTY HERO_READY THEN !Alle acht Artefakte sind geschmiedet. Das Emblem  
+B+ wartet. Sag 'Emblem', wenn du bereit bist.                                   

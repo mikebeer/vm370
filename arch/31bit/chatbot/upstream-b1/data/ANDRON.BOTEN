@@ -1,0 +1,7 @@
+B !...#Hm. Someone's here.#Welcome.#Back again.#Good timing, actually.          
+B IFNOTEMPTY MY_CHAPTER_DONE THEN !You finished [MY_CHAPTER_DONE]. Has the space
+B+ around you changed at all since?                                             
+B IFNOTEMPTY MY_CHAPTER_STARTED THEN ![MY_CHAPTER_STARTED] is started but not   
+B+ settled. Unfinished ground shifts - worth coming back to.                    
+B IFNOTEMPTY MY_ARTIFACT_READY THEN !You've gathered enough shards for          
+B+ [MY_ARTIFACT]. Say 'shards' when you want to forge it.                       

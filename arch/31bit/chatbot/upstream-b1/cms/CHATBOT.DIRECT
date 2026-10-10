@@ -1,0 +1,21 @@
+* ---- VM/370 directory entry for the CHATBOT service machine ----------
+* (add to the system directory, adjust passwords, volumes and sizes)
+USER CHATBOT CHANGE_ME 3M 4M G
+ ACCOUNT 1 CHATBOT
+ OPTION ECMODE
+ IPL CMS
+ CONSOLE 009 3215
+ SPOOL 00C 2540 READER A
+ SPOOL 00D 2540 PUNCH A
+ SPOOL 00E 1403 A
+ LINK MAINT 190 190 RR
+ LINK MAINT 19E 19E RR
+ MDISK 191 3330 000 010 VMDSK1 MR
+*
+* AUTOLOG at IPL: add to the system's start-up (e.g. the operator's
+* PROFILE or a 'CP XAUTOLOG CHATBOT' line):
+*     CP XAUTOLOG CHATBOT
+* Anything that arrives in CHATBOT's reader while it is logged off is
+* answered when it starts: PROFILE EXEC ends in EXEC CHATBOT.
+* Let users punch to it freely:  no privilege class is needed for
+*     SPOOL PUNCH TO CHATBOT
