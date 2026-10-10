@@ -47,7 +47,8 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['M7', 'ESA/390 virtual machines, Linux/390, Debian, SSH', 'complete'],
   ['M7.8', 'Linux for several users from a linkable disk (LINUX EXEC); Linux and CMS side by side', 'complete; two Debians at once need M4b.3'],
   ['M7.9', 'channel programs of any length for ESA/390 guests (no 64-CCW limit)', 'planned'],
-  ['M7.10', 'IPL of Linux from its disk (zipl) and a CP name LINUX', 'next'],
+  ['M7.10', 'IPL of Linux from its disk (vmzipl) and `IPL LINUX`', 'complete'],
+  ['M7.11', 'a 3390-9 Debian disk (about 7 GB) as the standard Linux disk', 'in progress'],
   ['M8', 'cREXX: the 2022 release built natively (M5); the current release cross-built (M8.1)', 'complete'],
   ['M8.2', 'the current cREXX built natively with GCC380', 'compiler, assembler and VM work; the library does not build yet'],
   ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'complete on both'],
@@ -78,7 +79,8 @@ H2('CP commands');
 TABLE(['Command', 'Change'], [
   ['`SET ESA ON|OFF`', 'New (class G). ON makes the next IPL of a device an IPL of an ESA/390 machine; OFF returns to System/370 at once.'],
   ['`IPL cuu`', 'A user who is running a shared named system (CMS) is IPLed with CLEAR, so that no copy of the shared pages stays in the virtual machine.'],
-  ['`IPL name`', 'Always IPLs a System/370 machine; a pending `SET ESA ON` waits for the next IPL of a device.'],
+  ['`IPL LINUX`', 'New. IPLs the Debian disk at virtual address 250 as an ESA/390 machine: `SET ESA ON` and `IPL 250` in one command. Works from a directory IPL statement too.'],
+  ['`IPL name`', 'Any other name always IPLs a System/370 machine; a pending `SET ESA ON` waits for the next IPL of a device.'],
   ['`DEFINE STORAGE`', 'Up to 256 MB. Leaves the named system the user was running.'],
   ['`DISPLAY`, `STORE`', 'Address storage above 16 MB.'],
   ['`QUERY VIRTUAL STORAGE`', 'Shows five digits only (131072K appears as 31072K); `DEFINE STORAGE` echoes the right value.'],
@@ -160,13 +162,36 @@ TABLE(['Resource', 'Virtual address', 'How it is provided'], [
 P('The operator attaches the devices:');
 SCREEN(['attach 600 to maint as 620', 'attach 601 to maint as 630', 'attach 190 to maint as 250'], 'Attaching a Linux user’s devices (operator)');
 P('Each device must be on its own virtual control unit (620 and 630, not 620 and 621). For a permanent arrangement put `DEDICATE` statements in the user’s directory entry.');
+H2('Starting Linux from its disk: IPL LINUX');
+P('The Debian disk carries its own kernel and IPL records, so Linux IPLs straight from it. With 64 MB of storage and the devices attached (the disk at 250), one CP command is enough, from CMS or from CP:');
+SCREEN(['logon cmsuser',
+        'cp define storage 64m',
+        'cp ipl linux',
+        'Linux version 4.0.0+ ...',
+        '...',
+        'Debian GNU/Linux 7 vm370plus ttyS0',
+        'vm370plus login:'], 'Starting Linux from its disk');
+P('`IPL LINUX` is `SET ESA ON` followed by `IPL 250`. Options of the device IPL may follow (`IPL LINUX CLEAR`). The kernel parameters, including the IP address, were written to the disk with the kernel by `vmzipl` (below); the reader route that follows remains for a different kernel or other parameters.');
+H2('Making a disk IPLable: vmzipl');
+P('`vmzipl` is the VM/370plus counterpart of `zipl`, for the 31-bit Linux 4.0 kernel. It is installed on the Debian disk as `/usr/local/sbin/vmzipl`. Run it as root after changing the kernel or its parameters:');
+SCREEN(['vmzipl',
+        'vmzipl: /dev/dasda: kernel 1775 blocks in 151 runs, channel program 2560 CCWs in 5 blocks',
+        'vmzipl: parameters: no_removal_warning conmode=3215 condev=0x0009 vmip=10.1.1.2 vmpeer=10.1.1.1',
+        'vmzipl: IPL with  CP SET ESA ON  and  CP IPL <address of this disk>'], 'Running vmzipl');
+TABLE(['Option', 'Meaning'], [
+  ['`-k file`', 'the kernel image (default `/boot/linux48.image`)'],
+  ['`-p "parameters"`', 'the kernel parameter line (default: the running system\u2019s `/proc/cmdline`)'],
+  ['`-d device`', 'the disk to make IPLable (default `/dev/dasda`)'],
+  ['`-r directory`', 'where that disk\u2019s file system is mounted, when it is not the root'],
+], [2400, 7238], 'vmzipl options');
+P('It writes `/boot/vmipl.bin` (the kernel with the parameters) and `/boot/vmipl.ccw` (the channel program that reads it), then records 1 and 2 of track 0 (IPL1 and IPL2) of the disk.');
 H2('Starting Linux with the LINUX EXEC');
-P('The Linux kernel, the IPL parameter files and the `LINUX EXEC` are on MAINT’s 19D disk, which every CMS user accesses as the U disk. From CMS, with 64 MB of storage and the devices attached, type `LINUX`:');
+P('The `LINUX EXEC` is on MAINT’s 19D disk, which every CMS user accesses as the U disk. `LINUX` alone issues `CP IPL LINUX`. `LINUX READER` takes the older route: the kernel and the IPL parameter files on 19D go through your reader. From CMS, with 64 MB of storage and the devices attached:');
 SCREEN(['logon cmsuser',
         'cp define storage 64m',
         'ipl cms',
         'Ready;',
-        'linux',
+        'linux reader',
         'LINUX: punching the kernel and CMSUSER LXPARM to your reader ...',
         'PUN FILE 0002  TO  CMSUSER  COPY 01 NOHOLD',
         'PUN FILE 0003  TO  CMSUSER  COPY 01 NOHOLD',
@@ -289,10 +314,10 @@ H2('SET ESA');
 SCREEN(['SET ESA ON', 'SET ESA OFF'], 'SET ESA');
 P('Class G. **ON**: the next IPL of a device (not an IPL by name) makes the virtual machine an ESA/390 machine; it stays pending across `IPL CMS`. **OFF**: the machine is a System/370 machine at once and nothing is pending. Any operand other than OFF means ON.');
 H2('IPL');
-P('As in VM/370, with two changes: an IPL by name always gives a System/370 machine; an IPL of a device by a user who runs a shared named system is done with CLEAR.');
+P('As in VM/370, with three changes: `IPL LINUX` IPLs the disk at 250 as an ESA/390 machine; any other IPL by name gives a System/370 machine; an IPL of a device by a user who runs a shared named system is done with CLEAR.');
 H2('LINUX EXEC');
-SCREEN(['LINUX'], 'LINUX EXEC');
-P('On MAINT 19D. Punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `DEFAULT LXPARM`) to the user’s reader, holding the other reader files, and IPLs the reader as an ESA/390 machine. Needs 64 MB and, for Debian, the devices listed in Chapter 5 under “What a Linux user needs”.');
+SCREEN(['LINUX [DISK|READER]'], 'LINUX EXEC');
+P('On MAINT 19D. **DISK** (the default) issues `CP IPL LINUX`. **READER** punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `DEFAULT LXPARM`) to the user’s reader, holding the other reader files, and IPLs the reader as an ESA/390 machine. Needs 64 MB and, for Debian, the devices listed in Chapter 5 under “What a Linux user needs”.');
 
 H1('Contents of the Kit');
 TABLE(['Path', 'Contents'], [

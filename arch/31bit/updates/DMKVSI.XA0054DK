@@ -778,22 +778,31 @@ SIDL0    SR    R1,R1                                           XA0054DK
 *  CVTCHN: THE CHAIN AT ENTCCW, IN PLACE. R0 = 1: FORMAT 1     XA0054DK         
 *  TO FORMAT 0; R0 = 0: BACK. FOLLOWS CD/CC AND TIC; A TIC TO  XA0054DK         
 *  A CCW ALREADY DONE (SEARCH LOOP) GOES ON PAST THE TIC, FOR  XA0054DK         
-*  THE STATUS-MODIFIER PATH. AT MOST 64 CCWS.                  XA0054DK         
+*  THE STATUS-MODIFIER PATH. M7.9: ANY LENGTH -- WHAT IS       XA0054DK         
+*  DONE IS KEPT AS SEGMENTS (FIRST, LAST CCW), ONE PER TIC     XA0054DK         
+*  TARGET, AT MOST 32 OF THEM, NOT AS SINGLE CCWS.             XA0054DK         
 CVTCHN   ST    R9,VCSLNK2                                      XA0054DK         
          STC   R0,VCSDIR                                       XA0054DK         
          L     R7,ENTCCW(R3)                                   XA0054DK         
          XC    VCSNVIS,VCSNVIS                                 XA0054DK         
-CVLOOP   BAL   R14,CVSEEN     DONE ALREADY?                    XA0054DK         
-         BZ    CVDONE                                          XA0054DK         
-         L     R1,VCSNVIS                                      XA0054DK         
-         C     R1,F64                                          XA0054DK         
+CVNEWSG  L     R1,VCSNVIS     A SEGMENT STARTS AT R7           XA0054DK         
+         LA    R0,32                                           XA0054DK         
+         CR    R1,R0                                           XA0054DK         
          BNL   CVDONE                                          XA0054DK         
-         SLL   R1,2                                            XA0054DK         
-         ST    R7,VCSVIS(R1)                                   XA0054DK         
+         SLL   R1,3                                            XA0054DK         
+         LA    R1,VCSVIS(R1)                                   XA0054DK         
+         ST    R7,0(,R1)                                       XA0054DK         
+         ST    R7,4(,R1)                                       XA0054DK         
+         ST    R1,VCSSEGP                                      XA0054DK         
          L     R1,VCSNVIS                                      XA0054DK         
          LA    R1,1(,R1)                                       XA0054DK         
          ST    R1,VCSNVIS                                      XA0054DK         
-         LR    R5,R7                                           XA0054DK         
+         B     CVFETCH                                         XA0054DK         
+CVLOOP   BAL   R14,CVSEEN     DONE ALREADY?                    XA0054DK         
+         BZ    CVDONE                                          XA0054DK         
+         L     R1,VCSSEGP     NO: THE SEGMENT GROWS            XA0054DK         
+         ST    R7,4(,R1)                                       XA0054DK         
+CVFETCH  LR    R5,R7                                           XA0054DK         
          LA    R6,VCSCCW                                       XA0054DK         
          LA    R4,2                                            XA0054DK         
          LA    R0,1                                            XA0054DK         
@@ -830,7 +839,7 @@ CVSTORE  LR    R5,R7                                           XA0054DK
          ST    R7,VCSTIC                                       XA0054DK         
          L     R7,VCSCADR     ITS TARGET,                      XA0054DK         
          BAL   R14,CVSEEN                                      XA0054DK         
-         BNZ   CVLOOP                                          XA0054DK         
+         BNZ   CVNEWSG        NOT DONE: A NEW SEGMENT          XA0054DK         
          L     R7,VCSTIC      OR, ALREADY DONE, PAST THE TIC   XA0054DK         
          AL    R7,F8                                           XA0054DK         
          B     CVLOOP                                          XA0054DK         
@@ -840,15 +849,19 @@ CVNOTIC  TM    VCSCFLG,X'C0'  CHAIN DATA OR COMMAND?           XA0054DK
          B     CVLOOP                                          XA0054DK         
 CVDONE   L     R9,VCSLNK2                                      XA0054DK         
          BR    R9                                              XA0054DK         
-CVSEEN   L     R1,VCSNVIS     CC 0 IF R7 IS IN VCSVIS          XA0054DK         
+CVSEEN   L     R1,VCSNVIS     CC 0 IF R7 IS IN A SEGMENT       XA0054DK         
          LTR   R1,R1                                           XA0054DK         
          BZ    CVSEEN9                                         XA0054DK         
          LA    R2,VCSVIS                                       XA0054DK         
 CVSEEN1  C     R7,0(,R2)                                       XA0054DK         
-         BCR   8,R14                                           XA0054DK         
-         LA    R2,4(,R2)                                       XA0054DK         
+         BL    CVSEEN2                                         XA0054DK         
+         C     R7,4(,R2)                                       XA0054DK         
+         BNH   CVSEENY                                         XA0054DK         
+CVSEEN2  LA    R2,8(,R2)                                       XA0054DK         
          BCT   R1,CVSEEN1                                      XA0054DK         
 CVSEEN9  LTR   R14,R14        CC NOT 0                         XA0054DK         
+         BR    R14                                             XA0054DK         
+CVSEENY  CR    R7,R7          CC 0                             XA0054DK         
          BR    R14                                             XA0054DK         
 *  GETTAB: R10 = THIS USER'S TABLE. VMVCSIX IS ITS SLOT        XA0054DK         
 *  NUMBER IN VCSSLOTS (OWNER VMBLOK, TABLE); A SLOT LEFT BY    XA0054DK         
@@ -858,18 +871,18 @@ GETTAB   LH    R1,VMVCSIX                                      XA0054DK
          LTR   R1,R1                                           XA0054DK         
          BNP   GTFIND                                          XA0054DK         
          SLL   R1,3                                            XA0054DK         
-         LA    R1,VCSSLOTS-8(R1)                               XA0054DK         
+         A     R1,AVCSSL8     (VCSSLOTS-8, PAST R12'S REACH)   XA0054DK         
          C     R11,0(,R1)     STILL OURS?                      XA0054DK         
          BNE   GTFIND                                          XA0054DK         
          L     R10,4(,R1)                                      XA0054DK         
          BR    R9                                              XA0054DK         
-GTFIND   LA    R1,VCSSLOTS    A SLOT THIS VMBLOK HAD, OR       XA0054DK         
+GTFIND   L     R1,AVCSSLOT    A SLOT THIS VMBLOK HAD, OR       XA0054DK         
          LA    R0,VCSNSLOT    A FREE ONE                       XA0054DK         
 GTF1     C     R11,0(,R1)                                      XA0054DK         
          BE    GTREUSE                                         XA0054DK         
          LA    R1,8(,R1)                                       XA0054DK         
          BCT   R0,GTF1                                         XA0054DK         
-         LA    R1,VCSSLOTS                                     XA0054DK         
+         L     R1,AVCSSLOT                                     XA0054DK         
          LA    R0,VCSNSLOT                                     XA0054DK         
 GTF2     ICM   R10,15,0(R1)                                    XA0054DK         
          BZ    GTNEW                                           XA0054DK         
@@ -886,7 +899,7 @@ GTNEW    ST    R11,0(,R1)                                      XA0054DK
          B     GTINIT0                                         XA0054DK         
 GTREUSE  L     R10,4(,R1)     THE PREVIOUS USER'S TABLE        XA0054DK         
 GTINIT0  LR    R0,R1          SLOT NUMBER INTO VMVCSIX         XA0054DK         
-         LA    R1,VCSSLOTS-8                                   XA0054DK         
+         L     R1,AVCSSL8                                      XA0054DK         
          SR    R0,R1                                           XA0054DK         
          SRL   R0,3                                            XA0054DK         
          STH   R0,VMVCSIX                                      XA0054DK         
@@ -1007,7 +1020,8 @@ VCSSAVN  DS    16F                                             XA0054DK
 VCSCCX   DC    X'00'                                           XA0054DK         
          DS    0F                                              XA0054DK         
 VCSSLOTW DC    F'0'                                            XA0054DK         
-VCSSLOTS DC    64F'0'         32 SLOTS: OWNER VMBLOK, TABLE    XA0054DK         
+AVCSSLOT DC    A(VCSSLOTS)    M7.9: THE SLOTS ARE PAST R12'S   XA0054DK         
+AVCSSL8  DC    A(VCSSLOTS-8)  4 KB, AFTER THE RING             XA0054DK         
          DS    0F                                              XA0054DK         
 SSIDW    DC    X'00010000'                                     XA0054DK         
 F65535   DC    F'65535'                                        XA0054DK         
@@ -1040,6 +1054,7 @@ SIDTAB   DC    X'80FF321500000000'  CONSOLE: 3215              XA0054DK
          DC    X'FF'                                           XA0054DK         
          DS    0F                                              XA0054DK         
 VCRING   DC    32XL16'00'                                      XA0054DK         
+VCSSLOTS DC    64F'0'         32 SLOTS: OWNER VMBLOK, TABLE    XA0054DK         
 *                                                              XA0054DK         
 * SIGP (AE): ONE CPU, ADDRESS 0. STOP, STOP AND STORE STATUS   XA0054DK         
 * PUT THE VIRTUAL MACHINE IN A DISABLED WAIT (LINUX'S HALT     XA0054DK         
@@ -1122,7 +1137,8 @@ VCSCADR  DS    F                      CCW DATA ADDRESS         XA0054DK
 VCSTIC   DS    F                                               XA0054DK         
 VCSCCW   DS    2F                     AS FETCHED               XA0054DK         
 VCSNEW   DS    2F                     AS STORED                XA0054DK         
-VCSVIS   DS    64F                    CCWS DONE                XA0054DK         
+VCSVIS   DS    64F                    SEGMENTS DONE (32)       XA0054DK         
+VCSSEGP  DS    F                      CVTCHN: THE ONE GROWING  XA0054DK         
 VCSHDRL  EQU   *-VCSTAB                                        XA0054DK         
 VCSTABSZ EQU   (VCSHDRL+VCSNENT*ENTLEN+7)/8                    XA0054DK         
          END   DMKVSI                                          XA0054DK         

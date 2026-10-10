@@ -3,6 +3,8 @@
 # after SET ESA ON), as zipl does, for the 31-bit Linux 4.0 kernel.
 #
 #   vmzipl [-k /boot/linux48.image] [-p "kernel parameters"] [-d /dev/dasda]
+#          [-r /mnt]   (the root of the disk's file system, when it is not /:
+#                       M7.11 copies a system to a new disk mounted there)
 #
 # The kernel image is laid out for a reader IPL: bytes 0..64K are the
 # reader IPL code, the kernel proper starts at 0x10000 (startup) and its
@@ -82,9 +84,10 @@ def program(blks, dest, base, last_flags):
             code += ccw(RD, dest + (i + j) * BLK, last_flags if lastone else CC, BLK)
     return code + data
 
-opts, _ = getopt.getopt(sys.argv[1:], 'k:p:d:')
+opts, _ = getopt.getopt(sys.argv[1:], 'k:p:d:r:')
 o = dict(opts)
-image = o.get('-k', '/boot/linux48.image')
+root = o.get('-r', '/').rstrip('/')
+image = o.get('-k', root + '/boot/linux48.image')
 dev = o.get('-d', '/dev/dasda')
 parm = o.get('-p')
 if parm is None:
@@ -105,17 +108,17 @@ body[cl:cl + 896] = parm + b'\0' * (896 - len(parm))
 body += b'\0' * (-len(body) % BLK)
 if LOAD + len(body) > 0xFF0000:
     sys.exit('vmzipl: kernel too large (%d bytes)' % len(body))
-with open('/boot/vmipl.bin', 'wb') as f:
+with open(root + '/boot/vmipl.bin', 'wb') as f:
     f.write(body); f.flush(); os.fsync(f.fileno())
-kb = blocks_of('/boot/vmipl.bin')
+kb = blocks_of(root + '/boot/vmipl.bin')
 
 prog = program(kb, LOAD, LIST, 0)
 prog += b'\0' * (-len(prog) % BLK)
 if LIST + len(prog) > LOAD:
     sys.exit('vmzipl: channel program too long')
-with open('/boot/vmipl.ccw', 'wb') as f:
+with open(root + '/boot/vmipl.ccw', 'wb') as f:
     f.write(prog); f.flush(); os.fsync(f.fileno())
-lb = blocks_of('/boot/vmipl.ccw')
+lb = blocks_of(root + '/boot/vmipl.ccw')
 
 # IPL2: read the channel program into storage, then TIC to it; the
 # seek and search arguments follow the CCWs inside IPL2
