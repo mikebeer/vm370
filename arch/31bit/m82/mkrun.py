@@ -41,16 +41,20 @@ if load:
     t('format 194 a', 'CONTINUE|DMSFOR', 60)
     t('yes', 'LABEL', 60)
     t('crx82', RDY, 600)
+    t('format 196 h', 'CONTINUE|DMSFOR', 60)    # the sources (mkcms: H1)
+    t('yes', 'LABEL', 60)
+    t('cms196', RDY, 600)
 else:
     t('access 194 a', RDY)
+    t('access 196 h', RDY)
 t('access 191 b', RDY)
 for d in decks:
     t('readcard *', RDY, 3600)
 t('query disk', RDY)
 t('highstor reset', RDY)
 if mode == 'full':
-    t('exec crx82mk dimfix', RDY + '|DMSABN|DMSITP', 600)
-    t('exec dimfixlk', 'DIMFIXLK: DONE|DMSABN|DMSITP|CP ENTERED', 300)
+    t('exec crx82mk dimfix unhext', RDY + '|DMSABN|DMSITP', 600)
+    t('exec dimfixlk', 'DIMFIXLK.*DONE|DMSABN|DMSITP|CP ENTERED', 300)
     t('exec crx82mk', 'NOW LINK|BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 36000)
     t('exec crx82lk', 'CRX82LK: DONE|DMSABN|DMSITP|CP ENTERED', 1800)
     for c in ('rxbvm82 -v', 'rxas82 -v', 'rxc82 -v'):

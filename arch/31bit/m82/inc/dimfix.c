@@ -6,8 +6,11 @@
             L     3,4+0(2)        low word through the clobbered register
 
    when the register pair it picks starts with the pointer's own register.
-   DIMFIX swaps every such pair (the low word is loaded first, the high
-   word last), writing fn ASSEMBF A, then replaces fn ASSEMBLE A with it.
+   Swapping the two is no answer when the address also uses the second
+   register (8(2,3)), so DIMFIX loads the pair with LM, which forms the
+   address once:  LM 2,3,0(2)  -- or, with an index register,
+   LA 3,8(2,3) then LM 2,3,0(3).  It writes fn ASSEMBF A, then replaces
+   fn ASSEMBLE A with it.
 
    It reads and writes with FSREAD/FSWRITE in sequence (record number 0)
    rather than GCCLIB stdio, which stops at 32,768 records. */
@@ -52,6 +55,14 @@ static int uses(const char *addr, int r)
     return strstr(addr, a) || strstr(addr, b) || strstr(addr, c);
 }
 
+/* blank-fill a sprintf'd card to 80 columns */
+static void pad80(char *l)
+{
+    int k = strlen(l);
+    while (k < 80) l[k++] = ' ';
+    l[80] = 0;
+}
+
 static int nout;
 
 static int put(const char *l)
@@ -92,9 +103,22 @@ int main(int argc, char **argv)
             sprintf(want, "4+%s", a1);
             if (r1 >= 0 && r2 == r1 + 1 && uses(a1, r1) &&
                 strcmp(a2, want) == 0) {
-                if (put(ibuf) || put(prev)) {
-                    printf("DIMFIX: write error\n");
-                    return 12;
+                char l1[81], l2[81];
+                memset(l1, ' ', 80); memset(l2, ' ', 80);
+                l1[80] = l2[80] = 0;
+                if (strchr(a1, ',')) {          /* index and base */
+                    sprintf(l1, "         LA    %d,%s", r1 + 1, a1);
+                    sprintf(l2, "         LM    %d,%d,0(%d)", r1, r1 + 1,
+                            r1 + 1);
+                } else {
+                    sprintf(l1, "         LM    %d,%d,%s", r1, r1 + 1, a1);
+                    l2[0] = 0;
+                }
+                pad80(l1);
+                if (put(l1)) { printf("DIMFIX: write error\n"); return 12; }
+                if (l2[0]) {
+                    pad80(l2);
+                    if (put(l2)) { printf("DIMFIX: write error\n"); return 12; }
                 }
                 fixed++;
                 have = 0;
@@ -120,7 +144,7 @@ int main(int argc, char **argv)
         return 12;
     }
     if (fixed)
-        printf("DIMFIX: %s %d records, %d 64-bit loads reordered\n",
+        printf("DIMFIX: %s %d records, %d 64-bit loads made LM\n",
                name, n, fixed);
     return 0;
 }

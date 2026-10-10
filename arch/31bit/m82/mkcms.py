@@ -182,6 +182,7 @@ def exec_text(stage):
         L.append("CS.%s = '%s'" % (u, c))
     L.append("CS.TK = '$TK'                 /* the test unit */")
     L.append("CS.DIMFIX = '$DIMFIX'         /* the assembler repair filter */")
+    L.append("CS.UNHEXT = '$UNHEXT'         /* long text files from the PC */")
     L += ["/* CRX82 MACLIB: GCC31's, PDPTOP fixing GCC380's 64-bit code */",
           "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
           "'MACLIB ADD CRX82 VTABLE'",
@@ -219,7 +220,11 @@ def exec_text(stage):
           '    RETURN R',
           '  END',
           "  L = 'CRX82'",
-          "  IF U = 'CRXLGCC' | U = 'DIMFIX' THEN L = 'GCC31'",
+          "  IF U = 'CRXLGCC' | U = 'DIMFIX' | U = 'UNHEXT' THEN L = 'GCC31'",
+          "  /* the sources are on H (196); an updated copy on A wins */",
+          "  'STATE' U 'C A'",
+          "  IF RC = 0 THEN SRC = 'A'",
+          "  ELSE SRC = 'H'",
           "  'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82 NOASM KEEP'",
           '  IF RC = 12 THEN DO',
           "    SAY 'CRX82MK:' U 'AGAIN WITH -O0'",
@@ -237,7 +242,7 @@ def exec_text(stage):
           "  'DROPBUF'",
           '  IF E <> 0 THEN RETURN 100 + E',
           "  /* GCC380's 64-bit loads that clobber their own base register */",
-          "  IF U <> 'DIMFIX' THEN DO",
+          "  IF U <> 'DIMFIX' & U <> 'UNHEXT' THEN DO",
           "    'STATE DIMFIX MODULE *'",
           "    IF RC = 0 THEN 'DIMFIX' U",
           "    ELSE SAY 'CRX82MK: *** NO DIMFIX MODULE (EXEC DIMFIXLK)'",
@@ -281,15 +286,20 @@ def main():
     stage, xfdir, out = sys.argv[1:4]
     XF = xfdir
     deck = ['ID CMSUSER NAME CRX82 SRC']
-    for f in sorted(f for f in os.listdir(xfdir) if f.endswith('.assemble')):
-        deck.append(':READ  %-8s ASSEMBLE A1' % f[:-9].upper())
+    # only the table CSECTs a unit lists (xform renumbers them on each run)
+    live = set()
+    for a in os.listdir(xfdir):
+        if a.endswith('.asm'):
+            live |= {w.lower() for w in open(os.path.join(xfdir, a)).read().split()}
+    for f in sorted(f for f in os.listdir(xfdir) if f.endswith('.assemble') and f[:-9] in live):
+        deck.append(':READ  %-8s ASSEMBLE H1' % f[:-9].upper())
         deck.extend(cards(os.path.join(xfdir, f), 'ASSEMBLE'))
     files = sorted(f for f in os.listdir(xfdir) if f.endswith('.c'))
     for f in files:
         fn = f[:-2]
         cs = cards(os.path.join(xfdir, f), 'C')
         if len(cs) <= 60000:
-            deck.append(':READ  %-8s C        A1' % fn.upper())
+            deck.append(':READ  %-8s C        H1' % fn.upper())
             deck.extend(cs)
             continue
         # a CMS file holds 65,533 records: the unit #includes its pieces,
@@ -305,10 +315,10 @@ def main():
         main = []
         for k, part in enumerate(parts):
             pn = '%s%02d' % (fn[:6], k + 1)
-            deck.append(':READ  %-8s H        A1' % pn.upper())
+            deck.append(':READ  %-8s H        H1' % pn.upper())
             deck.extend(part)
             main.append('#include "%s.h"' % pn.lower())
-        deck.append(':READ  %-8s C        A1' % fn.upper())
+        deck.append(':READ  %-8s C        H1' % fn.upper())
         deck.extend(main)
     mk = [':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
     progs = programs(stage)[0]
@@ -322,12 +332,17 @@ def main():
         if not u.upper().startswith('CT'):
             cs[u.upper()] = csname(u, used)
     mk += [':READ  CRX82LK  EXEC     A1'] + link_exec(progs, cs)
-    dl = [l.rstrip() for l in open(os.path.join(HERE, 'inc', 'dimfix.c')).read().rstrip('\n').split('\n')]
-    assert all(len(l) <= 80 for l in dl), 'dimfix.c: a line over 80 columns'
-    mk += [':READ  DIMFIX   C        A1'] + dl
+    # the build tools, plain GCCLIB31 programs: DIMFIX (run by CRX82MK on
+    # every unit) and UNHEXT (long-line text files from the PC)
+    for tool in ('dimfix', 'unhext'):
+        dl = [l.rstrip() for l in open(os.path.join(HERE, 'inc', tool + '.c')).read().rstrip('\n').split('\n')]
+        assert all(len(l) <= 80 for l in dl), tool + '.c: a line over 80 columns'
+        mk += [':READ  %-8s C        A1' % tool.upper()] + dl
     mk += [':READ  DIMFIXLK EXEC     A1', '&CONTROL ERROR',
-           '* DIMFIXLK EXEC -- M8.2: link DIMFIX (LOAD may not run from REXX)',
-           'GLOBAL TXTLIB GCCLIB31', 'LOAD DIMFIX ( CLEAR', 'GENMOD DIMFIX', '&TYPE DIMFIXLK: DONE']
+           '* DIMFIXLK EXEC -- M8.2: link DIMFIX and UNHEXT (LOAD may not',
+           '* run from REXX)',
+           'GLOBAL TXTLIB GCCLIB31', 'LOAD DIMFIX ( CLEAR', 'GENMOD DIMFIX',
+           'LOAD UNHEXT ( CLEAR', 'GENMOD UNHEXT', '&TYPE DIMFIXLK: DONE']
     mk += [':READ  CRX82    PARM     A1', PARM]
     mk += [':READ  CRX82O0  PARM     A1', PARM.replace('-O1', '-O0')]
     top = open(os.path.join(HERE, '..', 'gcclib31', 'src', 'pdptop.copy')).read().rstrip('\n').split('\n')
