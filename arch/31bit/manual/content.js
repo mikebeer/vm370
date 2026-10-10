@@ -50,7 +50,7 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['M7.10', 'IPL of Linux from its disk (zipl) and a CP name LINUX', 'next'],
   ['M8', 'cREXX: the 2022 release built natively (M5); the current release cross-built (M8.1)', 'complete'],
   ['M8.2', 'the current cREXX built natively with GCC380', 'compiler, assembler and VM work; the library does not build yet'],
-  ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'Linux complete; CMS: all but Smalltalk'],
+  ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'complete on both'],
   ['\u2014', 'GNU C 4.6, Python 2.7 and 3.2, Regina REXX and THE under Debian', 'complete'],
   ['M9', 'z/Architecture (64-bit)', 'planned, after all of the above'],
 ], [1400, 6038, 2200], 'VM/370+ milestones');
@@ -248,6 +248,7 @@ TABLE(['Language', 'CMS', 'Linux', 'Notes'], [
   ['LOGO', '`LOGO fn.logo out`', '`logo fn.logo out.svg`', 'turtle graphics written as SVG'],
 ], [1400, 2100, 2100, 4038], 'Languages in cREXX');
 P('On CMS the languages arrive as one reader deck (`LANGS`); `READCARD *` puts the files on your A disk and `LANGSUP EXEC` rebuilds the modules from their hex form. Use one of CMSUSER’s large disks as A for it (for example `ACCESS 196 A`). CMS cuts a command argument to eight characters, so the EXECs pass file names through the program stack: type the names as usual.');
+P('The languages need an EC-mode CMS with a large virtual machine: `CP DEFINE STORAGE 256M` and `IPL 290`. Their storage comes from above 16 MB through HIGHSTOR; Smalltalk alone uses about 100 MB, so it is practical only when Hercules gives VM/370+ real storage to match (the kit’s `MAINSIZE 256`); with 16 MB of real storage CP pages it to a crawl. Programs cross-built for CMS run on an 8 MB stack.');
 P('On Debian the languages are part of the cREXX bundle (`lxcrexx.tgz`), unpacked under `/usr/local`; the examples are in `/usr/local/share/`*language*.');
 H2('Turbo CREXX');
 P('Turbo CREXX is a small Turbo-Pascal-style front end: a menu that creates, edits, compiles and runs one cREXX program at a time. It does not implement REXX; it calls the real cREXX tools.');

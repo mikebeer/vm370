@@ -134,11 +134,11 @@ static int highstor(const char *fn, u32 bytes, u32 addr)
     return cms202(&hsp);
 }
 
-u32 cms_heap_mb = 0;        /* 0: largest of 96/64/48/32/16 that HIGHSTOR gives */
+u32 cms_heap_mb = 0;        /* 0: the largest that HIGHSTOR gives, up to 232 MB */
 
 static void heap_init(void)
 {
-    static const u32 tries[] = { 96, 64, 48, 32, 16, 0 };
+    static const u32 tries[] = { 232, 224, 192, 160, 128, 96, 64, 48, 32, 16, 0 };
     if (cms_heap_mb) {
         if (!highstor("OBTAIN", cms_heap_mb << 20, 0)) {
             heap_base = (char *)hsp.addr; heap_end = heap_base + (cms_heap_mb << 20);
@@ -166,7 +166,15 @@ void *_sbrk(int incr)
     char *old = heap_brk;
     if (!heap_base) heap_init();
     old = heap_brk;
-    if (incr < 0 || heap_brk + incr > heap_end) { errno = ENOMEM; return (void *)-1; }
+    if (incr < 0 || heap_brk + incr > heap_end) {
+        static int told;
+        if (!told++) {          /* say so once: a program may not check */
+            static const char m[] = "CMSRT: out of storage (heap above 16 MB is full)\n";
+            tput(m, sizeof m - 1);
+            tflush();
+        }
+        errno = ENOMEM; return (void *)-1;
+    }
     heap_brk += incr;
     return old;
 }
