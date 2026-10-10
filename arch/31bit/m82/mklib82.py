@@ -11,8 +11,10 @@ concatenated modules directly, so LIB82 EXEC concatenates with COPYFILE.
 Sources travel as hex of their EBCDIC (IBM-1047, as Hercules' 819/1047
 reader) text with X'15' line ends: UNHEXT turns each back into a text
 file of variable-length records (lines up to 1,180 columns, which cards
-would cut at 80).  CMS names: Lnnn CREXX for the modules, Rnnn RXAS for
-the RXAS parts (most upstream names are longer than 8 characters)."""
+would cut at 80).  The files keep their own names (the compiler finds a
+sibling function by its file name), mapped as CRXRT maps them: a name
+longer than 8 characters becomes its first 3, '$', and 4 hex digits of an
+FNV-1a hash (cmsfn() here, cmsname() in inc/crxrt.c)."""
 import os
 import re
 import sys
@@ -36,6 +38,18 @@ def ebcdic(text):
     return bytes(out)
 
 
+def cmsfn(name):
+    """CRXRT's CMS file name for a base name (see cmsname() in crxrt.c);
+    the hash is over the IBM-1047 bytes of the lower-case name"""
+    if len(name) <= 8:
+        return name.upper()
+    h = 2166136261
+    for b in ebcdic(name.lower()):
+        h ^= b
+        h = (h * 16777619) & 0xFFFFFFFF
+    return name[:3].upper() + '$%04X' % ((h ^ (h >> 16)) & 0xFFFF)
+
+
 def main():
     out = sys.argv[1]
     body = re.search(r'set\(BIFS(.*?)\)', open(C + '/rexx/CMakeLists.txt').read(), re.S).group(1)
@@ -53,27 +67,32 @@ def main():
         deck.extend(h[i:i + 78] for i in range(0, len(h), 78))
         names.append((fn, ft))
 
-    for i, r in enumerate(rxas):
-        add('R%03d' % (i + 1), 'RXAS', '%s/rxas/%s.rxas' % (C, r))
-    for i, b in enumerate(bifs):
-        add('L%03d' % (i + 1), 'CREXX', '%s/rexx/%s.crexx' % (C, b))
+    for r in rxas:
+        add(cmsfn(r), 'RXAS', '%s/rxas/%s.rxas' % (C, r))
+    for b in bifs:
+        add(cmsfn(b), 'CREXX', '%s/rexx/%s.crexx' % (C, b))
+    fns = [f for f, _ in names]
+    assert len(set(fns)) == len(fns), 'CMS name collision'
+    mods = [(cmsfn(b), b) for b in bifs]
     ex = ['/* LIB82 EXEC -- M8.2: the cREXX library built with RXC82/RXAS82 */',
           "PARSE ARG FROM .",
           "IF FROM = '' THEN FROM = 1",
-          "BAD = ''"]
-    ex += ["IF FROM = 1 THEN DO",
-           "  'EXEC LIB82U'",
-           "  'RXAS82 R001'",
-           "  IF RC <> 0 THEN BAD = BAD 'R001'",
-           "END"]
-    ex += ["N = %d" % len(bifs),
-           "DO I = FROM TO N",
-           "  F = 'L'RIGHT(I, 3, '0')",
-           "  'RXC82 -x --no-exe-import --import-rxas -o' F '-i a' F",
-           "  IF RC <> 0 THEN DO; BAD = BAD F; ITERATE; END",
-           "  'RXAS82' F",
-           "  IF RC <> 0 THEN BAD = BAD F",
-           "  ELSE SAY 'LIB82:' F 'OK'",
+          "BAD = ''",
+          "IF FROM = 1 THEN DO",
+          "  'EXEC LIB82U'",
+          "  'RXAS82 _elapsed'",
+          "  IF RC <> 0 THEN BAD = BAD '_elapsed'",
+          "END"]
+    ex += ["N = %d" % len(mods)]
+    for i, (fn, b) in enumerate(mods):
+        ex += ["M.%d = '%s'" % (i + 1, b), "F.%d = '%s'" % (i + 1, fn)]
+    ex += ["DO I = FROM TO N",
+           "  B = M.I",
+           "  'RXC82 -x --no-exe-import --import-rxas -o' B '-i a' B",
+           "  IF RC <> 0 THEN DO; BAD = BAD B; ITERATE; END",
+           "  'RXAS82' B",
+           "  IF RC <> 0 THEN BAD = BAD B",
+           "  ELSE SAY 'LIB82:' I B 'OK'",
            "END",
            "IF BAD <> '' THEN DO",
            "  SAY 'LIB82: *** FAILED:' BAD",
@@ -81,11 +100,10 @@ def main():
            "END",
            "'ERASE LIBRARY RXBIN A'",
            "DO I = 1 TO N",
-           "  F = 'L'RIGHT(I, 3, '0')",
-           "  IF I = 1 THEN 'COPYFILE' F 'RXBIN A LIBRARY RXBIN A'",
-           "  ELSE 'COPYFILE' F 'RXBIN A LIBRARY RXBIN A ( APPEND'",
+           "  IF I = 1 THEN 'COPYFILE' F.I 'RXBIN A LIBRARY RXBIN A'",
+           "  ELSE 'COPYFILE' F.I 'RXBIN A LIBRARY RXBIN A ( APPEND'",
            "END",
-           "'COPYFILE R001 RXBIN A LIBRARY RXBIN A ( APPEND'",
+           "'COPYFILE _ELAPSED RXBIN A LIBRARY RXBIN A ( APPEND'",
            "'LISTFILE LIBRARY RXBIN A ( LABEL'",
            "SAY 'LIB82: LIBRARY RXBIN BUILT'",
            "EXIT 0"]

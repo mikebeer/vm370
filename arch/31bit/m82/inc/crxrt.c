@@ -351,9 +351,22 @@ static int cmsname(const char *path, char *out, size_t cap)
     } else base = path;
     dot = strchr(base, '.');
     nf = dot ? (size_t)(dot - base) : strlen(base);
-    if (nf == 0 || nf > 8) return -1;
-    for (i = 0; i < nf; i++) fn[i] = (char)toupper((unsigned char)base[i]);
-    fn[nf] = 0;
+    if (nf == 0) return -1;
+    if (nf > 8) {
+        /* a longer name: its first 3 characters, '$', and 4 hex digits of
+           an FNV-1a hash of the whole name in lower case (mklib82.py
+           names the library sources the same way) */
+        unsigned long h = 2166136261UL;
+        for (i = 0; i < nf; i++) {
+            h ^= (unsigned char)tolower((unsigned char)base[i]);
+            h = (h * 16777619UL) & 0xFFFFFFFFUL;
+        }
+        for (i = 0; i < 3; i++) fn[i] = (char)toupper((unsigned char)base[i]);
+        sprintf(fn + 3, "$%04lX", (h ^ (h >> 16)) & 0xFFFFUL);
+    } else {
+        for (i = 0; i < nf; i++) fn[i] = (char)toupper((unsigned char)base[i]);
+        fn[nf] = 0;
+    }
     if (dot) {
         const char *t = dot + 1, *d2 = strchr(t, '.');
         nt = d2 ? (size_t)(d2 - t) : strlen(t);
