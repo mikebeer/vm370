@@ -38,6 +38,28 @@ PATCHES = [
      '#elif defined(CREXX_CMS_ELF) || defined(CREXX_CMS_GCC)\n        FILE *probe', 1),
     ('platform.c', '#elif defined(CREXX_CMS_ELF)\n            FILE *probe',
      '#elif defined(CREXX_CMS_ELF) || defined(CREXX_CMS_GCC)\n            FILE *probe', 1),
+    # hexadecimal floating point (GCC380): 10**exp for |exp| > 75 is out of
+    # range, and a zero divisor traps (IEEE would give inf) -- scale twice
+    ('rxvmvars.h', '    double coeff = abs_value / pow(10.0, (double)exp);',
+     '''    double coeff;
+#ifdef CREXX_CMS_GCC
+    {
+        double p10 = pow(10.0, (double)exp);
+        if (!(p10 > 0.0) || exp > 60 || exp < -60) {
+            unsigned long w[2];
+            memcpy(w, &abs_value, 8);
+            fprintf(stderr, "CRX: float %08lX%08lX exp %ld pow %g\\n",
+                    w[0], w[1], (long)exp, p10);
+            p10 = pow(10.0, (double)(exp / 2));
+            coeff = p10 > 0.0 ? abs_value / p10 : abs_value;
+            p10 = pow(10.0, (double)(exp - exp / 2));
+            if (p10 > 0.0) coeff /= p10;
+        }
+        else coeff = abs_value / p10;
+    }
+#else
+    coeff = abs_value / pow(10.0, (double)exp);
+#endif''', 1),
     # say why a module did not load (the loader's own error text)
     ('rxvmmain.c', 'fprintf(stderr, "ERROR reading module file %s\\n", file_name);',
      '{ extern int crxfline, crxflog[16]; int q; const char *e = rxbin_last_error(); fprintf(stderr, "ERROR reading module file %s%s%s\\n", file_name, e ? ": " : "", e ? e : ""); for (q = crxfline - 16; q < crxfline; q++) if (q >= 0) fprintf(stderr, " %d", crxflog[q & 15]); fprintf(stderr, "\\n"); }', 1),
