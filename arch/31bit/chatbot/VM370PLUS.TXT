@@ -1,0 +1,28 @@
+CHATBOT build 1 on VM/370plus -- what was changed, for upstream
+================================================================
+Tested 10 Oct 2026: AUTOLOG CHATBOT, CHAT from CMSUSER, 6 questions
+including /LIST, /NPC elena de, /WHO -- all answered (about 30 s each,
+the INTERVAL).  The bot itself ran unchanged, compiled with the M8.1
+cREXX (the one RXBVM8 runs).  cbpatch.py applies these to the deck:
+
+1. CHATBOT EXEC stampfrom: the FROM card set k = 1, so cd.1 was never
+   set and the question reached the bot as "CD.1 question"; a /command
+   was never recognised.  Now a separate flag (fseen).  (Real bug, also
+   on z/VM.)
+2. BREXX has no UPPER(): translate() in stampfrom.
+3. BREXX's EXECIO writes each line at its own length: DISKW with a
+   fixed format (1 F 80, 1 F 8) fails with FSWRITE rc 15 on any shorter
+   line.  CHAT REQ and CHATBOT CBQUEUE are written variable.
+4. CHAT EXEC: "exit rc" after "call ask": RC is not set by an internal
+   routine, BREXX's EXIT needs a number -> "exit result".
+5. No WAKEUP on VM/370: CP SLEEP n SEC instead of the busy wait (both
+   EXECs), and WAKEUP is tried once only.
+6. No CP TERMINAL CONMODE on VM/370: removed from PROFILE EXEC.
+7. PROFILE EXEC starts the bot only when disconnected (AUTOLOG); an
+   interactive logon gets CMS, for maintenance.
+8. CHATBOT CONFIG: BOTCMD RXBVM8 CHATBOT -a CMS.
+Also: VM/370 has AUTOLOG userid password, not XAUTOLOG.  CLOSE PUNCH
+NAME does not rename the file after PUNCH (PUNCH closes it itself), so
+the reply arrives as Qnnnn CBRPL; CHAT does not care.
+On the VM/370plus side, RXBVM8 had been built without clock services
+(TIME/DATE/RANDOM seeding failed); it now has them (TOD clock, UTC).

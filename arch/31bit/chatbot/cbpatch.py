@@ -5,9 +5,12 @@ is noticed.  The list is reported back upstream (VM370PLUS.TXT)."""
 import sys
 
 P = [
-    # BREXX has no UPPER() built-in
-    ("    if upper(word(c, 1)) = 'FROM' & k = 0 then do",
-     "    if translate(word(c, 1)) = 'FROM' & k = 0 then do"),
+    # BREXX has no UPPER() built-in; and stampfrom counted the FROM card
+    # as card 1 (k = 1), so cd.1 was never set and the question went to
+    # the bot as "CD.1 question" -- a /command was never seen as one
+    ("  k = 0\n  do i = 1 to n", "  k = 0\n  fseen = 0\n  do i = 1 to n"),
+    ("    if upper(word(c, 1)) = 'FROM' & k = 0 then do\n      k = 1\n",
+     "    if translate(word(c, 1)) = 'FROM' & k = 0 & \\fseen then do\n      fseen = 1\n"),
     # no WAKEUP on VM/370: CP SLEEP instead of a busy wait (and WAKEUP is
     # tried once only, not on every round)
     ("  'WAKEUP +' || right(interval, 6, '0') || ' (RDR QUIET'\n"
@@ -44,6 +47,20 @@ P = [
     # the caller's RC is not set by an internal routine; BREXX's EXIT
     # wants a number: ASK's RETURN value is in RESULT
     ("  call ask line\n  exit rc", "  call ask line\n  exit result"),
+    # start the bot only when AUTOLOGged (disconnected); an interactive
+    # logon gets a CMS prompt, for maintenance
+    ("/* take the reader as it is; ignore anything that arrives while logging in */\n'EXEC CHATBOT'",
+     "/* VM/370plus: the bot starts when AUTOLOGged (disconnected) only   */\n"
+     "'MAKEBUF'\n"
+     "'EXECIO * CP (STRING QUERY' userid()\n"
+     "dsc = 0\n"
+     "do while queued() > 0\n"
+     "  parse pull q\n"
+     "  if pos('DSC', q) > 0 then dsc = 1\n"
+     "end\n"
+     "'DROPBUF'\n"
+     "if dsc then 'EXEC CHATBOT'\n"
+     "else say 'CHATBOT: interactive logon -- EXEC CHATBOT (LOUD starts the bot'"),
 ]
 
 src, out = sys.argv[1:]
