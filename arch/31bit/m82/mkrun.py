@@ -49,6 +49,8 @@ for d in decks:
 t('query disk', RDY)
 t('highstor reset', RDY)
 if mode == 'full':
+    t('exec crx82mk dimfix', RDY + '|DMSABN|DMSITP', 600)
+    t('exec dimfixlk', 'DIMFIXLK: DONE|DMSABN|DMSITP|CP ENTERED', 300)
     t('exec crx82mk', 'NOW LINK|BUILD OK|ERRORS \\*\\*\\*\\*\\*|DMSABN|DMSITP|CP ENTERED|DMSFRE', 36000)
     t('exec crx82lk', 'CRX82LK: DONE|DMSABN|DMSITP|CP ENTERED', 1800)
     for c in ('rxbvm82 -v', 'rxas82 -v', 'rxc82 -v'):

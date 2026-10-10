@@ -139,26 +139,19 @@ int crx_vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
             else *va_arg(ap, int *) = (int)o.len;
         } else if (conv == 'e' || conv == 'E' || conv == 'f' || conv == 'F' ||
                    conv == 'g' || conv == 'G' || conv == 'a' || conv == 'A') {
-            /* one conversion, length modifier dropped, to GCCLIB31 */
+            /* one conversion to GCCLIB31, rebuilt from the parsed fields:
+               length modifiers dropped, '*' width and precision as numbers */
             char f[32], tmp[512];
             int k = 0, m;
             double d = va_arg(ap, double);
-            const char *q;
-            for (q = start; q < p && k < 24; q++)
-                if (*q != 'L' && *q != 'l' && *q != 'q' && *q != 'h' &&
-                    *q != 'j' && *q != 'z' && *q != 't' && *q != '*') f[k++] = *q;
-            if (width >= 0 && strchr(start, '*') && strchr(start, '*') < p) {
-                /* re-insert '*' widths as numbers */
-                k = 0;
-                f[k++] = '%';
-                if (left) f[k++] = '-';
-                if (plus) f[k++] = '+';
-                if (space) f[k++] = ' ';
-                if (alt) f[k++] = '#';
-                if (zero) f[k++] = '0';
-                k += sprintf(f + k, "%d", width > 400 ? 400 : width);
-                if (prec >= 0) k += sprintf(f + k, ".%d", prec > 100 ? 100 : prec);
-            }
+            f[k++] = '%';
+            if (left) f[k++] = '-';
+            if (plus) f[k++] = '+';
+            if (space) f[k++] = ' ';
+            if (alt) f[k++] = '#';
+            if (zero) f[k++] = '0';
+            if (width >= 0) k += sprintf(f + k, "%d", width > 400 ? 400 : width);
+            if (prec >= 0) k += sprintf(f + k, ".%d", prec > 100 ? 100 : prec);
             f[k++] = (conv == 'F') ? 'f' : (conv == 'a' ? 'e' : (conv == 'A' ? 'E' : conv));
             f[k] = 0;
             m = sprintf(tmp, f, d);

@@ -181,6 +181,7 @@ def exec_text(stage):
     for u, c in cs:
         L.append("CS.%s = '%s'" % (u, c))
     L.append("CS.TK = '$TK'                 /* the test unit */")
+    L.append("CS.DIMFIX = '$DIMFIX'         /* the assembler repair filter */")
     L += ["/* CRX82 MACLIB: GCC31's, PDPTOP fixing GCC380's 64-bit code */",
           "'MACLIB GEN CRX82 CMSCRAB GCCCRAB PDPEPIL PDPPRLG PDPTOP VTENTRY'",
           "'MACLIB ADD CRX82 VTABLE'",
@@ -218,7 +219,7 @@ def exec_text(stage):
           '    RETURN R',
           '  END',
           "  L = 'CRX82'",
-          "  IF U = 'CRXLGCC' THEN L = 'GCC31'",
+          "  IF U = 'CRXLGCC' | U = 'DIMFIX' THEN L = 'GCC31'",
           "  'EXEC GCC31' U 'C' SRC '( LIB' L 'PARM CRX82 NOASM KEEP'",
           '  IF RC = 12 THEN DO',
           "    SAY 'CRX82MK:' U 'AGAIN WITH -O0'",
@@ -235,6 +236,13 @@ def exec_text(stage):
           '  E = RC',
           "  'DROPBUF'",
           '  IF E <> 0 THEN RETURN 100 + E',
+          "  /* GCC380's 64-bit loads that clobber their own base register */",
+          "  IF U <> 'DIMFIX' THEN DO",
+          "    'STATE DIMFIX MODULE *'",
+          "    IF RC = 0 THEN 'DIMFIX' U",
+          "    ELSE SAY 'CRX82MK: *** NO DIMFIX MODULE (EXEC DIMFIXLK)'",
+          "    IF RC <> 0 THEN RETURN 200 + RC",
+          "  END",
           "  'GLOBAL MACLIB' L 'DMSGPI CMSHRC CMSLIB OSMACRO TSOMAC'",
           "  'ASMAHL' U '(NOTERM'",
           '  R = RC',
@@ -314,6 +322,12 @@ def main():
         if not u.upper().startswith('CT'):
             cs[u.upper()] = csname(u, used)
     mk += [':READ  CRX82LK  EXEC     A1'] + link_exec(progs, cs)
+    dl = [l.rstrip() for l in open(os.path.join(HERE, 'inc', 'dimfix.c')).read().rstrip('\n').split('\n')]
+    assert all(len(l) <= 80 for l in dl), 'dimfix.c: a line over 80 columns'
+    mk += [':READ  DIMFIX   C        A1'] + dl
+    mk += [':READ  DIMFIXLK EXEC     A1', '&CONTROL ERROR',
+           '* DIMFIXLK EXEC -- M8.2: link DIMFIX (LOAD may not run from REXX)',
+           'GLOBAL TXTLIB GCCLIB31', 'LOAD DIMFIX ( CLEAR', 'GENMOD DIMFIX', '&TYPE DIMFIXLK: DONE']
     mk += [':READ  CRX82    PARM     A1', PARM]
     mk += [':READ  CRX82O0  PARM     A1', PARM.replace('-O1', '-O0')]
     top = open(os.path.join(HERE, '..', 'gcclib31', 'src', 'pdptop.copy')).read().rstrip('\n').split('\n')
