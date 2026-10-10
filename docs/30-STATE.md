@@ -28,6 +28,7 @@ The kit was verified on a fresh CE (kt14).
 | gcc under Debian | done: gcc 4.6.3, g++, make |
 | CPWATCH | get it running again (I-251) |
 | M6 | 31-bit CMS proper, including larger minidisks (4K blocks, past the 65,535-block limit of the 800-byte format) |
+| **Before M9 (owner, 10 Oct)** | C++ on CMS (subset via the cross route; full after M9), SQL (SQLite on CMS; MariaDB/PostgreSQL on Debian), CMS sockets + httpd, xBase/Harbour, MQ -- then a **distributable snapshot (kit)** |
 | M9 | 64-bit |
 
 **Backlog (agreed, not scheduled before M9 unless said):**
@@ -37,7 +38,7 @@ The kit was verified on a fresh CE (kt14).
 - THE (The Hessling Editor) 3.3 and Regina REXX 3.6: **installed on Debian** 10 Oct from the wheezy packages (the owner downloaded them with `linux390/pc/get-wheezy-the.bat`; golden7 disk). THE on CMS after the 3270 panel library.
 - xBase: mikebeer/xbase (cREXX, when it has commits) on both; Harbour on Debian first, CMS later.
 - Message queueing (mikebeer/mq): on Linux a statically linked client with a RabbitMQ broker; on CMS a VM-native queue machine over VMCF/IUCV, a RabbitMQ client after CMS sockets.
-- C++ on CMS: a subset through the cross route now, full C++ after M9 -- awaiting the owner's OK.
+- C++ on CMS: OK from the owner (10 Oct): a subset through the cross route before M9, full C++ after M9.
 - Docker: not on 31-bit (Docker and containerd are Go programs, and Go has no 31-bit s390 port; Docker needs a 64-bit kernel with cgroups and overlayfs). After M9, under a 64-bit Linux (s390x) guest with a current Debian, where Docker's s390x builds run. Before that, LXC containers under Debian 7 (LXC is C; the Linux 4.0 kernel has namespaces and cgroups) as a first step.
 - SMAPI (the z/VM Systems Management API): a VSMSERVE-style service virtual machine in REXX/cREXX that answers a subset of the SMAPI calls (Image_Query, Image_Activate/Deactivate, Image_Create/Delete through the directory, Image_Disk_Create/Delete, Virtual_Network queries) using class A/B CP commands and the directory program; locally over VMCF/IUCV, and over TCP (port 44444, the SMAPI wire format) after CMS sockets; an smcli-style client for Debian. Lets OpenStack-era tools (Feilong/zVM Cloud Connector) and scripts manage VM/370+ guests.
 - Java: OpenJDK 7 under Debian (soon, a package download like Python); a fuller Java on CMS after M9.
