@@ -131,6 +131,12 @@ cp -r "$HERE"/smalltalk/lib "$HERE"/smalltalk/examples $R/usr/local/share/smallt
 cp plmx.rxbin $R/usr/local/share/plm/plm.rxbin
 cp plmrtx.rxbin $R/usr/local/share/plm/plmrt.rxbin
 cp -r "$HERE"/plm/examples $R/usr/local/share/plm/
+# Turbo CREXX: the menu front end, run against these tools by the crexx driver
+mkdir -p $R/usr/local/share/turbocrexx
+cp "$HERE"/turbo/turbocrexx.sh "$HERE"/turbo/levelb_tutorial.md $R/usr/local/share/turbocrexx/
+cp -r "$HERE"/turbo/examples $R/usr/local/share/turbocrexx/
+ln -s /usr/local/bin $R/usr/local/share/turbocrexx/bin
+cp "$HERE"/turbo/crexx "$HERE"/turbo/turbocrexx $R/usr/local/bin/
 cp "$HERE"/basic/linux/basic "$HERE"/logo/linux/logo "$HERE"/prolog/linux/prolog \
    "$HERE"/snobol/linux/snobol "$HERE"/pascal/linux/pasc "$HERE"/lisp/linux/lisp "$HERE"/smalltalk/linux/smalltalk "$HERE"/plm/linux/plmc $R/usr/local/bin/
 (cd $R && tar czf "$OUT"/lxcrexx.tgz --format=ustar --owner=0 --group=0 usr)

@@ -207,7 +207,8 @@ static int parse_name(const char *name, struct cfile *f)
             if (np == 3) break;
             continue;
         }
-        if (np >= 3 || k >= 8) return -1;
+        if (np >= 3) return -1;
+        if (k >= 8) continue;   /* longer names are cut to 8, as CMS does */
         char c = *p;
         if (c >= 'a' && c <= 'z') c -= 32;
         part[np][k++] = c;

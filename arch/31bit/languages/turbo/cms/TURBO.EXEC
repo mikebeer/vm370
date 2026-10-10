@@ -1,0 +1,112 @@
+/* TURBO EXEC -- Turbo CREXX for CMS (VM/370+)                          */
+/*   TURBO                  the menu                                    */
+/*   TURBO fn               the menu, with fn CREXX A as current file   */
+/*   TURBO C|R|E fn         compile, run or edit fn CREXX A at once     */
+/* Like turbocrexx.sh on Linux, a front end only: EDIT for the editor,  */
+/* the current cREXX (M8.1) RXC8, RXAS8 and RXBVM8 for compile and run. */
+/* RXC8 needs LIBRARY RXBIN and RXCEXITS RXBIN on A (as M8.1 installs). */
+PARSE UPPER ARG A1 A2 .
+CUR = ''
+IF A2 <> '' & WORDPOS(A1, 'C R E') > 0 THEN DO
+  CUR = A2
+  SELECT
+    WHEN A1 = 'C' THEN CALL COMPILE
+    WHEN A1 = 'R' THEN CALL RUN
+    OTHERWISE CALL EDITF
+  END
+  EXIT RESULT
+END
+CUR = A1
+DO FOREVER
+  SAY ''
+  SAY '  T U R B O   C R E X X   ---   VM/370+ CMS'
+  IF CUR = '' THEN SAY '  Current file: (none)'
+  ELSE SAY '  Current file:' CUR 'CREXX A'
+  SAY '  N New    O Open    E Edit    C Compile    R Run'
+  SAY '  L Examples         D Versions             Q Quit'
+  SAY 'Command:'
+  PULL CMD REST
+  CMD = LEFT(CMD, 1)
+  SELECT
+    WHEN CMD = 'N' THEN CALL NEWF
+    WHEN CMD = 'O' THEN CALL OPENF
+    WHEN CMD = 'E' THEN CALL EDITF
+    WHEN CMD = 'C' THEN CALL COMPILE
+    WHEN CMD = 'R' THEN CALL RUN
+    WHEN CMD = 'L' THEN CALL EXAMPLES
+    WHEN CMD = 'D' THEN CALL VERSIONS
+    WHEN CMD = 'Q' THEN EXIT 0
+    WHEN CMD = '' THEN NOP
+    OTHERWISE SAY 'Unknown command:' CMD
+  END
+END
+
+ASKNAME:
+  SAY ARG(1)
+  PULL N .
+  PARSE VAR N N '.' .
+  RETURN LEFT(N, 8)
+
+NEWF:
+  N = ASKNAME('New file name (up to 8 characters):')
+  IF N = '' THEN RETURN 0
+  'STATE' N 'CREXX A'
+  IF RC = 0 THEN DO
+    SAY N 'CREXX A exists. Overwrite? (Y/N)'
+    PULL OK .
+    IF OK <> 'Y' THEN RETURN 0
+  END
+  'COPYFILE TCNEW TCEXAMPL * ' N 'CREXX A ( REPLACE'
+  IF RC <> 0 THEN RETURN RC
+  CUR = N
+  RETURN EDITF()
+
+OPENF:
+  'LISTFILE * CREXX A'
+  N = ASKNAME('File to open:')
+  IF N = '' THEN RETURN 0
+  'STATE' N 'CREXX A'
+  IF RC <> 0 THEN DO; SAY 'No' N 'CREXX A'; RETURN 28; END
+  CUR = N
+  RETURN 0
+
+NEEDCUR:
+  IF CUR <> '' THEN RETURN 1
+  SAY 'No current file: use N or O first.'
+  RETURN 0
+
+EDITF:
+  IF \NEEDCUR() THEN RETURN 0
+  'EDIT' CUR 'CREXX A'
+  RETURN RC
+
+COMPILE:
+  IF \NEEDCUR() THEN RETURN 0
+  'RXC8 -l a -i a' CUR
+  IF RC <> 0 THEN DO; SAY 'TURBO: compile failed, RC' RC; RETURN RC; END
+  'RXAS8 -l a' CUR
+  IF RC <> 0 THEN DO; SAY 'TURBO: assembly failed, RC' RC; RETURN RC; END
+  SAY 'TURBO:' CUR 'compiled without errors'
+  RETURN 0
+
+RUN:
+  IF \NEEDCUR() THEN RETURN 0
+  IF COMPILE() <> 0 THEN RETURN RESULT
+  'RXBVM8 -l a' CUR 'LIBRARY'
+  R = RC
+  SAY 'TURBO: RC' R
+  RETURN R
+
+EXAMPLES:
+  'LISTFILE * TCEXAMPL *'
+  N = ASKNAME('Copy which one to A? (blank to skip)')
+  IF N = '' | N = 'TCNEW' THEN RETURN 0
+  'COPYFILE' N 'TCEXAMPL * ' N 'CREXX A ( REPLACE'
+  IF RC = 0 THEN CUR = N
+  RETURN RC
+
+VERSIONS:
+  'RXC8 -v'
+  'RXAS8 -v'
+  'RXBVM8 -v'
+  RETURN 0

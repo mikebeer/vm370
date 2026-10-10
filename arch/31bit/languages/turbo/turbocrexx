@@ -1,0 +1,3 @@
+#!/bin/sh
+# turbocrexx -- start Turbo CREXX from anywhere (VM/370+ Debian)
+exec bash /usr/local/share/turbocrexx/turbocrexx.sh "$@"

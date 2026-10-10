@@ -1,6 +1,6 @@
 # VM/370+ — where things stand
 
-Last updated **9 October 2026, 16:10 UTC**. **Read this first in a new session.**
+Last updated **10 October 2026, 07:20 UTC**. **Read this first in a new session.**
 
 ---
 
@@ -31,7 +31,14 @@ The kit was verified on a fresh CE (kt14).
 | M9 | 64-bit |
 
 **Backlog (agreed, not scheduled before M9 unless said):**
-- Languages in cREXX, for CMS (via RXBVM8, later RXBVM82) and Linux, built by `arch/31bit/languages/mklangs.sh` with a cREXX `rxfloat` (`languages/common`): BASIC (mikebeer/basic, 13/13 tests), SNOBOL4 (mikebeer/snobol, 10/10), Pascal (mikebeer/pascal, 11/11), Lisp (mikebeer/lisp, 12/12), Prolog, LOGO -- all pass on the PC, and run on CMS through RXBVM8 (run lg2; `mkcmsdeck.py`). Smalltalk (mikebeer/smalltalk) and PL/M (mikebeer/PLM): as soon as the repositories have commits. Others: FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
+- Languages in cREXX, for CMS (via RXBVM8, later RXBVM82) and Linux, built by `arch/31bit/languages/mklangs.sh` with a cREXX `rxfloat` (`languages/common`): BASIC (mikebeer/basic, 13/13 tests), SNOBOL4 (mikebeer/snobol, 10/10), Pascal (mikebeer/pascal, 11/11), Lisp (mikebeer/lisp, 12/12), Prolog, LOGO -- all pass on the PC, and run on CMS through RXBVM8 (run lg2; `mkcmsdeck.py`). Smalltalk (mikebeer/smalltalk, 10/10) and PL/M (mikebeer/PLM) added 10 Oct; each language builds in its own directory; on Debian (golden6 disk) all run. Others: FORTH (pforth); MicroPython on CMS, CPython on 64-bit CMS after M9; R under Debian; a modern APL (GNU APL checked); bwBASIC, and CE's own BASIC checked; FreeBASIC after M9; a PL/M compiler (PL/M to C).
+- Turbo CREXX (the project owner's turbocrexx-cli, a Turbo-Pascal-style menu around cREXX): on Debian in the bundle (`turbocrexx`, with a small s390 `crexx` driver, `languages/turbo/crexx`; verified on Debian 10 Oct); on CMS as `TURBO EXEC` (EDIT + RXC8/RXAS8/RXBVM8), in the LANGS deck (run lg3).
+- THE (The Hessling Editor): on Debian from the wheezy packages (`the`, `libregina3`) -- this session's network refuses the Debian archive, so the packages must be attached; on CMS after the 3270 panel library.
+- xBase: mikebeer/xbase (cREXX, when it has commits) on both; Harbour on Debian first, CMS later.
+- Message queueing (mikebeer/mq): on Linux a statically linked client with a RabbitMQ broker; on CMS a VM-native queue machine over VMCF/IUCV, a RabbitMQ client after CMS sockets.
+- C++ on CMS: a subset through the cross route now, full C++ after M9 -- awaiting the owner's OK.
+- Docker: not on 31-bit (Docker and containerd are Go programs, and Go has no 31-bit s390 port; Docker needs a 64-bit kernel with cgroups and overlayfs). After M9, under a 64-bit Linux (s390x) guest with a current Debian, where Docker's s390x builds run. Before that, LXC containers under Debian 7 (LXC is C; the Linux 4.0 kernel has namespaces and cgroups) as a first step.
+- SMAPI (the z/VM Systems Management API): a VSMSERVE-style service virtual machine in REXX/cREXX that answers a subset of the SMAPI calls (Image_Query, Image_Activate/Deactivate, Image_Create/Delete through the directory, Image_Disk_Create/Delete, Virtual_Network queries) using class A/B CP commands and the directory program; locally over VMCF/IUCV, and over TCP (port 44444, the SMAPI wire format) after CMS sockets; an smcli-style client for Debian. Lets OpenStack-era tools (Feilong/zVM Cloud Connector) and scripts manage VM/370+ guests.
 - Java: OpenJDK 7 under Debian (soon, a package download like Python); a fuller Java on CMS after M9.
 - SQL: SQLite on CMS (cross-built like M8.1, with a CMS file layer and a REXX interface); MariaDB/MySQL 5.5 or PostgreSQL 9.1 under Debian.
 - CMS sockets (over the Hercules TCP/IP instruction) and a web server (httpd) on CMS; Apache under Debian. The Office's internet mail and web client build on these.

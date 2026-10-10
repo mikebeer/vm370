@@ -12,11 +12,15 @@ B(['**Chapter 1, Introduction**, says what VM/370+ is and what it is for.',
    '**Chapter 3, Installing VM/370+**, takes you from a fresh Community Edition to a running VM/370+ system.',
    '**Chapter 4, Operating VM/370+**, covers start-up, shutdown and the rules that keep the system healthy.',
    '**Chapter 5, Running Linux/390**, describes ESA/390 virtual machines, the Linux kernel, the Debian system and the network connection to the PC.',
-   '**Chapter 6, cREXX on VM/370+**, describes the REXX compiler and virtual machine built for and on VM/370+.',
+   '**Chapter 6, cREXX on VM/370+**, describes the REXX compiler and virtual machine built for and on VM/370+, the languages written in cREXX that run on CMS and on Linux, and Turbo CREXX.',
    '**Chapter 7, Restrictions and Known Problems**, lists what does not work yet.',
    '**Appendix A** summarizes the new and changed commands, **Appendix B** lists the files in the installation kit, **Appendix C** gives the ESA/390 deviations of the virtual machine.']);
 H3('Conventions');
 P('Commands are shown in `monospaced type`. In command descriptions, uppercase letters are typed as shown and lowercase words stand for values you supply. Examples of terminal sessions are shown in framed figures; lines you type are not marked separately because the context makes clear which they are.');
+H3('Summary of changes');
+P('This edition is kept up to date as VM/370+ grows; each change is listed here, newest first.');
+B(['**10 October 2026.** Languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
+   '**9 October 2026.** First edition, for kit build 5.']);
 P('*PC* means the personal computer on which Hercules runs. *Real* storage and devices are those of the Hercules machine; *virtual* storage and devices are those CP gives a user.');
 
 // ---------------------------------------------------------------- chapter 1
@@ -43,8 +47,11 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['M7', 'ESA/390 virtual machines, Linux/390, Debian, SSH', 'complete'],
   ['M7.8', 'Linux for several users from a linkable disk (LINUX EXEC); Linux and CMS side by side', 'complete; two Debians at once need M4b.3'],
   ['M7.9', 'channel programs of any length for ESA/390 guests (no 64-CCW limit)', 'planned'],
-  ['M8', 'cREXX: 2022 release built natively; current release cross-built', 'native build of the current release pending'],
-  ['\u2014', 'GNU C under Debian (development packages)', 'planned'],
+  ['M7.10', 'IPL of Linux from its disk (zipl) and a CP name LINUX', 'next'],
+  ['M8', 'cREXX: the 2022 release built natively (M5); the current release cross-built (M8.1)', 'complete'],
+  ['M8.2', 'the current cREXX built natively with GCC380', 'compiler, assembler and VM work; the library does not build yet'],
+  ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'in the Linux bundle; CMS deck being tested'],
+  ['\u2014', 'GNU C 4.6, Python 2.7 and 3.2 under Debian', 'complete'],
   ['M9', 'z/Architecture (64-bit)', 'planned, after all of the above'],
 ], [1400, 6038, 2200], 'VM/370+ milestones');
 
@@ -65,7 +72,8 @@ H2('Virtual machines');
 B(['**Storage.** A virtual machine may have up to 256 MB. The directory’s maximum (the second size on the USER statement) is checked as before; the kit’s directory allows 256 MB for CMSUSER and 64 MB for MAINT.',
    '**Shared CMS.** The CMS saved system is shared by page frame rather than by segment: with 1 MB segments, sharing whole segments would expose private CMS storage to other users. The effect for the user is none.',
    '**31-bit virtual machines.** A virtual machine in EC mode may run with PSW bit 32 on (31-bit addressing); CP translates its addresses in 31 bits.',
-   '**ESA/390 virtual machines.** New command `SET ESA ON|OFF`; see Chapter 5 and Appendix A.']);
+   '**ESA/390 virtual machines.** New command `SET ESA ON|OFF`; see Chapter 5 and Appendix A.',
+   '**More disk space for CMSUSER.** Besides 191–195 on VM50U0, CMSUSER has four more minidisks, 196–199, of 115 cylinders (about 52 MB) each on VM50-8, in the cylinders the Community Edition leaves free there. They come formatted, labeled CMS196 to CMS199: `ACCESS 196 H` (197 I, 198 J, 199 K). A CMS minidisk on a 3350 holds at most 65,535 blocks of 800 bytes, about 52 MB; larger minidisks come with milestone M6.']);
 H2('CP commands');
 TABLE(['Command', 'Change'], [
   ['`SET ESA ON|OFF`', 'New (class G). ON makes the next IPL of a device an IPL of an ESA/390 machine; OFF returns to System/370 at once.'],
@@ -190,7 +198,8 @@ H2('The Linux system');
 H3('Boot sequence');
 P('The kernel’s initramfs (BusyBox) brings the 3390 online, creates a partition and a file system on a new disk, groups the CTC pair as `ctc0` and configures it from the IPL parameters (default 10.1.1.2, peer 10.1.1.1). If the disk holds a system (`/sbin/init`), it hands over to it with `switch_root`; otherwise it stays in storage with the prompt `vm370plus:~#`. The parameter `vmroot=ram` (deck `lxparmram.rdr`) keeps the in-storage system even when Debian is on the disk, which is how you repair the disk.');
 H3('Debian');
-P('The disk holds Debian 7.11 (wheezy) for s390: sysvinit, udev, rsyslog, cron, OpenSSH, apt and dpkg, 154 packages, root on ext2, a 128 MB swap file. Log in as `root` with password `vm370plus`, and change the password.');
+P('The disk holds Debian 7.11 (wheezy) for s390: sysvinit, udev, rsyslog, cron, OpenSSH, apt and dpkg, root on ext2, a 128 MB swap file. Log in as `root` with password `vm370plus`, and change the password.');
+P('Development tools are installed: GNU C and C++ 4.6.3 with make, Python 2.7.3 (`python`) and Python 3.2.3 (`python3`). cREXX and the languages of Chapter 6 are in `/usr/local/bin`.');
 SCREEN(['root@vm370plus:~# cat /etc/debian_version', '7.11',
         'root@vm370plus:~# df -h /', 'Filesystem      Size  Used Avail Use% Mounted on', '/dev/dasda1     771M  325M  407M  45% /',
         'root@vm370plus:~# free', '             total       used       free     shared    buffers     cached',
@@ -223,7 +232,38 @@ H2('Cross-compiled programs');
 P('`rxc31`, `rxas31` and `rxbvm31` on CMSUSER’s A disk were compiled on the PC with GCC 13 (`-m31`), newlib and a small CMS runtime (`vm370plus/m5f/`). They need Hercules 4.x.');
 SCREEN(['ipl 290', 'rxc31 basic', 'rxas31 basic', 'rxbvm31 basic', 'libctest a b'], 'Cross-compiled cREXX');
 H2('The current cREXX release');
-P('The current release needs a C99 compiler; GCC380 is GCC 3.2.3. It runs on VM/370+ cross-compiled (`rxc8`, `rxas8`, `rxbvm8`); building it natively is milestone M8.2.');
+P('The current release (1.0.0-beta.3) needs a C99 compiler; GCC380 is GCC 3.2.3. It runs on VM/370+ cross-compiled with GCC 13 (`RXC8`, `RXAS8`, `RXBVM8`, milestone M8.1). `RXC8` needs `LIBRARY RXBIN` and `RXCEXITS RXBIN` on the disk named by `-l`; source files are `fn CREXX`:');
+SCREEN(['rxc8 -l a -i a hello', 'rxas8 -l a hello', 'rxbvm8 -l a hello', 'Hello from current cREXX on VM/370+', 'sum 1..10 = 55', 'Ready;'], 'The current cREXX on CMS');
+P('Milestone M8.2 builds the same release natively with GCC380 and GCCLIB31 (`RXC82`, `RXAS82`, `RXBVM82`). The three work for programs that call no library functions; the library itself does not build natively yet (Chapter 7). Until it does, use the M8.1 tools. Native cREXX on CMS runs in EBCDIC (IBM-1047) throughout, as IBM REXX does.');
+H2('Languages written in cREXX');
+P('Several languages are implemented as cREXX programs. They are compiled once on the PC and run unchanged on CMS (through `RXBVM8`) and on Linux (through `rxvm`). Floating point comes from `rxfloat`, a cREXX version of the cREXX float plugin, so no native plugin is needed.');
+TABLE(['Language', 'CMS', 'Linux', 'Notes'], [
+  ['BASIC', '`BASIC fn.bas`', '`basic fn.bas`', 'classic, MS and ANSI dialects (`-MS`, `-FB`, `-ANSI`)'],
+  ['SNOBOL4', '`SNOBOL fn.sno`', '`snobol fn.sno`', 'patterns, tables, arrays'],
+  ['Pascal', '`PASCAL fn`', '`pasc fn.pas`', 'compiles Pascal to cREXX, then runs it'],
+  ['Lisp', '`LISP fn.lisp`', '`lisp fn.lisp`', 'a Common Lisp subset; without a file, a read-eval-print loop'],
+  ['Smalltalk', '`SMALLTLK fn.st`', '`smalltalk fn.st`', 'Smalltalk-80 with GNU Smalltalk bracket syntax; class library in `*.ST`'],
+  ['PL/M', '`PLM fn`', '`plmc fn.plm`', 'PL/M-80 compiled to cREXX; `( COMPILE` or `-c` compiles only'],
+  ['Prolog', '`PROLOG`', '`prolog`', 'consult files with `consult(\'family.pl\')?`'],
+  ['LOGO', '`LOGO fn.logo out`', '`logo fn.logo out.svg`', 'turtle graphics written as SVG'],
+], [1400, 2100, 2100, 4038], 'Languages in cREXX');
+P('On CMS the languages arrive as one reader deck (`LANGS`); `READCARD *` puts the files on your A disk and `LANGSUP EXEC` rebuilds the modules from their hex form. Use one of CMSUSER’s large disks as A for it (for example `ACCESS 196 A`). CMS cuts a command argument to eight characters, so the EXECs pass file names through the program stack: type the names as usual.');
+P('On Debian the languages are part of the cREXX bundle (`lxcrexx.tgz`), unpacked under `/usr/local`; the examples are in `/usr/local/share/`*language*.');
+H2('Turbo CREXX');
+P('Turbo CREXX is a small Turbo-Pascal-style front end: a menu that creates, edits, compiles and runs one cREXX program at a time. It does not implement REXX; it calls the real cREXX tools.');
+TABLE(['Key', 'Action'], [
+  ['N', 'new program (from a template), then edit it'],
+  ['O / E', 'open an existing program; edit it'],
+  ['C', 'compile: compiler and assembler, no run'],
+  ['R', 'compile and run'],
+  ['L', 'copy an example (hello, fibfact) to your disk or directory'],
+  ['D', 'show the versions of the tools'],
+  ['Q', 'quit'],
+], [1400, 8238], 'Turbo CREXX menu');
+P('**On Debian**, type `turbocrexx` (or `turbocrexx` *file*`.crexx`). The editor is `$EDITOR`, else nano or vi. Underneath, `crexx` *file*`.crexx` compiles and runs a program (`crexx -noexec` only compiles): a small driver of VM/370+ for `rxc`, `rxas` and `rxvm`, since the upstream `crexx` driver is not yet built for s390.');
+P('**On CMS**, type `TURBO` (or `TURBO fn`). Programs are `fn CREXX A`; the editor is EDIT; compile and run use `RXC8`, `RXAS8` and `RXBVM8` with `LIBRARY RXBIN` on A. Without the menu: `TURBO C fn`, `TURBO R fn`, `TURBO E fn`. The examples are `HELLO TCEXAMPL` and `FIBFACT TCEXAMPL`.');
+SCREEN(['turbo', '  T U R B O   C R E X X   ---   VM/370+ CMS', '  Current file: (none)',
+        '  N New    O Open    E Edit    C Compile    R Run', '  L Examples         D Versions             Q Quit', 'Command:'], 'Turbo CREXX on CMS');
 
 // ---------------------------------------------------------------- chapter 7
 H1('Restrictions and Known Problems');
@@ -236,6 +276,8 @@ TABLE(['Area', 'Restriction'], [
   ['CPWATCH', 'Loops under this CP; not autologged.'],
   ['QUERY VIRTUAL STORAGE', 'Shows five digits.'],
   ['Multiprocessing', 'One CPU only.'],
+  ['cREXX, native', 'The natively built current cREXX (M8.2) cannot build its library yet; use RXC8, RXAS8 and RXBVM8 (M8.1).'],
+  ['CMS file names', 'Programs cross-compiled for CMS cut a file name longer than eight characters to eight (Smalltalk’s `collections.st` is `COLLECTI ST`).'],
   ['Linux', 'Linux 4.0 31-bit is the last kernel with 31-bit support; Debian 7 is the last Debian for s390 (31-bit). No IPL of Linux from DASD yet.'],
 ], [2400, 7238], 'Restrictions');
 

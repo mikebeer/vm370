@@ -1,0 +1,5 @@
+options levelb
+import rxfnsb
+
+say 'Hello from Turbo CREXX on CMS'
+return 0

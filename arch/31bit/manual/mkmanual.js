@@ -104,14 +104,14 @@ const title = [
   new Paragraph({ children: [new TextRun({ text: 'Introduction, Installation', font: HEAD, bold: true, size: 40 })] }),
   new Paragraph({ children: [new TextRun({ text: 'and User’s Guide', font: HEAD, bold: true, size: 40 })], spacing: { after: 400 },
     border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: '000000', space: 8 } } }),
-  new Paragraph({ children: [new TextRun({ text: 'Release 1  •  Kit Build 5', font: HEAD, size: 24 })], spacing: { after: 120 } }),
+  new Paragraph({ children: [new TextRun({ text: 'Release 1  •  Kit Build 5, updated 10 October 2026', font: HEAD, size: 24 })], spacing: { after: 120 } }),
   new Paragraph({ children: [new TextRun({ text: 'based on VM/370 Community Edition V1 R1.2', font: HEAD, size: 22 })], spacing: { after: 2400 } }),
   new Paragraph({ children: [new TextRun({ text: 'Publication VMP-0001-0', font: HEAD, size: 22 })] }),
   new Paragraph({ children: [new TextRun({ text: 'File No. S370-34', font: HEAD, size: 22 })] }),
   new Paragraph({ children: [new PageBreak()] }),
 ];
 const edition = [
-  new Paragraph({ children: [new TextRun({ text: 'First Edition (October 2026)', font: HEAD, bold: true, size: 24 })], spacing: { after: 200 } }),
+  new Paragraph({ children: [new TextRun({ text: 'First Edition, revised (October 2026)', font: HEAD, bold: true, size: 24 })], spacing: { after: 200 } }),
   ...['This edition applies to VM/370+ Release 1 (kit build 5, 9 October 2026), an ESA/390 conversion of the VM/370 Community Edition V1 R1.2, and to all subsequent builds until otherwise indicated in new editions.',
      'VM/370+ is a hobbyist project. It is not a product of, and this manual is not a publication of, International Business Machines Corporation. IBM, System/370, ESA/390, z/Architecture and VM/370 are names of IBM products and architectures, used here only to identify the systems this software runs on and descends from.',
      'VM/370 itself is in the public domain. The VM/370 Community Edition is maintained by its community. Hercules is an open-source emulator. Linux and Debian are trademarks of their respective owners. cREXX is an open-source REXX implementation.',

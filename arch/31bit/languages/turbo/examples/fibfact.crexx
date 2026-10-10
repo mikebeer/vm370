@@ -1,0 +1,22 @@
+options levelb
+import rxfnsb
+
+main: procedure
+  say "Fibonacci and factorial demo"
+  do i = 0 to 9
+    say "fib(" || i || ") = " || fib(i)
+  end
+  do n = 1 to 6
+    say n || "! = " || fact(n)
+  end
+  return
+
+fib: procedure = .int
+  arg n = .int
+  if n < 2 then return n
+  return fib(n - 1) + fib(n - 2)
+
+fact: procedure = .int
+  arg n = .int
+  if n <= 1 then return 1
+  return n * fact(n - 1)

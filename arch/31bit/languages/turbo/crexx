@@ -1,0 +1,20 @@
+#!/bin/sh
+# crexx -- VM/370+: a small stand-in for the cREXX "crexx" driver, enough
+# for Turbo CREXX (turbocrexx.sh): compile, assemble and run one program
+# with rxc, rxas and rxvm.  The upstream driver is itself a cREXX program
+# linked with the native VM and its plugins, not yet built for s390.
+#   crexx [-noexec] file.crexx [args...]     crexx -version
+B=$(cd "$(dirname "$0")" && pwd)
+case "${1:-}" in
+  -version|--version|-v) echo "crexx (VM/370+ driver) - $("$B"/rxc -v 2>&1 | head -1)"; exit 0 ;;
+esac
+run=1
+[ "${1:-}" = "-noexec" ] && { run=0; shift; }
+[ $# -ge 1 ] || { echo "usage: crexx [-noexec] file.crexx [args]"; exit 8; }
+f=$1; shift
+d=$(dirname "$f"); m=$(basename "$f"); m=${m%.*}
+cd "$d" || exit 8
+"$B"/rxc -i "$B" "$m" || exit $?
+"$B"/rxas "$m" || exit $?
+[ $run = 1 ] || { echo "crexx: $m compiled without errors"; exit 0; }
+exec "$B"/rxvm "$m" "$B"/library.rxbin -a "$@"

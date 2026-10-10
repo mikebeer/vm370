@@ -1,0 +1,5 @@
+turbocrexx.sh, examples/ and levelb_tutorial.md: from turbocrexx-cli_1.tar.gz
+(supplied by the project owner, 2026-10-10); one change: end of input
+at the menu prompt ends the program (it looped when fed from a pipe).  The x86_64 binaries
+in that package are not used: on Debian/s390 Turbo CREXX drives the s390
+cREXX tools of this bundle through crexx, a small driver written here.
