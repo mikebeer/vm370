@@ -166,6 +166,15 @@ def main():
                     '#define CRXFAIL(v) (crxflog[crxfline++ & 15] = __LINE__ - 2, (v))\n' +
                     re.sub(r'\bgoto error;', '{ CRXFAIL(0); goto error; }',
                            re.sub(r'\breturn 0;', 'return CRXFAIL(0);', text)))
+        if b in os.environ.get('M82TM', '').split(','):
+            # debugging aid: say which TYPE_MISMATCH site fires
+            text = re.sub(r'\bmknd_err\((\w+), "TYPE_MISMATCH"\)',
+                          lambda m: '(fprintf(stderr, "TM %s %%d\\n", __LINE__ - 0), mknd_err(%s, "TYPE_MISMATCH"))'
+                          % (b, m.group(1)), text)
+        if b == 'rxcp_val_orch.c' and 'orch' in os.environ.get('M82TM', ''):
+            o = '/* printf("DEBUG: TYPE_MISMATCH on \'%s\': value_type=%d, target_type=%d\\n", debug_str, node->value_type, node->target_type); */'
+            assert text.count(o) == 1, 'orch debug line'
+            text = text.replace(o, 'fprintf(stderr, "TMD \'%s\' node %d value %d target %d vclass %s tclass %s sym %p\\n", debug_str, (int)node->node_type, (int)node->value_type, (int)node->target_type, node->value_class ? node->value_class : "-", node->target_class ? node->target_class : "-", (void *)node->symbolNode);')
         if b == 'rxbin007.c' and 'pool' in os.environ.get('M82TRACE', ''):
             o = '''static int rxbin007_pool_id_has_type(const rxbin007_pool_read *pool,
                                      uint32_t id,
@@ -191,6 +200,13 @@ def main():
             pool && id < pool->record_count ? (unsigned long) pool->records[id].type : 0UL,
             (unsigned long) type);
 ''')
+        # the section sign that prefixes the compiler's internal names
+        # (\u00a7this, \u00a7factory): upstream writes it both as the escape
+        # "\xc2\xa7" (raw UTF-8 bytes, which the card reader leaves alone) and
+        # as literal UTF-8 (which it translates) -- on CMS the two would no
+        # longer compare equal.  One Latin-1 byte X'A7' here becomes the
+        # IBM-1047 section sign X'B5' on CMS, as the 1047 scanners have it.
+        text = text.replace('\\xc2\\xa7', '\xa7').replace('\xc2\xa7', '\xa7')
         if names:
             text = rename(text, names)
         out = []

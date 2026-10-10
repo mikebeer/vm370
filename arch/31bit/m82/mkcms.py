@@ -16,7 +16,7 @@ C = '/home/claude/adesutherland/crexx'
 sys.path.insert(0, os.path.join(HERE, '..', 'crexx'))
 from mkdeck import cards  # noqa: E402
 
-PARM = '-w -O1 -S -DNDEBUG -D__CMS__ -o dd:out -'
+PARM = os.environ.get('M82PARM', '-w -O1 -S -DNDEBUG -D__CMS__ -o dd:out -')
 
 
 def units_of(stage):
