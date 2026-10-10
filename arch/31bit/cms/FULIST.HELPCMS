@@ -1,0 +1,45 @@
+FULIST                                                    (VM/370plus) CMS EXEC
+Use the FULIST command to work with CMS files from a full-screen list of them,
+in the manner of IBM's FILELIST.  FL is a short form.
++----------+------------------------------------------------------------------+
+| FULIST   | [fn|* [ft|* [fm|A|*]]]                                           |
+| FL       |                                                                  |
++----------+------------------------------------------------------------------+
+fn, ft   file name and type; * or a prefix followed by * selects several.
+fm       the file mode; the default is A, * means all accessed disks.
+
+The list shows Cmd, Filename, Filetype, Fm, Format, Lrecl, Records, Blocks,
+Date and Time (and the disk label on a 132-column screen).
+
+Commands in the Cmd column
+Type a command next to one or more files and press ENTER.  The commands run
+from the top of the screen down.  In a command:
+   /    stands for the whole file id "fn ft fm"
+   /n   the file name,  /t  the file type,  /m  the file mode
+A command without a / gets " /" appended.  Abbreviations:
+   E or X    edit the file (EE)
+   B         browse the file (FSVIEW)
+   D         discard (erase) the file
+   =         repeat the last command
+Any other CMS or CP command may be used, e.g.  COPYFILE / = = B  or
+RENAME / NEW = =  or  PRINT /.  After a command the column shows  *  if it
+ended with return code 0, otherwise  *rc.
+
+PF keys
+   PF1  Help             PF7   Backward (a page)
+   PF2  Refresh          PF8   Forward  (a page)
+   PF3  Quit             PF9   FL /n: all files with this file name
+   PF4  Sort by type     PF10  Sort by name
+   PF5  Sort by date     PF11  Edit the file under the cursor
+   PF6  Sort by size     PF12  Cursor: list <-> command line
+
+The command line (====>)
+   TOP, BOTTOM           go to the top or the end of the list
+   SORT NAME|TYPE|DATE|SIZE
+   REFRESH               read the list again
+   FULIST fn ft fm       list other files
+   QUIT                  leave FULIST
+   anything else         run as a CMS or CP command
+
+FULIST uses the REXX full-screen package (HELP REXXEXT FULLSCRE) and needs a
+3270 terminal.

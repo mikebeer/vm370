@@ -1,0 +1,4 @@
+/* FL EXEC -- VM/370plus: short for FULIST */
+parse arg a
+'EXEC FULIST' a
+exit rc

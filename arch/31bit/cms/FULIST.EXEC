@@ -1,0 +1,333 @@
+/* FULIST EXEC -- VM/370plus: full-screen file list, IBM FILELIST style  */
+/*                                                                       */
+/*   FULIST [fn|* [ft|* [fm|A|*]]]          (synonym: FL)                */
+/*                                                                       */
+/* Type a command in the Cmd column next to a file and press ENTER;      */
+/* in it  /  stands for "fn ft fm", /n /t /m for the parts.  A command   */
+/* without a / gets " /" appended.  Abbreviations: E or X edit,          */
+/* B browse, D discard (erase), = repeats the last command.  After a     */
+/* command the column shows * (rc 0) or *nn (rc nn).                     */
+/* PF1 Help  PF2 Refresh  PF3 Quit  PF4 Sort(type)  PF5 Sort(date)       */
+/* PF6 Sort(size)  PF7 Backward  PF8 Forward  PF9 FL /n  PF10 Sort(name) */
+/* PF11 Edit  PF12 Cursor.  Command line: TOP, BOTTOM, SORT NAME|TYPE|   */
+/* DATE|SIZE, REFRESH, QUIT, FULIST fn ft fm, or any CMS/CP command.     */
+/* Uses the REXX full-screen package (FSVARS ...).                       */
+/* Editor and browser: EE and FSVIEW (MECAFF); THE later.                */
+
+parse upper arg pfn pft pfm .
+if pfn = '' then pfn = '*'
+if pft = '' then pft = '*'
+if pfm = '' then pfm = 'A'
+editor  = 'EE'
+browser = 'FSVIEW'
+lastcmd = ''
+msg = ''
+sortkey = ''
+n = 0; done = 0; fsoff = 0; pausing = 0
+call loadlist
+top = 1
+call fsvars
+cursor_to = 'LIST'
+do forever
+  call showscreen
+  select
+    when aid = 'PF3' | aid = 'PF15' then leave
+    when aid = 'PF1' then call outside 'HELP FULIST', 0
+    when aid = 'PF2' then do; msg = ''; call loadlist; end
+    when aid = 'PF4' then call sortlist 'TYPE'
+    when aid = 'PF5' then call sortlist 'DATE'
+    when aid = 'PF6' then call sortlist 'SIZE'
+    when aid = 'PF10' then call sortlist 'NAME'
+    when aid = 'PF7' then top = max(1, top - nlines)
+    when aid = 'PF8' then if top + nlines <= n then top = top + nlines
+    when aid = 'PF9' then do
+      k = filerow()
+      if k > 0 then do
+        pfn = fn.k; pft = '*'; pfm = '*'
+        call loadlist; top = 1
+      end
+    end
+    when aid = 'PF11' then do
+      k = filerow()
+      if k > 0 then call runone k, 'E'
+    end
+    when aid = 'PF12' then do
+      if cursor_row = cmdrow then cursor_to = 'LIST'
+      else cursor_to = 'CMD'
+    end
+    when aid = 'ENTER' then do
+      call linecmds
+      if strip(cmdl) <> '' then call cmdline strip(cmdl)
+    end
+    otherwise nop
+  end
+  if done = 1 then leave
+end
+call fsend
+exit 0
+
+/* ---- the file list ------------------------------------------------ */
+loadlist:
+  old. = ''
+  do i = 1 to n
+    old.i = fn.i ft.i fm.i st.i
+  end
+  oldn = n
+  n = 0
+  'MAKEBUF'
+  'LISTFILE' pfn pft pfm '(STACK LABEL'
+  lrc = rc
+  do while queued() > 0
+    parse pull f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 .
+    n = n + 1
+    fn.n = f1; ft.n = f2; fm.n = f3; fmt.n = f4; lrecl.n = f5
+    recs.n = f6; blks.n = f7; dat.n = f8; tim.n = f9; lab.n = f10
+    st.n = ''
+    do j = 1 to oldn             /* keep the status of known files */
+      if word(old.j, 1) = f1 & word(old.j, 2) = f2 then do
+        st.n = word(old.j, 4)
+        leave
+      end
+    end
+  end
+  'DROPBUF'
+  if n = 0 then msg = 'No files found:' pfn pft pfm '(rc' lrc')'
+  else if msg = '' then msg = n word('files file', 1 + (n = 1))
+  if sortkey <> '' then call sortlist sortkey
+  return
+
+datekey: procedure expose dat. tim.
+  arg k
+  parse var dat.k mm '/' dd '/' yy
+  parse var tim.k hh ':' mi
+  return right(yy, 2, 0) || right(mm, 2, 0) || right(dd, 2, 0) ||,
+         right(hh, 2, 0) || right(mi, 2, 0)
+
+sortlist:
+  arg sortkey
+  do i = 1 to n
+    select
+      when sortkey = 'NAME' then key.i = left(fn.i, 8) left(ft.i, 8) fm.i
+      when sortkey = 'TYPE' then key.i = left(ft.i, 8) left(fn.i, 8) fm.i
+      when sortkey = 'DATE' then key.i = translate(datekey(i),,
+                                  '9876543210', '0123456789')
+      when sortkey = 'SIZE' then
+        key.i = right(999999999 - blks.i, 10, 0) left(fn.i, 8)
+      otherwise key.i = i
+    end
+  end
+  do i = 2 to n                  /* insertion sort, stable */
+    k = key.i; a1 = fn.i; a2 = ft.i; a3 = fm.i; a4 = fmt.i; a5 = lrecl.i
+    a6 = recs.i; a7 = blks.i; a8 = dat.i; a9 = tim.i; a10 = lab.i; a11 = st.i
+    j = i - 1
+    do while j > 0
+      if key.j <<= k then leave
+      jj = j + 1
+      key.jj = key.j; fn.jj = fn.j; ft.jj = ft.j; fm.jj = fm.j
+      fmt.jj = fmt.j; lrecl.jj = lrecl.j; recs.jj = recs.j
+      blks.jj = blks.j; dat.jj = dat.j; tim.jj = tim.j
+      lab.jj = lab.j; st.jj = st.j
+      j = j - 1
+    end
+    jj = j + 1
+    key.jj = k; fn.jj = a1; ft.jj = a2; fm.jj = a3; fmt.jj = a4
+    lrecl.jj = a5; recs.jj = a6; blks.jj = a7; dat.jj = a8
+    tim.jj = a9; lab.jj = a10; st.jj = a11
+  end
+  msg = 'Sorted by' tolower(sortkey)
+  return
+
+tolower: return translate(arg(1), 'abcdefghijklmnopqrstuvwxyz',,
+                                  'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+/* ---- the screen ---------------------------------------------------- */
+showscreen:
+  call fsreset
+  nlines = rows - 6
+  cmdrow = rows - 1
+  if top > n then top = max(1, n - nlines + 1)
+  hdr = userid() 'FULIST' pfn pft pfm '  Size='n '  Line='top
+  call fsdata protect+highlight, white, normal, 1, 2, columns - 2, hdr
+  ch = 'Cmd   Filename Filetype Fm Format Lrecl  Records  Blocks Date     Time'
+  if columns >= 100 then ch = ch '  Label'
+  call fsdata protect, turquoise, normal, 2, 2, columns - 2, ch
+  do i = 1 to nlines
+    k = top + i - 1
+    interpret 'CF'i "= ''"
+    if k > n then iterate
+    l = left(fn.k, 8) left(ft.k, 8) left(fm.k, 2) left(fmt.k, 1),
+        right(lrecl.k, 9) right(recs.k, 8) right(blks.k, 7),
+        left(dat.k, 8) right(tim.k, 5)
+    if columns >= 100 then l = l '  ' lab.k
+    /* one input field per line, as in FILELIST: a command may run */
+    /* over the file information; what was typed is what changed   */
+    orig.i = left(left(st.k, 5) l, columns - 3)
+    call fsdata 0, green, normal, i + 2, 2, columns - 3, orig.i, 'CF'i
+  end
+  call fsdata protect+highlight, red, normal, rows - 3, 2, columns - 2, msg
+  call fsdata protect, turquoise, normal, rows - 2, 2, columns - 2,,
+    '1=Help 2=Refresh 3=Quit 4=Sort(type) 5=Sort(date) 6=Sort(size)',
+    '7=Bkwd 8=Fwd 9=FL /n 10=Sort(name) 11=Edit 12=Cursor'
+  call fsdata protect+highlight, white, normal, cmdrow, 2, 5, '====>'
+  cmdl = ''
+  call fsdata 0, white, normal, cmdrow, 8, columns - 9, '', 'CMDL'
+  if cursor_to = 'CMD' then call fscursor cmdrow, 8
+  else call fscursor 3, 2
+  cursor_to = 'LIST'
+  msg = ''
+  call fsewrite unlock
+  return
+
+/* the list entry under the cursor, or 0 */
+filerow:
+  if cursor_row < 3 | cursor_row > nlines + 2 then return 0
+  k = top + cursor_row - 3
+  if k > n then return 0
+  return k
+
+/* ---- commands ------------------------------------------------------ */
+linecmds:
+  ran = 0
+  do i = 1 to nlines
+    k = top + i - 1
+    if k > n then leave
+    t = value('CF'i)
+    if t = '' then iterate           /* not modified */
+    c = typed(t, orig.i)
+    if c = '' | left(c, 1) = '*' then iterate
+    ran = 1
+    call runone k, c
+  end
+  if ran then do
+    call pause
+    call loadlist
+  end
+  return
+
+/* the command typed over a list line: everything up to the last */
+/* column that differs from what was shown                         */
+typed: procedure
+  parse arg t, o
+  t = left(t, max(length(t), length(o)))
+  o = left(o, length(t))
+  e = 0
+  do p = length(t) to 1 by -1
+    if substr(t, p, 1) <> substr(o, p, 1) then do
+      e = p
+      leave
+    end
+  end
+  if e = 0 then return ''
+  c = strip(left(t, e))
+  if c = left(o, e) then return ''
+  return c
+
+/* run one file's command; the full screen is left for it */
+runone: procedure expose fn. ft. fm. st. lastcmd editor browser msg,
+                        pausing fsoff
+  parse arg k, c
+  if c = '=' then c = lastcmd
+  else lastcmd = c
+  w = translate(word(c, 1))
+  rest = subword(c, 2)
+  select
+    when w = 'E' | w = 'X' | w = 'XEDIT' | w = 'EDIT' then do
+      c = editor '/' rest; fs = 1
+    end
+    when w = 'B' | w = 'BROWSE' then do
+      c = browser '/' rest; fs = 1
+    end
+    when w = 'D' | w = 'DISCARD' then do
+      c = 'ERASE /' rest; fs = 0
+    end
+    otherwise fs = 0
+  end
+  if pos('/', c) = 0 then c = c '/'
+  c = subst(c, '/N', fn.k)
+  c = subst(c, '/T', ft.k)
+  c = subst(c, '/M', fm.k)
+  c = subst(c, '/', fn.k ft.k fm.k)
+  crc = docmd(c)
+  if crc = 0 then st.k = '*'
+  else st.k = '*' || crc
+  /* a pause to read the output -- not for quiet commands that worked */
+  q = translate(word(c, 1))
+  if crc <> 0 | (\fs & wordpos(q, 'ERASE RENAME COPYFILE MOVEFILE') = 0) then
+    pausing = 1
+  return
+
+/* replace every tok (case-insensitive) in s by val */
+subst: procedure
+  parse arg s, tok, val
+  out = ''
+  do forever
+    p = pos(tok, translate(s))
+    if p = 0 then leave
+    out = out || left(s, p - 1) || val
+    s = substr(s, p + length(tok))
+  end
+  return out || s
+
+/* a command from the command line */
+cmdline:
+  parse arg line
+  w = translate(word(line, 1))
+  select
+    when w = 'QUIT' | w = 'QQUIT' then done = 1
+    when w = 'TOP' then top = 1
+    when w = 'BOTTOM' | w = 'BOT' then top = max(1, n - nlines + 1)
+    when w = 'REFRESH' then call loadlist
+    when w = 'SORT' then call sortlist translate(word(line, 2))
+    when w = 'FULIST' | w = 'FL' | w = 'FILELIST' then do
+      parse upper var line . pfn pft pfm .
+      if pfn = '' then pfn = '*'
+      if pft = '' then pft = '*'
+      if pfm = '' then pfm = 'A'
+      call loadlist; top = 1
+    end
+    otherwise do
+      crc = docmd(line)
+      if crc <> 0 then say 'FULIST: rc' crc
+      call pausehere
+      call fsvars; fsoff = 0
+      call loadlist
+    end
+  end
+  return
+
+/* leave the full screen, run a command, come back */
+outside:
+  parse arg ocmd, opause
+  call docmd ocmd
+  if opause then call pausehere
+  call fsvars; fsoff = 0
+  return
+
+/* commands from the list: the full screen is ended before the first */
+docmd: procedure expose fsoff
+  parse arg dc
+  if fsoff <> 1 then do
+    call fsend
+    fsoff = 1
+  end
+  dc
+  if rc = -3 then do             /* not a module: an EXEC?   */
+    'EXEC' dc
+    if rc = 28 then 'CP' dc      /* no such EXEC: CP command */
+  end
+  return rc
+
+pause:
+  if pausing = 1 then call pausehere
+  pausing = 0
+  if fsoff = 1 then do
+    call fsvars
+    fsoff = 0
+  end
+  return
+
+pausehere:
+  say ''
+  say 'FULIST: press ENTER to return to the list'
+  pull .
+  return
