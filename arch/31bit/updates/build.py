@@ -4056,6 +4056,23 @@ def m7decks():
         "         TM    VMFSTAT,VMESA390  I-256: NO LOCATION-80 TIMER",
         "         BO    ADDROK         FOR AN ESA/390 GUEST"])
     decks['DMKPTR'] = d
+
+    d = Deck(XA54)
+    # QUERY SET line 5 shows ESA ON, PENDING (SET ESA ON before the next
+    # IPL of a device) or OFF (owner, 10 Oct).
+    d.insert('00437240', first='00437241', inc=1,
+             limit=next_seq(src('DMKCQR'), '00437240'), lines=M7EQU[:1] + [
+        "         TM    VMFSTAT,VMESA390  M7: ESA/390 MACHINE?",
+        "         BO    CQRESA1",
+        "         MVC   SETHDR+19(7),=X'D7C5D5C4C9D5C7'  (PENDING)",
+        "         TM    VMLCLRSV,X'40'  SET ESA ON, NOT YET IPLED",
+        "         BO    CQRESA1",
+        "         MVC   SETHDR+19(7),=CL7'OFF'",
+        "CQRESA1  DS    0H"])
+    d.replace('00449520', first='00449521', inc=1,
+              limit=next_seq(src('DMKCQR'), '00449520'), lines=[
+        "HDRSET5  DC    C'STBYPASS VR  , ESA ON     '"])
+    decks['DMKCQR'] = d
     return decks
 
 XSTSLOT = [   # R2 = slot frame address from the CCPD at SWPTABLE R5

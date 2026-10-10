@@ -1,0 +1,11 @@
+./ I 00437240 $ 00437241 001                                                    
+VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
+         TM    VMFSTAT,VMESA390  M7: ESA/390 MACHINE?          XA0054DK         
+         BO    CQRESA1                                         XA0054DK         
+         MVC   SETHDR+19(7),=X'D7C5D5C4C9D5C7'  (PENDING)      XA0054DK         
+         TM    VMLCLRSV,X'40'  SET ESA ON, NOT YET IPLED       XA0054DK         
+         BO    CQRESA1                                         XA0054DK         
+         MVC   SETHDR+19(7),=CL7'OFF'                          XA0054DK         
+CQRESA1  DS    0H                                              XA0054DK         
+./ R 00449520          $ 00449521 001                                           
+HDRSET5  DC    C'STBYPASS VR  , ESA ON     '                   XA0054DK         
