@@ -1,0 +1,16 @@
+/* XBASE EXEC -- xBase (Clipper/dBASE/Harbour style) in cREXX         */
+/*   XBASE fn.prg [args]   run an xBase program (github.com/mikebeer/xbase) */
+/* Runs XBASE RXBIN (linked with the library) on RXBVM8.              */
+PARSE ARG ARGS
+IF ARGS = '' THEN DO
+  SAY 'XBASE: usage: XBASE program.prg [arguments]'
+  EXIT 24
+END
+'STATE XBASE RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'XBASE: XBASE RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+QUEUE ARGS                /* CMS would cut each argument to 8 chars */
+'RXBVM8 XBASE -a =STACK'
+EXIT RC

@@ -12,7 +12,7 @@ def add(fn, ft, lines):
     for l in lines:
         assert len(l) <= 80, (fn, ft, l)
         L.append(l)
-mods = ['basic', 'logo', 'prolog', 'snobol', 'pascal', 'pasrt', 'lisp', 'smalltalk', 'plm', 'plmrt']
+mods = ['basic', 'logo', 'prolog', 'snobol', 'pascal', 'pasrt', 'lisp', 'smalltalk', 'plm', 'plmrt', 'xbase']
 CMSN = {'smalltalk': 'smalltlk'}             # CMS file names: 8 characters
 for m in mods:
     h = open(os.path.join(rx, m + '.rxbin'), 'rb').read().hex().upper()
@@ -21,7 +21,7 @@ def text(path):
     return [l.rstrip('\r') for l in open(path, encoding='latin-1').read().rstrip('\n').split('\n')]
 for d, f in (('basic/cms', 'BASIC.EXEC'), ('logo/cms', 'LOGO.EXEC'), ('prolog/cms', 'PROLOG.EXEC'),
              ('snobol/cms', 'SNOBOL.EXEC'), ('pascal/cms', 'PASCAL.EXEC'), ('lisp/cms', 'LISP.EXEC'),
-             ('smalltalk/cms', 'SMALLTLK.EXEC'), ('plm/cms', 'PLM.EXEC'), ('turbo/cms', 'TURBO.EXEC'),
+             ('smalltalk/cms', 'SMALLTLK.EXEC'), ('plm/cms', 'PLM.EXEC'), ('turbo/cms', 'TURBO.EXEC'), ('xbase/cms', 'XBASE.EXEC'),
              ('turbo/cms', 'HELLO.TCEXAMPL'), ('turbo/cms', 'FIBFACT.TCEXAMPL'), ('turbo/cms', 'TCNEW.TCEXAMPL')):
     fn, ft = f.split('.')
     add(fn, ft, text(os.path.join(HERE, d, f)))

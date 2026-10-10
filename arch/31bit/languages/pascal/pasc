@@ -1,0 +1,25 @@
+#!/bin/sh
+# pasc - compile and run a Pascal program
+#
+#   pasc program.pas            compile and run
+#   pasc -c program.pas         compile only (writes program.rxas and program.rxbin)
+#
+# Environment: CREXX_BIN = directory with rxas and rxvm (default: found via PATH)
+HERE=$(cd "$(dirname "$0")" && pwd)
+BIN=${CREXX_BIN:-$(dirname "$(command -v rxvm)")}
+ONLY=0
+if [ "$1" = "-c" ]; then ONLY=1; shift; fi
+if [ -z "$1" ] || [ ! -f "$1" ]; then
+  echo "usage: pasc [-c] program.pas" >&2
+  exit 2
+fi
+SRC=$1; shift
+STEM=${SRC%.pas}
+if [ ! -f "$HERE/build/pascal.rxbin" ] || [ ! -f "$HERE/build/pasrt.rxbin" ]; then
+  echo "pasc: run 'make' first" >&2
+  exit 2
+fi
+"$BIN/rxvm" "$HERE/build/pascal.rxbin" -a "$SRC" "$STEM.rxas" || exit 1
+"$BIN/rxas" "$STEM" || exit 1
+[ $ONLY = 1 ] && exit 0
+exec "$BIN/rxvm" "$STEM.rxbin" "$HERE/build/pasrt.rxbin" -a "$@"

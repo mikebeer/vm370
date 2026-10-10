@@ -36,6 +36,7 @@ build smalltalk "" "$HERE"/smalltalk/smalltalk.crexx
 build pascal -n "$HERE"/pascal/pascal.crexx "$HERE"/pascal/pasrt.crexx    # as their Makefiles: -n
 build lisp -n "$HERE"/lisp/lisp.crexx
 build plm -n "$HERE"/plm/plm.crexx "$HERE"/plm/plmrt.crexx
+build xbase -n "$HERE"/xbase/xbase.crexx
 cd "$W"
 C=$W/common
 "$B"/rxlink -o basicx basic/basic $C/rxfloat "$B"/library.rxbin
@@ -46,6 +47,7 @@ C=$W/common
 "$B"/rxlink -o pascalx pascal/pascal "$B"/library.rxbin
 "$B"/rxlink -o pasrtx pascal/pasrt "$B"/library.rxbin
 "$B"/rxlink -o lispx lisp/lisp "$B"/library.rxbin
+"$B"/rxlink -o xbasex xbase/xbase "$B"/library.rxbin
 "$B"/rxlink -o plmx plm/plm "$B"/library.rxbin
 "$B"/rxlink -o plmrtx plm/plmrt "$B"/library.rxbin
 
@@ -100,6 +102,12 @@ for src in "$HERE"/pascal/tests/*.pas; do
   same "$W/pas_$t.out" "$HERE/pascal/tests/$t.out" || { echo "PASCAL FAIL $t"; fail=1; }
 done
 "$B"/rxvm logox -a "$HERE"/logo/examples/tree.logo tree.svg > /dev/null
+# xBase: tests/*.prg against tests/*.out, each in a scratch directory
+for src in "$HERE"/xbase/tests/*.prg; do
+  t=$(basename "$src" .prg); in=/dev/null; [ -f "$HERE/xbase/tests/$t.in" ] && in="$HERE/xbase/tests/$t.in"
+  d=$(mktemp -d); (cd "$d" && "$B"/rxvm "$W"/xbasex -a "$src" < "$in") > "$W/xb_$t.out" 2>&1 || true; rm -rf "$d"
+  same "$W/xb_$t.out" "$HERE/xbase/tests/$t.out" || { echo "XBASE FAIL $t"; fail=1; }
+done
 grep -q "<svg" tree.svg || { echo "LOGO FAIL"; fail=1; }
 (cd "$HERE"/prolog && printf "consult('recur.pl')?\n\nhalt.\n" | "$B"/rxvm "$W"/prologx > "$W"/prolog.out 2>&1) || true
 grep -qi "yes\|true" prolog.out || { echo "PROLOG FAIL"; cat prolog.out | head; fail=1; }
@@ -126,6 +134,7 @@ cp pasrtx.rxbin $R/usr/local/share/pascal/pasrt.rxbin
 cp "$HERE"/pascal/tests/*.pas $R/usr/local/share/pascal/
 cp lispx.rxbin $R/usr/local/share/lisp/lisp.rxbin
 cp -r "$HERE"/lisp/examples $R/usr/local/share/lisp/
+mkdir -p $R/usr/local/share/xbase; cp xbasex.rxbin $R/usr/local/share/xbase/xbase.rxbin; cp -r "$HERE"/xbase/examples $R/usr/local/share/xbase/
 cp smalltalkx.rxbin $R/usr/local/share/smalltalk/smalltalk.rxbin
 cp -r "$HERE"/smalltalk/lib "$HERE"/smalltalk/examples $R/usr/local/share/smalltalk/
 cp plmx.rxbin $R/usr/local/share/plm/plm.rxbin
@@ -138,10 +147,10 @@ cp -r "$HERE"/turbo/examples $R/usr/local/share/turbocrexx/
 ln -s /usr/local/bin $R/usr/local/share/turbocrexx/bin
 cp "$HERE"/turbo/crexx "$HERE"/turbo/turbocrexx $R/usr/local/bin/
 cp "$HERE"/basic/linux/basic "$HERE"/logo/linux/logo "$HERE"/prolog/linux/prolog \
-   "$HERE"/snobol/linux/snobol "$HERE"/pascal/linux/pasc "$HERE"/lisp/linux/lisp "$HERE"/smalltalk/linux/smalltalk "$HERE"/plm/linux/plmc $R/usr/local/bin/
+   "$HERE"/snobol/linux/snobol "$HERE"/pascal/linux/pasc "$HERE"/lisp/linux/lisp "$HERE"/smalltalk/linux/smalltalk "$HERE"/plm/linux/plmc "$HERE"/xbase/linux/xbase $R/usr/local/bin/
 (cd $R && tar czf "$OUT"/lxcrexx.tgz --format=ustar --owner=0 --group=0 usr)
 cp basicx.rxbin "$OUT"/basic.rxbin; cp logox.rxbin "$OUT"/logo.rxbin; cp prologx.rxbin "$OUT"/prolog.rxbin
-cp snobolx.rxbin "$OUT"/snobol.rxbin; cp pascalx.rxbin "$OUT"/pascal.rxbin; cp pasrtx.rxbin "$OUT"/pasrt.rxbin; cp lispx.rxbin "$OUT"/lisp.rxbin
+cp snobolx.rxbin "$OUT"/snobol.rxbin; cp pascalx.rxbin "$OUT"/pascal.rxbin; cp pasrtx.rxbin "$OUT"/pasrt.rxbin; cp lispx.rxbin "$OUT"/lisp.rxbin; cp xbasex.rxbin "$OUT"/xbase.rxbin
 cp smalltalkx.rxbin "$OUT"/smalltalk.rxbin; cp plmx.rxbin "$OUT"/plm.rxbin; cp plmrtx.rxbin "$OUT"/plmrt.rxbin
 ls -la "$OUT"
 exit $fail

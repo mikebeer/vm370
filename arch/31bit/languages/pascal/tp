@@ -1,0 +1,13 @@
+#!/bin/sh
+# tp - Turbo-Pascal-style environment for the cREXX Pascal compiler
+#
+#   tp [file.pas]
+#
+# Environment: CREXX_BIN = directory with rxvm and rxas (default: found via PATH)
+HERE=$(cd "$(dirname "$0")" && pwd)
+if [ ! -f "$HERE/build/pascal.rxbin" ] || [ ! -f "$HERE/build/pasrt.rxbin" ]; then
+  echo "tp: run 'make' first" >&2
+  exit 2
+fi
+command -v python3 >/dev/null 2>&1 || { echo "tp: python3 is required" >&2; exit 2; }
+exec python3 "$HERE/ide/tpide.py" "$@"

@@ -1,0 +1,6 @@
+#!/bin/sh
+# xbase -- xBase (Clipper/dBASE/Harbour style) in cREXX (github.com/mikebeer/xbase) on VM/370plus Linux
+#   xbase program.prg [args]
+P=/usr/local/share/xbase
+[ $# -ge 1 ] || { echo "usage: xbase program.prg [arguments]" >&2; exit 2; }
+exec /usr/local/bin/rxvm $P/xbase.rxbin -a "$@"
