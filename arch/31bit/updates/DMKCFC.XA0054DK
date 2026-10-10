@@ -1,2 +1,5 @@
+./ I 00653300 $ 00653310 010                                                    
+         DC    C'MACHINE ',AL1(4,G,8,32)  QUERY MACHINE        XA0054DK         
 ./ I 00665313 $ 00665320 010                                                    
          DC    C'ESA     ',AL1(3,G,0,76)  M7                   XA0054DK         
+         DC    C'MACHINE ',AL1(4,G,0,80)  SET MACHINE          XA0054DK         

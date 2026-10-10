@@ -1,3 +1,18 @@
+./ I 00138000 $ 00138100 100                                                    
+         B     QRYMACH        QUERY MACHINE (M7)               XA0054DK         
+./ I 00141000 $ 00141010 010                                                    
+QRYMACH  LA    R1,QMACHESA                                     XA0054DK         
+         TM    VMFSTAT,VMESA390                                XA0054DK         
+         BO    QRYMACH1                                        XA0054DK         
+         LA    R1,QMACHPND                                     XA0054DK         
+         TM    VMLCLRSV,X'40'  SET ESA ON, NOT YET IPLED       XA0054DK         
+         BO    QRYMACH1                                        XA0054DK         
+         LA    R1,QMACH370                                     XA0054DK         
+QRYMACH1 LA    R0,L'QMACHESA                                   XA0054DK         
+         B     QRYWRIT                                         XA0054DK         
+QMACHESA DC    CL25'MACHINE ESA'                               XA0054DK         
+QMACH370 DC    CL25'MACHINE 370'                               XA0054DK         
+QMACHPND DC    CL25'MACHINE 370, ESA PENDING'                  XA0054DK         
 ./ I 00437240 $ 00437241 001                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
          TM    VMFSTAT,VMESA390  M7: ESA/390 MACHINE?          XA0054DK         

@@ -1,5 +1,6 @@
 ./ I 00428100 $ 00428150 010                                                    
          B     SETESA         SET ESA ON|OFF (M7)              XA0054DK         
+         B     SETMACH        SET MACHINE 370|XA|ESA           XA0054DK         
 ./ I 00719000 $ 00719110 010                                                    
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
 * SET ESA ON|OFF.  ON TAKES EFFECT AT THE NEXT IPL OF A        XA0054DK         
@@ -7,9 +8,18 @@ VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK
 * OFF IS TESTED: THE SECOND ARGUMENT WAS SEEN AS 'KEEP'        XA0054DK         
 * AFTER AN ATTACH TO THE USER (I-253, OPEN), AND ON IS THE     XA0054DK         
 * ONLY USE THAT MATTERS.                                       XA0054DK         
+* SET MACHINE 370|XA|ESA, z/VM'S NAME FOR IT: 370 IS OFF,      XA0054DK         
+* XA AND ESA ARE ON (THE ESA/390 MACHINE RUNS XA PROGRAMS).    XA0054DK         
+SETMACH  CLC   SAVEWRK5(4),=C'370 '                            XA0054DK         
+         BE    SETESAOF                                        XA0054DK         
+         CLC   SAVEWRK5(4),=C'ESA '                            XA0054DK         
+         BE    SETESAN                                         XA0054DK         
+         CLC   SAVEWRK5(4),=C'XA  '                            XA0054DK         
+         BE    SETESAN                                         XA0054DK         
+         B     CFS003         INVALID OPTION                   XA0054DK         
 SETESA   CLC   SAVEWRK5(4),=C'OFF '                            XA0054DK         
          BE    SETESAOF                                        XA0054DK         
-         TM    VMPSTAT,VMV370R  SHADOW TABLES LEFT FROM AN     XA0054DK         
+SETESAN  TM    VMPSTAT,VMV370R  SHADOW TABLES LEFT FROM AN     XA0054DK         
          BZ    SETESAON       EARLIER SYSTEM GO FIRST          XA0054DK         
          EXTRN DMKVATBC                                        XA0054DK         
          CALL  DMKVATBC                                        XA0054DK         

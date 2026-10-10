@@ -4006,9 +4006,15 @@ def m7decks():
     decks['DMKVAT'] = d
 
     d = Deck(XA54)
+    # QUERY MACHINE (z/VM's name; owner, 11 Oct): DMKCQR index 32
+    d.insert('00653300', first='00653310', inc=10,
+             limit=next_seq(src('DMKCFC'), '00653300'), lines=[
+        "         DC    C'MACHINE ',AL1(4,G,8,32)  QUERY MACHINE",
+    ])
     d.insert('00665313', first='00665320', inc=10,
              limit=next_seq(src('DMKCFC'), '00665313'), lines=[
         "         DC    C'ESA     ',AL1(3,G,0,76)  M7",
+        "         DC    C'MACHINE ',AL1(4,G,0,80)  SET MACHINE",
     ])
     decks['DMKCFC'] = d
 
@@ -4016,6 +4022,7 @@ def m7decks():
     d.insert('00428100', first='00428150', inc=10,
              limit=next_seq(src('DMKCFS'), '00428100'), lines=[
         "         B     SETESA         SET ESA ON|OFF (M7)",
+        "         B     SETMACH        SET MACHINE 370|XA|ESA",
     ])
     d.insert('00719000', first='00719110', inc=10,
              limit=next_seq(src('DMKCFS'), '00719000'), lines=M7EQU[:1] + [
@@ -4024,9 +4031,18 @@ def m7decks():
         "* OFF IS TESTED: THE SECOND ARGUMENT WAS SEEN AS 'KEEP'",
         "* AFTER AN ATTACH TO THE USER (I-253, OPEN), AND ON IS THE",
         "* ONLY USE THAT MATTERS.",
+        "* SET MACHINE 370|XA|ESA, z/VM'S NAME FOR IT: 370 IS OFF,",
+        "* XA AND ESA ARE ON (THE ESA/390 MACHINE RUNS XA PROGRAMS).",
+        "SETMACH  CLC   SAVEWRK5(4),=C'370 '",
+        "         BE    SETESAOF",
+        "         CLC   SAVEWRK5(4),=C'ESA '",
+        "         BE    SETESAN",
+        "         CLC   SAVEWRK5(4),=C'XA  '",
+        "         BE    SETESAN",
+        "         B     CFS003         INVALID OPTION",
         "SETESA   CLC   SAVEWRK5(4),=C'OFF '",
         "         BE    SETESAOF",
-        "         TM    VMPSTAT,VMV370R  SHADOW TABLES LEFT FROM AN",
+        "SETESAN  TM    VMPSTAT,VMV370R  SHADOW TABLES LEFT FROM AN",
         "         BZ    SETESAON       EARLIER SYSTEM GO FIRST",
         "         EXTRN DMKVATBC",
         "         CALL  DMKVATBC",
@@ -4060,6 +4076,24 @@ def m7decks():
     d = Deck(XA54)
     # QUERY SET line 5 shows ESA ON, PENDING (SET ESA ON before the next
     # IPL of a device) or OFF (owner, 10 Oct).
+    # QUERY MACHINE: ESA, 370, or 370 with SET ESA ON pending
+    d.insert('00138000', first='00138100', inc=100,
+             limit=next_seq(src('DMKCQR'), '00138000'), lines=[
+        "         B     QRYMACH        QUERY MACHINE (M7)"])
+    d.insert('00141000', first='00141010', inc=10,
+             limit=next_seq(src('DMKCQR'), '00141000'), lines=[
+        "QRYMACH  LA    R1,QMACHESA",
+        "         TM    VMFSTAT,VMESA390",
+        "         BO    QRYMACH1",
+        "         LA    R1,QMACHPND",
+        "         TM    VMLCLRSV,X'40'  SET ESA ON, NOT YET IPLED",
+        "         BO    QRYMACH1",
+        "         LA    R1,QMACH370",
+        "QRYMACH1 LA    R0,L'QMACHESA",
+        "         B     QRYWRIT",
+        "QMACHESA DC    CL25'MACHINE ESA'",
+        "QMACH370 DC    CL25'MACHINE 370'",
+        "QMACHPND DC    CL25'MACHINE 370, ESA PENDING'"])
     d.insert('00437240', first='00437241', inc=1,
              limit=next_seq(src('DMKCQR'), '00437240'), lines=M7EQU[:1] + [
         "         TM    VMFSTAT,VMESA390  M7: ESA/390 MACHINE?",
