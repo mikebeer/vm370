@@ -1,4 +1,4 @@
-/* LINUX EXEC -- VM/370+: IPL Linux/390 in this virtual machine.   */
+/* LINUX EXEC -- VM/370plus: IPL Linux/390 in this virtual machine.   */
 /*                                                                 */
 /* LINUX48 KERNEL1/KERNEL2 (one kernel; a CMS file holds at most  */
 /* 65533 records) and the IPL parameters (userid LXPARM, else      */

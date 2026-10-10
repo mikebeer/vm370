@@ -1,5 +1,5 @@
 #!/bin/sh
-# mklangs.sh -- VM/370+: build the cREXX languages (BASIC, LOGO, Prolog,
+# mklangs.sh -- VM/370plus: build the cREXX languages (BASIC, LOGO, Prolog,
 # SNOBOL, Pascal, Lisp, Smalltalk, PL/M) as
 # linked RXBINs with the PC cREXX, run their tests, and pack the Linux
 # bundle (the s390 31-bit cREXX tools from ../linux390/crexx plus the

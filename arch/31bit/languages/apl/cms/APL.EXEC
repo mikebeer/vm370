@@ -1,0 +1,16 @@
+/* APL EXEC -- APL (word glyphs, github.com/mikebeer/apl) on VM/370plus */
+/*   APL fn.apl          run an APL script                              */
+/*   APL                 interactive (type  )OFF  to leave)             */
+/* Runs APL MODULE: the C89 interpreter cross-built for CMS (M5f).      */
+PARSE ARG ARGS
+'STATE APL MODULE *'
+IF RC <> 0 THEN DO
+  SAY 'APL: APL MODULE not found -- access the disk that has it'
+  EXIT 28
+END
+IF ARGS = '' THEN 'APL'
+ELSE DO
+  QUEUE ARGS              /* CMS would cut each argument to 8 chars */
+  'APL =STACK'
+END
+EXIT RC

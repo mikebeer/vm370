@@ -1,4 +1,4 @@
-gcc under Debian on VM/370+ (9 October 2026)
+gcc under Debian on VM/370plus (9 October 2026)
 
 Packages: the 18 wheezy s390 .debs that get-wheezy-dev.cmd (Windows 11),
 get-wheezy-dev.ps1 or get-wheezy-dev.sh download into wheezy-s390-dev.zip:

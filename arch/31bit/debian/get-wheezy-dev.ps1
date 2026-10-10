@@ -1,4 +1,4 @@
-# get-wheezy-dev.ps1 -- VM/370+: download the Debian 7 (wheezy) s390 packages
+# get-wheezy-dev.ps1 -- VM/370plus: download the Debian 7 (wheezy) s390 packages
 # for a C compiler under Debian (gcc 4.6, binutils, make, libc6-dev, and
 # optionally g++), and pack them into one zip to upload.
 #

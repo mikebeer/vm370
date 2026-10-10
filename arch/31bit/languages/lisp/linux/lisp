@@ -1,5 +1,5 @@
 #!/bin/sh
-# lisp -- Common Lisp subset in cREXX (github.com/mikebeer/lisp) on VM/370+ Linux
+# lisp -- Common Lisp subset in cREXX (github.com/mikebeer/lisp) on VM/370plus Linux
 #   lisp file.lisp [more.lisp ...]   load and run
 #   lisp                             read-eval-print loop
 P=/usr/local/share/lisp/lisp.rxbin

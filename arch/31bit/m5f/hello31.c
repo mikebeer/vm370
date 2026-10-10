@@ -1,4 +1,4 @@
-/* VM/370+ M5f: GCC -m31 (mainline s390 backend) in AMODE 31 on CMS. */
+/* VM/370plus M5f: GCC -m31 (mainline s390 backend) in AMODE 31 on CMS. */
 typedef unsigned int u32;
 int cms202(void *plist);
 

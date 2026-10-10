@@ -1,14 +1,14 @@
-# Installing VM/370+
+# Installing VM/370plus
 
 ## The quick way (6 October): the overlay kit
 
-`arch/31bit/kit/mkkit.sh` packs everything VM/370+ changes on top of a
+`arch/31bit/kit/mkkit.sh` packs everything VM/370plus changes on top of a
 pristine VM/370 CE V1R1.2 into two zips under 30 MB: `vm370ce.conf`
 (ESA/390, CPUMODEL 3090, ECPSVM NO), the 16 shadow files (the ESA/390 CP
 nucleus, the EC-mode CMS on 290, HIGHSTOR, the patched GCCLIB/BREXX, the
 directory) and the I-239-patched `vm50-4.cckd`. Unzip CE, unzip both parts
 over it, start as CE, `ipl 6a1`, answer `/cold`. Verified on a fresh CE
-extraction (kt1): `VM/370+` banner, CMSUSER IPLs 290 (EC, HIGHSTOR 112 MB
+extraction (kt1): `VM/370plus` banner, CMSUSER IPLs 290 (EC, HIGHSTOR 112 MB
 in a 128 MB machine) and 190 (BC). Full steps and caveats:
 `arch/31bit/kit/README-VM370PLUS.txt`.
 
@@ -24,7 +24,7 @@ environment?"*
 
 The honest headline first, because it decides whether the rest is worth your
 afternoon: **what this repository distributes is a set of update decks and a
-generator, not a system image.** You do not install VM/370+; you rebuild it from
+generator, not a system image.** You do not install VM/370plus; you rebuild it from
 a pristine VM/370 CE distribution plus our decks. And as of this writing the
 result IPLs, initialises, prints its banner, accepts `cold`, auto-logs on
 OPERATOR and reports its storage sizes — and then does not yet take console
@@ -147,7 +147,7 @@ A CP that, in ESA/390 mode on either engine:
 - IPLs from 6A1 and sizes storage
 - resolves SYSRES and reads the directory
 - passes CE's own System/380 probe
-- prints `VM/370+ Community Edition Version 1 Release 1.2`
+- prints `VM/370plus Community Edition Version 1 Release 1.2`
 - reaches `Start ((Warm|Force|COLD|CKPT) ...)` and accepts `cold`
 - auto-logs on OPERATOR and prints
   `DMKCPI957I Storage size = 16384 K, Nucleus = 348 K, Dynamic Paging = 14776 K, Trace Table = 240 K, Free Storage = 1020 K`

@@ -1,5 +1,5 @@
 /* M8.2 crxcms.h -- included first into every current-cREXX source built
-   natively on VM/370+ (GCC380 + GCCLIB31).  Declares what GCCLIB31 lacks;
+   natively on VM/370plus (GCC380 + GCCLIB31).  Declares what GCCLIB31 lacks;
    CRXRT C implements it. */
 #ifndef CRXCMS_H
 #define CRXCMS_H

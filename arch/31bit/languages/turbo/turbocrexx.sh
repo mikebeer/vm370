@@ -218,7 +218,7 @@ while true; do
   echo "  [N] New   [O] Open   [E] Edit   [C] Compile   [R] Run"
   echo "  [L] Examples   [D] Versions   [H] Help   [Q] Quit"
   echo
-  read -r -p "Command: " cmd || { echo; exit 0; }   # VM/370+: end of input ends the menu
+  read -r -p "Command: " cmd || { echo; exit 0; }   # VM/370plus: end of input ends the menu
   case "$cmd" in
     [Nn]) new_file; pause ;;
     [Oo]) open_file; pause ;;

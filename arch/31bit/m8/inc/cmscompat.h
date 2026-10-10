@@ -1,4 +1,4 @@
-/* M8 cmscompat.h -- forced into every cREXX source for CMS (VM/370+).
+/* M8 cmscompat.h -- forced into every cREXX source for CMS (VM/370plus).
    CMS has no processes, signals beyond the basics, sockets, dynamic
    loading or threads: these declarations let the sources compile; the
    functions (cmscompat.c) fail with ENOSYS, and the single-threaded

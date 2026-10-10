@@ -1,6 +1,6 @@
 #!/bin/sh
 # M8.2: the EBCDIC scanners, re2c -e with upstream's S370/encoding.re.
-# re2c's EBCDIC table is code page 037 with "\n" as X'25'; VM/370+ is
+# re2c's EBCDIC table is code page 037 with "\n" as X'25'; VM/370plus is
 # IBM-1047 throughout (Hercules CODEPAGE 819/1047, so the C sources, GCC380
 # and every text file), with "\n" as X'15' (NL, what GCC380 and GCCLIB31
 # use).  re2c/ebcdic.h is re2c's table for that; this script builds a re2c

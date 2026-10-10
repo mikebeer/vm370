@@ -1,12 +1,12 @@
 #!/bin/sh
-# crexx -- VM/370+: a small stand-in for the cREXX "crexx" driver, enough
+# crexx -- VM/370plus: a small stand-in for the cREXX "crexx" driver, enough
 # for Turbo CREXX (turbocrexx.sh): compile, assemble and run one program
 # with rxc, rxas and rxvm.  The upstream driver is itself a cREXX program
 # linked with the native VM and its plugins, not yet built for s390.
 #   crexx [-noexec] file.crexx [args...]     crexx -version
 B=$(cd "$(dirname "$0")" && pwd)
 case "${1:-}" in
-  -version|--version|-v) echo "crexx (VM/370+ driver) - $("$B"/rxc -v 2>&1 | head -1)"; exit 0 ;;
+  -version|--version|-v) echo "crexx (VM/370plus driver) - $("$B"/rxc -v 2>&1 | head -1)"; exit 0 ;;
 esac
 run=1
 [ "${1:-}" = "-noexec" ] && { run=0; shift; }

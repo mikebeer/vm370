@@ -162,7 +162,7 @@ def exec_text(stage):
                 allu.append(u)
     used = set()
     cs = [(u.upper(), csname(u, used)) for u in allu if not u.upper().startswith('CT')]
-    L = ['/* CRX82MK EXEC -- M8.2: current cREXX built natively on VM/370+ */',
+    L = ['/* CRX82MK EXEC -- M8.2: current cREXX built natively on VM/370plus */',
          '/* GCC380 (GCC31 EXEC), GCCLIB31 on G, sources and output on A.  */',
          '/* CRX82MK          compile every unit and link                    */',
          '/* CRX82MK fn ...   compile only these units;  CRX82MK LINK: link  */',

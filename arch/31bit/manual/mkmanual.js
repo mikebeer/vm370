@@ -1,4 +1,4 @@
-// mkmanual.js -- VM/370+ Installation, Operation and User's Guide (Word)
+// mkmanual.js -- VM/370plus Installation, Operation and User's Guide (Word)
 // node mkmanual.js out.docx
 const fs = require('fs');
 const {
@@ -99,7 +99,7 @@ fs.writeFileSync(__dirname + '/headings.json', JSON.stringify(HEADS));
 // ---------- title page and front matter ----------
 const title = [
   new Paragraph({ children: [], spacing: { before: 1800 } }),
-  new Paragraph({ children: [new TextRun({ text: 'VM/370+', font: HEAD, bold: true, size: 72 })] }),
+  new Paragraph({ children: [new TextRun({ text: 'VM/370plus', font: HEAD, bold: true, size: 72 })] }),
   new Paragraph({ children: [new TextRun({ text: 'Virtual Machine Facility/370, ESA/390 Edition', font: HEAD, size: 30 })], spacing: { after: 600 } }),
   new Paragraph({ children: [new TextRun({ text: 'Introduction, Installation', font: HEAD, bold: true, size: 40 })] }),
   new Paragraph({ children: [new TextRun({ text: 'and User’s Guide', font: HEAD, bold: true, size: 40 })], spacing: { after: 400 },
@@ -112,8 +112,8 @@ const title = [
 ];
 const edition = [
   new Paragraph({ children: [new TextRun({ text: 'First Edition, revised (October 2026)', font: HEAD, bold: true, size: 24 })], spacing: { after: 200 } }),
-  ...['This edition applies to VM/370+ Release 1 (kit build 5, 9 October 2026), an ESA/390 conversion of the VM/370 Community Edition V1 R1.2, and to all subsequent builds until otherwise indicated in new editions.',
-     'VM/370+ is a hobbyist project. It is not a product of, and this manual is not a publication of, International Business Machines Corporation. IBM, System/370, ESA/390, z/Architecture and VM/370 are names of IBM products and architectures, used here only to identify the systems this software runs on and descends from.',
+  ...['This edition applies to VM/370plus Release 1 (kit build 5, 9 October 2026), an ESA/390 conversion of the VM/370 Community Edition V1 R1.2, and to all subsequent builds until otherwise indicated in new editions.',
+     'VM/370plus is a hobbyist project. It is not a product of, and this manual is not a publication of, International Business Machines Corporation. IBM, System/370, ESA/390, z/Architecture and VM/370 are names of IBM products and architectures, used here only to identify the systems this software runs on and descends from.',
      'VM/370 itself is in the public domain. The VM/370 Community Edition is maintained by its community. Hercules is an open-source emulator. Linux and Debian are trademarks of their respective owners. cREXX is an open-source REXX implementation.',
      'The project repository holds the update decks, the build tools, the issue register and the test runs from which every statement in this manual can be checked. Comments on this publication may be addressed to the project.'].map(t => new Paragraph({ children: runs(t), spacing: { after: 160 } })),
   new Paragraph({ children: [new PageBreak()] }),
@@ -131,7 +131,7 @@ const toc = [
 ];
 
 const doc = new Document({
-  creator: 'VM/370+ project', title: 'VM/370+ Introduction, Installation and User’s Guide',
+  creator: 'VM/370plus project', title: 'VM/370plus Introduction, Installation and User’s Guide',
   styles: {
     default: { document: { run: { font: BODY, size: 21 } } },
     paragraphStyles: [
@@ -154,7 +154,7 @@ const doc = new Document({
     { properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } },
       children: [...title, ...edition, ...toc] },
     { properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1300, bottom: 1134, left: 1134, right: 1134 }, pageNumbers: { start: 1 } } },
-      headers: { default: new Header({ children: [new Paragraph({ children: [new TextRun({ text: 'VM/370+ Introduction, Installation and User’s Guide', font: HEAD, size: 16 })],
+      headers: { default: new Header({ children: [new Paragraph({ children: [new TextRun({ text: 'VM/370plus Introduction, Installation and User’s Guide', font: HEAD, size: 16 })],
         border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000', space: 4 } } })] }) },
       footers: { default: new Footer({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
         children: [new TextRun({ text: 'VMP-0001-0', font: HEAD, size: 16 }), new TextRun({ children: ['\t', PageNumber.CURRENT], font: HEAD, size: 18 })] })] }) },

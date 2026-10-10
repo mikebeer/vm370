@@ -1,4 +1,4 @@
-/* GCLB31 EXEC -- build GCCLIB31 TXTLIB on VM/370+ (M5g)              */
+/* GCLB31 EXEC -- build GCCLIB31 TXTLIB on VM/370plus (M5g)              */
 /* Sources (mk31.py output) on the A disk.  Assembler stubs with      */
 /* ASSEMBLE, C with GCC370 and the GCC31 MACLIB, so the headers and   */
 /* macros are these, not GCCCMS 202's.                                */

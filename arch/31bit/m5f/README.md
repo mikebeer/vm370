@@ -1,4 +1,4 @@
-# M5f: mainline GCC `-m31` on VM/370+ (first proof, 7 October 2026)
+# M5f: mainline GCC `-m31` on VM/370plus (first proof, 7 October 2026)
 
     s390x-linux-gnu-gcc -m31 -mesa -march=z900 -O2 -ffreestanding -fno-pic \
         -fno-asynchronous-unwind-tables -fno-builtin -c hello31.c
@@ -38,7 +38,7 @@ Result (w255, Hercules 4.9.1, CMSUSER 128M, EC-mode CMS from 290):
 `libm.a`) + `softfp/libsoftfp.a` + the 31-bit libgcc, and exports a TEXT deck.
 `crexx/build.sh` builds RXC, RXAS, RXBVM, RXDAS from the 2022 tree.
 
-On VM/370+ (Hercules 4.9.1), `tests/runs/crexx31-install.json` reads the
+On VM/370plus (Hercules 4.9.1), `tests/runs/crexx31-install.json` reads the
 decks, `LOAD`/`GENMOD`s RXC31 etc., runs RXC31 -> RXAS31 -> RXBVM31 on
 BASIC REXX; `crexx31-tests.json` runs the 2022 tests that pass on a host
 build too (test, main, sextest, testbge/bgt/ble/blt, testneeq, func1, func2,

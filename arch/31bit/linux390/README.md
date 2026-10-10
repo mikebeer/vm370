@@ -1,4 +1,4 @@
-# Linux 4.0 31-bit for M7 (ESA/390 guest under VM/370+)
+# Linux 4.0 31-bit for M7 (ESA/390 guest under VM/370plus)
 
 Built in the workspace from the v4.0 tag with `s390x-linux-gnu-gcc` 13:
 

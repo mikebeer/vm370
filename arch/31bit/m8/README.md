@@ -1,13 +1,13 @@
-# M8: current cREXX on VM/370+
+# M8: current cREXX on VM/370plus
 
 **M8.1 (8 October 2026): current cREXX (1.0.0-beta.3, adesutherland/crexx
-77ba820c3) cross-built and running on VM/370+.** RXC8 compiles a REXX
+77ba820c3) cross-built and running on VM/370plus.** RXC8 compiles a REXX
 program on CMS, RXAS8 assembles it, RXBVM8 runs it (run m8f):
 
     rxc8 -l a hello          HELLO CREXX A -> HELLO RXAS A
     rxas8 -l a hello         -> HELLO RXBIN A
     rxbvm8 -l a hello
-    Hello from current cREXX on VM/370+
+    Hello from current cREXX on VM/370plus
     sum 1..10 = 55
 
 Route: cREXX's own single-threaded CMS ELF port (`ports/single-threaded`,
@@ -27,5 +27,5 @@ RXC needs `LIBRARY RXBIN` and `RXCEXITS RXBIN` (built on the PC:
 `fn CREXX` (no extension given). Runs: `tests/runs/m8-install.json`,
 `tests/runs/m8-current-crexx.json`, Hercules 4.x (z900 instructions).
 
-Next (M8.2): build it natively on VM/370+ (GCC380 / GCCLIB31), as M5g did
+Next (M8.2): build it natively on VM/370plus (GCC380 / GCCLIB31), as M5g did
 for the 2022 tree.

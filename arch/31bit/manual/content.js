@@ -1,39 +1,39 @@
-// content.js -- the text of the VM/370+ guide.  Helpers from mkmanual.js.
+// content.js -- the text of the VM/370plus guide.  Helpers from mkmanual.js.
 module.exports = function (M) {
 const { P, H1, H1plain, H2, H3, B, N, NOTE, ATTN, SCREEN, TABLE, setAppendix } = M;
 
 // ------------------------------------------------------------------ preface
 H1plain('Preface');
-P('This manual introduces VM/370+, tells you how to install it over a VM/370 Community Edition system running under the Hercules emulator, and describes how to use the two things it adds to VM/370: virtual machines larger than 16 MB with programs that run in 31-bit addressing mode, and virtual machines that run the ESA/390 architecture, in which Linux/390 and a complete Debian system run.');
-P('It is written for the VM/370 user who already knows CP and CMS: how to log on, how to use the CP commands of the general user (class G) and of the system operator (class A and B), how to edit and run an EXEC. Where VM/370+ behaves as VM/370 does, this manual says nothing; where it differs, it says how and why.');
+P('This manual introduces VM/370plus, tells you how to install it over a VM/370 Community Edition system running under the Hercules emulator, and describes how to use the two things it adds to VM/370: virtual machines larger than 16 MB with programs that run in 31-bit addressing mode, and virtual machines that run the ESA/390 architecture, in which Linux/390 and a complete Debian system run.');
+P('It is written for the VM/370 user who already knows CP and CMS: how to log on, how to use the CP commands of the general user (class G) and of the system operator (class A and B), how to edit and run an EXEC. Where VM/370plus behaves as VM/370 does, this manual says nothing; where it differs, it says how and why.');
 H3('How this manual is organized');
-B(['**Chapter 1, Introduction**, says what VM/370+ is and what it is for.',
+B(['**Chapter 1, Introduction**, says what VM/370plus is and what it is for.',
    '**Chapter 2, Differences from VM/370 Community Edition**, lists every externally visible change.',
-   '**Chapter 3, Installing VM/370+**, takes you from a fresh Community Edition to a running VM/370+ system.',
-   '**Chapter 4, Operating VM/370+**, covers start-up, shutdown and the rules that keep the system healthy.',
+   '**Chapter 3, Installing VM/370plus**, takes you from a fresh Community Edition to a running VM/370plus system.',
+   '**Chapter 4, Operating VM/370plus**, covers start-up, shutdown and the rules that keep the system healthy.',
    '**Chapter 5, Running Linux/390**, describes ESA/390 virtual machines, the Linux kernel, the Debian system and the network connection to the PC.',
-   '**Chapter 6, cREXX on VM/370+**, describes the REXX compiler and virtual machine built for and on VM/370+, the languages written in cREXX that run on CMS and on Linux, and Turbo CREXX.',
+   '**Chapter 6, cREXX on VM/370plus**, describes the REXX compiler and virtual machine built for and on VM/370plus, the languages written in cREXX that run on CMS and on Linux, and Turbo CREXX.',
    '**Chapter 7, Restrictions and Known Problems**, lists what does not work yet.',
    '**Appendix A** summarizes the new and changed commands, **Appendix B** lists the files in the installation kit, **Appendix C** gives the ESA/390 deviations of the virtual machine.']);
 H3('Conventions');
 P('Commands are shown in `monospaced type`. In command descriptions, uppercase letters are typed as shown and lowercase words stand for values you supply. Examples of terminal sessions are shown in framed figures; lines you type are not marked separately because the context makes clear which they are.');
 H3('Summary of changes');
-P('This edition is kept up to date as VM/370+ grows; each change is listed here, newest first.');
+P('This edition is kept up to date as VM/370plus grows; each change is listed here, newest first.');
 B(['**10 October 2026.** Regina REXX and THE under Debian; languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
    '**9 October 2026.** First edition, for kit build 5.']);
 P('*PC* means the personal computer on which Hercules runs. *Real* storage and devices are those of the Hercules machine; *virtual* storage and devices are those CP gives a user.');
 
 // ---------------------------------------------------------------- chapter 1
 H1('Introduction');
-P('VM/370 was written for System/370: 24-bit addresses, 16 MB of storage, S/370 channel I/O. VM/370+ is the VM/370 Community Edition V1 R1.2 with its Control Program (CP) converted to the ESA/390 architecture. It runs on Hercules in `ARCHMODE ESA/390` and gives its users:');
+P('VM/370 was written for System/370: 24-bit addresses, 16 MB of storage, S/370 channel I/O. VM/370plus is the VM/370 Community Edition V1 R1.2 with its Control Program (CP) converted to the ESA/390 architecture. It runs on Hercules in `ARCHMODE ESA/390` and gives its users:');
 B(['**Virtual machines up to 256 MB.** CP builds ESA/390 segment and page tables, runs in 31-bit addressing mode itself, and gives a virtual machine as much storage as its directory entry allows.',
    '**31-bit programs under CMS.** An EC-mode CMS, IPLed from MAINT’s 290 disk, lets programs obtain storage above 16 MB (the HIGHSTOR facility) and run in 31-bit addressing mode, with a C compiler and library for such programs.',
    '**ESA/390 virtual machines.** `SET ESA ON` makes a virtual machine an ESA/390 machine: channel subsystem I/O (SSCH, TSCH, MSCH, STSCH), the ESA/390 PSW and control registers, home and primary address spaces, IEEE floating point. Linux/390 runs in it.',
    '**Linux and Debian.** A Linux 4.0 kernel (31-bit, the last Linux release that supports 31-bit machines) IPLs from the virtual card reader and runs Debian 7 from a 3390 disk, with SSH access from the PC over a channel-to-channel adapter.',
-   '**cREXX.** The cREXX REXX compiler, assembler and virtual machine run on VM/370+ and are built on it.']);
+   '**cREXX.** The cREXX REXX compiler, assembler and virtual machine run on VM/370plus and are built on it.']);
 P('Everything else is VM/370: the same CP commands, the same directory, the same CMS for 24-bit work, the same spooling, the same operator. Programs that ran under the Community Edition run unchanged.');
-H2('How VM/370+ is built');
-P('VM/370+ is a set of UPDATE decks applied to the Community Edition source, assembled on the system itself, and loaded into the CP nucleus with the standard VMFLOAD procedure. The repository of the project holds every deck, the generator that produces them, the build tools, the issue register and the regression runs. Nothing in VM/370+ is a binary patch.');
+H2('How VM/370plus is built');
+P('VM/370plus is a set of UPDATE decks applied to the Community Edition source, assembled on the system itself, and loaded into the CP nucleus with the standard VMFLOAD procedure. The repository of the project holds every deck, the generator that produces them, the build tools, the issue register and the regression runs. Nothing in VM/370plus is a binary patch.');
 H2('Milestones');
 P('The conversion was done in milestones, each closed by a run that exercises it. Figure 1 shows where they stand.');
 TABLE(['Milestone', 'Content', 'Status'], [
@@ -53,12 +53,12 @@ TABLE(['Milestone', 'Content', 'Status'], [
   ['\u2014', 'languages in cREXX for CMS and Linux; Turbo CREXX', 'complete on both'],
   ['\u2014', 'GNU C 4.6, Python 2.7 and 3.2, Regina REXX and THE under Debian', 'complete'],
   ['M9', 'z/Architecture (64-bit)', 'planned, after all of the above'],
-], [1400, 6038, 2200], 'VM/370+ milestones');
+], [1400, 6038, 2200], 'VM/370plus milestones');
 
 // ---------------------------------------------------------------- chapter 2
 H1('Differences from VM/370 Community Edition');
 H2('The machine');
-TABLE(['Item', 'Community Edition', 'VM/370+'], [
+TABLE(['Item', 'Community Edition', 'VM/370plus'], [
   ['Hercules architecture', '`ARCHMODE S/370`', '`ARCHMODE ESA/390`'],
   ['CPU model', '4381, ECPS:VM available', '3090, ECPS:VM not used (its assists are S/370-only)'],
   ['Hercules main storage', '16 MB', '64 MB in the kit; up to 2048 MB'],
@@ -90,13 +90,13 @@ B(['The ordinary CMS (`IPL CMS`, `IPL 190`) is unchanged: a System/370 BC-mode C
    'CPWATCH is not autologged: it is an S/370 monitor that loops under this CP. The two lines in AUTOLOG1’s PROFILE EXEC are commented out.']);
 
 // ---------------------------------------------------------------- chapter 3
-H1('Installing VM/370+');
+H1('Installing VM/370plus');
 H2('What you need');
-B(['A fresh, unmodified extraction of `VM370CE_V1_R1_2.zip`. Do not install VM/370+ over a system you care about.',
+B(['A fresh, unmodified extraction of `VM370CE_V1_R1_2.zip`. Do not install VM/370plus over a system you care about.',
    'Hercules 4.x (SDL Hyperion; tested with 4.7 and 4.9.1) or Hercules 3.13. Programs cross-compiled for 31-bit mode need Hercules 4.x, which has the z900-level instructions in ESA/390 mode.',
    'A 3270 terminal emulator; the wc3270 in the Community Edition package is sufficient.',
    'For Linux networking on Windows: the CTCI-WIN package for SDL Hercules (TunTap64.dll, with Npcap). On Linux or WSL2: the tun driver, and Hercules running as root or with hercifc installed setuid.',
-   'The VM/370+ kit: seven zip files, each under 30 MB.']);
+   'The VM/370plus kit: seven zip files, each under 30 MB.']);
 TABLE(['Part', 'Contents'], [
   ['1', '`vm370ce.conf` (ESA/390), the shadow files of the system volumes (CP nucleus, CMS, directory), README, tools'],
   ['2', '`disks/vm50-4.cckd`: VM50-4 with its paging area record corrected'],
@@ -117,18 +117,18 @@ N(['If you want the Linux network, remove the `#` in front of the line `#0600.2 
 H2('The first IPL');
 P('The Community Edition’s `hercules.rc` IPLs from 6A1 by itself when Hercules starts. The first time, CP has no warm-start data and asks for the start type; answer `/cold`. When the console shows `DMKCPI966I Initialization complete`, the system is up.');
 SCREEN(['HHCCP041I SYSCONS interface active',
-        'VM/370+ Online',
+        'VM/370plus Online',
         'Start ((Warm|Force|COLD|CKPT) (DRain) (DIsable) (NOAUTOlo)) or (SHUTDOWN)',
         '/cold',
         'NOW 09:51:57 GMT FRIDAY 10/09/26',
-        'DMKCPI966I Initialization complete'], 'The first IPL of VM/370+');
+        'DMKCPI966I Initialization complete'], 'The first IPL of VM/370plus');
 ATTN('Do not type `ipl 6a1` again once CP has initialized: it resets the running system. Type it yourself only if nothing has been IPLed (no DMKCPI messages at all).');
 P('Then connect the 3270 emulator to `localhost:3270` and log on as usual.');
 H2('Going back to the Community Edition');
 P('Delete `disks/shadows/*_1.shadow` and restore `vm370ce.conf` and `disks/vm50-4.cckd` from the Community Edition zip.');
 
 // ---------------------------------------------------------------- chapter 4
-H1('Operating VM/370+');
+H1('Operating VM/370plus');
 H2('Start-up and shutdown');
 P('Operation is that of VM/370. The operator’s console is 0009; `ENABLE ALL` brings up the 3270 terminals. To stop the system, the operator types `shutdown` on 0009 and then `exit` at the Hercules console.');
 ATTN('Always end with `shutdown` at the operator’s console before you leave Hercules. Killing Hercules leaves the shadow files inconsistent. Never run two Hercules instances on the same disks.');
@@ -203,7 +203,7 @@ P('Development tools are installed: GNU C and C++ 4.6.3 with make, Python 2.7.3 
 SCREEN(['root@vm370plus:~# cat /etc/debian_version', '7.11',
         'root@vm370plus:~# df -h /', 'Filesystem      Size  Used Avail Use% Mounted on', '/dev/dasda1     771M  325M  407M  45% /',
         'root@vm370plus:~# free', '             total       used       free     shared    buffers     cached',
-        'Mem:         60512      21688      38824          0       2220      13792'], 'Debian on VM/370+');
+        'Mem:         60512      21688      38824          0       2220      13792'], 'Debian on VM/370plus');
 H3('The console');
 P('The 3215 is a line device. Programs that use the full screen (vi, top without `-n1`) draw poorly; use them only if you must. Ctrl-C cannot be typed: type `^c` and Enter instead (the 3215 driver turns `^c`, `^d` and `^z` into the control characters). When CP shows MORE..., press CLEAR or PA2.');
 H3('Network and SSH');
@@ -219,12 +219,12 @@ H2('Linux and CMS side by side');
 P('Linux users and CMS users share the system as any two VM/370 users do. Tested: one user runs Debian and writes and reads files under load, while another user works in CMS (LISTFILE, COPYFILE, TYPE, ERASE), defines 64 MB, starts Linux with `LINUX`, stops it with `poweroff` and goes back to CMS with `IPL CMS`; the Debian system\u2019s files are unchanged throughout.');
 
 // ---------------------------------------------------------------- chapter 6
-H1('cREXX on VM/370+');
-P('cREXX is a REXX implementation built as a compiler (RXC), an assembler (RXAS), a disassembler (RXDAS) and a virtual machine (RXBVM, RXVM). It needs more than 16 MB to compile larger programs, which is where VM/370+ came from.');
-H2('The 2022 release, built on VM/370+');
+H1('cREXX on VM/370plus');
+P('cREXX is a REXX implementation built as a compiler (RXC), an assembler (RXAS), a disassembler (RXDAS) and a virtual machine (RXBVM, RXVM). It needs more than 16 MB to compile larger programs, which is where VM/370plus came from.');
+H2('The 2022 release, built on VM/370plus');
 P('CMSUSER’s disks hold the 2022 cREXX tree (F0041). In the EC-mode CMS it is compiled by GCC380 with GCCLIB31 and runs in 31-bit mode with its heap above 16 MB:');
 SCREEN(['logon cmsuser', 'cp define storage 256m', 'cp link maint 290 290 rr', 'ipl 290',
-        'exec crxmk31', '...', 'rxcn basic', 'rxasn basic', 'rxbvmn basic', '0.1', 'Ready;'], 'Building and running cREXX on VM/370+');
+        'exec crxmk31', '...', 'rxcn basic', 'rxasn basic', 'rxbvmn basic', '0.1', 'Ready;'], 'Building and running cREXX on VM/370plus');
 P('`CRXMK31 EXEC` compiles the tree and links `RXCN`, `RXASN`, `RXBVMN` and `RXDASN` (about 90 seconds of CPU time). `GCLB31 EXEC` builds the GCCLIB31 library itself. The output equals that of the cross-compiled build line for line.');
 H2('The 24-bit build');
 P('The same tree also builds with GCC370 as a 24-bit program (`rxc`, `rxas`, `rxdas`, `rxbvm` on CMSUSER’s E disk); in the EC-mode CMS with `global txtlib gcclib`, `rxbvm -l d ascommon` and `rxbvm -l d asebcdic` run their test sets.');
@@ -232,8 +232,8 @@ H2('Cross-compiled programs');
 P('`rxc31`, `rxas31` and `rxbvm31` on CMSUSER’s A disk were compiled on the PC with GCC 13 (`-m31`), newlib and a small CMS runtime (`vm370plus/m5f/`). They need Hercules 4.x.');
 SCREEN(['ipl 290', 'rxc31 basic', 'rxas31 basic', 'rxbvm31 basic', 'libctest a b'], 'Cross-compiled cREXX');
 H2('The current cREXX release');
-P('The current release (1.0.0-beta.3) needs a C99 compiler; GCC380 is GCC 3.2.3. It runs on VM/370+ cross-compiled with GCC 13 (`RXC8`, `RXAS8`, `RXBVM8`, milestone M8.1). `RXC8` needs `LIBRARY RXBIN` and `RXCEXITS RXBIN` on the disk named by `-l`; source files are `fn CREXX`:');
-SCREEN(['rxc8 -l a -i a hello', 'rxas8 -l a hello', 'rxbvm8 -l a hello', 'Hello from current cREXX on VM/370+', 'sum 1..10 = 55', 'Ready;'], 'The current cREXX on CMS');
+P('The current release (1.0.0-beta.3) needs a C99 compiler; GCC380 is GCC 3.2.3. It runs on VM/370plus cross-compiled with GCC 13 (`RXC8`, `RXAS8`, `RXBVM8`, milestone M8.1). `RXC8` needs `LIBRARY RXBIN` and `RXCEXITS RXBIN` on the disk named by `-l`; source files are `fn CREXX`:');
+SCREEN(['rxc8 -l a -i a hello', 'rxas8 -l a hello', 'rxbvm8 -l a hello', 'Hello from current cREXX on VM/370plus', 'sum 1..10 = 55', 'Ready;'], 'The current cREXX on CMS');
 P('Milestone M8.2 builds the same release natively with GCC380 and GCCLIB31 (`RXC82`, `RXAS82`, `RXBVM82`). The three work for programs that call no library functions; the library itself does not build natively yet (Chapter 7). Until it does, use the M8.1 tools. Native cREXX on CMS runs in EBCDIC (IBM-1047) throughout, as IBM REXX does.');
 H2('Languages written in cREXX');
 P('Several languages are implemented as cREXX programs. They are compiled once on the PC and run unchanged on CMS (through `RXBVM8`) and on Linux (through `rxvm`). Floating point comes from `rxfloat`, a cREXX version of the cREXX float plugin, so no native plugin is needed.');
@@ -248,7 +248,7 @@ TABLE(['Language', 'CMS', 'Linux', 'Notes'], [
   ['LOGO', '`LOGO fn.logo out`', '`logo fn.logo out.svg`', 'turtle graphics written as SVG'],
 ], [1400, 2100, 2100, 4038], 'Languages in cREXX');
 P('On CMS the languages arrive as one reader deck (`LANGS`); `READCARD *` puts the files on your A disk and `LANGSUP EXEC` rebuilds the modules from their hex form. Use one of CMSUSER’s large disks as A for it (for example `ACCESS 196 A`). CMS cuts a command argument to eight characters, so the EXECs pass file names through the program stack: type the names as usual.');
-P('The languages need an EC-mode CMS with a large virtual machine: `CP DEFINE STORAGE 256M` and `IPL 290`. Their storage comes from above 16 MB through HIGHSTOR; Smalltalk alone uses about 100 MB, so it is practical only when Hercules gives VM/370+ real storage to match (the kit’s `MAINSIZE 256`); with 16 MB of real storage CP pages it to a crawl. Programs cross-built for CMS run on an 8 MB stack.');
+P('The languages need an EC-mode CMS with a large virtual machine: `CP DEFINE STORAGE 256M` and `IPL 290`. Their storage comes from above 16 MB through HIGHSTOR; Smalltalk alone uses about 100 MB, so it is practical only when Hercules gives VM/370plus real storage to match (the kit’s `MAINSIZE 256`); with 16 MB of real storage CP pages it to a crawl. Programs cross-built for CMS run on an 8 MB stack.');
 P('On Debian the languages are part of the cREXX bundle (`lxcrexx.tgz`), unpacked under `/usr/local`; the examples are in `/usr/local/share/`*language*.');
 H2('Turbo CREXX');
 P('Turbo CREXX is a small Turbo-Pascal-style front end: a menu that creates, edits, compiles and runs one cREXX program at a time. It does not implement REXX; it calls the real cREXX tools.');
@@ -261,9 +261,9 @@ TABLE(['Key', 'Action'], [
   ['D', 'show the versions of the tools'],
   ['Q', 'quit'],
 ], [1400, 8238], 'Turbo CREXX menu');
-P('**On Debian**, type `turbocrexx` (or `turbocrexx` *file*`.crexx`). The editor is `$EDITOR`, else nano or vi. Underneath, `crexx` *file*`.crexx` compiles and runs a program (`crexx -noexec` only compiles): a small driver of VM/370+ for `rxc`, `rxas` and `rxvm`, since the upstream `crexx` driver is not yet built for s390.');
+P('**On Debian**, type `turbocrexx` (or `turbocrexx` *file*`.crexx`). The editor is `$EDITOR`, else nano or vi. Underneath, `crexx` *file*`.crexx` compiles and runs a program (`crexx -noexec` only compiles): a small driver of VM/370plus for `rxc`, `rxas` and `rxvm`, since the upstream `crexx` driver is not yet built for s390.');
 P('**On CMS**, type `TURBO` (or `TURBO fn`). Programs are `fn CREXX A`; the editor is EDIT; compile and run use `RXC8`, `RXAS8` and `RXBVM8` with `LIBRARY RXBIN` on A. Without the menu: `TURBO C fn`, `TURBO R fn`, `TURBO E fn`. The examples are `HELLO TCEXAMPL` and `FIBFACT TCEXAMPL`.');
-SCREEN(['turbo', '  T U R B O   C R E X X   ---   VM/370+ CMS', '  Current file: (none)',
+SCREEN(['turbo', '  T U R B O   C R E X X   ---   VM/370plus CMS', '  Current file: (none)',
         '  N New    O Open    E Edit    C Compile    R Run', '  L Examples         D Versions             Q Quit', 'Command:'], 'Turbo CREXX on CMS');
 
 // ---------------------------------------------------------------- chapter 7
@@ -297,7 +297,7 @@ P('On MAINT 19D. Punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `D
 H1('Contents of the Kit');
 TABLE(['Path', 'Contents'], [
   ['`vm370ce.conf`', 'ESA/390 configuration, MAINSIZE 64, the CTC and 3390 lines for Linux'],
-  ['`disks/shadows/*_1.shadow`', 'the VM/370+ system: CP nucleus, CMS, directory, user disks'],
+  ['`disks/shadows/*_1.shadow`', 'the VM/370plus system: CP nucleus, CMS, directory, user disks'],
   ['`disks/vm50-4.cckd`', 'VM50-4 with the paging area record corrected'],
   ['`disks/lnx190.cckd`', 'the Debian disk (after joining parts 5–7)'],
   ['`README-VM370PLUS.txt`', 'the short form of this manual'],

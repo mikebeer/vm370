@@ -173,11 +173,11 @@ CPINSCH  EQU   256            SUBCHANNELS PROBED AT IPL        XA0013DK
 *  SO THE EXTRA BYTE SHIFTS NOTHING THAT IS ADDRESSED BY       XA0013DK         
 *  NAME. THE ONE FIXED-OFFSET READER WAS THE ZAP REMOVED AT    XA0013DK         
 *  02287560. I-179.                                            XA0013DK         
-         DC    C'VM/370+ Community Edition Version '           XA0013DK         
+         DC    C'VM/370plus Community Edition Version '        XA0013DK         
 ./ R 02287560          $ 02287561 001                                           
 *  WAS MVI STMSG+7,C'8' -- 'TELL THEM THIS IS SYSTEM/380'. IT  XA0013DK         
 *  IS NOT: THIS IS A 31-BIT ESA/390 CONVERSION ON THE WAY TO   XA0013DK         
-*  64-BIT, AND THE NAME IS VM/370+. THE MVI INSTWRD1,C'8'      XA0013DK         
+*  64-BIT, AND THE NAME IS VM/370plus. THE MVI INSTWRD1,C'8'   XA0013DK         
 *  ABOVE IS LEFT ALONE -- THE BSM PROBE DID SUCCEED AND THAT   XA0013DK         
 *  IS WORTH RECORDING -- BUT NOTHING MAY PAINT IT OVER THE     XA0013DK         
 *  BANNER. I-179.                                              XA0013DK         

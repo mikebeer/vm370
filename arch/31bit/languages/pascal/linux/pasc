@@ -1,5 +1,5 @@
 #!/bin/sh
-# pasc -- Pascal in cREXX (github.com/mikebeer/pascal) on VM/370+ Linux
+# pasc -- Pascal in cREXX (github.com/mikebeer/pascal) on VM/370plus Linux
 #   pasc prog.pas [args]     compile and run
 #   pasc -c prog.pas         compile only (prog.rxas, prog.rxbin)
 P=/usr/local/share/pascal

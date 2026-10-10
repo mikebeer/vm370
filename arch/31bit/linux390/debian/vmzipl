@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# vmzipl -- VM/370+ M7.10: make this Debian disk IPLable (CP IPL 250
+# vmzipl -- VM/370plus M7.10: make this Debian disk IPLable (CP IPL 250
 # after SET ESA ON), as zipl does, for the 31-bit Linux 4.0 kernel.
 #
 #   vmzipl [-k /boot/linux48.image] [-p "kernel parameters"] [-d /dev/dasda]
@@ -140,10 +140,13 @@ ipl2 += b'\0' * (144 - len(ipl2))
 ipl1 = struct.pack('>II', 0x00080000, 0x80000000 | LOAD) + \
        ccw(RD, IPL2AT, CC | SLI, 144) + ccw(TIC, IPL2AT, 0, 0)
 
-# CDL: block 0 is IPL1 (24 bytes), block 1 IPL2 (144); VOL1 (block 2) stays
+# CDL: block 0 is record 1 (key 'IPL1', 24 data bytes), block 1 record 2
+# (key 'IPL2', 144 bytes); the dasd driver writes key and data from the
+# front of the block.  VOL1 (block 2) stays.
+K1, K2 = b'\xc9\xd7\xd3\xf1', b'\xc9\xd7\xd3\xf2'     # EBCDIC IPL1, IPL2
 fd = os.open(dev, os.O_RDWR | os.O_SYNC)
 os.lseek(fd, 0, 0)
-os.write(fd, ipl1 + b'\0' * (BLK - 24) + ipl2 + b'\0' * (BLK - 144))
+os.write(fd, K1 + ipl1 + b'\0' * (BLK - 28) + K2 + ipl2 + b'\0' * (BLK - 148))
 os.fsync(fd)
 os.close(fd)
 print('vmzipl: %s: kernel %d blocks in %d runs, channel program %d CCWs in %d blocks'

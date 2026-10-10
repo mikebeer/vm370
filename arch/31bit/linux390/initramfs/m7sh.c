@@ -1,4 +1,4 @@
-/* m7sh -- a tiny interactive /init for Linux/390 31-bit on VM/370+.
+/* m7sh -- a tiny interactive /init for Linux/390 31-bit on VM/370plus.
  * No C library: raw system calls (SVC n, arguments in r2-r6).
  * Commands: help echo ls cat mem ps uname uptime mount mkdir cd pwd dmesg
  *           write halt.  Mounts /proc and /sys, and a tmpfs on /tmp.     */
@@ -130,7 +130,7 @@ void m7main(void)
     sc(SYS_mount, (long)"proc", (long)"/proc", (long)"proc", 0, 0);
     sc(SYS_mount, (long)"sysfs", (long)"/sys", (long)"sysfs", 0, 0);
     sc(SYS_mount, (long)"tmpfs", (long)"/tmp", (long)"tmpfs", 0, 0);
-    out("\nHELLO FROM LINUX/390 ON VM/370+ (M7)\n");
+    out("\nHELLO FROM LINUX/390 ON VM/370plus (M7)\n");
     uname();
     out("m7sh: type 'help' for commands\n");
     for (;;) {

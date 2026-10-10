@@ -96,7 +96,7 @@ significant digits (no single-precision rounding).
 | `examples/` | sample programs in both dialects |
 | `tests/` | regression programs with expected output (`tests/run_tests.sh`) |
 
-## On VM/370+
+## On VM/370plus
 
 Taken from github.com/mikebeer/basic (commit in `UPSTREAM`).
 `../mklangs.sh` links it with the cREXX `rxfloat` (`../common/rxfloat.crexx`,

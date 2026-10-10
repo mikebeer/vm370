@@ -1,4 +1,4 @@
-/* CMSMAKE31 EXEC -- builds cREXX (2022 S370 tree) on VM/370+        */
+/* CMSMAKE31 EXEC -- builds cREXX (2022 S370 tree) on VM/370plus        */
 /* As CMSMAKE EXEC, but every compile runs GCC380 (AMODE 31, heap    */
 /* above 16 MB, via GCC31 EXEC) and RXBVM -- 'Out of memory - todo'  */
 /* in the original -- is built.                                       */

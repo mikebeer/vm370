@@ -1,6 +1,6 @@
 #!/bin/sh
 # get-wheezy-dev.sh -- the same as get-wheezy-dev.ps1, for Linux/WSL/macOS:
-# Debian 7 (wheezy) s390 packages for gcc under Debian on VM/370+.
+# Debian 7 (wheezy) s390 packages for gcc under Debian on VM/370plus.
 #   sh get-wheezy-dev.sh [--no-cxx]     -> wheezy-s390-dev.zip
 set -e
 B=http://archive.debian.org/debian/

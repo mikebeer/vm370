@@ -1,4 +1,4 @@
-/* PROLOG EXEC -- Prolog in cREXX (prolog.crexx) on VM/370+ CMS.       */
+/* PROLOG EXEC -- Prolog in cREXX (prolog.crexx) on VM/370plus CMS.       */
 /*   PROLOG              the interactive top level                     */
 /*   PROLOG fn.pl        consult FN PL first (e.g. PROLOG family.pl)  */
 /* End a query with ?  (female(ann)?), a fact or rule with .  ;        */

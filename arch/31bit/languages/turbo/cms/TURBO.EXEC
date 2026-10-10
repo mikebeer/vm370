@@ -1,4 +1,4 @@
-/* TURBO EXEC -- Turbo CREXX for CMS (VM/370+)                          */
+/* TURBO EXEC -- Turbo CREXX for CMS (VM/370plus)                          */
 /*   TURBO                  the menu                                    */
 /*   TURBO fn               the menu, with fn CREXX A as current file   */
 /*   TURBO C|R|E fn         compile, run or edit fn CREXX A at once     */
@@ -19,7 +19,7 @@ END
 CUR = A1
 DO FOREVER
   SAY ''
-  SAY '  T U R B O   C R E X X   ---   VM/370+ CMS'
+  SAY '  T U R B O   C R E X X   ---   VM/370plus CMS'
   IF CUR = '' THEN SAY '  Current file: (none)'
   ELSE SAY '  Current file:' CUR 'CREXX A'
   SAY '  N New    O Open    E Edit    C Compile    R Run'

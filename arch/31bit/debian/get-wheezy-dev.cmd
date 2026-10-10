@@ -1,5 +1,5 @@
 @echo off
-rem get-wheezy-dev.cmd -- VM/370+, Windows 11: download the Debian 7 (wheezy)
+rem get-wheezy-dev.cmd -- VM/370plus, Windows 11: download the Debian 7 (wheezy)
 rem s390 packages for gcc under Debian and pack them into ONE zip to upload.
 rem Double-click it, or run it from cmd.exe.  Uses curl.exe and tar.exe,
 rem which Windows 11 has built in.  Result: wheezy-s390-dev.zip (about 24 MB)

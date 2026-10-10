@@ -1,5 +1,5 @@
 #!/bin/sh
-# /init for Linux/390 on VM/370+ (BusyBox userland, in memory)
+# /init for Linux/390 on VM/370plus (BusyBox userland, in memory)
 /bin/busybox mkdir -p /proc /sys /tmp /dev /root /var/log /usr/bin /usr/sbin /sbin
 /bin/busybox mount -t proc proc /proc
 /bin/busybox mount -t sysfs sysfs /sys
@@ -20,7 +20,7 @@ for d in /sys/bus/ccw/devices/*; do
   case "$(cat $d/devtype 2>/dev/null)" in
     3390/*|3380/*) echo 1 > $d/online 2>/dev/null;; esac; done
 sleep 1
-# VM/370+ converts a format-1 channel program of at most 64 CCWs (D-21):
+# VM/370plus converts a format-1 channel program of at most 64 CCWs (D-21):
 # 128 KB per request is 32 records of 4 KB, plus Define Extent and
 # Locate Record -- well inside.
 for q in /sys/block/dasd*/queue/max_sectors_kb; do [ -e $q ] && echo 128 > $q; done
@@ -73,7 +73,7 @@ if [ -x /data/sbin/init ] && [ ! -d /data/debootstrap ] && ! grep -q vmroot=ram 
   exec switch_root /data /sbin/init
 fi
 echo
-echo "HELLO FROM LINUX/390 ON VM/370+ (M7)"
+echo "HELLO FROM LINUX/390 ON VM/370plus (M7)"
 cat /etc/motd
 uname -a
 echo "BusyBox userland (in memory): ls /bin  ps  free  top -n1  vi  dmesg  poweroff"

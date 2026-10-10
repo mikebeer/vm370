@@ -1,5 +1,5 @@
 #!/bin/bash
-# mkkit.sh -- build the VM/370+ overlay kit from the working pack.
+# mkkit.sh -- build the VM/370plus overlay kit from the working pack.
 # Run only with Hercules DOWN after a clean /shutdown.  Three parts, each
 # under 30 MB: part 1 = config + shadows + tools + README, part 2 = the
 # I-239-patched vm50-4.cckd, part 3 = the user volume's shadow (CMSUSER).  gccbrx.cckd is byte-identical to CE's and is
@@ -18,7 +18,7 @@ if i>0: s=s[:i].rstrip()+'\n'
 s=s.replace('MAINSIZE        16','MAINSIZE        256')
 s=s.replace('#0500 CTCE 30882 127.0.0.1 30880','0500 CTCE 30882 127.0.0.1 30880')
 s=s.replace('0600.2  CTCI    10.1.1.2 10.1.1.1','# Remove the # on the next line for Linux networking (README):\n#0600.2  CTCI    10.1.1.2 10.1.1.1')
-s=s.replace('PANTITLE        "VM370CE 1.1.2"','PANTITLE        "VM/370+ (VM370CE 1.1.2 ESA/390)"')
+s=s.replace('PANTITLE        "VM370CE 1.1.2"','PANTITLE        "VM/370plus (VM370CE 1.1.2 ESA/390)"')
 open(sys.argv[2],'w').write(s)
 PY
 cp $C/disks/vm50-4.cckd $K/disks/; cp $C/disks/shadows/*_1.shadow $K/disks/shadows/

@@ -1,4 +1,4 @@
-/* rxfloat.crexx -- VM/370+: the rxfloat plugin's functions written in
+/* rxfloat.crexx -- VM/370plus: the rxfloat plugin's functions written in
    cREXX itself, so the cREXX languages (BASIC, Prolog, LOGO, Pascal,
    SNOBOL ...) run where the native plugin is not linked in (CMS, and the
    Linux build).  Same names and signatures as lib/plugins/float/rxfloat.c.

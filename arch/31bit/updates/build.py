@@ -1559,7 +1559,7 @@ def dmkcpi():
 
     # --- The name, on the console banner.  See the longer note in dmkcns():
     #     CE's System/380 probe zaps a C'8' over the C'7' of "VM/370" in three
-    #     places.  We are not taking the /380 route, so the banner is VM/370+.
+    #     places.  We are not taking the /380 route, so the banner is VM/370plus.
     d.replace('02140100', first='02140110', inc=10,
               limit=next_seq(SRC + '/DMKCPI.ASSEMBLE', '02140100'),
               lines=Deck.comment(
@@ -1567,7 +1567,7 @@ def dmkcpi():
         "CPILEV FOLLOW AS SEPARATE DCs AND STMSGL IS *-STMSG, SO THE EXTRA "
         "BYTE SHIFTS NOTHING THAT IS ADDRESSED BY NAME. THE ONE "
         "FIXED-OFFSET READER WAS THE ZAP REMOVED AT 02287560. I-179.") + [
-        "         DC    C'VM/370+ Community Edition Version '",
+        "         DC    C'VM/370plus Community Edition Version '",
     ])
 
     # 02287580 is the next surviving record, twenty away, so number by one.
@@ -1576,7 +1576,7 @@ def dmkcpi():
               lines=Deck.comment(
         "WAS MVI STMSG+7,C'8' -- 'TELL THEM THIS IS SYSTEM/380'. IT IS NOT: "
         "THIS IS A 31-BIT ESA/390 CONVERSION ON THE WAY TO 64-BIT, AND THE "
-        "NAME IS VM/370+. THE MVI INSTWRD1,C'8' ABOVE IS LEFT ALONE -- THE "
+        "NAME IS VM/370plus. THE MVI INSTWRD1,C'8' ABOVE IS LEFT ALONE -- THE "
         "BSM PROBE DID SUCCEED AND THAT IS WORTH RECORDING -- BUT NOTHING "
         "MAY PAINT IT OVER THE BANNER. I-179.") + [
         "         DS    0H             THE ZAP IS GONE",
@@ -2548,12 +2548,11 @@ VCSCODE = [
     "         SRL   R1,4",
     "         SLL   R1,28",
     "         OR    R0,R1",
-    "         ST    R0,VCSBUF      THE CAW, FOR DMKVSI",
-    "         LA    R5,X'48'",
-    "         LA    R6,VCSBUF",
-    "         LA    R4,1",
-    "         SR    R0,R0",
-    "         BAL   R9,GUESTIO",
+    "         O     R0,=X'01000000'  M7.10: THE CAW GOES TO DMKVSI",
+    "         ST    R0,DMKVCSCW    IN DMKVCSCW (X01 MARKS IT),",
+    "*                             NOT AT GUEST X48: PAGE 0 IS",
+    "*                             THE GUESTS STORAGE (A 4-BYTE",
+    "*                             HOLE IN LINUX DATA, I-256)",
     "         OI    ENTFLG(R3),ENTACT",
     "         MVI   VCSOP,C'S'",
     "         MVC   VMINST(2),SIOOP   SIO VDEV",
@@ -2619,6 +2618,7 @@ VCSCODE = [
     "* THE SIO/TIO CONDITION CODE (X'00'-X'30'), R13 = THE DEVICE.",
     "*",
     "DMKVCSSE L     R12,AVCSSE-DMKVCSSE(,R12)",
+    "         XC    DMKVCSCW,DMKVCSCW  I-256: A CAW NOT TAKEN",
     "         TM    VMVCSFL,X'80'  OURS ONLY IF DMKVCS SET VCSOP:",
     "         BZ    SENOTME        THE IPL SIMULATOR'S OWN SIO",
     "         BAL   R9,GETTAB      AND TIO GO BACK",
@@ -3222,6 +3222,8 @@ VCSCODE = [
     "         BR    R9",
     "*",
     "AVCSSE   DC    A(DMKVCS)",
+    "         ENTRY DMKVCSCW",
+    "DMKVCSCW DC    F'0'           M7.10: THE CAW OF THE SSCH",
     "         ENTRY DMKVCSRG",
     "DMKVCSRG DC    C'VCRING  '",
     "VCRNXT   DC    F'0'",
@@ -3381,6 +3383,19 @@ def m7decks():
     decks = {}
 
     d = Deck(XA54)
+    # M7.10, I-256: an ESA/390 guest's SSCH hands its CAW over in
+    # DMKVCSCW; guest X'48' is the guest's own storage and stays untouched.
+    d.replace('00295000', first='00294100', inc=100,
+              limit=next_seq(src('DMKVSI'), '00295000'), lines=[
+        "         TM    VMFSTAT,VMESA390  M7.10: ESA/390 SSCH:",
+        "         BZ    VSIOCAW        ITS CAW IS IN DMKVCSCW,",
+        "         L     R15,=A(DMKVCSCW)  NOT AT X'48' (I-256)",
+        "         ICM   R2,15,0(R15)",
+        "         BZ    VSIOCAW        NONE: DMKVMI'S OWN SIO",
+        "         XC    0(4,R15),0(R15)",
+        "         N     R2,=X'F0FFFFFF'  DROP THE MARK",
+        "         B     TSTDED1",
+        "VSIOCAW  LA    R1,CAW         LOGICAL ADDRESS OF USER'S CAW"])
     # DMKVCS outgrew the 999 numbers between COPY SAVE (01636000) and the
     # END card (01637000): the END card is replaced, DMKVCS ahead of it,
     # so the numbers run on past 01637000 with nothing after them.
@@ -5393,7 +5408,7 @@ def dmkcns():
     #     succeeds, zaps a C'8' over the C'7' in three "VM/370" literals so the
     #     system announces itself as VM/380.  We are NOT taking the /380 route:
     #     this is a 31-bit ESA/390 conversion on the way to 64-bit, so the name
-    #     is VM/370+.  The probe itself is left alone -- it records a true fact
+    #     is VM/370plus.  The probe itself is left alone -- it records a true fact
     #     about the machine in INSTWRD1 byte 0 -- but nothing may overwrite the
     #     banner with it.  Byte 0 is display-only; bytes 1-3 are the LDEVCTL
     #     pointer that DMKCFP, DMKGRF and HDKD7C use, and MVI touches only
@@ -5402,7 +5417,7 @@ def dmkcns():
               lines=Deck.comment(
         "WAS MVC EBCLMSG+8(1),INSTWRD1 -- ZAP THE '7' OF VM/370 WITH THE "
         "'7' OR '8' CE'S SYSTEM/380 PROBE LEFT IN THE PSA. THE LITERAL "
-        "BELOW NOW READS VM/370+ AND MUST NOT BE OVERWRITTEN. I-179.") + [
+        "BELOW NOW READS VM/370plus AND MUST NOT BE OVERWRITTEN. I-179.") + [
         "         DS    0H             THE ZAP IS GONE",
     ])
 
@@ -5428,7 +5443,7 @@ def dmkcns():
         "WAS C' VM/370 ONLINE '. EBCLMSGL IS COMPUTED AS *-EBCLMSG SO THE "
         "EXTRA BYTE NEEDS NO OTHER CHANGE, AND THE ONLY FIXED-OFFSET "
         "READER OF THIS MESSAGE WAS THE ZAP REMOVED AT 01523100. I-179.") + [
-        "EBCLMSG  DC    X'151515',C' VM/370+ Online '",
+        "EBCLMSG  DC    X'151515',C' VM/370plus Online '",
     ])
 
     d.insert('01724000', first='01724010', inc=10, limit=nxt('01724000'),
@@ -6595,7 +6610,7 @@ CHANMODS = {
 # three separate literals, so the system announces itself as VM/380.
 #
 # This project is not taking that route.  It is a 31-bit ESA/390 conversion on
-# the way to 64-bit, so the name is **VM/370+**.  The probe is left in place
+# the way to 64-bit, so the name is **VM/370plus**.  The probe is left in place
 # because it records a true fact about the machine in `INSTWRD1` byte 0, but
 # nothing may paint that byte over a banner.  Byte 0 is display-only; bytes 1-3
 # hold the LDEVCTL pointer used by DMKCFP, DMKGRF and HDKD7C, and `MVI` writes
@@ -7255,7 +7270,7 @@ TMRMODS = {
 ECMODS = {
     # M5d: SVC 120 (GETMAIN/FREEMAIN RU, LOC=ANY) from HIGHSTOR.  CE's
     # HRC380DS placeholder returned the fixed X'04100000' for S/380 Hercules
-    # to back; on VM/370+ the storage is real and managed (I-245).
+    # to back; on VM/370plus the storage is real and managed (I-245).
     'DMSSVT': [
         ('02667100', '02667450', [
             "*  M5D: GETMAIN/FREEMAIN RU (SVC 120).  R0 = LENGTH, R1 =",
@@ -10386,7 +10401,7 @@ def main():
         path = os.path.join(HERE, '%s.%s' % (m, XA39))
         n = dk.write(path)
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
-            [(XA39, 'THE NAME IS VM/370+, NOT VM/380')])
+            [(XA39, 'THE NAME IS VM/370plus, NOT VM/380')])
         print('%-8s %-9s %3d cards  %s' % (m, XA39, n,
               'OK' if not verify(path) else 'BAD'))
 

@@ -1,5 +1,5 @@
 /* M8.2 CRXRT C -- what current cREXX needs from C beyond GCCLIB31, for the
-   native build on VM/370+ (GCC380, AMODE 31).  Compiled with CRXRT defined,
+   native build on VM/370plus (GCC380, AMODE 31).  Compiled with CRXRT defined,
    so the names below are not redirected onto themselves.
 
    - printf family with C99 length modifiers (hh h l ll j z t L), the

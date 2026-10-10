@@ -1,6 +1,6 @@
 #!/bin/bash
 # Current cREXX (rxc, rxas, rxvm, rxlink) cross-built for Linux on
-# VM/370+: s390 31-bit, static, glibc sysroot from lx31.
+# VM/370plus: s390 31-bit, static, glibc sysroot from lx31.
 #   build.sh vm|rxas|rxc|rxlink|all   -> out/<tool>
 set -e
 cd "$(dirname "$0")"

@@ -1,4 +1,4 @@
-/* PLM EXEC -- PL/M-80 in cREXX (github.com/mikebeer/PLM), VM/370+      */
+/* PLM EXEC -- PL/M-80 in cREXX (github.com/mikebeer/PLM), VM/370plus      */
 /*   PLM fn [args]        compile fn.plm and run it                     */
 /*   PLM fn ( COMPILE     compile only (fn RXAS, fn RXBIN)              */
 PARSE ARG FN ARGS '(' OPT

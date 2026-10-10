@@ -1,6 +1,6 @@
 #!/bin/bash
 # M8: current cREXX (adesutherland/crexx, ports/single-threaded) cross-built
-# for CMS on VM/370+ with the M5f toolchain (GCC 13 -m31, newlib, cmsrt).
+# for CMS on VM/370plus with the M5f toolchain (GCC 13 -m31, newlib, cmsrt).
 #   build.sh vm|rxc|rxas   -> rxbvm.text / rxc.text / rxas.text here
 set -e
 export E2C=${E2C:-/home/claude/m5f/elf_to_cms8}   # RXC is 2.8 MB: the 8 MB image limit

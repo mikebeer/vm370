@@ -1,4 +1,4 @@
-# VM/370+ M5f: CMS command entry for a -m31 C program (GCC s390, ELF).
+# VM/370plus M5f: CMS command entry for a -m31 C program (GCC s390, ELF).
 # CMS calls in AMODE 24 with R13 -> save area, R1 -> tokenised PLIST.
 # The image itself is loaded below 16 MB (CMS LOAD); the program runs in
 # AMODE 31 and reaches storage above the line through HIGHSTOR.
@@ -124,4 +124,25 @@ cms_exit_sp: .skip 4
 cms_stack: .skip 65536
  .balign 8
 cms_sa: .skip 96
+ .section .note.GNU-stack,"",@progbits
+
+# int setjmp(jmp_buf), void longjmp(jmp_buf, int): R6-R15 (the s390 ELF
+# ABI's callee-saved registers; soft float, so no FPRs).  inc/setjmp.h.
+ .text
+ .balign 8
+ .globl setjmp
+setjmp:
+ stm %r6,%r15,0(%r2)
+ lhi %r2,0
+ br %r14
+ .globl longjmp
+longjmp:
+ lr %r1,%r2
+ lr %r2,%r3
+ ltr %r2,%r2
+ jnz .Llj1
+ lhi %r2,1
+.Llj1:
+ lm %r6,%r15,0(%r1)
+ br %r14
  .section .note.GNU-stack,"",@progbits

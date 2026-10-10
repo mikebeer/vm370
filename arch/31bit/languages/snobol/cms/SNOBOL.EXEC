@@ -1,4 +1,4 @@
-/* SNOBOL EXEC -- SNOBOL4 in cREXX (github.com/mikebeer/snobol), VM/370+ */
+/* SNOBOL EXEC -- SNOBOL4 in cREXX (github.com/mikebeer/snobol), VM/370plus */
 /*   SNOBOL [-f] fn.sno [args]   run a SNOBOL4 program                  */
 /* Runs SNOBOL RXBIN (linked with RXFLOAT and the library) on RXBVM8.   */
 PARSE ARG ARGS

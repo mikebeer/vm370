@@ -1,5 +1,5 @@
 @echo off
-rem get-wheezy-python.cmd -- VM/370+, Windows 11: download the Debian 7
+rem get-wheezy-python.cmd -- VM/370plus, Windows 11: download the Debian 7
 rem (wheezy) s390 packages for Python 2.7 and 3.2 under Debian and pack them into ONE zip to upload.
 rem Double-click it, or run it from cmd.exe.  Uses curl.exe and tar.exe,
 rem which Windows 11 has built in.  Result: wheezy-s390-python.zip (about 9 MB)

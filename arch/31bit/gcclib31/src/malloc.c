@@ -172,7 +172,7 @@ CMS NOTE: As CMS memory goes dowawards checking topmost space will
 #define MUNMAP(a, s) cmsmunmap((a),(s))
 
 #ifdef __GCC31__
-/* GCCLIB31 (VM/370+ M5g): dlmalloc's segments come from above 16 MB, from
+/* GCCLIB31 (VM/370plus M5g): dlmalloc's segments come from above 16 MB, from
    the HIGHSTOR nucleus extension (SYSPROF loads it).  DMSFREE below the
    line only when HIGHSTOR is absent or full.  The plist is static, so it
    is in the module, below the line. */

@@ -1,4 +1,4 @@
-/* VM/370+ M5f: newlib on CMS in AMODE 31 -- printf, malloc above 16 MB,
+/* VM/370plus M5f: newlib on CMS in AMODE 31 -- printf, malloc above 16 MB,
    floating point (soft-fp), files. */
 #include <stdio.h>
 #include <stdlib.h>

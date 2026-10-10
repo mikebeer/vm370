@@ -1,5 +1,5 @@
 #!/bin/sh
-# plmc -- PL/M-80 in cREXX (github.com/mikebeer/PLM) on VM/370+ Linux
+# plmc -- PL/M-80 in cREXX (github.com/mikebeer/PLM) on VM/370plus Linux
 #   plmc prog.plm [args]     compile and run
 #   plmc -c prog.plm         compile only (prog.rxas, prog.rxbin)
 P=/usr/local/share/plm

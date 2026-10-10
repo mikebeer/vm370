@@ -3,7 +3,7 @@
 # from X'8C' after a program check, or CCxx00cc).
 #
 # T1 SPEX: a prefix page at X'5000' with a marker and the program-new PSW,
-#    SPX X'5000', then real X'200' -> the marker (VM/370+ copies the page)
+#    SPX X'5000', then real X'200' -> the marker (VM/370plus copies the page)
 # T2 STPX
 # T3 DATP: segment table X'6000' (STL 0, 16 entries), page table X'7000'
 #    (PTL 15): identity, except virtual X'8000' -> real X'9000'.  CR0 byte

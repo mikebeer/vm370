@@ -1,6 +1,6 @@
 # M7 — ESA/390 guests, target Linux/390 (scoped 7 October 2026)
 
-VM/370+ runs every guest as a System/370 virtual machine: BC or EC mode,
+VM/370plus runs every guest as a System/370 virtual machine: BC or EC mode,
 S/370 I/O (`SIO`/`TIO`/`HIO`, CAW and CSW in page 0), S/370-format DAT.
 M7 adds a second kind of virtual machine, an **ESA/390 virtual machine**,
 good enough to IPL a 31-bit Linux/390 kernel from the virtual reader and
@@ -156,7 +156,7 @@ its 3215 console on MAINT's terminal and runs `/init` from its initramfs:
 *** 4000AC SVC   001D ==> 213B78     pause()
 Freeing unused kernel memory: 104K (0027a000 - 00294000)
 
-HELLO FROM LINUX/390 ON VM/370+ (M7)
+HELLO FROM LINUX/390 ON VM/370plus (M7)
 ```
 
 Kernel parameters (parameter file in the reader, or built in):

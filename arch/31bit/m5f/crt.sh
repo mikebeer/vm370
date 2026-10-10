@@ -1,5 +1,5 @@
 #!/bin/sh
-# crt.sh -- VM/370+ M5f: compile and link a C program for CMS (AMODE 31).
+# crt.sh -- VM/370plus M5f: compile and link a C program for CMS (AMODE 31).
 #   crt.sh OUT.text file.c ...   -> OUT.text (CMS TEXT deck: LOAD, GENMOD)
 # Needs: s390x-linux-gnu-gcc (13, with lib32gcc-13-dev-s390x-cross), the
 # newlib build in $NEWLIB (libc.a, libm.a, headers), softfp/libsoftfp.a,

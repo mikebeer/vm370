@@ -1,4 +1,4 @@
-/* cmsrt.c -- VM/370+ M5f: the CMS side of newlib for GCC -m31 programs.
+/* cmsrt.c -- VM/370plus M5f: the CMS side of newlib for GCC -m31 programs.
  *
  * The program runs in AMODE 31 with its code, data, stack and plists in the
  * image CMS LOADed below 16 MB, and its heap above 16 MB from HIGHSTOR.

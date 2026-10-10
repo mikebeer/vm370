@@ -1,5 +1,5 @@
 #!/bin/sh
-# VM/370+: finish a Debian wheezy s390 system after debootstrap's second
+# VM/370plus: finish a Debian wheezy s390 system after debootstrap's second
 # stage (run inside the chroot).  Console: the 3215 is ttyS0, line mode.
 set -e
 echo vm370plus > /etc/hostname
@@ -8,7 +8,7 @@ cat > /etc/hosts <<H
 10.1.1.2  vm370plus
 H
 cat > /etc/fstab <<F
-# VM/370+: the root is mounted by the initramfs before switch_root
+# VM/370plus: the root is mounted by the initramfs before switch_root
 /dev/dasda1  /      ext2   defaults,errors=remount-ro  0  0
 proc         /proc  proc   defaults                    0  0
 /swapfile    none   swap   sw                          0  0
@@ -44,4 +44,4 @@ echo 'HWCLOCKACCESS=no' >> /etc/default/rcS 2>/dev/null || true
 # debootstrap's own clean-up, if its second stage did not get that far
 [ -x /sbin/start-stop-daemon.REAL ] && mv /sbin/start-stop-daemon.REAL /sbin/start-stop-daemon
 rm -f /usr/sbin/policy-rc.d
-echo "VM/370+ post-install done"
+echo "VM/370plus post-install done"

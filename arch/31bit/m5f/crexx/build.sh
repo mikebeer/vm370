@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cross-build the cREXX 2022 tree (F0041) for VM/370+ AMODE 31.
+# Cross-build the cREXX 2022 tree (F0041) for VM/370plus AMODE 31.
 # Scanners/parsers from a host cmake build (ASCII re2c output) in $C/hbuild.
 set -e
 cd "$(dirname "$0")"

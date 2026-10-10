@@ -1,4 +1,4 @@
-/* LOGO EXEC -- LOGO in cREXX (github.com/mikebeer/LOGO) on VM/370+ CMS */
+/* LOGO EXEC -- LOGO in cREXX (github.com/mikebeer/LOGO) on VM/370plus CMS */
 /*   LOGO fn.logo [out.svg]   run a LOGO program; the turtle drawing is */
 /*                            written as SVG (default LOGO SVG A)       */
 /*   LOGO                     built-in demo                             */

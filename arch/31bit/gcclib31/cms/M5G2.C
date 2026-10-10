@@ -1,4 +1,4 @@
-/* M5G2 -- GCCLIB31 test (VM/370+ M5g): AMODE 31, heap above 16 MB,  */
+/* M5G2 -- GCCLIB31 test (VM/370plus M5g): AMODE 31, heap above 16 MB,  */
 /* stack bins over 16 KB, file I/O and a command from heap buffers.  */
 #include <stdio.h>
 #include <stdlib.h>

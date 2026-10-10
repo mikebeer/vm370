@@ -1,10 +1,10 @@
-# VM/370+ — where things stand
+# VM/370plus — where things stand
 
 Last updated **10 October 2026, 07:20 UTC**. **Read this first in a new session.**
 
 ---
 
-## Current position, 9 October — kit build 5: Linux (Debian 7.11) for several users, from CMS, side by side with CMS users; the VM/370+ Guide
+## Current position, 9 October — kit build 5: Linux (Debian 7.11) for several users, from CMS, side by side with CMS users; the VM/370plus Guide
 
 **Delivered:** `dist/VM370PLUS-kit-20261009-b5-part1..7.zip`, which goes over a fresh CE V1R1.2 with MAINSIZE 256, and
 `arch/31bit/manual/VM370PLUS-Guide.docx`, a 20-page IBM-style guide (`mkguide.sh`).
@@ -39,19 +39,20 @@ The kit was verified on a fresh CE (kt14).
 - THE (The Hessling Editor) 3.3 and Regina REXX 3.6: **installed on Debian** 10 Oct from the wheezy packages (the owner downloaded them with `linux390/pc/get-wheezy-the.bat`; golden7 disk). THE on CMS after the 3270 panel library.
 - xBase: mikebeer/xbase (cREXX, when it has commits) on both; Harbour on Debian first, CMS later.
 - MQTT (mikebeer/mqtt): on CMS and Debian, alongside MQ.
+- APL in C (mikebeer/apl, empty at 10 Oct): **before M9** -- Debian natively (gcc 4.6) or cross-built, CMS through the M8.1 cross route (GCC 13 -m31, newlib, cmsrt) like cREXX; the APL glyphs need a transliteration or an APL code page on the 3270/3215 (UTF-8 over SSH on Debian is fine).
 - APL: `apl.rexx` (cREXX) to be ignored until the owner says it is complete; APL\360 as a VM guest is a possible historic route.
-- Name: the project is **VM/370plus** (was VM/370+) -- docs, guide, kit, EXECs and CP's logon banner.
+- Name: the project is **VM/370plus** (was VM/370plus) -- docs, guide, kit, EXECs and CP's logon banner.
 - Message queueing (mikebeer/mq): on Linux a statically linked client with a RabbitMQ broker; on CMS a VM-native queue machine over VMCF/IUCV, a RabbitMQ client after CMS sockets.
 - C++ on CMS: OK from the owner (10 Oct): a subset through the cross route before M9, full C++ after M9.
 - Docker: not on 31-bit (Docker and containerd are Go programs, and Go has no 31-bit s390 port; Docker needs a 64-bit kernel with cgroups and overlayfs). After M9, under a 64-bit Linux (s390x) guest with a current Debian, where Docker's s390x builds run. Before that, LXC containers under Debian 7 (LXC is C; the Linux 4.0 kernel has namespaces and cgroups) as a first step.
-- SMAPI (the z/VM Systems Management API): a VSMSERVE-style service virtual machine in REXX/cREXX that answers a subset of the SMAPI calls (Image_Query, Image_Activate/Deactivate, Image_Create/Delete through the directory, Image_Disk_Create/Delete, Virtual_Network queries) using class A/B CP commands and the directory program; locally over VMCF/IUCV, and over TCP (port 44444, the SMAPI wire format) after CMS sockets; an smcli-style client for Debian. Lets OpenStack-era tools (Feilong/zVM Cloud Connector) and scripts manage VM/370+ guests.
+- SMAPI (the z/VM Systems Management API): a VSMSERVE-style service virtual machine in REXX/cREXX that answers a subset of the SMAPI calls (Image_Query, Image_Activate/Deactivate, Image_Create/Delete through the directory, Image_Disk_Create/Delete, Virtual_Network queries) using class A/B CP commands and the directory program; locally over VMCF/IUCV, and over TCP (port 44444, the SMAPI wire format) after CMS sockets; an smcli-style client for Debian. Lets OpenStack-era tools (Feilong/zVM Cloud Connector) and scripts manage VM/370plus guests.
 - Java: OpenJDK 7 under Debian (soon, a package download like Python); a fuller Java on CMS after M9.
 - SQL: SQLite on CMS (cross-built like M8.1, with a CMS file layer and a REXX interface); MariaDB/MySQL 5.5 or PostgreSQL 9.1 under Debian.
 - CMS sockets (over the Hercules TCP/IP instruction) and a web server (httpd) on CMS; Apache under Debian. The Office's internet mail and web client build on these.
 - CP/M 2.2 as a guest (from ivop/cpm22-from-source, needs PL/M): an 8080 emulator first under Linux, then as a CMS command, then stand-alone IPLable.
 - 3270 full-screen panel library for CMS (cREXX and C); a 3270 console for Linux.
 - A VisiCalc-style spreadsheet of our own for CMS, on the 3270 panel library (geoffmoss0/VisiCalc has no licence, so it is a model only).
-- VM/370+ Office, PROFS-style, in REXX/cREXX: mail with internet e-mail to other users, calendar, notes, documents, a Projects module, an optional web-browser client.
+- VM/370plus Office, PROFS-style, in REXX/cREXX: mail with internet e-mail to other users, calendar, notes, documents, a Projects module, an optional web-browser client.
 - A BookMaster-compatible layer for Waterloo SCRIPT.
 
 **Open issues that matter:** I-254 (two Debians, real storage), I-253 (SPOOL TO SYSTEM, cosmetic), I-251 (CPWATCH, worked around), I-235 models, I-201.

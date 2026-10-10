@@ -12307,7 +12307,7 @@ CMS NOTE: As CMS memory goes dowawards checking topmost space will
 #define MUNMAP(a, s) cmsmunmap((a),(s))                                         
                                                                                 
 #ifdef __GCC31__                                                                
-/* GCCLIB31 (VM/370+ M5g): dlmalloc's segments come from above 16 MB, from      
+/* GCCLIB31 (VM/370plus M5g): dlmalloc's segments come from above 16 MB, from      
    the HIGHSTOR nucleus extension (SYSPROF loads it).  DMSFREE below the        
    line only when HIGHSTOR is absent or full.  The plist is static, so it       
    is in the module, below the line. */                                         
@@ -24488,7 +24488,7 @@ RXVARPOL VTENTRY
 &OFFSET  SETA  &OFFSET+4          Increment for next call                       
          MEND                                                                   
 :READ  GCLB31   EXEC     A1                                                     
-/* GCLB31 EXEC -- build GCCLIB31 TXTLIB on VM/370+ (M5g)              */        
+/* GCLB31 EXEC -- build GCCLIB31 TXTLIB on VM/370plus (M5g)              */        
 /* Sources (mk31.py output) on the A disk.  Assembler stubs with      */        
 /* ASSEMBLE, C with GCC370 and the GCC31 MACLIB, so the headers and   */        
 /* macros are these, not GCCCMS 202's.                                */        
@@ -24565,7 +24565,7 @@ RETURN 0
 :READ  M5G      PARM     A1                                                     
 -o dd:out - -w -O2 -S -D__CMS__                                                 
 :READ  M5G2     C        A1                                                     
-/* M5G2 -- GCCLIB31 test (VM/370+ M5g): AMODE 31, heap above 16 MB,  */         
+/* M5G2 -- GCCLIB31 test (VM/370plus M5g): AMODE 31, heap above 16 MB,  */         
 /* stack bins over 16 KB, file I/O and a command from heap buffers.  */         
 #include <stdio.h>                                                              
 #include <stdlib.h>                                                             

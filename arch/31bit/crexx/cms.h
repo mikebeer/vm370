@@ -6,7 +6,7 @@
 #define CREXX_CMS_H
 
 #undef RX_INLINE
-#define RX_INLINE static inline /* VM/370+: not extern -- 8-char names collide */
+#define RX_INLINE static inline /* VM/370plus: not extern -- 8-char names collide */
 
 /* VM/370 has a 32 bit (or 24/32) architecture */
 #define __32BIT__
@@ -34,10 +34,10 @@ static void tzset(void) {};
 #define daylight 0
 
 #ifndef SIZE_MAX
-#define SIZE_MAX ((size_t)-1)    /* VM/370+: GCCLIB lacks it */
+#define SIZE_MAX ((size_t)-1)    /* VM/370plus: GCCLIB lacks it */
 #endif
 
-/* VM/370+: GCCLIB has no gettimeofday -- seconds from time() */
+/* VM/370plus: GCCLIB has no gettimeofday -- seconds from time() */
 #include <time.h>
 static int gettimeofday(struct timeval *tv, void *tz) {
     tv->tv_sec = (long) time(0);
@@ -47,7 +47,7 @@ static int gettimeofday(struct timeval *tv, void *tz) {
 
 
 /*
- * VM/370+ (M5g): GCCLIB has no snprintf/vsnprintf.  The original hack
+ * VM/370plus (M5g): GCCLIB has no snprintf/vsnprintf.  The original hack
  * mapped them to sprintf/vsprintf and so ignored the size -- and the
  * compiler sizes its buffers by calling vsnprintf with a small one first
  * (rxcpemit.c, rxcpast.c), so every long line overran the heap: the

@@ -1055,7 +1055,7 @@ MNT19E 19E Y/S R/O   70 3350  800        710      28263-71      11637      39900
 Ready; T=0.01/0.01 06:33:42
 ```
 
-**CMS reaches `Ready;` under VM/370+ running in ESA/390 mode**, 4 October
+**CMS reaches `Ready;` under VM/370plus running in ESA/390 mode**, 4 October
 2026, 06:33 UTC, Hercules 3.13. MAINT, `LOGON … NOIPL`, `DEF STOR 16M`,
 `IPL 190`. The minidisks are accessed through CP's SSCH path, the system
 profile runs, a typed command is read and answered from the file system.

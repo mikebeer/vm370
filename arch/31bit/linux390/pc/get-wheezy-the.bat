@@ -1,5 +1,5 @@
 @echo off
-rem get-wheezy-the.bat -- VM/370+: download THE (The Hessling Editor) and
+rem get-wheezy-the.bat -- VM/370plus: download THE (The Hessling Editor) and
 rem Regina REXX for Debian 7 (wheezy) s390, with the packages they need,
 rem from archive.debian.org.  Windows 10 or later (PowerShell 5).
 rem   get-wheezy-the.bat            -> .\wheezy-the\*.deb
@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 $base = 'https://archive.debian.org/debian/'
 $dest = $env:DEST
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
-# what we want, and what the VM/370+ Debian disk already has (not fetched)
+# what we want, and what the VM/370plus Debian disk already has (not fetched)
 $want = @('the', 'the-doc', 'regina-rexx', 'libregina3')
 $have = @('libc6', 'libc-bin', 'libgcc1', 'multiarch-support', 'libtinfo5', 'libncurses5',
           'libncursesw5', 'ncurses-base', 'ncurses-bin', 'debconf', 'dpkg', 'perl-base',

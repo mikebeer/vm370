@@ -1,5 +1,5 @@
 /* CRXMK31 EXEC -- cREXX (2022 S370 tree) as AMODE 31 programs, built  */
-/* on VM/370+ (M5g): GCC380 with GCCLIB31's headers and macros (G disk, */
+/* on VM/370plus (M5g): GCC380 with GCCLIB31's headers and macros (G disk, */
 /* LIB GCC31), linked with GCCLIB31 TXTLIB.  Sources copied from D to F; */
 /* modules RXCN, RXASN, RXBVMN, RXDASN on A beside the 24-bit ones on E. */
 SOURCE_DISK = 'F'

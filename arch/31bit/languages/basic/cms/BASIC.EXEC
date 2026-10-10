@@ -1,4 +1,4 @@
-/* BASIC EXEC -- BASIC in cREXX (github.com/mikebeer/basic) on VM/370+   */
+/* BASIC EXEC -- BASIC in cREXX (github.com/mikebeer/basic) on VM/370plus   */
 /*   BASIC [-MS|-FB|-ANSI] fn.bas [args]   run a BASIC program          */
 /*   BASIC                                 interactive prompt           */
 /* Runs BASIC RXBIN (linked with RXFLOAT and the library) on RXBVM8.    */

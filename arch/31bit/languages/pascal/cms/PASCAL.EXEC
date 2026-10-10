@@ -1,4 +1,4 @@
-/* PASCAL EXEC -- Pascal in cREXX (github.com/mikebeer/pascal), VM/370+  */
+/* PASCAL EXEC -- Pascal in cREXX (github.com/mikebeer/pascal), VM/370plus  */
 /*   PASCAL fn [args]      compile fn.pas and run it                    */
 /*   PASCAL fn ( COMPILE   compile only (fn RXAS, fn RXBIN)             */
 /* The compiler (PASCAL RXBIN) writes cREXX assembler, RXAS8 assembles  */

@@ -1,3 +1,13 @@
+./ R 00295000          $ 00294100 100                                           
+         TM    VMFSTAT,VMESA390  M7.10: ESA/390 SSCH:          XA0054DK         
+         BZ    VSIOCAW        ITS CAW IS IN DMKVCSCW,          XA0054DK         
+         L     R15,=A(DMKVCSCW)  NOT AT X'48' (I-256)          XA0054DK         
+         ICM   R2,15,0(R15)                                    XA0054DK         
+         BZ    VSIOCAW        NONE: DMKVMI'S OWN SIO           XA0054DK         
+         XC    0(4,R15),0(R15)                                 XA0054DK         
+         N     R2,=X'F0FFFFFF'  DROP THE MARK                  XA0054DK         
+         B     TSTDED1                                         XA0054DK         
+VSIOCAW  LA    R1,CAW         LOGICAL ADDRESS OF USER'S CAW    XA0054DK         
 ./ R 01637000          $ 01636001 001                                           
 VMESA390 EQU   X'02'          VMFSTAT: ESA/390 MACHINE         XA0054DK         
 VMVCSIX  EQU   VMUSERH1       ITS TABLE: SLOT IN DMKVCS        XA0054DK         
@@ -306,12 +316,11 @@ SSCHF0   BAL   R9,SIDCHK      SENSE ID: OURS                   XA0054DK
          SRL   R1,4                                            XA0054DK         
          SLL   R1,28                                           XA0054DK         
          OR    R0,R1                                           XA0054DK         
-         ST    R0,VCSBUF      THE CAW, FOR DMKVSI              XA0054DK         
-         LA    R5,X'48'                                        XA0054DK         
-         LA    R6,VCSBUF                                       XA0054DK         
-         LA    R4,1                                            XA0054DK         
-         SR    R0,R0                                           XA0054DK         
-         BAL   R9,GUESTIO                                      XA0054DK         
+         O     R0,=X'01000000'  M7.10: THE CAW GOES TO DMKVSI  XA0054DK         
+         ST    R0,DMKVCSCW    IN DMKVCSCW (X01 MARKS IT),      XA0054DK         
+*                             NOT AT GUEST X48: PAGE 0 IS      XA0054DK         
+*                             THE GUESTS STORAGE (A 4-BYTE     XA0054DK         
+*                             HOLE IN LINUX DATA, I-256)       XA0054DK         
          OI    ENTFLG(R3),ENTACT                               XA0054DK         
          MVI   VCSOP,C'S'                                      XA0054DK         
          MVC   VMINST(2),SIOOP   SIO VDEV                      XA0054DK         
@@ -377,6 +386,7 @@ CSCHQ    XC    VCSBUF(8),VCSBUF                                XA0054DK
 * THE SIO/TIO CONDITION CODE (X'00'-X'30'), R13 = THE DEVICE.  XA0054DK         
 *                                                              XA0054DK         
 DMKVCSSE L     R12,AVCSSE-DMKVCSSE(,R12)                       XA0054DK         
+         XC    DMKVCSCW,DMKVCSCW  I-256: A CAW NOT TAKEN       XA0054DK         
          TM    VMVCSFL,X'80'  OURS ONLY IF DMKVCS SET VCSOP:   XA0054DK         
          BZ    SENOTME        THE IPL SIMULATOR'S OWN SIO      XA0054DK         
          BAL   R9,GETTAB      AND TIO GO BACK                  XA0054DK         
@@ -980,6 +990,8 @@ FNCHN    LA    R2,2(,R2)                                       XA0054DK
          BR    R9                                              XA0054DK         
 *                                                              XA0054DK         
 AVCSSE   DC    A(DMKVCS)                                       XA0054DK         
+         ENTRY DMKVCSCW                                        XA0054DK         
+DMKVCSCW DC    F'0'           M7.10: THE CAW OF THE SSCH       XA0054DK         
          ENTRY DMKVCSRG                                        XA0054DK         
 DMKVCSRG DC    C'VCRING  '                                     XA0054DK         
 VCRNXT   DC    F'0'                                            XA0054DK         

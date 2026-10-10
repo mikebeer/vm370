@@ -1,9 +1,9 @@
-VM/370+  --  overlay kit, 9 October 2026 (build 5)
+VM/370plus  --  overlay kit, 9 October 2026 (build 5)
 =========================================
 
 VM/370 Community Edition V1 R1.2, with CP converted to ESA/390 (AMODE 31)
 and an EC-mode CMS on MAINT 290 that can use storage above 16 MB.
-Development checkpoint of the VM/370+ project, not a release.
+Development checkpoint of the VM/370plus project, not a release.
 
 WHAT YOU NEED
   - A fresh, unmodified extraction of VM370CE_V1_R1_2.zip.
@@ -89,7 +89,7 @@ USE
         load hello31 (start
     (needs  cp def stor 128m  -- GCC380 asks for a 60 MB heap).
 
-LINUX/390 ON VM/370+  (milestone M7, 9 October 2026)
+LINUX/390 ON VM/370plus  (milestone M7, 9 October 2026)
   A Linux 4.0 kernel (31-bit, ESA/390) runs in a virtual machine.  Kit b4
   adds a complete DEBIAN 7 (wheezy, s390) system on a 3390 disk:
   sysvinit, udev, rsyslog, cron, OpenSSH, apt/dpkg, 154 packages, root on
@@ -119,7 +119,7 @@ LINUX/390 ON VM/370+  (milestone M7, 9 October 2026)
     Hercules writes to it.
 
   THE FULL MANUAL is vm370plus/linux/VM370PLUS-Guide.docx (Word): what
-  VM/370+ is, the differences to CE, installation, Linux, cREXX.
+  VM/370plus is, the differences to CE, installation, Linux, cREXX.
 
   START LINUX FROM CMS (build 5): the kernel, the LINUX EXEC and the
   parameter files are on MAINT's 19D (your U disk).  With 64 MB and the
@@ -137,7 +137,7 @@ LINUX/390 ON VM/370+  (milestone M7, 9 October 2026)
   1. vm370ce.conf has MAINSIZE 256 (CP uses 16 MB as real storage and the
      rest as paging store).  Keep it.  For the network remove the # in
      front of  #0600.2  CTCI ...  (see NETWORK below).
-  2. With VM/370+ up (step 4 of INSTALL), at the HERCULES console spool
+  2. With VM/370plus up (step 4 of INSTALL), at the HERCULES console spool
      the two decks to MAINT's reader, in this order:
         /cp spool 00c class *
         devinit 00c vm370plus/linux/linux48.rdr ebcdic eof

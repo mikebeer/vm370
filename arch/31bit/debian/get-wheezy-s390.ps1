@@ -1,5 +1,5 @@
 # get-wheezy-s390.ps1 -- download the Debian 7 "wheezy" s390 (31-bit)
-# packages for Linux on VM/370+ and pack them into zip parts of about 24 MB
+# packages for Linux on VM/370plus and pack them into zip parts of about 24 MB
 # to upload.  Run in PowerShell:
 #     powershell -ExecutionPolicy Bypass -File get-wheezy-s390.ps1
 # (add  -Dev  to also get gcc, make, git, cmake, perl, python: +57 MB)

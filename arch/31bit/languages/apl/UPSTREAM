@@ -1,0 +1,5 @@
+apl: github.com/mikebeer/apl (word-glyph APL in portable C89), 98f1bb2
+(v0.4).  Built from apl_all.c, unchanged:
+  CMS:   ../../m5f/crt.sh with CFLAGS_PRE=-I../../m5f/inc (setjmp.h) and
+         the __linux__/__unix__ macros undefined (no dirent: )LIB says so)
+  Linux: s390x-linux-gnu-gcc -m31 static against the lx31 sysroot

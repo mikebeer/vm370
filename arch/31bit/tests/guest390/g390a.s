@@ -1,4 +1,4 @@
-# M7.0 baseline: what does VM/370+ do today with an ESA/390 guest?
+# M7.0 baseline: what does VM/370plus do today with an ESA/390 guest?
 # Tape-IPLed at X'400' with PSW 00080000 80000400.  Results at X'1000',
 # 16 bytes per test: tag(4) info(4) data(8).  info = X'CCxx00cc' (ran,
 # condition code) or the program interruption ILC+code from X'8C'.

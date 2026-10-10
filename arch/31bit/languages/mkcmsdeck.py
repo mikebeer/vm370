@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""mkcmsdeck.py RXBINDIR OUT.txt -- VM/370+: the reader deck that brings the
+"""mkcmsdeck.py RXBINDIR OUT.txt -- VM/370plus: the reader deck that brings the
 cREXX languages to CMS (READCARD *): each RXBIN as hex text (fn HEX, UNHEX
 rebuilds the bytes: 80-byte card padding breaks the RXBIN loader), the
 EXECs, and the test programs, plus LANGSUP EXEC that unhexes them."""

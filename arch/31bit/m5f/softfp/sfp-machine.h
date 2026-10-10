@@ -1,4 +1,4 @@
-/* VM/370+ M5f: soft-fp for GCC -m31 -msoft-float (s390 31-bit, big endian),
+/* VM/370plus M5f: soft-fp for GCC -m31 -msoft-float (s390 31-bit, big endian),
    derived from libgcc/config/rs6000/sfp-machine.h (32-bit path). */
 
 #define _FP_W_TYPE_SIZE		32

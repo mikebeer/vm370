@@ -1,5 +1,5 @@
 #!/bin/sh
-# prolog -- Prolog in cREXX (prolog.crexx) on VM/370+ Linux
+# prolog -- Prolog in cREXX (prolog.crexx) on VM/370plus Linux
 #   prolog [file.pl]     interactive top level, optionally consulting file.pl
 # End a query with ?, a fact or rule with . ; halt. ends the session.
 P=/usr/local/share/prolog/prolog.rxbin
