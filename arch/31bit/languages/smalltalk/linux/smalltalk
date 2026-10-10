@@ -1,0 +1,6 @@
+#!/bin/sh
+# smalltalk -- Smalltalk-80 in cREXX (github.com/mikebeer/smalltalk) on VM/370+ Linux
+#   smalltalk prog.st [args]      run a program (GNU Smalltalk bracket syntax)
+#   smalltalk                     read statements from standard input
+P=/usr/local/share/smalltalk
+exec /usr/local/bin/rxvm $P/smalltalk.rxbin -a -L $P/lib "$@"

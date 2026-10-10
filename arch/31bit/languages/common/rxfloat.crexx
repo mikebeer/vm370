@@ -186,13 +186,24 @@ log: procedure = .float
   end
   return 2 * r + e * 0.6931471805599453
 
+/* log2 and log10 are exact for exact powers, as the C library's are */
 log2: procedure = .float
   arg value = .float
-  return log(value) / 0.6931471805599453
+  r = .float
+  k = .float
+  r = log(value) / 0.6931471805599453
+  k = round(r)
+  if fabs(r - k) < 1e-9 then if pow(2.0, k) = value then return k
+  return r
 
 log10: procedure = .float
   arg value = .float
-  return log(value) / 2.302585092994046
+  r = .float
+  k = .float
+  r = log(value) / 2.302585092994046
+  k = round(r)
+  if fabs(r - k) < 1e-9 then if pow(10.0, k) = value then return k
+  return r
 
 log1p: procedure = .float
   arg value = .float

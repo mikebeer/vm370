@@ -1,6 +1,6 @@
 #!/bin/sh
 # mklangs.sh -- VM/370+: build the cREXX languages (BASIC, LOGO, Prolog,
-# SNOBOL, Pascal, Lisp) as
+# SNOBOL, Pascal, Lisp, Smalltalk, PL/M) as
 # linked RXBINs with the PC cREXX, run their tests, and pack the Linux
 # bundle (the s390 31-bit cREXX tools from ../linux390/crexx plus the
 # languages) as OUT/lxcrexx.tgz.
@@ -11,27 +11,43 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 B=${CREXX_BIN:-/home/claude/crexx-host/bin}
 OUT=$(mkdir -p "$1" && cd "$1" && pwd)
 W=$OUT/work
-rm -rf "$W"; mkdir -p "$W"
-cp "$HERE"/common/rxfloat.crexx "$HERE"/basic/basic.crexx "$HERE"/logo/logo.crexx \
-   "$HERE"/prolog/prolog.crexx "$HERE"/prolog/crexxcallback.crexx "$HERE"/prolog/rxfs.crexx \
-   "$HERE"/snobol/snobol.crexx "$HERE"/pascal/pascal.crexx "$HERE"/pascal/pasrt.crexx \
-   "$HERE"/lisp/lisp.crexx "$W"/
+rm -rf "$W"; mkdir -p "$W/common"
+# each language compiles in a directory of its own: rxc reads the sibling
+# sources of the current directory, and the languages share procedure names
+cp "$HERE"/common/rxfloat.crexx "$HERE"/prolog/rxfs.crexx "$HERE"/prolog/crexxcallback.crexx "$W/common/"
+(cd "$W/common" && for m in rxfloat rxfs crexxcallback; do
+   "$B"/rxc -i "$B" $m >/dev/null 2>$m.err || { cat $m.err; exit 1; }
+   "$B"/rxas $m; done) || exit 1
+# build NAME FLAGS SOURCES... : compile each source in $W/NAME, link each
+# main module with its imports and the library as $W/<main>x.rxbin
+build() {
+  name=$1; flags=$2; shift 2
+  mkdir -p "$W/$name"
+  for f in "$@"; do cp "$f" "$W/$name/"; done
+  (cd "$W/$name" && for f in "$@"; do m=$(basename "$f" .crexx)
+     "$B"/rxc $flags -i "$B;$W/common" $m >/dev/null 2>$m.err || { cat $m.err; exit 1; }
+     "$B"/rxas $m; done) || exit 1
+}
+build basic "" "$HERE"/basic/basic.crexx
+build logo "" "$HERE"/logo/logo.crexx
+build prolog "" "$HERE"/prolog/prolog.crexx
+build snobol "" "$HERE"/snobol/snobol.crexx
+build smalltalk "" "$HERE"/smalltalk/smalltalk.crexx
+build pascal -n "$HERE"/pascal/pascal.crexx "$HERE"/pascal/pasrt.crexx    # as their Makefiles: -n
+build lisp -n "$HERE"/lisp/lisp.crexx
+build plm -n "$HERE"/plm/plm.crexx "$HERE"/plm/plmrt.crexx
 cd "$W"
-for m in rxfloat rxfs crexxcallback basic logo prolog snobol; do
-  "$B"/rxc -i "$B;." $m >/dev/null 2>$m.err || { cat $m.err; exit 1; }
-  "$B"/rxas $m
-done
-for m in pascal pasrt lisp; do          # as their Makefiles: -n
-  "$B"/rxc -n -i "$B;." $m >/dev/null 2>$m.err || { cat $m.err; exit 1; }
-  "$B"/rxas $m
-done
-"$B"/rxlink -o basicx basic rxfloat "$B"/library.rxbin
-"$B"/rxlink -o logox logo "$B"/library.rxbin
-"$B"/rxlink -o prologx prolog crexxcallback rxfloat rxfs "$B"/library.rxbin
-"$B"/rxlink -o snobolx snobol rxfloat "$B"/library.rxbin
-"$B"/rxlink -o pascalx pascal "$B"/library.rxbin
-"$B"/rxlink -o pasrtx pasrt "$B"/library.rxbin
-"$B"/rxlink -o lispx lisp "$B"/library.rxbin
+C=$W/common
+"$B"/rxlink -o basicx basic/basic $C/rxfloat "$B"/library.rxbin
+"$B"/rxlink -o logox logo/logo "$B"/library.rxbin
+"$B"/rxlink -o prologx prolog/prolog $C/crexxcallback $C/rxfloat $C/rxfs "$B"/library.rxbin
+"$B"/rxlink -o snobolx snobol/snobol $C/rxfloat "$B"/library.rxbin
+"$B"/rxlink -o smalltalkx smalltalk/smalltalk $C/rxfloat "$B"/library.rxbin
+"$B"/rxlink -o pascalx pascal/pascal "$B"/library.rxbin
+"$B"/rxlink -o pasrtx pascal/pasrt "$B"/library.rxbin
+"$B"/rxlink -o lispx lisp/lisp "$B"/library.rxbin
+"$B"/rxlink -o plmx plm/plm "$B"/library.rxbin
+"$B"/rxlink -o plmrtx plm/plmrt "$B"/library.rxbin
 
 # tests (compared as the upstream run_tests.sh do: trailing newlines ignored)
 same() { [ "$(cat "$1")" = "$(cat "$2")" ]; }
@@ -59,6 +75,21 @@ for src in "$HERE"/lisp/tests/*.lisp "$HERE"/lisp/tests/*.repl; do
   esac
   same "$W/lsp_$t.out" "$HERE/lisp/tests/$t.out" || { echo "LISP FAIL $t"; fail=1; }
 done
+for src in "$HERE"/smalltalk/tests/*.st; do
+  t=$(basename "$src" .st); in=/dev/null
+  [ -f "$HERE/smalltalk/tests/$t.in" ] && in="$HERE/smalltalk/tests/$t.in"
+  (cd "$HERE/smalltalk/tests" && "$B"/rxvm "$W"/smalltalkx -a -L "$HERE"/smalltalk/lib "$src" < "$in") > "$W/st_$t.out" 2>&1 || true
+  same "$W/st_$t.out" "$HERE/smalltalk/tests/$t.out" || { echo "SMALLTALK FAIL $t"; fail=1; }
+done
+mkdir -p plmw
+for src in "$HERE"/plm/tests/*.plm; do
+  t=$(basename "$src" .plm); in=/dev/null
+  [ -f "$HERE/plm/tests/$t.in" ] && in="$HERE/plm/tests/$t.in"
+  cp "$src" plmw/
+  (cd plmw && { "$B"/rxvm "$W"/plmx -a $t.plm prog.rxas && "$B"/rxas prog && \
+    "$B"/rxvm prog "$W"/plmrtx -a < "$in"; }) > "$W/plm_$t.out" 2>&1 || true
+  same "$W/plm_$t.out" "$HERE/plm/tests/$t.out" || { echo "PLM FAIL $t"; fail=1; }
+done
 mkdir -p pas
 for src in "$HERE"/pascal/tests/*.pas; do
   t=$(basename "$src" .pas); in=/dev/null
@@ -77,7 +108,8 @@ grep -qi "yes\|true" prolog.out || { echo "PROLOG FAIL"; cat prolog.out | head; 
 # the Linux bundle
 R=$W/root
 mkdir -p $R/usr/local/bin $R/usr/local/share/basic $R/usr/local/share/logo $R/usr/local/share/prolog \
-  $R/usr/local/share/snobol $R/usr/local/share/pascal $R/usr/local/share/lisp
+  $R/usr/local/share/snobol $R/usr/local/share/pascal $R/usr/local/share/lisp \
+  $R/usr/local/share/smalltalk $R/usr/local/share/plm
 L=$HERE/../linux390/crexx/out
 cp $L/rxc $L/rxas $L/rxvm "$B"/library.rxbin "$B"/rxcexits.rxbin $R/usr/local/bin/
 cp -r "$B"/messages $R/usr/local/bin/
@@ -94,10 +126,16 @@ cp pasrtx.rxbin $R/usr/local/share/pascal/pasrt.rxbin
 cp "$HERE"/pascal/tests/*.pas $R/usr/local/share/pascal/
 cp lispx.rxbin $R/usr/local/share/lisp/lisp.rxbin
 cp -r "$HERE"/lisp/examples $R/usr/local/share/lisp/
+cp smalltalkx.rxbin $R/usr/local/share/smalltalk/smalltalk.rxbin
+cp -r "$HERE"/smalltalk/lib "$HERE"/smalltalk/examples $R/usr/local/share/smalltalk/
+cp plmx.rxbin $R/usr/local/share/plm/plm.rxbin
+cp plmrtx.rxbin $R/usr/local/share/plm/plmrt.rxbin
+cp -r "$HERE"/plm/examples $R/usr/local/share/plm/
 cp "$HERE"/basic/linux/basic "$HERE"/logo/linux/logo "$HERE"/prolog/linux/prolog \
-   "$HERE"/snobol/linux/snobol "$HERE"/pascal/linux/pasc "$HERE"/lisp/linux/lisp $R/usr/local/bin/
-(cd $R && tar czf "$OUT"/lxcrexx.tgz --owner=0 --group=0 usr)
+   "$HERE"/snobol/linux/snobol "$HERE"/pascal/linux/pasc "$HERE"/lisp/linux/lisp "$HERE"/smalltalk/linux/smalltalk "$HERE"/plm/linux/plmc $R/usr/local/bin/
+(cd $R && tar czf "$OUT"/lxcrexx.tgz --format=ustar --owner=0 --group=0 usr)
 cp basicx.rxbin "$OUT"/basic.rxbin; cp logox.rxbin "$OUT"/logo.rxbin; cp prologx.rxbin "$OUT"/prolog.rxbin
 cp snobolx.rxbin "$OUT"/snobol.rxbin; cp pascalx.rxbin "$OUT"/pascal.rxbin; cp pasrtx.rxbin "$OUT"/pasrt.rxbin; cp lispx.rxbin "$OUT"/lisp.rxbin
+cp smalltalkx.rxbin "$OUT"/smalltalk.rxbin; cp plmx.rxbin "$OUT"/plm.rxbin; cp plmrtx.rxbin "$OUT"/plmrt.rxbin
 ls -la "$OUT"
 exit $fail

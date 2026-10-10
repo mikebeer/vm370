@@ -1,0 +1,14 @@
+/* SMALLTLK EXEC -- Smalltalk-80 in cREXX (github.com/mikebeer/smalltalk) */
+/*   SMALLTLK fn.st [args]   run a program                              */
+/*   SMALLTLK                read statements from the terminal          */
+/* Runs SMALLTLK RXBIN on RXBVM8; the class library (KERNEL ST ...) is  */
+/* read from the accessed disks.                                        */
+PARSE ARG ARGS
+'STATE SMALLTLK RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'SMALLTLK: SMALLTLK RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+QUEUE '-L a' ARGS         /* CMS would cut each argument to 8 chars */
+'RXBVM8 SMALLTLK -a =STACK'
+EXIT RC

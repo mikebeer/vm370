@@ -1,0 +1,13 @@
+#!/bin/sh
+# plmc -- PL/M-80 in cREXX (github.com/mikebeer/PLM) on VM/370+ Linux
+#   plmc prog.plm [args]     compile and run
+#   plmc -c prog.plm         compile only (prog.rxas, prog.rxbin)
+P=/usr/local/share/plm
+ONLY=0
+if [ "$1" = "-c" ]; then ONLY=1; shift; fi
+if [ -z "$1" ] || [ ! -f "$1" ]; then echo "usage: plmc [-c] program.plm" >&2; exit 2; fi
+SRC=$1; shift; STEM=${SRC%.plm}
+/usr/local/bin/rxvm $P/plm.rxbin -a "$SRC" "$STEM.rxas" || exit 1
+/usr/local/bin/rxas "$STEM" || exit 1
+[ $ONLY = 1 ] && exit 0
+exec /usr/local/bin/rxvm "$STEM.rxbin" $P/plmrt.rxbin -a "$@"

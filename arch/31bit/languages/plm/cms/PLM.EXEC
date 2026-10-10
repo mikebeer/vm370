@@ -1,0 +1,26 @@
+/* PLM EXEC -- PL/M-80 in cREXX (github.com/mikebeer/PLM), VM/370+      */
+/*   PLM fn [args]        compile fn.plm and run it                     */
+/*   PLM fn ( COMPILE     compile only (fn RXAS, fn RXBIN)              */
+PARSE ARG FN ARGS '(' OPT
+FN = STRIP(FN)
+IF FN = '' THEN DO
+  SAY 'PLM: usage: PLM fn [args] [( COMPILE]'
+  EXIT 24
+END
+'STATE PLM RXBIN *'
+IF RC <> 0 THEN DO
+  SAY 'PLM: PLM RXBIN not found -- access the disk that has it'
+  EXIT 28
+END
+QUEUE FN'.plm' FN'.rxas'      /* CMS would cut each argument to 8 chars */
+'RXBVM8 PLM -a =STACK'
+IF RC <> 0 THEN EXIT RC
+'RXAS8' FN
+IF RC <> 0 THEN EXIT RC
+IF ABBREV('COMPILE', TRANSLATE(STRIP(OPT)), 1) & STRIP(OPT) <> '' THEN EXIT 0
+IF STRIP(ARGS) = '' THEN 'RXBVM8' FN 'PLMRT'
+ELSE DO
+  QUEUE ARGS
+  'RXBVM8' FN 'PLMRT -a =STACK'
+END
+EXIT RC
