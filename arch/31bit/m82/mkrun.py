@@ -41,12 +41,8 @@ if load:
     t('format 194 a', 'CONTINUE|DMSFOR', 60)
     t('yes', 'LABEL', 60)
     t('crx82', RDY, 600)
-    t('format 196 h', 'CONTINUE|DMSFOR', 60)    # the sources (mkcms: H1)
-    t('yes', 'LABEL', 60)
-    t('cms196', RDY, 600)
 else:
     t('access 194 a', RDY)
-    t('access 196 h', RDY)
 t('access 191 b', RDY)
 for d in decks:
     t('readcard *', RDY, 3600)

@@ -221,7 +221,7 @@ def exec_text(stage):
           '  END',
           "  L = 'CRX82'",
           "  IF U = 'CRXLGCC' | U = 'DIMFIX' | U = 'UNHEXT' THEN L = 'GCC31'",
-          "  /* the sources are on H (196); an updated copy on A wins */",
+          "  /* READCARD writes to A; a unit may also come from another disk */",
           "  'STATE' U 'C A'",
           "  IF RC = 0 THEN SRC = 'A'",
           "  ELSE SRC = 'H'",
@@ -292,14 +292,14 @@ def main():
         if a.endswith('.asm'):
             live |= {w.lower() for w in open(os.path.join(xfdir, a)).read().split()}
     for f in sorted(f for f in os.listdir(xfdir) if f.endswith('.assemble') and f[:-9] in live):
-        deck.append(':READ  %-8s ASSEMBLE H1' % f[:-9].upper())
+        deck.append(':READ  %-8s ASSEMBLE A1' % f[:-9].upper())
         deck.extend(cards(os.path.join(xfdir, f), 'ASSEMBLE'))
     files = sorted(f for f in os.listdir(xfdir) if f.endswith('.c'))
     for f in files:
         fn = f[:-2]
         cs = cards(os.path.join(xfdir, f), 'C')
         if len(cs) <= 60000:
-            deck.append(':READ  %-8s C        H1' % fn.upper())
+            deck.append(':READ  %-8s C        A1' % fn.upper())
             deck.extend(cs)
             continue
         # a CMS file holds 65,533 records: the unit #includes its pieces,
@@ -315,10 +315,10 @@ def main():
         main = []
         for k, part in enumerate(parts):
             pn = '%s%02d' % (fn[:6], k + 1)
-            deck.append(':READ  %-8s H        H1' % pn.upper())
+            deck.append(':READ  %-8s H        A1' % pn.upper())
             deck.extend(part)
             main.append('#include "%s.h"' % pn.lower())
-        deck.append(':READ  %-8s C        H1' % fn.upper())
+        deck.append(':READ  %-8s C        A1' % fn.upper())
         deck.extend(main)
     mk = [':READ  CRX82MK  EXEC     A1'] + exec_text(stage)
     progs = programs(stage)[0]
