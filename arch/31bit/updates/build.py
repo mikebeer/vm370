@@ -111,6 +111,7 @@ XA51 = 'XA0051DK'
 XA52 = 'XA0052DK'
 XA53 = 'XA0053DK'   # M4b: real storage above 16 MB
 XA54 = 'XA0054DK'   # M7: ESA/390 virtual machines
+XA55 = 'XA0055DK'   # M4b.3: guest pages in frames above 16 MB
 
 
 def psa():
@@ -4149,6 +4150,76 @@ XSTSLOT = [   # R2 = slot frame address from the CCPD at SWPTABLE R5
     "         SLL   R2,12          FRAME = 16 MB + SLOT*4096",
     "         AL    R2,=X'01000000'",
 ]
+
+
+def m4b3decks():
+    """M4b.3: guest pages in real frames above 16 MB (docs/42-M4B3-HIGH-FRAMES.md).
+
+    Step 3, paging I/O.  A format-0 CCW carries a 24-bit data address; a
+    frame above 16 MB goes through an IDAL of two 31-bit IDAWs (the frame and
+    the frame + 2048: IDAWs after the first start on 2 KB boundaries).  The
+    IDAL lives in the paging IOBLOK, which DMKFREE gives from storage below
+    16 MB, so the paging IOBLOK grows by one doubleword: PAGESIZE 15 -> 16 in
+    every module that knows it (DMKPAG, DMKUSO and DMKMON compute it from
+    their copies of the extension; DMKPTR and DMKCPI have it as a constant).
+    """
+    decks = {}
+    src = lambda m: SRC + '/%s.ASSEMBLE' % m
+
+    d = Deck(XA55)
+    d.replace('00504000', '00508000', first='00504100', inc=10,
+              limit=next_seq(src('DMKPAG'), '00508000'), lines=[
+        "         SL    R7,ACORETBL    GET PAGE FRAME ADDRESS/256",
+        "         SLL   R7,8           GET PAGE FRAME ADDRESS",
+        "         CL    R7,=A(X'01000000') M4B.3: ABOVE 16 MB?",
+        "         BL    SETRW24",
+        "         ST    R7,PAGEIDAL    YES: THROUGH TWO 31-BIT IDAWS",
+        "         LA    R7,2048(,R7)",
+        "         ST    R7,PAGEIDAL+4",
+        "         LA    R7,PAGEIDAL",
+        "         ICM   R7,B'1000',CPEXR0+3 GET DASD OP-CODE",
+        "         ST    R7,PAGERW      AND SET 1ST HALF OF R/W CCW",
+        "         MVI   PAGERW+4,CC+X'04'  CHAIN, IDA",
+        "         B     SETRWOK",
+        "SETRW24  ICM   R7,B'1000',CPEXR0+3 DASD OP-CODE FROM GPR0",
+        "         ST    R7,PAGERW      AND SET 1ST HALF OF R/W CCW",
+        "         MVI   PAGERW+4,CC    MAKE SURE FLAGS ARE CORRECT",
+        "SETRWOK  DS    0H",
+    ])
+    d.insert('01299000', first='01299100', inc=100,
+             limit=next_seq(src('DMKPAG'), '01299000'), lines=[
+        "PAGEIDAL DS    2F             M4B.3: IDAL, A FRAME > 16 MB",
+    ])
+    decks['DMKPAG'] = d
+
+    d = Deck(XA55)
+    d.replace('01304500', first='01304510', inc=10,
+              limit=next_seq(src('DMKUSO'), '01304500'), lines=[
+        "         DS    8D             PAGE EXTENSION (M4B.3: +IDAL)",
+    ])
+    decks['DMKUSO'] = d
+
+    d = Deck(XA55)
+    d.insert('02012230', first='02012231', inc=1,
+             limit=next_seq(src('DMKMON'), '02012230'), lines=[
+        "PAGEIDAL DS    2F             M4B.3: AS IN DMKPAG",
+    ])
+    decks['DMKMON'] = d
+
+    d = Deck(XA55)
+    d.replace('02146000', first='02146100', inc=100,
+              limit=next_seq(src('DMKPTR'), '02146000'), lines=[
+        "PAGESIZE EQU   16      *** PAGING IOBLOK (M4B.3: +IDAL)",
+    ])
+    decks['DMKPTR'] = d
+
+    d = Deck(XA55)
+    d.replace('02061000', first='02061100', inc=100,
+              limit=next_seq(src('DMKCPI'), '02061000'), lines=[
+        "PAGESIZE EQU   16             PAGING IOBLOK (M4B.3: +IDAL)",
+    ])
+    decks['DMKCPI'] = d
+    return decks
 
 
 def m4bslots():
@@ -10684,6 +10755,14 @@ def main():
         aux(os.path.join(HERE, '%s.AUXLCL' % m),
             [(XA54, 'M7: ESA/390 VIRTUAL MACHINES (DMKVCS)')])
         print('%-8s %-9s %3d cards  %s' % (m, XA54, n,
+              'OK' if not verify(path) else 'BAD'))
+
+    for m, dk in sorted(m4b3decks().items()):
+        path = os.path.join(HERE, '%s.%s' % (m, XA55))
+        n = dk.write(path)
+        aux(os.path.join(HERE, '%s.AUXLCL' % m),
+            [(XA55, 'M4B.3: GUEST PAGES IN FRAMES ABOVE 16 MB')])
+        print('%-8s %-9s %3d cards  %s' % (m, XA55, n,
               'OK' if not verify(path) else 'BAD'))
 
     for m, dk in sorted(m4bslots().items()):

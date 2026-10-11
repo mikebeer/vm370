@@ -1,0 +1,2 @@
+./ R 02061000          $ 02061100 100                                           
+PAGESIZE EQU   16             PAGING IOBLOK (M4B.3: +IDAL)     XA0055DK         

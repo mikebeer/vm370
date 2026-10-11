@@ -1,0 +1,19 @@
+./ R 00504000 00508000 $ 00504100 010                                           
+         SL    R7,ACORETBL    GET PAGE FRAME ADDRESS/256       XA0055DK         
+         SLL   R7,8           GET PAGE FRAME ADDRESS           XA0055DK         
+         CL    R7,=A(X'01000000') M4B.3: ABOVE 16 MB?          XA0055DK         
+         BL    SETRW24                                         XA0055DK         
+         ST    R7,PAGEIDAL    YES: THROUGH TWO 31-BIT IDAWS    XA0055DK         
+         LA    R7,2048(,R7)                                    XA0055DK         
+         ST    R7,PAGEIDAL+4                                   XA0055DK         
+         LA    R7,PAGEIDAL                                     XA0055DK         
+         ICM   R7,B'1000',CPEXR0+3 GET DASD OP-CODE            XA0055DK         
+         ST    R7,PAGERW      AND SET 1ST HALF OF R/W CCW      XA0055DK         
+         MVI   PAGERW+4,CC+X'04'  CHAIN, IDA                   XA0055DK         
+         B     SETRWOK                                         XA0055DK         
+SETRW24  ICM   R7,B'1000',CPEXR0+3 DASD OP-CODE FROM GPR0      XA0055DK         
+         ST    R7,PAGERW      AND SET 1ST HALF OF R/W CCW      XA0055DK         
+         MVI   PAGERW+4,CC    MAKE SURE FLAGS ARE CORRECT      XA0055DK         
+SETRWOK  DS    0H                                              XA0055DK         
+./ I 01299000 $ 01299100 100                                                    
+PAGEIDAL DS    2F             M4B.3: IDAL, A FRAME > 16 MB     XA0055DK         
