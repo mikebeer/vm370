@@ -307,11 +307,24 @@ def main():
             if rest:
                 w(('Also: ' if desc else '') + ', '.join(rest) + '.')
                 w('')
+    w('### Nucleus extensions loaded at IPL')
+    w('')
+    w('Loaded by the system profile (SYSPROFX EXEC on 19E) from TEXT files, '
+      'so they are commands like the nucleus functions, resident until the '
+      'next IPL of CMS.')
+    w('')
+    w('| Command | Function |')
+    w('|---|---|')
+    w('| GLOBALV | **+** global variables, in the manner of z/VM GLOBALV '
+      '(SET/SETS/SETL/SETP, PUT*, GET, STACK, LIST, PURGE, GRPLIST) |')
+    w('| HIGHSTOR | **+** storage above 16 MB for the EC-mode CMS |')
+    w('| GCCLIB | the GCC run-time library (CE) |')
+    w('')
     w('## Not yet there (z/VM names, see the plan in 30-STATE)')
     w('')
     w('CP: DEFINE CPU / NIC / LAN / VSWITCH / MDISK, QUERY FRAMES, '
-      'QUERY NSS, IUCV. CMS: XEDIT (THE), FILELIST (FULIST), RDRLIST, '
-      'NOTE / TELL, GLOBALV, PIPE, NUCXLOAD.')
+      'QUERY NSS, IUCV. CMS: XEDIT (THE), RDRLIST, '
+      'NOTE / TELL, PIPE, NUCXLOAD.')
     open(OUT, 'w').write('\n'.join(o) + '\n')
     print('%s: %d CP commands, %d QUERY, %d SET operands' %
           (OUT, len(cmds), len(qry), len(setl)))

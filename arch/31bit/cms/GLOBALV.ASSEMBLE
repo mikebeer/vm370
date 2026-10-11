@@ -1,0 +1,668 @@
+*        GLOBALV -- VM/370plus: global variables, in the manner of the
+*        z/VM CMS GLOBALV command (a subset)
+*
+*        GLOBALV [INIT] [SELECT group] verb ...
+*          SET   name value    the value for this IPL of CMS
+*          SETS  name value    ... and in SESSION GLOBALV A (this IPL)
+*          SETL  name value    ... and in LASTING GLOBALV A (kept)
+*          SETP  name value    SETS and SETL
+*          PUT   name ...      the caller's REXX variables' values
+*          PUTS, PUTL, PUTP    likewise, with the lifetimes above
+*          GET   name ...      set the caller's REXX variables
+*          STACK name ...      the values to the console stack (FIFO)
+*          LIST  [name ...]    type the group's variables
+*          PURGE               drop the group's variables
+*          GRPLIST             type the group names
+*        The group is UNNAMED unless SELECT names one.  A null value
+*        drops the variable.  Names up to 32 characters, values up to
+*        255; at most 128 variables.  Names are upper case.
+*
+*        It lives as a nucleus extension, loaded by the system profile
+*        (NUCXTEXT GLOBALV (SYSTEM PERM), so its table survives from
+*        command to command until the next IPL of CMS.  On its first
+*        call it erases SESSION GLOBALV A and reads LASTING GLOBALV A.
+*        GET and PUT reach the caller's variables through EXECCOMM.
+*
+*        Return codes: 0 OK, 24 bad syntax, 28 table full,
+*        nn from EXECCOMM (negative: no EXEC active).
+*
+*        ONE VARIABLE (ALSO ONE F 300 RECORD OF THE FILES)
+ENTRY    DSECT
+EGRP     DS    CL8
+EFLG     DS    X
+EUSED    EQU   X'80'
+ESESS    EQU   X'01'
+ELAST    EQU   X'02'
+ENLN     DS    X
+ENAM     DS    CL32
+EVLN     DS    X
+EVAL     DS    CL255
+         DS    CL2
+ENTLEN   EQU   *-ENTRY
+MAXENT   EQU   128
+GLOBALV  CSECT
+         STM   R14,R12,12(R13)
+         LR    R12,R15
+         USING GLOBALV,R12,R11
+         SPKA  0              KEY 0: OUR STORAGE IS NUCLEUS STORAGE
+         LA    R11,2048(,R12)
+         LA    R11,2048(,R11)
+         ST    R13,SAVE+4
+         LA    R13,SAVE
+         ST    R1,APLIST
+         ST    R0,AEPLIST
+         XC    RC,RC
+         MVI   DIRTY,0
+         CLI   INITDONE,1
+         BE    ARGS
+         BAL   R14,INIT
+*
+*        THE ARGUMENT STRING TO ARGBUF: FROM THE EXTENDED PLIST WHEN
+*        THERE IS ONE (CALL TYPE 01, 0B: MIXED CASE, ANY LENGTH), ELSE
+*        FROM THE TOKENS
+ARGS     MVI   ARGBUF,C' '
+         MVC   ARGBUF+1(L'ARGBUF-1),ARGBUF
+         SR    R5,R5              LENGTH SO FAR
+         CLI   APLIST,X'01'
+         BE    ARGEP
+         CLI   APLIST,X'0B'
+         BNE   ARGTOK
+ARGEP    L     R3,AEPLIST
+         LA    R3,0(,R3)
+         LTR   R3,R3
+         BZ    ARGTOK
+         L     R6,4(,R3)          BEGIN OF ARGUMENTS
+         L     R7,8(,R3)          END
+         LA    R6,0(,R6)
+         LA    R7,0(,R7)
+         LTR   R6,R6
+         BZ    ARGTOK
+         SR    R7,R6              LENGTH
+         BM    ARGTOK
+         BZ    ARGDONE
+         C     R7,=A(L'ARGBUF-1)
+         BH    BADLEN
+         BCTR  R7,0
+         EX    R7,MVARG
+         LA    R5,1(,R7)
+         B     ARGDONE
+MVARG    MVC   ARGBUF(*-*),0(R6)
+ARGTOK   L     R3,APLIST
+         LA    R3,8(,R3)          SKIP THE COMMAND NAME
+         LA    R4,ARGBUF
+ATOK1    CLI   0(R3),X'FF'
+         BE    ATOKEND
+         LA    R7,7(,R3)          LAST NONBLANK OF THE TOKEN
+ATOK2    CLI   0(R7),C' '
+         BNE   ATOK3
+         BCTR  R7,0
+         CR    R7,R3
+         BNL   ATOK2
+         B     ATOK4              ALL BLANK
+ATOK3    SR    R7,R3              LENGTH - 1
+         EX    R7,MVTOK
+         LA    R4,2(R7,R4)        PAST THE TOKEN AND ONE BLANK
+ATOK4    LA    R3,8(,R3)
+         LA    R0,ARGBUF+L'ARGBUF-10
+         CR    R4,R0
+         BL    ATOK1
+ATOKEND  LA    R5,ARGBUF
+         SR    R4,R5
+         LR    R5,R4
+         B     ARGDONE
+MVTOK    MVC   0(*-*,R4),0(R3)
+ARGDONE  ST    R5,ARGLEN
+         XC    CURPOS,CURPOS
+         MVC   GROUP,=CL8'UNNAMED'
+*
+*        THE VERB, AFTER INIT AND SELECT GROUP
+VERB     BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BZ    BADSYN             NOTHING TO DO
+         CLC   WORDU(8),=CL8'GLOBALV'  (FROM AN EXTENDED PLIST)
+         BE    VERB
+         CLC   WORDU(8),=CL8'INIT'
+         BE    VERB
+         CLC   WORDU(8),=CL8'SELECT'
+         BNE   VERB2
+         BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BZ    BADSYN
+         C     R3,=F'8'
+         BH    BADSYN
+         MVC   GROUP,WORDU
+         B     VERB
+VERB2    LA    R9,VERBTAB
+VERB3    CLI   0(R9),X'FF'
+         BE    BADSYN
+         CLC   WORDU(8),0(R9)
+         BE    VERB4
+         LA    R9,12(,R9)
+         B     VERB3
+VERB4    MVC   LIFE,8(R9)         LIFETIME FLAGS FOR SET/PUT
+         L     R15,8(,R9)
+         LA    R15,0(,R15)
+         BR    R15
+*
+*        SET NAME VALUE
+DOSET    BAL   R14,GETNAME
+         BAL   R14,NEXTWORD       SKIP BLANKS TO THE VALUE
+         SR    R6,R6              NULL VALUE
+         LTR   R3,R3
+         BZ    DOSET1
+         LR    R6,R2              FROM THE VALUE'S FIRST CHARACTER
+         S     R6,=A(ARGBUF)
+         L     R7,ARGLEN
+         SR    R7,R6              ... TO THE END
+         LR    R6,R7
+DOSET1   ST    R6,VALLEN
+         LTR   R6,R6
+         BZ    DOSET2
+         C     R6,=F'255'
+         BH    BADLEN
+         BCTR  R6,0
+         EX    R6,MVVAL
+DOSET2   BAL   R14,STOREV
+         B     FINISH
+MVVAL    MVC   VALBUF(*-*),0(R2)
+*
+*        PUT NAME ... : THE CALLER'S VARIABLES
+DOPUT    BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BZ    FINISH
+         BAL   R14,NAMEOK
+         MVI   SHVCODE2,SHVFETCH
+         BAL   R14,EXECCOM
+         LTR   R15,R15
+         BNZ   FINISH
+         L     R6,SHVVALL
+         TM    SHVRET,SHVNEWV     NOT SET IN THE EXEC: NULL
+         BZ    *+6
+         SR    R6,R6
+         C     R6,=F'255'
+         BNH   *+8
+         L     R6,=F'255'
+         ST    R6,VALLEN
+         BAL   R14,STOREV
+         B     DOPUT
+*
+*        GET NAME ... : SET THE CALLER'S VARIABLES
+DOGET    BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BZ    FINISH
+         BAL   R14,NAMEOK
+         BAL   R14,FIND
+         SR    R6,R6
+         LTR   R9,R9
+         BZ    DOGET1
+         IC    R6,EVLN-ENTRY(,R9)
+         LTR   R6,R6
+         BZ    DOGET1
+         BCTR  R6,0
+         EX    R6,MVFROMV
+         LA    R6,1(,R6)
+DOGET1   ST    R6,VALLEN
+         MVI   SHVCODE2,SHVSTORE
+         BAL   R14,EXECCOM
+         LTR   R15,R15
+         BNZ   FINISH
+         B     DOGET
+MVFROMV  MVC   VALBUF(*-*),EVAL-ENTRY(R9)
+*
+*        STACK NAME ... : FIFO ON THE CONSOLE STACK
+DOSTACK  BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BZ    FINISH
+         BAL   R14,NAMEOK
+         BAL   R14,FIND
+         SR    R6,R6
+         LA    R7,VALBUF
+         LTR   R9,R9
+         BZ    DOSTK1
+         IC    R6,EVLN-ENTRY(,R9)
+         LA    R7,EVAL-ENTRY(,R9)
+DOSTK1   STC   R6,ATTNLEN
+         STCM  R7,7,ATTNADR
+         LA    R1,ATTNPL
+         SVC   202
+         DC    AL4(1)
+         B     DOSTACK
+*
+*        LIST [NAME ...]
+DOLIST   BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BNZ   DOLIST2
+         L     R9,=A(TABLE)       ALL OF THE GROUP
+         LA    R8,MAXENT
+DOLIST1  TM    EFLG-ENTRY(R9),EUSED
+         BZ    DOLIST1N
+         CLC   EGRP-ENTRY(8,R9),GROUP
+         BNE   DOLIST1N
+         BAL   R14,TYPEENT
+DOLIST1N LA    R9,ENTLEN(,R9)
+         BCT   R8,DOLIST1
+         B     FINISH
+DOLIST2  BAL   R14,NAMEOK         THE NAMES GIVEN
+         BAL   R14,FIND
+         LTR   R9,R9
+         BZ    DOLIST3
+         BAL   R14,TYPEENT
+DOLIST3  BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BNZ   DOLIST2
+         B     FINISH
+*
+*        PURGE: THE GROUP'S VARIABLES, ALL LIFETIMES
+DOPURGE  L     R9,=A(TABLE)
+         LA    R8,MAXENT
+DOPURG1  TM    EFLG-ENTRY(R9),EUSED
+         BZ    DOPURGN
+         CLC   EGRP-ENTRY(8,R9),GROUP
+         BNE   DOPURGN
+         OC    DIRTY,EFLG-ENTRY(R9)
+         MVI   EFLG-ENTRY(R9),0
+DOPURGN  LA    R9,ENTLEN(,R9)
+         BCT   R8,DOPURG1
+         B     FINISH
+*
+*        GRPLIST: EACH GROUP NAME ONCE
+DOGRPL   L     R9,=A(TABLE)
+         LA    R8,MAXENT
+DOGRPL1  TM    EFLG-ENTRY(R9),EUSED
+         BZ    DOGRPLN
+         L     R7,=A(TABLE)       SEEN BEFORE?
+DOGRPL2  CR    R7,R9
+         BNL   DOGRPL3
+         TM    EFLG-ENTRY(R7),EUSED
+         BZ    *+14
+         CLC   EGRP-ENTRY(8,R7),EGRP-ENTRY(R9)
+         BE    DOGRPLN
+         LA    R7,ENTLEN(,R7)
+         B     DOGRPL2
+DOGRPL3  MVC   LINE(8),EGRP-ENTRY(R9)
+         LA    R2,LINE
+         LA    R3,8
+         WRTERM (R2),(R3)
+DOGRPLN  LA    R9,ENTLEN(,R9)
+         BCT   R8,DOGRPL1
+         B     FINISH
+*
+*        END: REWRITE THE FILES WHOSE VARIABLES CHANGED
+FINISH   TM    DIRTY,ESESS
+         BZ    FIN1
+         MVC   FILEFN,=CL8'SESSION'
+         MVI   FILEBIT,ESESS
+         BAL   R14,WRITEF
+FIN1     TM    DIRTY,ELAST
+         BZ    EXIT
+         MVC   FILEFN,=CL8'LASTING'
+         MVI   FILEBIT,ELAST
+         BAL   R14,WRITEF
+EXIT     L     R15,RC
+         L     R13,SAVE+4
+         L     R14,12(,R13)
+         LM    R0,R12,20(R13)
+         BR    R14
+BADSYN   LA    R2,MSGSYN
+         LA    R3,L'MSGSYN
+         WRTERM (R2),(R3)
+         LA    R15,24
+         ST    R15,RC
+         B     EXIT
+BADLEN   LA    R2,MSGLEN
+         LA    R3,L'MSGLEN
+         WRTERM (R2),(R3)
+         LA    R15,24
+         ST    R15,RC
+         B     EXIT
+*
+*        NEXTWORD: THE NEXT BLANK-DELIMITED WORD OF ARGBUF.
+*        OUT: R2 ITS ADDRESS, R3 ITS LENGTH (0: NONE LEFT), WORDU IT
+*        IN UPPER CASE (BLANK-PADDED, AT MOST 64)
+NEXTWORD L     R2,CURPOS
+         L     R4,ARGLEN
+         SR    R3,R3
+NW1      CR    R2,R4
+         BNL   NWEND
+         LA    R5,ARGBUF(R2)
+         CLI   0(R5),C' '
+         BNE   NW2
+         LA    R2,1(,R2)
+         B     NW1
+NW2      LR    R6,R2              START
+NW3      CR    R2,R4
+         BNL   NW4
+         LA    R5,ARGBUF(R2)
+         CLI   0(R5),C' '
+         BE    NW4
+         LA    R2,1(,R2)
+         B     NW3
+NW4      ST    R2,CURPOS
+         LR    R3,R2
+         SR    R3,R6              LENGTH
+         LA    R2,ARGBUF(R6)      ADDRESS
+         MVI   WORDU,C' '
+         MVC   WORDU+1(L'WORDU-1),WORDU
+         LR    R5,R3
+         C     R5,=A(L'WORDU)
+         BNH   *+8
+         LA    R5,L'WORDU
+         BCTR  R5,0
+         EX    R5,MVWORD
+         OC    WORDU,BLANKS       UPPER CASE
+         BR    R14
+NWEND    ST    R2,CURPOS
+         MVI   WORDU,C' '
+         MVC   WORDU+1(L'WORDU-1),WORDU
+         BR    R14
+MVWORD   MVC   WORDU(*-*),0(R2)
+*
+*        GETNAME: THE NEXT WORD AS A VARIABLE NAME (FOR SET)
+GETNAME  ST    R14,SAVE14
+         BAL   R14,NEXTWORD
+         LTR   R3,R3
+         BZ    BADSYN
+         L     R14,SAVE14
+*        NAMEOK: THE CURRENT WORD (R3 LONG) AS THE NAME
+NAMEOK   C     R3,=F'32'
+         BH    BADLEN
+         STC   R3,NAMELEN
+         MVC   NAME,WORDU
+         BR    R14
+*
+*        FIND: R9 = THE ENTRY FOR GROUP/NAME, OR 0
+FIND     L     R9,=A(TABLE)
+         LA    R8,MAXENT
+FIND1    TM    EFLG-ENTRY(R9),EUSED
+         BZ    FINDN
+         CLC   EGRP-ENTRY(8,R9),GROUP
+         BNE   FINDN
+         CLC   ENLN-ENTRY(1,R9),NAMELEN
+         BNE   FINDN
+         CLC   ENAM-ENTRY(32,R9),NAME
+         BER   R14
+FINDN    LA    R9,ENTLEN(,R9)
+         BCT   R8,FIND1
+         SR    R9,R9
+         BR    R14
+*
+*        STOREV: NAME = VALBUF (VALLEN), LIFETIME FLAGS IN LIFE
+STOREV   ST    R14,SAVE14
+         BAL   R14,FIND
+         LTR   R9,R9
+         BNZ   STV2
+         L     R6,VALLEN          A NEW NULL: NOTHING TO DO
+         LTR   R6,R6
+         BZ    STVRET
+         L     R9,=A(TABLE)       A FREE ENTRY
+         LA    R8,MAXENT
+STV1     TM    EFLG-ENTRY(R9),EUSED
+         BZ    STV1F
+         LA    R9,ENTLEN(,R9)
+         BCT   R8,STV1
+         LA    R2,MSGFULL
+         LA    R3,L'MSGFULL
+         WRTERM (R2),(R3)
+         LA    R15,28
+         ST    R15,RC
+         B     STVRET
+STV1F    XC    0(256,R9),0(R9)
+         XC    256(ENTLEN-256,R9),256(R9)
+         MVC   EGRP-ENTRY(8,R9),GROUP
+         MVC   ENLN-ENTRY(1,R9),NAMELEN
+         MVC   ENAM-ENTRY(32,R9),NAME
+         MVI   EFLG-ENTRY(R9),EUSED
+STV2     OC    DIRTY,EFLG-ENTRY(R9)  ITS FILES, IF ANY, CHANGE
+         OC    EFLG-ENTRY(1,R9),LIFE
+         OC    DIRTY,LIFE
+         NI    DIRTY,ESESS+ELAST
+         L     R6,VALLEN
+         STC   R6,EVLN-ENTRY(,R9)
+         LTR   R6,R6
+         BNZ   STV3
+         MVI   EFLG-ENTRY(R9),0   NULL: DROP IT
+         B     STVRET
+STV3     BCTR  R6,0
+         EX    R6,MVTOV
+STVRET   L     R14,SAVE14
+         BR    R14
+MVTOV    MVC   EVAL-ENTRY(*-*,R9),VALBUF
+*
+*        TYPEENT: TYPE "GROUP    NAME = VALUE" FOR ENTRY R9
+TYPEENT  ST    R14,SAVE14
+         MVI   LINE,C' '
+         MVC   LINE+1(255),LINE
+         MVC   LINE+256(L'LINE-256),LINE
+         MVC   LINE(8),EGRP-ENTRY(R9)
+         SR    R6,R6
+         IC    R6,ENLN-ENTRY(,R9)
+         BCTR  R6,0
+         EX    R6,MVNAME
+         LA    R4,LINE+10(R6)
+         MVC   0(3,R4),=C' = '
+         LA    R4,3(,R4)
+         SR    R6,R6
+         IC    R6,EVLN-ENTRY(,R9)
+         LTR   R6,R6
+         BZ    TYPE1
+         BCTR  R6,0
+         EX    R6,MVVALL
+         LA    R4,1(R6,R4)
+TYPE1    LA    R2,LINE
+         LR    R3,R4
+         SR    R3,R2
+         WRTERM (R2),(R3)
+         L     R14,SAVE14
+         BR    R14
+MVNAME   MVC   LINE+9(*-*),ENAM-ENTRY(R9)
+MVVALL   MVC   0(*-*,R4),EVAL-ENTRY(R9)
+*
+*        EXECCOM: FETCH OR STORE NAME (NAMELEN) / VALBUF (VALLEN)
+*        THROUGH THE CALLER'S EXECCOMM.  R15 = ITS RETURN CODE.
+EXECCOM  ST    R14,SAVE14
+*        BREXX STORES INTO THE SHVBLOCK AND THE VALUE BUFFER IN THE
+*        CALLER'S KEY: THEY GO IN USER STORAGE, FOR THIS CALL ONLY
+         LA    R0,WKDW
+         DMSFREE DWORDS=(0),TYPE=USER,ERR=ECNOMEM
+         LR    R10,R1
+         XC    0(32,R10),0(R10)   THE SHVBLOCK AT +0
+         MVC   8(1,R10),SHVCODE2  SHVCODE
+         MVC   32(32,R10),NAME    THE NAME AT +32
+         LA    R0,32(,R10)
+         ST    R0,16(,R10)        SHVNAMA
+         SR    R0,R0
+         IC    R0,NAMELEN
+         ST    R0,20(,R10)        SHVNAML
+         LA    R0,64(,R10)        THE VALUE AT +64
+         ST    R0,24(,R10)        SHVVALA
+         LA    R0,255
+         ST    R0,12(,R10)        SHVBUFL
+         MVC   28(4,R10),VALLEN   SHVVALL
+         MVC   64(255,R10),VALBUF
+         ST    R10,ECEPL+12       THE SHVBLOCK
+         LA    R0,ECNAME
+         ST    R0,ECEPL
+         XC    ECEPL+4(8),ECEPL+4
+         LA    R0,ECEPL
+         LA    R1,ECNAME
+         ICM   R1,B'1000',=X'02'  SUBCOMMAND CALL
+         SVC   202
+         DC    AL4(1)
+         ST    R15,ECRC
+         MVC   VALBUF(255),64(R10)
+         MVC   SHVRET,9(R10)
+         MVC   SHVVALL,28(R10)
+         LA    R0,WKDW
+         LR    R1,R10
+         DMSFRET DWORDS=(0),LOC=(1)
+         L     R15,ECRC
+         LTR   R15,R15
+         BZ    ECOK
+         ST    R15,RC
+ECOK     L     R14,SAVE14
+         BR    R14
+ECNOMEM  LA    R15,104
+         ST    R15,RC
+         B     ECOK
+WKDW     EQU   48                 384 BYTES
+*
+*        WRITEF: REWRITE FILEFN GLOBALV A WITH THE ENTRIES FLAGGED
+*        FILEBIT (NONE: THE FILE IS ERASED)
+WRITEF   ST    R14,SAVE14
+         MVC   ERPL+8(8),FILEFN
+         LA    R1,ERPL
+         SVC   202
+         DC    AL4(1)
+         MVC   WRPL+8(8),FILEFN
+         MVC   WRPL+26(2),=H'1'   ITEM 1 FIRST
+         L     R9,=A(TABLE)
+         LA    R8,MAXENT
+WRF1     TM    EFLG-ENTRY(R9),EUSED
+         BZ    WRFN
+         MVC   CHKBIT,EFLG-ENTRY(R9)
+         NC    CHKBIT,FILEBIT
+         CLI   CHKBIT,0
+         BE    WRFN
+         ST    R9,WRPL+28
+         LA    R1,WRPL
+         SVC   202
+         DC    AL4(1)
+         LTR   R15,R15
+         BNZ   WRFEND             (NO WRITABLE A-DISK: QUIETLY NONE)
+         LH    R0,WRPL+26
+         AH    R0,=H'1'
+         STH   R0,WRPL+26
+WRFN     LA    R9,ENTLEN(,R9)
+         BCT   R8,WRF1
+WRFEND   MVC   FIPL+8(8),FILEFN
+         LA    R1,FIPL
+         SVC   202
+         DC    AL4(1)
+         L     R14,SAVE14
+         BR    R14
+*
+*        INIT: ON THE FIRST CALL AFTER THE IPL OF CMS
+INIT     ST    R14,SAVE14
+         MVI   INITDONE,1
+         L     R9,=A(TABLE)
+         LA    R8,MAXENT
+INIT1    MVI   EFLG-ENTRY(R9),0
+         LA    R9,ENTLEN(,R9)
+         BCT   R8,INIT1
+         MVC   ERPL+8(8),=CL8'SESSION'  A NEW SESSION
+         LA    R1,ERPL
+         SVC   202
+         DC    AL4(1)
+         L     R9,=A(TABLE)       THE LASTING VARIABLES
+         LA    R8,MAXENT
+         MVC   RDPL+26(2),=H'1'
+INIT2    ST    R9,RDPL+28
+         LA    R1,RDPL
+         SVC   202
+         DC    AL4(1)
+         LTR   R15,R15
+         BNZ   INIT3              1: NO FILE, 12: END
+         NI    EFLG-ENTRY(R9),ELAST
+         OI    EFLG-ENTRY(R9),EUSED
+         LH    R0,RDPL+26
+         AH    R0,=H'1'
+         STH   R0,RDPL+26
+         LA    R9,ENTLEN(,R9)
+         BCT   R8,INIT2
+         B     INIT4
+INIT3    MVI   EFLG-ENTRY(R9),0   (A PARTIAL READ)
+INIT4    LA    R1,FIPLL
+         SVC   202
+         DC    AL4(1)
+         L     R14,SAVE14
+         BR    R14
+*
+         LTORG
+VERBTAB  DC    CL8'SET',AL1(0),AL3(DOSET)
+         DC    CL8'SETS',AL1(ESESS),AL3(DOSET)
+         DC    CL8'SETL',AL1(ELAST),AL3(DOSET)
+         DC    CL8'SETP',AL1(ESESS+ELAST),AL3(DOSET)
+         DC    CL8'PUT',AL1(0),AL3(DOPUT)
+         DC    CL8'PUTS',AL1(ESESS),AL3(DOPUT)
+         DC    CL8'PUTL',AL1(ELAST),AL3(DOPUT)
+         DC    CL8'PUTP',AL1(ESESS+ELAST),AL3(DOPUT)
+         DC    CL8'GET',AL1(0),AL3(DOGET)
+         DC    CL8'STACK',AL1(0),AL3(DOSTACK)
+         DC    CL8'LIST',AL1(0),AL3(DOLIST)
+         DC    CL8'PURGE',AL1(0),AL3(DOPURGE)
+         DC    CL8'GRPLIST',AL1(0),AL3(DOGRPL)
+         DC    X'FF'
+MSGSYN   DC    C'DMSGLB024E GLOBALV: INVALID OR MISSING OPERAND'
+MSGLEN   DC    C'DMSGLB024E GLOBALV: NAME OR VALUE TOO LONG'
+MSGFULL  DC    C'DMSGLB028E GLOBALV: NO ROOM FOR MORE VARIABLES'
+BLANKS   DC    CL64' '
+ECNAME   DC    CL8'EXECCOMM'
+ATTNPL   DC    CL8'ATTN',CL4'FIFO'
+ATTNLEN  DC    AL1(0)
+ATTNADR  DC    AL3(0)
+ERPL     DC    CL8'ERASE',CL8' ',CL8'GLOBALV',CL2'A1',8X'FF'
+FIPL     DC    CL8'FINIS',CL8' ',CL8'GLOBALV',CL2'A1',8X'FF'
+FIPLL    DC    CL8'FINIS',CL8'LASTING',CL8'GLOBALV',CL2'A1',8X'FF'
+         DS    0F
+WRPL     DC    CL8'WRBUF',CL8' ',CL8'GLOBALV',CL2'A1',H'1'
+         DC    A(0),A(ENTLEN),CL2'F',H'1',F'0'
+         DS    0F
+RDPL     DC    CL8'RDBUF',CL8'LASTING',CL8'GLOBALV',CL2'A1',H'1'
+         DC    A(0),A(ENTLEN),CL2'F',H'1',F'0'
+SAVE     DS    18F
+SAVE14   DS    F
+APLIST   DS    A
+AEPLIST  DS    A
+RC       DS    F
+ARGLEN   DS    F
+CURPOS   DS    F
+VALLEN   DS    F
+ECEPL    DS    6F
+ECRC     DS    F
+SHVNEXT  DS    A                  THE SHVBLOCK (SHVBLOCK MACRO LAYOUT)
+SHVUSER  DS    A
+SHVCODE  DS    C
+SHVRET   DS    X
+         DS    H
+SHVBUFL  DS    F
+SHVNAMA  DS    A
+SHVNAML  DS    F
+SHVVALA  DS    A
+SHVVALL  DS    F
+SHVBLEN  EQU   *-SHVNEXT
+SHVCODE2 DS    C
+SHVFETCH EQU   C'F'
+SHVSTORE EQU   C'S'
+SHVNEWV  EQU   X'01'
+INITDONE DC    X'00'
+DIRTY    DS    X
+LIFE     DS    X
+FILEBIT  DS    X
+CHKBIT   DS    X
+NAMELEN  DS    X
+GROUP    DS    CL8
+FILEFN   DS    CL8
+NAME     DS    CL32
+WORDU    DS    CL64
+VALBUF   DS    CL256
+LINE     DS    CL300
+ARGBUF   DS    CL256
+         DS    0D
+TABLE    DS    (MAXENT*ENTLEN)X
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R3       EQU   3
+R4       EQU   4
+R5       EQU   5
+R6       EQU   6
+R7       EQU   7
+R8       EQU   8
+R9       EQU   9
+R10      EQU   10
+R11      EQU   11
+R12      EQU   12
+R13      EQU   13
+R14      EQU   14
+R15      EQU   15
+         END   GLOBALV

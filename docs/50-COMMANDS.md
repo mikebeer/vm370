@@ -351,6 +351,16 @@ Also: ASMPOBJ, ASSIST, BLOCKTAP, CHECK380, CLRSCRN, CLS, CMP, CPYFIL, DIFF3, DIR
 
 Also: ASSIST, BOOGIE, CKFSTYPE, CLOAD, DISCOMM, DROP, EXPLOIT, GCCSEG, GCOMD, GENFORTG, GFILE1, GIMME, HEXPRINT, PASC370, PASCOMP, PASFORM, PASLINK, PASRUN, PASRUNC, PASRUNS, PLCT, REXXCPS, REXXTEST, RUNGCIC, SYSPROFB, SYSPROFX.
 
+### Nucleus extensions loaded at IPL
+
+Loaded by the system profile (SYSPROFX EXEC on 19E) from TEXT files, so they are commands like the nucleus functions, resident until the next IPL of CMS.
+
+| Command | Function |
+|---|---|
+| GLOBALV | **+** global variables, in the manner of z/VM GLOBALV (SET/SETS/SETL/SETP, PUT*, GET, STACK, LIST, PURGE, GRPLIST) |
+| HIGHSTOR | **+** storage above 16 MB for the EC-mode CMS |
+| GCCLIB | the GCC run-time library (CE) |
+
 ## Not yet there (z/VM names, see the plan in 30-STATE)
 
-CP: DEFINE CPU / NIC / LAN / VSWITCH / MDISK, QUERY FRAMES, QUERY NSS, IUCV. CMS: XEDIT (THE), FILELIST (FULIST), RDRLIST, NOTE / TELL, GLOBALV, PIPE, NUCXLOAD.
+CP: DEFINE CPU / NIC / LAN / VSWITCH / MDISK, QUERY FRAMES, QUERY NSS, IUCV. CMS: XEDIT (THE), RDRLIST, NOTE / TELL, PIPE, NUCXLOAD.

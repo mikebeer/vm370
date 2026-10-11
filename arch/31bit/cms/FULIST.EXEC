@@ -12,7 +12,7 @@
 /* PF11 Edit  PF12 Cursor.  Command line: TOP, BOTTOM, SORT NAME|TYPE|   */
 /* DATE|SIZE, REFRESH, QUIT, FULIST fn ft fm, or any CMS/CP command.     */
 /* Uses the REXX full-screen package (FSVARS ...).                       */
-/* Editor and browser: EE and FSVIEW (MECAFF); THE later.                */
+/* Editor and browser: EE and FSVIEW (MECAFF), or GLOBALV FULIST ones. */
 
 parse upper arg pfn pft pfm .
 if pfn = '' then pfn = '*'
@@ -20,6 +20,11 @@ if pft = '' then pft = '*'
 if pfm = '' then pfm = 'A'
 editor  = 'EE'
 browser = 'FSVIEW'
+/* GLOBALV SELECT FULIST SETL EDITOR name (or BROWSER) to choose others */
+'GLOBALV SELECT FULIST GET EDITOR BROWSER'
+if rc <> 0 then do; editor = 'EE'; browser = 'FSVIEW'; end
+if editor = '' then editor = 'EE'
+if browser = '' then browser = 'FSVIEW'
 lastcmd = ''
 msg = ''
 sortkey = ''

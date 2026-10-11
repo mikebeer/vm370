@@ -20,7 +20,8 @@ H3('Conventions');
 P('Commands are shown in `monospaced type`. In command descriptions, uppercase letters are typed as shown and lowercase words stand for values you supply. Examples of terminal sessions are shown in framed figures; lines you type are not marked separately because the context makes clear which they are.');
 H3('Summary of changes');
 P('This edition is kept up to date as VM/370plus grows; each change is listed here, newest first.');
-B(['**10 October 2026, night.** `SET MACHINE` and `QUERY MACHINE`; FULIST (FL); EE, FSVIEW and the REXX full-screen package under the EC-mode CMS; Appendix D, the CP and CMS command tables.',
+B(['**11 October 2026.** GLOBALV.',
+   '**10 October 2026, night.** `SET MACHINE` and `QUERY MACHINE`; FULIST (FL); EE, FSVIEW and the REXX full-screen package under the EC-mode CMS; Appendix D, the CP and CMS command tables.',
    '**10 October 2026, evening (kit build 6).** `IPL LINUX` and vmzipl: Debian starts from its own disk; the Debian disk is a 3390-9 (7 GB); no 64-CCW limit for Linux disk I/O; mosquitto (MQTT) and Asterisk under Debian; `QUERY SET` shows ESA; the CHATBOT service machine and `CHAT` (new Chapter 6); RXBVM8 has TIME and DATE; the console banner reads VM/370plus; a fix for memory corruption in Linux guests above 16 MB (location 80).',
    '**10 October 2026.** Regina REXX and THE under Debian; languages written in cREXX for CMS and Linux (BASIC, SNOBOL4, Pascal, Lisp, Smalltalk, PL/M, Prolog, LOGO); Turbo CREXX on both; four more minidisks for CMSUSER (196–199); the native build of the current cREXX (M8.2); Python and GNU C under Debian; milestones brought up to date.',
    '**9 October 2026.** First edition, for kit build 5.']);
@@ -95,7 +96,7 @@ H2('CMS');
 B(['The ordinary CMS (`IPL CMS`, `IPL 190`) is unchanged: a System/370 BC-mode CMS with 16 MB of addressable storage.',
    'An EC-mode CMS is on MAINT’s 290 disk (`IPL 290`). With it, the HIGHSTOR nucleus extension (loaded by the system profile) manages storage from 16 MB to the end of the virtual machine; SVC 120 (GETMAIN/FREEMAIN RU) gives programs storage above the line.',
    'GCC380, the AMODE 31 build of the Community Edition’s GCC, runs above 16 MB; GCCLIB31 is a C library for programs that run in 31-bit mode with their heap above 16 MB.',
-   'New commands on MAINT 19D: `FULIST` (`FL`), a full-screen file list in the manner of FILELIST; `WAKEUP`; `CHAT`; `LINUX`. Appendix A; Appendix D lists all CP and CMS commands.',
+   'New commands on MAINT 19D: `FULIST` (`FL`), a full-screen file list in the manner of FILELIST; `WAKEUP`; `CHAT`; `LINUX`. `GLOBALV`, global variables as in z/VM, is loaded at IPL. Appendix A; Appendix D lists all CP and CMS commands.',
    'Programs written for System/370 BC mode (MECAFF’s EE and FSVIEW, the REXX full-screen package) run under the EC-mode CMS too: CMS turns an SVC from BC mode into an EC call, and CP takes a BC-style system mask (`SSM =X\'FF\'`) in an EC-mode System/370 machine as the BC mask it is.',
    'CPWATCH is not autologged: it is an S/370 monitor that loops under this CP. The two lines in AUTOLOG1’s PROFILE EXEC are commented out.']);
 
@@ -404,6 +405,11 @@ TABLE(['Key', 'Action'], [
   ['PF11', 'edit the file at the cursor'], ['PF12', 'cursor to the command line and back'],
 ], [2400, 7238], 'FULIST keys');
 P('On the command line (`====>`): QUIT, TOP, BOTTOM, REFRESH, SORT NAME|TYPE|DATE|SIZE, FULIST pattern, or any CMS or CP command.');
+H2('GLOBALV');
+SCREEN(['GLOBALV [SELECT group] SET|SETS|SETL|SETP name value', 'GLOBALV [SELECT group] PUT|PUTS|PUTL|PUTP name ...', 'GLOBALV [SELECT group] GET|STACK name ...', 'GLOBALV [SELECT group] LIST [name ...]|PURGE', 'GLOBALV GRPLIST'], 'GLOBALV');
+P('New; a subset of z/VM’s GLOBALV. Variables live in groups (UNNAMED unless SELECT names one). **SET** keeps a value until the next IPL of CMS, **SETS** also in `SESSION GLOBALV A` (erased at the next IPL), **SETL** in `LASTING GLOBALV A` (read again at every IPL), **SETP** both. **PUT** takes the values of the calling EXEC’s REXX variables, **GET** sets them, **STACK** puts values on the console stack. A null value drops a variable. Names up to 32 characters, values up to 255, 128 variables. GLOBALV is a nucleus extension, loaded at IPL by the system profile.');
+SCREEN(['globalv select fulist setl editor EE', 'globalv select fulist list', 'FULIST   EDITOR = EE'], 'GLOBALV');
+P('FULIST takes its editor and browser from the group FULIST (`EDITOR`, `BROWSER`) when they are set.');
 H2('LINUX EXEC');
 SCREEN(['LINUX [DISK|READER]'], 'LINUX EXEC');
 P('On MAINT 19D. **DISK** (the default) issues `CP IPL LINUX`. **READER** punches `LINUX48 KERNEL1`, `KERNEL2` and `userid LXPARM` (or `DEFAULT LXPARM`) to the user’s reader, holding the other reader files, and IPLs the reader as an ESA/390 machine. Needs 64 MB and, for Debian, the devices listed in Chapter 5 under “What a Linux user needs”.');

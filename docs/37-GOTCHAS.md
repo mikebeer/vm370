@@ -461,3 +461,9 @@ EXEC (and GCC31) failed with `Invalid option C` for `fn C D (CMS PARM x`.
 The tool's timeout kills the process group, Hercules included (w216).
 Start drive.py with `nohup ... &` and poll. Afterwards check the shadows with
 `cckdcdsk -3 -ro` (all 16 were rc 0 after w216).
+
+## CMS file modes on the system disks (11 October)
+
+- A file copied to 19E with `COPYFILE fn ft A = = E` keeps mode number 1, and other users, who access 19E as an extension (`Y/S`), do not see it. System-disk files are mode 2: `COPYFILE fn ft A = = E2`.
+- VM/370's `ERASE fn ft E1` does not erase only the mode-1 file. It erased `SYSPROFX EXEC` E1 **and** E2, which left every IPL without HIGHSTOR until the file was put back from the repository (gv4, gv5). Never erase on a system disk with a mode number to pick one of two files: rename the one to keep first, or erase both and copy the right one back.
+- A REXX string followed straight by an `x` or `b` is a hex or binary literal: `'x=['x']'` is error 15. Name the variable something else.

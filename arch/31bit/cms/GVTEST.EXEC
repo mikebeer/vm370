@@ -1,0 +1,26 @@
+/* GVTEST EXEC -- VM/370plus: exercise GLOBALV */
+'GLOBALV SELECT TEST SET COLOR Blue sky'
+say 'set rc' rc
+'GLOBALV SELECT TEST GET COLOR'
+say 'get rc' rc 'color=['color']'
+val = 'Hello World'
+'GLOBALV SELECT TEST PUTS VAL'
+say 'puts rc' rc
+val = ''
+'GLOBALV SELECT TEST GET VAL'
+say 'val=['val']'
+'GLOBALV SELECT TEST SETL KEEP lasting value'
+'GLOBALV SELECT OTHER SET A 1'
+'GLOBALV SELECT TEST LIST'
+'GLOBALV GRPLIST'
+'GLOBALV SELECT TEST STACK COLOR'
+parse pull a
+say 'stacked=['a']'
+nosuch = 'old'
+'GLOBALV SELECT TEST GET NOSUCH'
+say 'nosuch=['nosuch']'
+'GLOBALV SELECT OTHER PURGE'
+'GLOBALV GRPLIST'
+'GLOBALV BOGUS'
+say 'bogus rc' rc
+exit
