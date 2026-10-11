@@ -36,6 +36,28 @@ WTPGERR, DMKIOS) keeping its IDAL.
 | 5 | CORTABLE for frames up to a frames top; the second free list; a switch (off by default) | switch on: the regression at MAINSIZE 256 with guest pages above 16 MB |
 | 6 | Two Debians at once (I-254) | both reach the login prompt and answer over the network |
 
+## Step 5 status (11 October, night)
+
+Built and committed **inactive**: `CPIBFT` in the DMKCPI deck is `X'01000000'`,
+so no frame is above 16 MB and the CORTABLE is the old size. Setting it to
+`X'0A000000'` chains the frames 16 MB-160 MB onto `DMKPTRH1` (count `DMKPTRHN`),
+and DMKPTR PAGHIGH hands them out on a guest page-in. The line marked
+`STAGE 1: ESA/390 GUESTS ONLY` in build.py restricts that further, for bisecting.
+
+What happens with it on, at MAINSIZE 256:
+
+| Restriction | Result |
+|---|---|
+| every guest page-in may go high | CMS IPL breaks, later FRE013 |
+| only new (zero) pages high | PTR003 at AUTOLOG1 |
+| ESA/390 guests only | CMS fine; `cp ipl linux` ends with guest PSW 0, then FRE013 on `cp d` |
+
+In the last case the two high frames held DMKVMI's code (correct) and zeros.
+The suspect is a path that keeps a high frame address in 24 bits (CORTABLE
+index computed from `frame & X'00FFFFFF'`, or a CCW not yet routed through an
+IDAL: DMKVSI/DMKVCS, DMKVCN, HDKD7C, DMKTRK, DMKISM, DMKVCA, DMKDIB), or the
+DMKCFG IPL path that builds the guest PSW.
+
 How the storage above 16 MB is shared between frames and the M4b.2 paging store
 is decided at step 5 (simplest: frames up to a configured top, the store above it).
 

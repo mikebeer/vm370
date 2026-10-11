@@ -1,2 +1,89 @@
+./ R 00310000          $ 00310100 100                                           
+         N     R7,=A(X'7FFFF000') PAGE, 31 BITS (M4B.3)        XA0055DK         
+./ I 00363100 $ 00363110 010                                                    
+         LR    R0,R7          M4B.3: RECLAIMED FROM THE        XA0055DK         
+         SL    R0,ACORETBL    HIGH LIST?                       XA0055DK         
+         CL    R0,HIDXLO                                       XA0055DK         
+         BL    RECLLOW                                         XA0055DK         
+         L     R0,DMKPTRHN    YES: ONE FEWER THERE             XA0055DK         
+         SR    R0,R4                                           XA0055DK         
+         ST    R0,DMKPTRHN                                     XA0055DK         
+         L     R0,DMKPTRPR    A RECLAIM ALL THE SAME           XA0055DK         
+         AR    R0,R4                                           XA0055DK         
+         ST    R0,DMKPTRPR                                     XA0055DK         
+         B     RECLHIX                                         XA0055DK         
+RECLLOW  DS    0H                                              XA0055DK         
+./ I 00370000 $ 00370100 100                                                    
+RECLHIX  DS    0H                                              XA0055DK         
+./ R 00467000          $ 00467100 100                                           
+         BAL   R3,PAGHIGH     A FREE PAGE (M4B.3: MAYBE HIGH)  XA0055DK         
+./ I 01062000 $ 01062010 010                                                    
+PAGHIGH  L     R0,DMKPTRHN    M4B.3: A FREE HIGH FRAME?        XA0055DK         
+         SR    R0,R4                                           XA0055DK         
+         BM    PAGFREE        NO: THE USUAL WAY                XA0055DK         
+         TM    SAVER2+3,SYSTEM  SYSTEM SPACE STAYS LOW         XA0055DK         
+         BO    PAGFREE                                         XA0055DK         
+         TM    SWPFLAG,SWPSHR  SO DOES A NAMED-SYSTEM PAGE     XA0055DK         
+         BO    PAGFREE                                         XA0055DK         
+         TM    VMFSTAT,VMESA390  STAGE 1: ESA/390 GUESTS ONLY  XA0055DK         
+         BZ    PAGFREE                                         XA0055DK         
+         ST    R0,DMKPTRHN                                     XA0055DK         
+         L     R7,DMKPTRH1    FIRST ON THE HIGH LIST           XA0055DK         
+         LM    R0,R1,CORFPNT  UNCHAIN IT                       XA0055DK         
+         LR    R15,R0                                          XA0055DK         
+         ST    R15,CORFPNT-CORTABLE(,R1)                       XA0055DK         
+         ST    R1,CORBPNT-CORTABLE(,R15)                       XA0055DK         
+         L     R1,CORPGPNT    OLD OWNER'S PTE (AS GETFREE)     XA0055DK         
+         LTR   R1,R1                                           XA0055DK         
+         BZ    PAGHIGHX                                        XA0055DK         
+         TM    2(R1),PAGINV                                    XA0055DK         
+         BO    PAGHIGH8                                        XA0055DK         
+         ABEND 45             (AS ABEND 8: A VALID PTE)        XA0055DK         
+PAGHIGH8 NI    3(R1),PAGREF                                    XA0055DK         
+         XC    0(2,R1),0(R1)                                   XA0055DK         
+         NI    2(R1),PAGINV                                    XA0055DK         
+         SLR   R1,R1                                           XA0055DK         
+         ST    R1,CORPGPNT                                     XA0055DK         
+PAGHIGHX MVI   CORFLAG,CORCP                                   XA0055DK         
+         SLR   R1,R1                                           XA0055DK         
+         ST    R1,CORBPNT                                      XA0055DK         
+         STCM  R1,B'0111',CORSWPNT+1                           XA0055DK         
+         BR    R3                                              XA0055DK         
+./ I 01669000 $ 01669100 100                                                    
+         LR    R2,R7          M4B.3: A FRAME ABOVE 16 MB?      XA0055DK         
+         SL    R2,ACORETBL                                     XA0055DK         
+         CL    R2,HIDXLO                                       XA0055DK         
+         BNL   CHAINHI        TO THE HIGH LIST, NOT A WAITER   XA0055DK         
+./ I 01723000 $ 01723010 010                                                    
+CHAINHI  LA    R2,DMKPTRH1    M4B.3: THE HIGH LIST             XA0055DK         
+         L     R1,CORFPNT-CORTABLE(,R2)                        XA0055DK         
+         ST    R7,CORBPNT-CORTABLE(,R1)                        XA0055DK         
+         ST    R7,CORFPNT-CORTABLE(,R2)                        XA0055DK         
+         STM   R1,R2,CORFPNT                                   XA0055DK         
+         L     R2,DMKPTRHN                                     XA0055DK         
+         A     R2,F1                                           XA0055DK         
+         ST    R2,DMKPTRHN                                     XA0055DK         
+         L     R2,CORPGPNT    THE PTE MUST BE INVALID          XA0055DK         
+         LTR   R2,R2                                           XA0055DK         
+         BZ    FRETEXIT                                        XA0055DK         
+         TM    PAGPFRA+2,PAGINV                                XA0055DK         
+         BO    FRETEXIT                                        XA0055DK         
+         ABEND 46             (AS ABEND 12: A VALID PTE)       XA0055DK         
+./ R 01775000          $ 01775100 100                                           
+         L     R1,=A(DMKPTRHT)   TOP OF FRAMES (M4B.3)         XA0055DK         
+./ R 01782000          $ 01782100 100                                           
+         N     R2,=A(X'7FFFF000') PAGE, 31 BITS (M4B.3)        XA0055DK         
+./ R 01854000          $ 01854100 100                                           
+         N     R2,=A(X'7FFFF000') PAGE, 31 BITS (M4B.3)        XA0055DK         
+./ I 01977200 $ 01977210 010                                                    
+         CL    R1,=A(X'01000000') M4B.3: ABOVE 16 MB: NEVER    XA0055DK         
+         BNL   RSPGUPD        ON THE FLUSH LIST                XA0055DK         
+./ I 02077000 $ 02077100 100                                                    
+         ENTRY DMKPTRH1,DMKPTRHN,DMKPTRHT                      XA0055DK         
+DMKPTRHN DC    F'0'           M4B.3: FREE FRAMES ABOVE 16 MB   XA0055DK         
+DMKPTRH1 DC    A(DMKPTRH1)    THEIR LIST: FIRST                XA0055DK         
+         DC    A(DMKPTRH1)    ... AND LAST                     XA0055DK         
+DMKPTRHT DC    A(X'01000000') TOP OF FRAMES (DMKCPIB)          XA0055DK         
+HIDXLO   DC    A(X'10000')    CORTABLE OFFSET OF 16 MB         XA0055DK         
 ./ R 02146000          $ 02146100 100                                           
 PAGESIZE EQU   16      *** PAGING IOBLOK (M4B.3: +IDAL)        XA0055DK         

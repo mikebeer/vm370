@@ -1693,7 +1693,7 @@ def m4bcpi():
         "* DMKSYSRV.  FRAMES ABOVE 16 MB: DMKPGT'S PAGING STORE.",
         "*",
         "DMKCPIB  CSECT",
-        "         EXTRN DMKPGTXT",
+        "         EXTRN DMKPGTXT,DMKPTRHT,DMKPTRH1,DMKPTRHN",
         "         USING PSA,R0",
         "         STM   R0,R14,CPIBSAVE-DMKCPIB(R15)",
         "         BALR  R11,0",
@@ -1701,14 +1701,22 @@ def m4bcpi():
         "         L     R3,=A(DMKSYSRM)",
         "         L     R5,0(,R3)      REAL SIZE",
         "         L     R10,=X'01000000'  CP BELOW 16 MB",
+        "         LR    R6,R5          M4B.3: TOP OF FRAMES",
         "         CLR   R5,R10",
         "         BNH   CPIB1",
         "         L     R4,=A(DMKPGTXT)  M4B.2: STORAGE ABOVE 16 MB",
         "         ST    R5,0(,R4)      IS DMKPGT'S PAGING STORE",
+        "         L     R6,CPIBFT      M4B.3: AND FRAMES UP TO CPIBFT",
+        "         CLR   R6,R5",
+        "         BNH   *+6",
+        "         LR    R6,R5",
+        "         ST    R6,4(,R4)      THE STORE BEGINS ABOVE THEM",
+        "         L     R4,=A(DMKPTRHT)",
+        "         ST    R6,0(,R4)",
         "         LR    R5,R10         M4B.4: AND CP'S MACHINE ENDS",
         "         ST    R5,0(,R3)      AT 16 MB (TABLE, LIMIT CHECKS)",
         "CPIB1    LR    R10,R5         TOP OF THE LOW REGION",
-        "         LR    R6,R5",
+        "         ST    R6,CPIBFTOP    THE TABLE COVERS THE FRAMES",
         "         SRL   R6,8           16 BYTES PER 4 KB FRAME",
         "         AL    R6,=F'4095'",
         "         N     R6,=X'7FFFF000'  WHOLE PAGES",
@@ -1730,13 +1738,32 @@ def m4bcpi():
         "         CLR   R7,R10",
         "         BL    CPIB2",
         "CPIB3    CLR   R7,R5          FRAMES ABOVE 16 MB: OFFLINE",
-        "         BNL   CPIB4",
+        "         BNL   CPIBH          (M4B.3: THEN THE HIGH FRAMES)",
         "         LR    R9,R7",
         "         SRL   R9,8",
         "         AL    R9,ACORETBL",
         "         MVC   CORFPNT-CORTABLE(4,R9),=C'*OL*'",
         "         AL    R7,=F'4096'",
         "         B     CPIB3",
+        "CPIBH    L     R8,CPIBFTOP    M4B.3: FRAMES 16 MB TO THE",
+        "         CLR   R7,R8          TOP: FREE, ON DMKPTR'S HIGH",
+        "         BNL   CPIB4          LIST (DMKPTRH1, DMKPTRHN)",
+        "         LR    R9,R7",
+        "         SRL   R9,8",
+        "         AL    R9,ACORETBL",
+        "         MVI   CORFLAG-CORTABLE(R9),CORFREE",
+        "         L     R2,=A(DMKPTRH1)",
+        "         L     R1,CORFPNT-CORTABLE(,R2)",
+        "         ST    R9,CORBPNT-CORTABLE(,R1)",
+        "         ST    R9,CORFPNT-CORTABLE(,R2)",
+        "         ST    R1,CORFPNT-CORTABLE(,R9)",
+        "         ST    R2,CORBPNT-CORTABLE(,R9)",
+        "         L     R2,=A(DMKPTRHN)",
+        "         L     R1,0(,R2)",
+        "         AL    R1,=F'1'",
+        "         ST    R1,0(,R2)",
+        "         AL    R7,=F'4096'",
+        "         B     CPIBH",
         "CPIB4    SLR   R10,R6         LOW REGION UNDER TABLE",
         "         L     R3,=A(DMKSYSRV)  DMKCPI LAYS IT OUT",
         "         ST    R10,0(,R3)",
@@ -1747,6 +1774,8 @@ def m4bcpi():
         "         BR    R14",
         "         DROP  R15",
         "CPIBSAVE DS    15F",
+        "CPIBFT   DC    A(X'01000000') M4B.3: 16 MB = HIGH FRAMES OFF",
+        "CPIBFTOP DS    F",
         "         LTORG",
     ])
     return d
@@ -4206,7 +4235,123 @@ def m4b3decks():
     ])
     decks['DMKMON'] = d
 
+    # Step 5: frames above 16 MB hold guest pages.  DMKCPIB (DMKCPI
+    # XA0053DK) gives them CORTABLE entries and puts them on a list of their
+    # own; only a guest page-in (not SYSTEM space, not a named-system page)
+    # takes from it, and a frame comes back to it, never to a waiter in
+    # FREEQ (that may be CP).  They are never stolen and never go on the
+    # flush list: a guest keeps its high frames until it releases the pages.
     d = Deck(XA55)
+    d.replace('00310000', first='00310100', inc=100,
+              limit=next_seq(src('DMKPTR'), '00310000'), lines=[
+        "         N     R7,=A(X'7FFFF000') PAGE, 31 BITS (M4B.3)",
+    ])
+    d.insert('00363100', first='00363110', inc=10,
+             limit='00364000', lines=[
+        "         LR    R0,R7          M4B.3: RECLAIMED FROM THE",
+        "         SL    R0,ACORETBL    HIGH LIST?",
+        "         CL    R0,HIDXLO",
+        "         BL    RECLLOW",
+        "         L     R0,DMKPTRHN    YES: ONE FEWER THERE",
+        "         SR    R0,R4",
+        "         ST    R0,DMKPTRHN",
+        "         L     R0,DMKPTRPR    A RECLAIM ALL THE SAME",
+        "         AR    R0,R4",
+        "         ST    R0,DMKPTRPR",
+        "         B     RECLHIX",
+        "RECLLOW  DS    0H",
+    ])
+    d.insert('00370000', first='00370100', inc=100,
+             limit=next_seq(src('DMKPTR'), '00370000'), lines=[
+        "RECLHIX  DS    0H",
+    ])
+    d.replace('00467000', first='00467100', inc=100,
+              limit=next_seq(src('DMKPTR'), '00467000'), lines=[
+        "         BAL   R3,PAGHIGH     A FREE PAGE (M4B.3: MAYBE HIGH)",
+    ])
+    d.insert('01062000', first='01062010', inc=10,
+             limit=next_seq(src('DMKPTR'), '01062000'), lines=[
+        "PAGHIGH  L     R0,DMKPTRHN    M4B.3: A FREE HIGH FRAME?",
+        "         SR    R0,R4",
+        "         BM    PAGFREE        NO: THE USUAL WAY",
+        "         TM    SAVER2+3,SYSTEM  SYSTEM SPACE STAYS LOW",
+        "         BO    PAGFREE",
+        "         TM    SWPFLAG,SWPSHR  SO DOES A NAMED-SYSTEM PAGE",
+        "         BO    PAGFREE",
+        "         TM    VMFSTAT,VMESA390  STAGE 1: ESA/390 GUESTS ONLY",
+        "         BZ    PAGFREE",
+        "         ST    R0,DMKPTRHN",
+        "         L     R7,DMKPTRH1    FIRST ON THE HIGH LIST",
+        "         LM    R0,R1,CORFPNT  UNCHAIN IT",
+        "         LR    R15,R0",
+        "         ST    R15,CORFPNT-CORTABLE(,R1)",
+        "         ST    R1,CORBPNT-CORTABLE(,R15)",
+        "         L     R1,CORPGPNT    OLD OWNER'S PTE (AS GETFREE)",
+        "         LTR   R1,R1",
+        "         BZ    PAGHIGHX",
+        "         TM    2(R1),PAGINV",
+        "         BO    PAGHIGH8",
+        "         ABEND 45             (AS ABEND 8: A VALID PTE)",
+        "PAGHIGH8 NI    3(R1),PAGREF",
+        "         XC    0(2,R1),0(R1)",
+        "         NI    2(R1),PAGINV",
+        "         SLR   R1,R1",
+        "         ST    R1,CORPGPNT",
+        "PAGHIGHX MVI   CORFLAG,CORCP",
+        "         SLR   R1,R1",
+        "         ST    R1,CORBPNT",
+        "         STCM  R1,B'0111',CORSWPNT+1",
+        "         BR    R3",
+    ])
+    d.insert('01669000', first='01669100', inc=100,
+             limit=next_seq(src('DMKPTR'), '01669000'), lines=[
+        "         LR    R2,R7          M4B.3: A FRAME ABOVE 16 MB?",
+        "         SL    R2,ACORETBL",
+        "         CL    R2,HIDXLO",
+        "         BNL   CHAINHI        TO THE HIGH LIST, NOT A WAITER",
+    ])
+    d.insert('01723000', first='01723010', inc=10,
+             limit=next_seq(src('DMKPTR'), '01723000'), lines=[
+        "CHAINHI  LA    R2,DMKPTRH1    M4B.3: THE HIGH LIST",
+        "         L     R1,CORFPNT-CORTABLE(,R2)",
+        "         ST    R7,CORBPNT-CORTABLE(,R1)",
+        "         ST    R7,CORFPNT-CORTABLE(,R2)",
+        "         STM   R1,R2,CORFPNT",
+        "         L     R2,DMKPTRHN",
+        "         A     R2,F1",
+        "         ST    R2,DMKPTRHN",
+        "         L     R2,CORPGPNT    THE PTE MUST BE INVALID",
+        "         LTR   R2,R2",
+        "         BZ    FRETEXIT",
+        "         TM    PAGPFRA+2,PAGINV",
+        "         BO    FRETEXIT",
+        "         ABEND 46             (AS ABEND 12: A VALID PTE)",
+    ])
+    d.replace('01775000', first='01775100', inc=100,
+              limit=next_seq(src('DMKPTR'), '01775000'), lines=[
+        "         L     R1,=A(DMKPTRHT)   TOP OF FRAMES (M4B.3)",
+    ])
+    d.replace('01782000', first='01782100', inc=100,
+              limit=next_seq(src('DMKPTR'), '01782000'), lines=[
+        "         N     R2,=A(X'7FFFF000') PAGE, 31 BITS (M4B.3)",
+    ])
+    d.replace('01854000', first='01854100', inc=100,
+              limit=next_seq(src('DMKPTR'), '01854000'), lines=[
+        "         N     R2,=A(X'7FFFF000') PAGE, 31 BITS (M4B.3)",
+    ])
+    d.insert('01977200', first='01977210', inc=10, limit='01978000', lines=[
+        "         CL    R1,=A(X'01000000') M4B.3: ABOVE 16 MB: NEVER",
+        "         BNL   RSPGUPD        ON THE FLUSH LIST",
+    ])
+    d.insert('02077000', first='02077100', inc=100,
+             limit=next_seq(src('DMKPTR'), '02077000'), lines=[
+        "         ENTRY DMKPTRH1,DMKPTRHN,DMKPTRHT",
+        "DMKPTRHN DC    F'0'           M4B.3: FREE FRAMES ABOVE 16 MB",
+        "DMKPTRH1 DC    A(DMKPTRH1)    THEIR LIST: FIRST",
+        "         DC    A(DMKPTRH1)    ... AND LAST",
+        "DMKPTRHT DC    A(X'01000000') TOP OF FRAMES (DMKCPIB)",
+        "HIDXLO   DC    A(X'10000')    CORTABLE OFFSET OF 16 MB",
+    ])
     d.replace('02146000', first='02146100', inc=100,
               limit=next_seq(src('DMKPTR'), '02146000'), lines=[
         "PAGESIZE EQU   16      *** PAGING IOBLOK (M4B.3: +IDAL)",

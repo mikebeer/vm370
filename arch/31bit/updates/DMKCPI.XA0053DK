@@ -19,7 +19,7 @@
 * DMKSYSRV.  FRAMES ABOVE 16 MB: DMKPGT'S PAGING STORE.        XA0053DK         
 *                                                              XA0053DK         
 DMKCPIB  CSECT                                                 XA0053DK         
-         EXTRN DMKPGTXT                                        XA0053DK         
+         EXTRN DMKPGTXT,DMKPTRHT,DMKPTRH1,DMKPTRHN             XA0053DK         
          USING PSA,R0                                          XA0053DK         
          STM   R0,R14,CPIBSAVE-DMKCPIB(R15)                    XA0053DK         
          BALR  R11,0                                           XA0053DK         
@@ -27,14 +27,22 @@ DMKCPIB  CSECT                                                 XA0053DK
          L     R3,=A(DMKSYSRM)                                 XA0053DK         
          L     R5,0(,R3)      REAL SIZE                        XA0053DK         
          L     R10,=X'01000000'  CP BELOW 16 MB                XA0053DK         
+         LR    R6,R5          M4B.3: TOP OF FRAMES             XA0053DK         
          CLR   R5,R10                                          XA0053DK         
          BNH   CPIB1                                           XA0053DK         
          L     R4,=A(DMKPGTXT)  M4B.2: STORAGE ABOVE 16 MB     XA0053DK         
          ST    R5,0(,R4)      IS DMKPGT'S PAGING STORE         XA0053DK         
+         L     R6,CPIBFT      M4B.3: AND FRAMES UP TO CPIBFT   XA0053DK         
+         CLR   R6,R5                                           XA0053DK         
+         BNH   *+6                                             XA0053DK         
+         LR    R6,R5                                           XA0053DK         
+         ST    R6,4(,R4)      THE STORE BEGINS ABOVE THEM      XA0053DK         
+         L     R4,=A(DMKPTRHT)                                 XA0053DK         
+         ST    R6,0(,R4)                                       XA0053DK         
          LR    R5,R10         M4B.4: AND CP'S MACHINE ENDS     XA0053DK         
          ST    R5,0(,R3)      AT 16 MB (TABLE, LIMIT CHECKS)   XA0053DK         
 CPIB1    LR    R10,R5         TOP OF THE LOW REGION            XA0053DK         
-         LR    R6,R5                                           XA0053DK         
+         ST    R6,CPIBFTOP    THE TABLE COVERS THE FRAMES      XA0053DK         
          SRL   R6,8           16 BYTES PER 4 KB FRAME          XA0053DK         
          AL    R6,=F'4095'                                     XA0053DK         
          N     R6,=X'7FFFF000'  WHOLE PAGES                    XA0053DK         
@@ -56,13 +64,32 @@ CPIB2    LR    R9,R7                                           XA0053DK
          CLR   R7,R10                                          XA0053DK         
          BL    CPIB2                                           XA0053DK         
 CPIB3    CLR   R7,R5          FRAMES ABOVE 16 MB: OFFLINE      XA0053DK         
-         BNL   CPIB4                                           XA0053DK         
+         BNL   CPIBH          (M4B.3: THEN THE HIGH FRAMES)    XA0053DK         
          LR    R9,R7                                           XA0053DK         
          SRL   R9,8                                            XA0053DK         
          AL    R9,ACORETBL                                     XA0053DK         
          MVC   CORFPNT-CORTABLE(4,R9),=C'*OL*'                 XA0053DK         
          AL    R7,=F'4096'                                     XA0053DK         
          B     CPIB3                                           XA0053DK         
+CPIBH    L     R8,CPIBFTOP    M4B.3: FRAMES 16 MB TO THE       XA0053DK         
+         CLR   R7,R8          TOP: FREE, ON DMKPTR'S HIGH      XA0053DK         
+         BNL   CPIB4          LIST (DMKPTRH1, DMKPTRHN)        XA0053DK         
+         LR    R9,R7                                           XA0053DK         
+         SRL   R9,8                                            XA0053DK         
+         AL    R9,ACORETBL                                     XA0053DK         
+         MVI   CORFLAG-CORTABLE(R9),CORFREE                    XA0053DK         
+         L     R2,=A(DMKPTRH1)                                 XA0053DK         
+         L     R1,CORFPNT-CORTABLE(,R2)                        XA0053DK         
+         ST    R9,CORBPNT-CORTABLE(,R1)                        XA0053DK         
+         ST    R9,CORFPNT-CORTABLE(,R2)                        XA0053DK         
+         ST    R1,CORFPNT-CORTABLE(,R9)                        XA0053DK         
+         ST    R2,CORBPNT-CORTABLE(,R9)                        XA0053DK         
+         L     R2,=A(DMKPTRHN)                                 XA0053DK         
+         L     R1,0(,R2)                                       XA0053DK         
+         AL    R1,=F'1'                                        XA0053DK         
+         ST    R1,0(,R2)                                       XA0053DK         
+         AL    R7,=F'4096'                                     XA0053DK         
+         B     CPIBH                                           XA0053DK         
 CPIB4    SLR   R10,R6         LOW REGION UNDER TABLE           XA0053DK         
          L     R3,=A(DMKSYSRV)  DMKCPI LAYS IT OUT             XA0053DK         
          ST    R10,0(,R3)                                      XA0053DK         
@@ -73,4 +100,6 @@ CPIB4    SLR   R10,R6         LOW REGION UNDER TABLE           XA0053DK
          BR    R14                                             XA0053DK         
          DROP  R15                                             XA0053DK         
 CPIBSAVE DS    15F                                             XA0053DK         
+CPIBFT   DC    A(X'01000000') M4B.3: 16 MB = HIGH FRAMES OFF   XA0053DK         
+CPIBFTOP DS    F                                               XA0053DK         
          LTORG                                                 XA0053DK         
