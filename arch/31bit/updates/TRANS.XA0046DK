@@ -18,7 +18,4 @@
          O     R15,=X'80000000' (CP ITSELF RUNS AMODE 24)      XA0046DK         
          BSM   0,R15          ...                              XA0046DK         
 TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE        XA0046DK         
-         LA    R15,TR&NL.B    BIT 0 OFF: BACK TO AMODE 24      XA0046DK         
-         BSM   0,R15          CC STILL LRA'S                   XA0046DK         
-TR&NL.B  DS    0H                                              XA0046DK         
 .TRDONE  ANOP                                                  XA0046DK         

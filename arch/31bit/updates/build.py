@@ -7073,10 +7073,13 @@ AMODEMODS = {
             ".TRINL   LA    R15,TR&NL.L    THE LRA, TO RUN IN AMODE 31",
             "         O     R15,=X'80000000' (CP ITSELF RUNS AMODE 24)",
             "         BSM   0,R15          ...",
+            # M4b.3: CP runs AMODE 31 since XA0048DK; going back to 24 after
+            # the LRA left CP in AMODE 24 to the next interrupt (DMKPTRAN's
+            # MVCL, SSKE, ISKE on a frame above 16 MB would go to the wrong
+            # frame).  So no way back: CP stays in AMODE 31.  (Not O + BSM:
+            # the O sets the CC, and the caller tests LRA's -- am1 looped in
+            # DMKPTRAN's SEGEX on a CC of 1.)
             "TR&NL.L  LRA   &RV,0(0,&UR)   AND DO HARDWARE TRANSLATE",
-            "         LA    R15,TR&NL.B    BIT 0 OFF: BACK TO AMODE 24",
-            "         BSM   0,R15          CC STILL LRA'S",
-            "TR&NL.B  DS    0H",
             ".TRDONE  ANOP",
         ]),
     ],
@@ -7121,9 +7124,7 @@ AMODEMODS = {
             "         O     R15,=X'80000000' ...",
             "         BSM   0,R15          ...",
             "PTRLRA   LRA   R7,0(,R1)      DO HARDWARE TRANSLATE",
-            "         LA    R15,PTRLRAB    BACK TO AMODE 24",
-            "         BSM   0,R15          ...",
-            "PTRLRAB  DS    0H",
+            "*        AND STAY IN AMODE 31, AS CP RUNS (M4B.3)",
         ]),
     ],
 }

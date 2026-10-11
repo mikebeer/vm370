@@ -467,3 +467,24 @@ Start drive.py with `nohup ... &` and poll. Afterwards check the shadows with
 - A file copied to 19E with `COPYFILE fn ft A = = E` keeps mode number 1, and other users, who access 19E as an extension (`Y/S`), do not see it. System-disk files are mode 2: `COPYFILE fn ft A = = E2`.
 - VM/370's `ERASE fn ft E1` does not erase only the mode-1 file. It erased `SYSPROFX EXEC` E1 **and** E2, which left every IPL without HIGHSTOR until the file was put back from the repository (gv4, gv5). Never erase on a system disk with a mode number to pick one of two files: rename the one to keep first, or erase both and copy the right one back.
 - A REXX string followed straight by an `x` or `b` is a hex or binary literal: `'x=['x']'` is error 15. Name the variable something else.
+
+## A nucleus that does not IPL, and the way back without a restore (11 October)
+
+CP builds itself: the assemblies and VMFLOAD run under the CP on 6A1. A
+nucleus that cannot IPL therefore cannot be rebuilt by the usual verbs, and a
+SNAP restore would throw away all CMS work since the snapshot. The way back
+(M4b.3, am1 → am1n):
+
+1. Keep the punched deck (`io/nucleus.deck`, copy it before the next cpwrite).
+2. Patch it as needed with `tools/nucpatch.py` (it rebuilds each CSECT's text
+   from the TXT cards and rewrites bytes in place; the pattern in it is the
+   M4b.3 one, edit it for another case).
+3. Strip the separator and USERID cards at both ends (the real punch adds them).
+4. Load it standalone: Hercules `archmode S/370` (the loader's IPL PSW is a
+   BC PSW, which ESA/390 refuses), `devinit 000c io/<deck> eof`, `ipl 00c`;
+   it ends in wait state `000A0000 00000012` as in cpwrite. Then
+   `archmode ESA/390` and `ipl 6A1`.
+
+And the bug that needed it: `O R15,=X'80000000'` between an LRA and the
+caller's `BC` changes the condition code. Mode switches around LRA must use
+LA and BSM only (neither sets the CC), or no switch at all.
