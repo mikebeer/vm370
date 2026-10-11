@@ -1,0 +1,38 @@
+./ I 00925000 $ 00925100 100                                                    
+         CL    R2,=A(X'01000000') M4B.3: FRAME ABOVE 16 MB?    XA0055DK         
+         BL    CCWNXT9X                                        XA0055DK         
+         CALL  DMKPTRUL       UNLOCK: THE IDAL PATH LOCKS IT   XA0055DK         
+         B     CCWMANYF       A HIGH FRAME GOES BY IDAWS       XA0055DK         
+CCWNXT9X DS    0H                                              XA0055DK         
+./ R 01155000          $ 01155100 100                                           
+         L     R15,=A(X'7FFFF800') 2 KB BLOCK, 31 BITS         XA0055DK         
+./ R 01179000          $ 01179100 100                                           
+         N     R15,=A(X'7FFFF800') CLEAN UP, 31 BITS           XA0055DK         
+./ R 01184000          $ 01184100 100                                           
+         N     R15,=A(X'7FFFF000') CLEAR DISPLACEMENT          XA0055DK         
+./ R 01191000          $ 01191100 100                                           
+         N     R15,=A(X'7FFFF800') CLEAN UP, 31 BITS           XA0055DK         
+./ R 01282000 01283000 $ 01282100 100                                           
+         L     R15,=V(DMKPGTXT) TOP OF REAL STORAGE (M4B.3)    XA0055DK         
+         L     R15,0(,R15)    ...                              XA0055DK         
+./ R 03629000          $ 03629100 100                                           
+         L     R15,=A(X'7FFFF800') MASK, 31 BITS               XA0055DK         
+./ R 03641000          $ 03641100 100                                           
+         N     R15,=A(X'7FFFF000') DROP DISPLACEMENT           XA0055DK         
+./ R 03711000          $ 03711100 100                                           
+         BE    CCWBK9         ONE PAGE (M4B.3: MAYBE HIGH)     XA0055DK         
+./ R 03712000          $ 03712100 100                                           
+CCWBKID  LR    R15,R1         "ENDING ADDRESS"                 XA0055DK         
+./ I 03720000 $ 03720010 010                                                    
+CCWBK9   TRANS 2,1,LCTL=NO    M4B.3: AS CCWNXT9                XA0055DK         
+         BNZ   CCWBK9A                                         XA0055DK         
+         CALL  DMKPTRLK                                        XA0055DK         
+         B     CCWBK9B                                         XA0055DK         
+CCWBK9A  CALL  DMKPTRAN,PARM=BRING+DEFER+LOCK                  XA0055DK         
+CCWBK9B  BNZ   CCWBAD4                                         XA0055DK         
+         CL    R2,=A(X'01000000') A FRAME ABOVE 16 MB?         XA0055DK         
+         BL    CCWNXT9X       NO: ONE PAGE, AS BEFORE          XA0055DK         
+         CALL  DMKPTRUL       YES: THE IDAL PATH LOCKS IT      XA0055DK         
+         LR    R14,R1         BEGINNING ADDRESS                XA0055DK         
+         SLR   R14,R4                                          XA0055DK         
+         B     CCWBKID                                         XA0055DK         

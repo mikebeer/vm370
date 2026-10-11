@@ -1,0 +1,6 @@
+./ R 00220500          $ 00220510 010                                           
+         L     R9,=V(DMKPGTXT) REAL STORAGE TOP (M4B.3)        XA0055DK         
+./ R 00274000          $ 00274100 100                                           
+         N     R7,=A(X'7FFFF000') DROP DISPLACEMENT            XA0055DK         
+./ R 00471000          $ 00471100 100                                           
+         L     R15,=A(X'7FFFF800') ALIGNMENT MASK              XA0055DK         

@@ -1,0 +1,19 @@
+./ R 00388000          $ 00388010 010                                           
+NOTCHG1  CL    R2,=A(X'01000000') M4B.3: FRAME ABOVE 16 MB?    XA0055DK         
+         BL    NOTCHG1L                                        XA0055DK         
+         OI    RCWFLAG,IDA    YES: THROUGH JIDAL1/JIDAL2       XA0055DK         
+         LA    R15,JIDAL1                                      XA0055DK         
+         STCM  R15,7,RCWADDR+1                                 XA0055DK         
+         ST    R2,JIDAL1                                       XA0055DK         
+         LA    R15,2048(,R2)                                   XA0055DK         
+         N     R15,=A(X'7FFFF800') THE NEXT 2 KB               XA0055DK         
+         ST    R15,JIDAL2                                      XA0055DK         
+         LR    R15,R3         DOES THE AREA CROSS A PAGE?      XA0055DK         
+         BCTR  R15,0                                           XA0055DK         
+         XR    R15,R1                                          XA0055DK         
+         N     R15,=A(X'7FFFF000')                             XA0055DK         
+         BNZ   NOTCHG1M       YES: ALTER2 SETS JIDAL2          XA0055DK         
+         CALL  DMKPTRLK       NO: DGUNLOK UNLOCKS BOTH IDAWS   XA0055DK         
+         B     NOTCHG1M                                        XA0055DK         
+NOTCHG1L STCM  R2,7,RCWADDR+1 STORE REAL ADDRESS IN RCWTASK    XA0055DK         
+NOTCHG1M DS    0H                                              XA0055DK         

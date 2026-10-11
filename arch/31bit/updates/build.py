@@ -4219,6 +4219,135 @@ def m4b3decks():
         "PAGESIZE EQU   16             PAGING IOBLOK (M4B.3: +IDAL)",
     ])
     decks['DMKCPI'] = d
+
+    # Step 4 (and the real-address masks of step 2 that it needs): a data
+    # area in a frame above 16 MB is addressed through IDAWs, and every
+    # routine that turns such an address into a key, a CORTABLE entry or a
+    # range check does it in 31 bits.  A non-IDA CCW still only ever points
+    # below 16 MB, so the 24-bit masks on RCWADDR words stay as they are.
+    M31P = "=A(X'7FFFF000')"
+    M31H = "=A(X'7FFFF800')"
+    d = Deck(XA55)
+    for seq in ('00383000', '00398000', '00407000'):
+        d.replace(seq, first=str(int(seq) + 100).zfill(8), inc=100,
+                  limit=next_seq(src('DMKPSA'), seq), lines=[
+            "         L     R15,X31B2K     2 KB BLOCK, 31 BITS (M4B.3)"])
+    for seq in ('00420000', '00431000', '00437000', '00442000'):
+        d.replace(seq, first=str(int(seq) + 100).zfill(8), inc=100,
+                  limit=next_seq(src('DMKPSA'), seq), lines=[
+            "         N     R15,X31PAGE    PAGE, 31 BITS (M4B.3)"])
+    d.insert('00448000', first='00448100', inc=100,
+             limit=next_seq(src('DMKPSA'), '00448000'), lines=[
+        "X31PAGE  DC    X'7FFFF000'    M4B.3: XPAGNUM FOR ANY FRAME",
+        "X31B2K   DC    X'7FFFF800'    M4B.3: X2048BND FOR ANY FRAME",
+    ])
+    decks['DMKPSA'] = d
+
+    d = Deck(XA55)
+    d.insert('00925000', first='00925100', inc=100,
+             limit=next_seq(src('DMKCCW'), '00925000'), lines=[
+        "         CL    R2,=A(X'01000000') M4B.3: FRAME ABOVE 16 MB?",
+        "         BL    CCWNXT9X",
+        "         CALL  DMKPTRUL       UNLOCK: THE IDAL PATH LOCKS IT",
+        "         B     CCWMANYF       A HIGH FRAME GOES BY IDAWS",
+        "CCWNXT9X DS    0H",
+    ])
+    d.replace('01155000', first='01155100', inc=100,
+              limit=next_seq(src('DMKCCW'), '01155000'), lines=[
+        "         L     R15," + M31H + " 2 KB BLOCK, 31 BITS",
+    ])
+    d.replace('01179000', first='01179100', inc=100,
+              limit=next_seq(src('DMKCCW'), '01179000'), lines=[
+        "         N     R15," + M31H + " CLEAN UP, 31 BITS",
+    ])
+    d.replace('01184000', first='01184100', inc=100,
+              limit=next_seq(src('DMKCCW'), '01184000'), lines=[
+        "         N     R15," + M31P + " CLEAR DISPLACEMENT",
+    ])
+    d.replace('01191000', first='01191100', inc=100,
+              limit=next_seq(src('DMKCCW'), '01191000'), lines=[
+        "         N     R15," + M31H + " CLEAN UP, 31 BITS",
+    ])
+    # an IDAW made positively invalid must point beyond real storage, and
+    # 16 MB (DMKSYSRM) is a frame now: the real top (DMKPGTXT)
+    d.replace('01282000', '01283000', first='01282100', inc=100,
+              limit=next_seq(src('DMKCCW'), '01283000'), lines=[
+        "         L     R15,=V(DMKPGTXT) TOP OF REAL STORAGE (M4B.3)",
+        "         L     R15,0(,R15)    ...",
+    ])
+    d.replace('03629000', first='03629100', inc=100,
+              limit=next_seq(src('DMKCCW'), '03629000'), lines=[
+        "         L     R15," + M31H + " MASK, 31 BITS",
+    ])
+    d.replace('03641000', first='03641100', inc=100,
+              limit=next_seq(src('DMKCCW'), '03641000'), lines=[
+        "         N     R15," + M31P + " DROP DISPLACEMENT",
+    ])
+    # read backward, one page: as CCWNXT9, but a high frame goes to the
+    # backward IDAL set-up below (R14 = beginning, R15 = ending address)
+    d.replace('03711000', first='03711100', inc=100,
+              limit=next_seq(src('DMKCCW'), '03711000'), lines=[
+        "         BE    CCWBK9         ONE PAGE (M4B.3: MAYBE HIGH)",
+    ])
+    d.replace('03712000', first='03712100', inc=100,
+              limit=next_seq(src('DMKCCW'), '03712000'), lines=[
+        "CCWBKID  LR    R15,R1         \"ENDING ADDRESS\"",
+    ])
+    d.insert('03720000', first='03720010', inc=10,
+             limit=next_seq(src('DMKCCW'), '03720000'), lines=[
+        "CCWBK9   TRANS 2,1,LCTL=NO    M4B.3: AS CCWNXT9",
+        "         BNZ   CCWBK9A",
+        "         CALL  DMKPTRLK",
+        "         B     CCWBK9B",
+        "CCWBK9A  CALL  DMKPTRAN,PARM=BRING+DEFER+LOCK",
+        "CCWBK9B  BNZ   CCWBAD4",
+        "         CL    R2,=A(X'01000000') A FRAME ABOVE 16 MB?",
+        "         BL    CCWNXT9X       NO: ONE PAGE, AS BEFORE",
+        "         CALL  DMKPTRUL       YES: THE IDAL PATH LOCKS IT",
+        "         LR    R14,R1         BEGINNING ADDRESS",
+        "         SLR   R14,R4",
+        "         B     CCWBKID",
+    ])
+    decks['DMKCCW'] = d
+
+    d = Deck(XA55)
+    d.replace('00388000', first='00388010', inc=10,
+              limit=next_seq(src('DMKDGD'), '00388000'), lines=[
+        "NOTCHG1  CL    R2,=A(X'01000000') M4B.3: FRAME ABOVE 16 MB?",
+        "         BL    NOTCHG1L",
+        "         OI    RCWFLAG,IDA    YES: THROUGH JIDAL1/JIDAL2",
+        "         LA    R15,JIDAL1",
+        "         STCM  R15,7,RCWADDR+1",
+        "         ST    R2,JIDAL1",
+        "         LA    R15,2048(,R2)",
+        "         N     R15," + M31H + " THE NEXT 2 KB",
+        "         ST    R15,JIDAL2",
+        "         LR    R15,R3         DOES THE AREA CROSS A PAGE?",
+        "         BCTR  R15,0",
+        "         XR    R15,R1",
+        "         N     R15," + M31P,
+        "         BNZ   NOTCHG1M       YES: ALTER2 SETS JIDAL2",
+        "         CALL  DMKPTRLK       NO: DGUNLOK UNLOCKS BOTH IDAWS",
+        "         B     NOTCHG1M",
+        "NOTCHG1L STCM  R2,7,RCWADDR+1 STORE REAL ADDRESS IN RCWTASK",
+        "NOTCHG1M DS    0H",
+    ])
+    decks['DMKDGD'] = d
+
+    d = Deck(XA55)
+    d.replace('00220500', first='00220510', inc=10,
+              limit=next_seq(src('DMKUNT'), '00220500'), lines=[
+        "         L     R9,=V(DMKPGTXT) REAL STORAGE TOP (M4B.3)",
+    ])
+    d.replace('00274000', first='00274100', inc=100,
+              limit=next_seq(src('DMKUNT'), '00274000'), lines=[
+        "         N     R7," + M31P + " DROP DISPLACEMENT",
+    ])
+    d.replace('00471000', first='00471100', inc=100,
+              limit=next_seq(src('DMKUNT'), '00471000'), lines=[
+        "         L     R15," + M31H + " ALIGNMENT MASK",
+    ])
+    decks['DMKUNT'] = d
     return decks
 
 

@@ -1,0 +1,17 @@
+./ R 00383000          $ 00383100 100                                           
+         L     R15,X31B2K     2 KB BLOCK, 31 BITS (M4B.3)      XA0055DK         
+./ R 00398000          $ 00398100 100                                           
+         L     R15,X31B2K     2 KB BLOCK, 31 BITS (M4B.3)      XA0055DK         
+./ R 00407000          $ 00407100 100                                           
+         L     R15,X31B2K     2 KB BLOCK, 31 BITS (M4B.3)      XA0055DK         
+./ R 00420000          $ 00420100 100                                           
+         N     R15,X31PAGE    PAGE, 31 BITS (M4B.3)            XA0055DK         
+./ R 00431000          $ 00431100 100                                           
+         N     R15,X31PAGE    PAGE, 31 BITS (M4B.3)            XA0055DK         
+./ R 00437000          $ 00437100 100                                           
+         N     R15,X31PAGE    PAGE, 31 BITS (M4B.3)            XA0055DK         
+./ R 00442000          $ 00442100 100                                           
+         N     R15,X31PAGE    PAGE, 31 BITS (M4B.3)            XA0055DK         
+./ I 00448000 $ 00448100 100                                                    
+X31PAGE  DC    X'7FFFF000'    M4B.3: XPAGNUM FOR ANY FRAME     XA0055DK         
+X31B2K   DC    X'7FFFF800'    M4B.3: X2048BND FOR ANY FRAME    XA0055DK         
